@@ -18,6 +18,10 @@
 #
 # CHANGELOG
 #
+# 2015-03-28 - 0.0 - Thomas LEVEIL - copied from BF4
+# 2015-03-29 - 0.1 - Fenix         - adjust server variabled for BFH
+#                                  - removed commander: BFH seems not to have commander feature
+#                                  - removed EVT_CLIENT_COMROSE and EVT_CLIENT_DISCONNECT_REASON
 
 import b3
 import b3.clients
@@ -32,15 +36,15 @@ from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 
-__author__ = ''
-__version__ = '0.0'
+__author__ = 'Thomas LEVEIL, Fenix'
+__version__ = '0.1'
 
 csv.register_dialect('dice', delimiter=';', quoting=csv.QUOTE_NONE)
 
 BFH_REQUIRED_VERSION = 000000  # TODO: figure out current version
 
-BFH_PLAYER = 0              # normal player
-BFH_SPECTATOR = 1           # spectator which is not visible in the game for other player but visible as player for b3
+BFH_PLAYER = 0                 # normal player
+BFH_SPECTATOR = 1              # spectator which is not visible in the game for other player but visible as player for b3
 
 SQUAD_NOSQUAD = 0
 SQUAD_ALPHA = 1
@@ -111,8 +115,7 @@ SQUAD_NAMES = {
     SQUAD_CELESTE: "Celeste"
 }
 
-
-gamemodes_csv = '''\
+gamemodes_csv = """\
 Engine Name;Human-Readable Name;Intended max player count
 TurfWarLarge0;Conquest Large;64
 TurfWarSmall0;Conquest Small;32
@@ -122,7 +125,7 @@ Bloodmoney0;Blood Money;32
 Hit0;Crosshair;10
 Hostage0;Rescue;10
 TeamDeathMatch0;Team Deathmatch;64
-'''
+"""
 
 # Base game modes: dict('Engine name'='Human-readable name')
 GAME_MODES_NAMES = dict([(x['Engine Name'], x['Human-Readable Name']) for x in
@@ -130,7 +133,7 @@ GAME_MODES_NAMES = dict([(x['Engine Name'], x['Human-Readable Name']) for x in
 
 GAMEMODES_IDS_BY_NAME = {name.lower(): x for x, name in GAME_MODES_NAMES.items()}
 
-maps_csv = '''\
+maps_csv = """\
 Engine name;Human-readable name;Game modes,,,,,,,,,
 mp_bank;Bank Job;TurfWarLarge0,TurfWarSmall0,Heist0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
 mp_bloodout;The Block;TurfWarLarge0,TurfWarSmall0,Heist0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
@@ -141,7 +144,7 @@ mp_glades;Everglades;TurfWarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit
 mp_growhouse;Growhouse;TurfWarSmall0,Heist0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
 mp_hills;Hollywood Heights;TurfWarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
 mp_offshore;Riptide;TurfWarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0,Hostage0,TeamDeathMatch0
-'''
+"""
 
 # game maps: dict('Engine name'='Human-readable name')
 MAP_NAME_BY_ID = dict([(x['Engine name'], x['Human-readable name']) for x in
@@ -199,10 +202,7 @@ class BfhParser(AbstractParser):
         'serverName',                     # <name>  Set the server name
         'serverType',                     # <type>  Set the server type: Official, Ranked, Unranked or Private
         'soldierHealth',                  # <modifier: percent>  Set soldier max health scale factor
-        'team1FactionOverride',           # <factionId: integer> Set the faction of team 1
-        'team2FactionOverride',           # <factionId: integer> Set the faction of team 2
-        'team3FactionOverride',           # <factionId: integer> Set the faction of team 3
-        'team4FactionOverride',           # <factionId: integer> Set the faction of team 4
+        'teamFactionOverride ',           # <factionId: integer> Set the faction of team 1
         'teamKillCountForKick',           # <count>  Set number of teamkills allowed during a round
         'teamKillKickForBan',             # <count>  Set number of team-kill kicks that will lead to permaban
         'teamKillValueDecreasePerSecond', # <count>  Set kill-value decrease per second
@@ -238,7 +238,7 @@ class BfhParser(AbstractParser):
     ####################################################################################################################
 
     def __new__(cls, *args, **kwargs):
-        BfhParser.patch_b3_Client_properties()
+        BfhParser.patch_b3_client_properties()
         return AbstractParser.__new__(cls)
 
     def startup(self):
@@ -403,8 +403,8 @@ class BfhParser(AbstractParser):
     def checkVersion(self):
         version = self.output.write('version')
         self.info('Server version : %s' % version)
-        if version[0] != 'BF4':
-            raise Exception('the BF4 parser can only work with Battlefield 4')
+        if version[0] != 'BFH':
+            raise Exception('the BFH parser can only work with Battlefield Hardline')
         if int(version[1]) < BFH_REQUIRED_VERSION:
             raise Exception("the BF4 parser can only work with Battlefield 4 server version %s and above. "
                             "You are trying to connect to %s v%s" % (BFH_REQUIRED_VERSION, version[0], version[1]))
@@ -510,16 +510,19 @@ class BfhParser(AbstractParser):
             """
             Helper function to query cvar from the server.
             """
-            _cvar = self.getCvar(cvar)
-            if _cvar:
+            v = self.getCvar(cvar)
+            if v:
                 if cvar_type == 'string':
-                    return _cvar.getString()
+                    return v.getString()
                 elif cvar_type == 'bool':
-                    return _cvar.getBoolean()
+                    return v.getBoolean()
                 elif cvar_type == 'int':
-                    return _cvar.getInt()
+                    return v.getInt()
                 elif cvar_type == 'float':
-                    return _cvar.getFloat()
+                    return v.getFloat()
+                else:
+                    raise TypeError('invalid value format: %s' % cvar_type)
+            return None
 
         self.game['3dSpotting'] = get_cvar('3dSpotting', 'bool')
         self.game['3pCam'] = get_cvar('3pCam', 'bool')
@@ -545,6 +548,7 @@ class BfhParser(AbstractParser):
         self.game['nameTag'] = get_cvar('nameTag', 'bool')
         self.game['onlySquadLeaderSpawn'] = get_cvar('onlySquadLeaderSpawn', 'bool')
         self.game['playerRespawnTime'] = get_cvar('playerRespawnTime', 'int')
+        self.game['preset'] = get_cvar('preset', 'string')
         self.game['regenerateHealth'] = get_cvar('regenerateHealth', 'bool')
         self.game['roundLockdownCountdown'] = get_cvar('roundLockdownCountdown', 'int')
         self.game['roundRestartPlayerCount'] = get_cvar('roundRestartPlayerCount', 'int')
@@ -556,20 +560,16 @@ class BfhParser(AbstractParser):
         self.game['serverName'] = get_cvar('serverName')
         self.game['serverType'] = get_cvar('serverType')
         self.game['soldierHealth'] = get_cvar('soldierHealth', 'int')
-        self.game['team1FactionOverride'] = get_cvar('team1FactionOverride', 'string')
-        self.game['team2FactionOverride'] = get_cvar('team2FactionOverride', 'string')
-        self.game['team3FactionOverride'] = get_cvar('team3FactionOverride', 'string')
-        self.game['team4FactionOverride'] = get_cvar('team4FactionOverride', 'string')
+        self.game['teamFactionOverride '] = get_cvar('teamFactionOverride ', 'string')
         self.game['teamKillCountForKick'] = get_cvar('teamKillCountForKick', 'int')
         self.game['teamKillKickForBan'] = get_cvar('teamKillKickForBan', 'int')
         self.game['teamKillValueDecreasePerSecond'] = get_cvar('teamKillValueDecreasePerSecond', 'float')
         self.game['teamKillValueForKick'] = get_cvar('teamKillValueForKick', 'float')
         self.game['teamKillValueIncrease'] = get_cvar('teamKillValueIncrease', 'float')
+        self.game['ticketBleedRate'] = get_cvar('ticketBleedRate', 'int')
         self.game['vehicleSpawnAllowed'] = get_cvar('vehicleSpawnAllowed', 'bool')
         self.game['vehicleSpawnDelay'] = get_cvar('vehicleSpawnDelay', 'int')
-        self.game['preset'] = get_cvar('preset')
-        self.game['unlockMode'] = get_cvar('unlockMode')
-        self.game['ticketBleedRate'] = get_cvar('ticketBleedRate', 'int')
+        self.game['unlockMode'] = get_cvar('unlockMode', 'string')
 
         self.game.timeLimit = self.game.gameModeCounter
         self.game.fragLimit = self.game.gameModeCounter
@@ -703,8 +703,16 @@ class BfhParser(AbstractParser):
         if numOfTeams == 4:
             response['team4score'] = data[11]
 
-        new_info = ('gameIpAndPort', 'punkBusterVersion', 'joinQueueEnabled', 'region',
-                    'closestPingSite', 'country', 'blazePlayerCount', 'blazeGameState')
+        new_info = (
+            'gameIpAndPort',
+            'punkBusterVersion',
+            'joinQueueEnabled',
+            'region',
+            'closestPingSite',
+            'country',
+            'blazePlayerCount',
+            'blazeGameState'
+        )
 
         start_index = 7 + numOfTeams + 8
         for i, n in zip(range(start_index, start_index + len(new_info)), new_info):
@@ -716,7 +724,7 @@ class BfhParser(AbstractParser):
         return response
 
     @staticmethod
-    def patch_b3_Client_properties():
+    def patch_b3_client_properties():
         """
         Add some properties to the Client Object.
         """
@@ -777,19 +785,10 @@ class BfhParser(AbstractParser):
         def set_player_type(self, ptype):
             pass
 
-        def get_commander_state(self):
-            return self.player_type == BFH_COMMANDER
-
-        def set_commander_state(self):
-            # silently prevents Client.is_commander from being set.
-            # The Client.is_commander value is determined from Client.type
-            pass
-
         b3.clients.Client.isAlive = isAlive
         b3.clients.Client.state = property(getPlayerState, setPlayerState)
         b3.clients.Client._get_player_type = _get_player_type
         b3.clients.Client.player_type = property(get_player_type, set_player_type)
-        b3.clients.Client.is_commander = property(get_commander_state, set_commander_state)
 
     def _startRound(self):
         # respect var.roundLockdownCountdown
