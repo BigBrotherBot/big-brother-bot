@@ -24,7 +24,7 @@ before_script:
 
 # command to run tests, e.g. python setup.py test
 script: 
-  - nosetests --where=tests --verbosity=3 --with-coverage --cover-package=b3 --cover-xml
+  - nosetests --where=tests --verbosity=3 --with-cov --cov b3 --cov-report term-missing --cov-config .coveragerc
   - python setup.py egg_info --tag-build .dev${TRAVIS_COMMIT:0:7} --tag-date sdist bdist_wheel
   - python setup.py build_exe
 

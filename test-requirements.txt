@@ -2,7 +2,7 @@
 unittest2
 mockito
 nose
-nosexcover
+nose-cov
 nose-exclude
 mock>=0.8
 pylint
