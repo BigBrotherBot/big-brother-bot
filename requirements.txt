@@ -1,4 +1,4 @@
 # Python modules needed to run the B3
 pymysql==0.6.6
-python-dateutil==2.4.1
+python-dateutil==2.4.2
 feedparser==5.1.3
