@@ -29,7 +29,7 @@ script:
   - python setup.py build_exe
 
 after_success:
-  - pip install python-coveralls
+  - pip install coveralls
   - coveralls
 
 notifications:
