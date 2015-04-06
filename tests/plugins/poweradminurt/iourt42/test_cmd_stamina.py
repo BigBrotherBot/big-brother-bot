@@ -43,12 +43,12 @@ pastamina-stamina: 20   ; set the stamina behavior <default/regain/infinite>
     def test_missing_parameter(self):
         self.moderator.message_history = []
         self.moderator.says("!stamina")
-        self.assertListEqual(["Invalid or missing data, try !help pastamina"], self.moderator.message_history)
+        self.assertListEqual(["invalid or missing data, try !help pastamina"], self.moderator.message_history)
 
     def test_junk(self):
         self.moderator.message_history = []
         self.moderator.says("!stamina qsdf")
-        self.assertListEqual(["Invalid or missing data, try !help pastamina"], self.moderator.message_history)
+        self.assertListEqual(["invalid or missing data, try !help pastamina"], self.moderator.message_history)
 
     def test_default(self):
         self.moderator.says("!stamina default")

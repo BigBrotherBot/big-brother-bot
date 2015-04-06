@@ -47,7 +47,7 @@ class Bf3TestCase(unittest.TestCase):
 
         # add method changes_team(newTeam, newSquad=None) to FakeClient
         def changes_team(self, newTeam, newSquad=None):
-            self.console.OnPlayerTeamchange(data=[self.cid, newTeam, newSquad if newSquad else self.squad], action=None)
+            self.console.OnPlayerTeamchange(None, data=[self.cid, newTeam, newSquad if newSquad else self.squad])
 
         from b3.fake import FakeClient
         FakeClient.changes_team = changes_team

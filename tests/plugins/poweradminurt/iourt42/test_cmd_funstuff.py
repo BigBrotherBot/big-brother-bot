@@ -43,12 +43,12 @@ pafunstuff-funstuff: 20 ; set the use of funstuff <on/off>
     def test_missing_parameter(self):
         self.moderator.message_history = []
         self.moderator.says("!funstuff")
-        self.assertListEqual(["Invalid or missing data, try !help pafunstuff"], self.moderator.message_history)
+        self.assertListEqual(["invalid or missing data, try !help pafunstuff"], self.moderator.message_history)
 
     def test_junk(self):
         self.moderator.message_history = []
         self.moderator.says("!funstuff qsdf")
-        self.assertListEqual(["Invalid or missing data, try !help pafunstuff"], self.moderator.message_history)
+        self.assertListEqual(["invalid or missing data, try !help pafunstuff"], self.moderator.message_history)
 
     def test_on(self):
         self.moderator.says("!funstuff on")
