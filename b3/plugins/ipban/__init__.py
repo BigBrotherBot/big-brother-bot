@@ -1,4 +1,3 @@
-#
 # IPban Plugin for BigBrotherBot(B3) (www.bigbrotherbot.com)
 # Copyright (C) 2014 Mark Weirath (xlr8or@xlr8or.com)
 # 
@@ -15,18 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 06-12-2014 : v1.0.0beta : xlr8or - irst edition of ipban
-# 23-02-2015 : v1.1.0beta : Fenix  - added missing 'settings' section in plugin configuration file
-#                                  - fixed plugin not correctly loading maxlevel property
-#                                  - correctly return list of banned ips in getBanIps and getTempBanIps
-#                                  - optimized SQL quieries and IP ban check workflow
-#                                  - updated plugin module structure for easier install
-#                                  - fixed usage of deprecated method startup()
-# 26-03-2015 : v1.2.0beta : Fenix  - made IPban a built in plugin
-#                                  - removed B3 1.9.x backwards compatibility
 
 __version__ = '1.2.0beta'
 __author__ = 'xlr8or'

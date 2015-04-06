@@ -1,4 +1,3 @@
-#
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2013 Daniele Pantaleone <fenix@bigbrotherbot.net>
 # 
@@ -15,11 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG:
-#
-# 23/02/2015 - 1.0 - Fenix - initial release
-# 10/03/2015 - 1.1 - Fenix - added plugin dependency loading
 
 __author__ = 'Fenix'
 __version__ = '1.1'
@@ -58,9 +52,6 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
         Initialize plugin settings.
         """
         self._adminPlugin = self.console.getPlugin('admin')
-        if not self._adminPlugin:
-            self.error('could not start without admin plugin')
-            return False
 
         # register our commands
         if 'commands' in self.config.sections():
@@ -193,7 +184,7 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
             client.message('^7Missing ^1%s ^7plugin configuration file' % name)
             client.message('^7Please put the plugin configuration file in ^3@b3/conf ^7or ^3@b3/extplugins/%s/conf' % name)
         except b3.config.ConfigFileNotValid:
-            client.message('^7Invalid configuration file found for plugin ^1%s' % name)
+            client.message('^7invalid configuration file found for plugin ^1%s' % name)
             client.message('^7Please inspect your b3 log file for more information')
             self.error('plugin %s has an invalid configuration file and can\'t be loaded: %s' % (name, extract_tb(sys.exc_info()[2])))
         else:
@@ -237,8 +228,8 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
 
             try:
 
-                plugin_list = _get_plugin_data(plugin_data)         # generate a list of PluginData which will include also requirements
-                plugin_dict = {x.name: x for x in plugin_list}      # dict(str, PluginData)
+                plugin_list = _get_plugin_data(plugin_data)     # generate a list of PluginData (also requirements)
+                plugin_dict = {x.name: x for x in plugin_list}  # dict(str, PluginData)
                 sorted_list = [y for y in topological_sort([(x.name, set(x.clazz.requiresPlugins)) for x in plugin_list])]
 
                 if len(sorted_list) > 1:
@@ -346,7 +337,7 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
         """
         plugin_list = [x.lower() for x in self._reSplit.findall(data or '')]
         if not plugin_list:
-            client.message('^7Usage: %splugin enable <name/s>' % self._adminPlugin.cmdPrefix)
+            client.message('^7usage: %splugin enable <name/s>' % self._adminPlugin.cmdPrefix)
         else:
             for plugin in plugin_list:
                 self.do_enable(client, plugin)
@@ -359,7 +350,7 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
         """
         plugin_list = [x.lower() for x in self._reSplit.findall(data or '')]
         if not plugin_list:
-            client.message('^7Usage: %splugin disable <name/s>' % self._adminPlugin.cmdPrefix)
+            client.message('^7usage: %splugin disable <name/s>' % self._adminPlugin.cmdPrefix)
         else:
             for plugin in plugin_list:
                 self.do_disable(client, plugin)
@@ -382,7 +373,7 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
         """
         plugin_list = [x.lower() for x in self._reSplit.findall(data or '')]
         if not plugin_list:
-            client.message('^7Usage: %splugin load <name/s>' % self._adminPlugin.cmdPrefix)
+            client.message('^7usage: %splugin load <name/s>' % self._adminPlugin.cmdPrefix)
         else:
             for plugin in plugin_list:
                 self.do_load(client, plugin)
@@ -395,7 +386,7 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
         """
         plugin_list = [x.lower() for x in self._reSplit.findall(data or '')]
         if not plugin_list:
-            client.message('^7Usage: %splugin unload <name/s>' % self._adminPlugin.cmdPrefix)
+            client.message('^7usage: %splugin unload <name/s>' % self._adminPlugin.cmdPrefix)
         else:
             for plugin in plugin_list:
                 self.do_unload(client, plugin)
@@ -408,7 +399,7 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
         """
         plugin_list = [x.lower() for x in self._reSplit.findall(data or '')]
         if not plugin_list:
-            client.message('^7Usage: %splugin info <name/s>' % self._adminPlugin.cmdPrefix)
+            client.message('^7usage: %splugin info <name/s>' % self._adminPlugin.cmdPrefix)
         else:
             for plugin in plugin_list:
                 self.do_info(client, plugin)
@@ -424,16 +415,16 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
         <action> [<plugin>] - manage plugins
         """
         if not data or not self._reParse.match(data):
-            client.message('^7Invalid data, try ^3%s^7help plugin' % self._adminPlugin.cmdPrefix)
+            client.message('^7invalid data, try ^3%s^7help plugin' % self._adminPlugin.cmdPrefix)
         else:
             match = self._reParse.match(data)
             command_list = [m[7:] for m in dir(self) if callable(getattr(self, m)) and m.startswith('plugin_')]
             if not match.group('command') in command_list:
                 command_list.sort()
-                client.message('^7Usage: %splugin <%s> [<data>]' % (self._adminPlugin.cmdPrefix, '|'.join(command_list)))
+                client.message('^7usage: %splugin <%s> [<data>]' % (self._adminPlugin.cmdPrefix, '|'.join(command_list)))
             else:
                 try:
                     func = getattr(self, 'plugin_%s' % match.group('command'))
                     func(client=client, data=match.group('data'))
                 except Exception, e:
-                    client.message('Unhandled exception: %s' % e)
+                    client.message('unhandled exception: %s' % e)

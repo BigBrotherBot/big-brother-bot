@@ -1,4 +1,3 @@
-#
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
 #
@@ -15,16 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 30/08/2014 - 1.3   - Fenix      - syntax cleanup
-# 02/05/2014 - 1.2.1 - Fenix      - make use of the new getCmd function from functions module
-# 06/04/2014 - 1.2   - Fenix      - PEP8 coding standards
-#                                 - improved plugin startup and configuration file loading
-# 19/07/2011 - 1.1.0 - Freelander - support for ftp access to pbbans.dat
-# 27/08/2009 - 1.0.9 - Bakes      - use command levels set in punkbuster plugin config not admin plugin
-# 11/30/2005 - 1.0.8 - ThorN      - use PluginCronTab instead of CronTab
 
 __author__ = 'ThorN'
 __version__ = '1.3'
@@ -61,12 +50,9 @@ class PunkbusterPlugin(b3.plugin.Plugin):
         Initialize the plugin.
         """
         self._adminPlugin = self.console.getPlugin('admin')
-        if not self._adminPlugin:
-            self.critical('could not start without admin plugin')
-            return False
 
         if self.console.PunkBuster is None:
-            self.warning('could not register commands because Punkbuster is disabled in your b3.xml configuration file')
+            self.warning('could not register commands because Punkbuster is disabled in your b3 configuration file')
             return False
 
         # register our commands

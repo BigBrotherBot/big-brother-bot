@@ -18,18 +18,7 @@
 #
 # CHANGELOG:
 #
-# 02/05/2014 - 1.0   - Fenix - committed first built-in release
-# 30/08/2014 - 1.1   - Fenix - syntax cleanup
-# 18/09/2014 - 1.2   - Fenix - added command !cmdgrant: allow the execution of a command to a specific client
-#                            - added command !cmdrevoke: revoke a previously given command grant
-#                            - added command !cmduse: check whether a client can execute the given command
-# 20/12/2014 - 1.3   - Fenix - fixed invalid placeholder in mysql related SQL statements
-#                            - use client auth event instead of client connect: in client connect, client.id is not set
-#                              and so we can't load command grants from the storage
-# 24/12/2014 - 1.3.1 - Fenix - use only EVT_CLIENT_AUTH: this event is fired in all the parser and behaves exactly in
-#                              the same way no matter the game we are running
-# 31/12/2014 - 1.3.2 - Fenix - moved hardcoded SQL code for creating tables in B3 sql scripts
-#                            - make use of QueryBuilder to generate SQL queries
+
 
 __author__ = 'Fenix'
 __version__ = '1.3.2'
@@ -56,10 +45,7 @@ GRANT_SET_ATTR = 'cmdgrantset'
 class CmdmanagerPlugin(b3.plugin.Plugin):
 
     _adminPlugin = None
-
-    _settings = {
-        'update_config_file': True
-    }
+    _update_config_file = True
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -72,24 +58,19 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         Load the configuration file.
         """
         try:
-            self._settings['update_config_file'] = self.config.getboolean('settings', 'update_config_file')
-            self.debug('loaded settings/update_config_file setting: %s' % self._settings['update_config_file'])
+            self._update_config_file = self.config.getboolean('settings', 'update_config_file')
+            self.debug('loaded settings/update_config_file setting: %s' % self._update_config_file)
         except NoOptionError:
-            self.warning('could not find settings/update_config_file in config file, '
-                         'using default: %s' % self._settings['update_config_file'])
+            self.warning('could not find settings/update_config_file setting, using default: %s' % self._update_config_file)
         except ValueError, e:
             self.error('could not load settings/update_config_file config value: %s' % e)
-            self.debug('using default value (%s) for settings/update_config_file' %
-                       self._settings['update_config_file'])
+            self.debug('using default value (%s) for settings/update_config_file' % self._update_config_file)
 
     def onStartup(self):
         """
         Initialize plugin settings.
         """
         self._adminPlugin = self.console.getPlugin('admin')
-        if not self._adminPlugin:
-            self.error('could not start without admin plugin')
-            return False
 
         # patch the admin module
         patch_admin_module(self._adminPlugin)
@@ -403,7 +384,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         cmd.sayLoudOrPM(client, '^7command ^3%s ^7level changed: %s' % (command.command, self.get_command_level_string(command)))
 
         # change the plugin configuration file
-        if self._settings['update_config_file']:
+        if self._update_config_file:
             self.write_config_file(command, client)
 
     def set_command_alias(self, command, alias, client, cmd):
@@ -435,7 +416,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         cmd.sayLoudOrPM(client, '^7%s alias for command ^3%s^7: ^2%s' % ('added' if not found else 'updated',
                                                                          command.command, command.alias))
         # change the plugin configuration file
-        if self._settings['update_config_file']:
+        if self._update_config_file:
             self.write_config_file(command, client)
 
     ####################################################################################################################
@@ -451,7 +432,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         r = re.compile(r'''^(?P<command>\w+)\s*(?P<level>.*)$''')
         m = r.match(data)
         if not m:
-            client.message('invalid data, try ^3!^7help cmdlevel')
+            client.message('^7invalid data, try ^3!^7help cmdlevel')
             return
 
         # get the command
@@ -482,7 +463,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         r = re.compile(r'''^(?P<command>\w+)\s*(?P<alias>\w*)$''')
         m = r.match(data)
         if not m:
-            client.message('invalid data, try ^3!^7help cmdalias')
+            client.message('^7invalid data, try ^3!^7help cmdalias')
             return
 
         # get the command
@@ -518,7 +499,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         r = re.compile(r'''^(?P<client>\w+)\s+(?P<command>\w+)$''')
         m = r.match(data)
         if not m:
-            client.message('invalid data, try ^3!^7help cmdgrant')
+            client.message('^7invalid data, try ^3!^7help cmdgrant')
             return
 
         # get the client
@@ -561,7 +542,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         r = re.compile(r'''^(?P<client>\w+)\s+(?P<command>\w+)$''')
         m = r.match(data)
         if not m:
-            client.message('invalid data, try ^3!^7help cmdrevoke')
+            client.message('^7invalid data, try ^3!^7help cmdrevoke')
             return
 
         # get the client
@@ -611,7 +592,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         r = re.compile(r'''^(?P<client>\w+)\s+(?P<command>\w+)$''')
         m = r.match(data)
         if not m:
-            client.message('invalid data, try ^3!^7help cmduse')
+            client.message('^7invalid data, try ^3!^7help cmduse')
             return
 
         # get the client

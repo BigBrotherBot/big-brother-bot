@@ -20,12 +20,12 @@
 import b3
 import os
 import logging
-import logging.handlers
 
 from b3.cron import PluginCronTab
 from b3.plugin import Plugin
 from b3.config import ConfigParser
 from b3.timezones import timezones
+from logging.handlers import TimedRotatingFileHandler
 
 __version__ = '1.5'
 __author__ = 'Courgette, xlr8or, BlackMamba, OliverWieland'
@@ -75,11 +75,10 @@ class ChatloggerPlugin(Plugin):
             self.debug('save chat to file : %s', 'enabled' if self._save2file else 'disabled')
         except ConfigParser.NoOptionError:
             self._save2file = False
-            self.info("Using default value '%s' for save_to_file", self._save2file)
-        except ValueError, err:
+            self.info("using default value '%s' for save_to_file", self._save2file)
+        except ValueError, e:
             self._save2file = False
-            self.warning('Unexpected value for save_to_file: using default value (%s) instead (%s)', self._save2file,
-                         err)
+            self.warning('unexpected value for save_to_file: using default value (%s) instead (%s)', self._save2file, e)
 
         if not (self._save2db or self._save2file):
             self.warning("your config explicitly specify to log nowhere: disabling plugin")
@@ -123,7 +122,7 @@ class ChatloggerPlugin(Plugin):
         """
         try:
             self._filelogger = logging.getLogger('chatlogfile')
-            handler = logging.handlers.TimedRotatingFileHandler(self._file_name, when=self._file_rotation_rate, encoding="UTF-8")
+            handler = TimedRotatingFileHandler(self._file_name, when=self._file_rotation_rate, encoding="UTF-8")
             handler.setFormatter(logging.Formatter('%(asctime)s\t%(message)s', '%y-%m-%d %H:%M:%S'))
             self._filelogger.addHandler(handler)
             self._filelogger.setLevel(logging.INFO)
@@ -173,7 +172,7 @@ class ChatloggerPlugin(Plugin):
                 self._hours = 23
         except:
             self._hours = 0
-            self.debug('Using default value (%s) for hours', self._hours)
+            self.debug('using default value (%s) for hours', self._hours)
 
         try:
             self._minutes = self.config.getint('purge', 'min')
@@ -295,8 +294,8 @@ class ChatloggerPlugin(Plugin):
         """
         if self._max_age_in_days and (self._max_age_in_days != 0):
             self.info('purge of chat messages older than %s days ...' % self._max_age_in_days)
-            q = "DELETE FROM %s WHERE msg_time < %i" % (
-                self._db_table, self.console.time() - (self._max_age_in_days * 24 * 60 * 60))
+            q = "DELETE FROM %s WHERE msg_time < %i" % (self._db_table,
+                                                        self.console.time() - (self._max_age_in_days * 24 * 60 * 60))
             self.debug(q)
             self.console.storage.query(q)
         else:
@@ -304,8 +303,8 @@ class ChatloggerPlugin(Plugin):
 
         if self._max_age_cmd_in_days and (self._max_age_cmd_in_days != 0):
             self.info('purge of commands older than %s days ...' % self._max_age_cmd_in_days)
-            q = "DELETE FROM %s WHERE cmd_time < %i" % (
-                self._db_table_cmdlog, self.console.time() - (self._max_age_cmd_in_days * 24 * 60 * 60))
+            q = "DELETE FROM %s WHERE cmd_time < %i" % (self._db_table_cmdlog,
+                                                        self.console.time() - (self._max_age_cmd_in_days * 24 * 60 * 60))
             self.debug(q)
             self.console.storage.query(q)
         else:
@@ -327,7 +326,7 @@ class ChatloggerPlugin(Plugin):
             else:
                 days = int(text)
         except ValueError, e:
-            self.error("could not convert '%s' to a valid number of days. (%s)" % (text, e))
+            self.error("could not convert '%s' to a valid number of days: %s" % (text, e))
             days = 0
         return days
 
@@ -335,7 +334,7 @@ class ChatloggerPlugin(Plugin):
 class AbstractData(object):
 
     def __init__(self, plugin):
-        #d efault name of the table for this data object
+        # default name of the table for this data object
         self._table = None
         self.plugin = plugin
 
@@ -343,7 +342,7 @@ class AbstractData(object):
         raise NotImplementedError
 
     def save(self):
-        """should call self._save2db with correct parameters"""
+        """Should call self._save2db with correct parameters"""
         raise NotImplementedError
 
     def _save2db(self, data):
@@ -366,7 +365,7 @@ class CmdData(AbstractData):
 
     def __init__(self, plugin, event):
         AbstractData.__init__(self, plugin)
-        #default name of the table for this data object
+        # default name of the table for this data object
         self._table = 'cmdlog'
 
         self.admin_id = event.client.id
@@ -379,8 +378,8 @@ class CmdData(AbstractData):
 
     def _insertquery(self):
         return """INSERT INTO {table_name} (cmd_time, admin_id, admin_name, command, data, result)
-             VALUES (%(time)s, %(admin_id)s, %(admin_name)s, %(command)s, %(data)s, %(result)s) """.format(
-             table_name=self._table)
+                  VALUES (%(time)s, %(admin_id)s, %(admin_name)s, %(command)s, %(data)s, %(result)s) """.format(
+                  table_name=self._table)
 
     def save(self):
         self.plugin.verbose("%s, %s, %s, %s, %s" % (self.admin_id, self.admin_name, self.command, self.data, self.result))
@@ -389,8 +388,8 @@ class CmdData(AbstractData):
                 'admin_name': self.admin_name,
                 'command': self.command.command,
                 'data': self.data,
-                'result': self.result
-        }
+                'result': self.result}
+
         if self.plugin._save2db:
             self._save2db(data)
 
@@ -406,9 +405,8 @@ class ChatData(AbstractData):
 
     def __init__(self, plugin, event):
         AbstractData.__init__(self, plugin)
-        #default name of the table for this data object
+        # default name of the table for this data object
         self._table = 'chatlog'
-
         self.client_id = event.client.id
         self.client_name = event.client.name
         self.client_team = event.client.team
@@ -419,9 +417,9 @@ class ChatData(AbstractData):
 
     def _insertquery(self):
         return """INSERT INTO {table_name}
-            (msg_time, msg_type, client_id, client_name, client_team, msg, target_id, target_name, target_team)
-            VALUES (%(time)s, %(type)s, %(client_id)s, %(client_name)s, %(client_team)s, %(msg)s, %(target_id)s,
-            %(target_name)s, %(target_team)s )""".format(table_name=self._table)
+                  (msg_time, msg_type, client_id, client_name, client_team, msg, target_id, target_name, target_team)
+                  VALUES (%(time)s, %(type)s, %(client_id)s, %(client_name)s, %(client_team)s, %(msg)s, %(target_id)s,
+                  %(target_name)s, %(target_team)s )""".format(table_name=self._table)
 
     def save(self):
         self.plugin.verbose("%s, %s, %s, %s" % (self.msg_type, self.client_id, self.client_name, self.msg))
@@ -433,8 +431,7 @@ class ChatData(AbstractData):
                 'msg': self.msg,
                 'target_id': self.target_id,
                 'target_name': self.target_name,
-                'target_team': self.target_team,
-        }
+                'target_team': self.target_team}
 
         if self.plugin._save2file:
             self._save2file(data)

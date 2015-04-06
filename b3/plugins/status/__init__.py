@@ -1,4 +1,3 @@
-#
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
 #
@@ -15,55 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 13/04/2015 - 1.6.4  - Fenix           - changed database column CID to VARCHAR(32) to support Frostbite games
-# 17/03/2015 - 1.6.3  - 82ndab.Bravo17  - escape ' characters when updating current_clients table
-# 16/02/2015 - 1.6.2  - 82ndab.Bravo17  - Set default score to zero
-# 04/02/2015 - 1.6.1  - Fenix           - fixed exception being generated when not using database to store status information
-# 05/01/2014 - 1.6    - Fenix           - PostgreSQl support
-# 30/08/2014 - 1.5    - Fenix           - syntax cleanup
-#                                       - make use of the new onStop event handler
-# 13/03/2014 - 1.4.18 - Fenix           - double check for server and client vars table to exists before attempting to create
-#                                       - use the correct data type for 'Updated' column
-#                                       - enforce database tables drop->create so we do not have to bother with schema updates
-#                                       - minor bugfixes
-# 28/23/2013 - 1.4.17 - Courgette       - close ftp connection
-# 30/11/2013 - 1.4.16 - Courgette       - save status info to database by default
-# 24/11/2013 - 1.4.15 - Fenix           - improved plugin configuration file loading
-#                                       - PEP8 coding standards
-# 22/02/2013 - 1.4.14 - Courgette       - fix the sanitize bug
-# 10/02/2013 - 1.4.13 - Courgette       - add log message with more precise info when failing to sanitize data
-# 26/10/2012 - 1.4.12 - Courgette       - makes sure 'Client' tags have a 'score' attribute
-#                                       - better sync of DB and XML saving for XLRstats v3 webfront
-# 12/08/2012 - 1.4.11 - Courgette       - will provide more debugging info about errors while generating the XML document
-# 05/05/2012 - 1.4.10 - Courgette       - fixes reading config options 'svar_table' and 'client_table'
-# 19/07/2011 - 1.4.9  - Freelander      - fix errors during map change
-# 25/04/2011 - 1.4.8  - Courgette       - in config file, settings/output_file can now use shortcuts such as @b3 and @conf
-# 17/04/2011 - 1.4.7  - Courgette       - XML file generated is now using UTF-8 encoding
-# 17/04/2011 - 1.4.6  - Courgette       - unicode compliant
-# 30/03/2011 - 1.4.5 - SGT              - bugfix camelCasing timeLimit and fragLimit
-# 06/01/2011 - 1.4.4 - Gammelbob        - additionally stores current svars and clients in database
-# 13/08/2010 - 1.4.3 - xlr8or           - added running roundtime and maptime
-# 08/08/2010 - 1.4.2 - xlr8or           - moved 'Game section' before 'Clients section', XLRstats needs gameinfo before it
-#                                         adds clients to the playerlist
-# 21/03/2010 - 1.4.1 - Courgette        - does not fail if there is no player score available
-#                                       - make errors more verbose
-# 23/11/2009 - 1.4.0 - Courgette        - on bot shutdown, write an empty status.xml document
-#                                       - add tests
-# 03/11/2009 - 1.3.1 - Bakes            - XML code is now produced through xml.dom.minidocument rather than concatenation.
-#                                         This has a number of advantages.
-# 03/11/2009 - 1.3.0 - Bakes            - combined statusftp and status. Use syntax ftp://user:password@host/path/to/status.xml
-# 02/11/2009 - 1.2.7 - xlr8or           - if masked show masked level instead of real level
-# 02/11/2009 - 1.2.6 - xlr8or           - sanitized xml data, cleaning ascii < 32 and > 126 (func is in functions.py)
-# 21/11/2008 - 1.2.5 - Anubis           - added PlayerScores
-# 12/03/2008 - 1.2.4 - Courgette        - properly escape strings to ensure valid xml
-# 30/11/2005 - 1.2.3 - ThorN            - use PluginCronTab instead of CronTab
-# 29/08/2005 - 1.2.0 - ThorN            - converted to use new event handlers
 
 __author__ = 'ThorN'
-__version__ = '1.6.3'
+__version__ = '1.6.4'
 
 import b3
 import b3.cron
@@ -101,30 +54,30 @@ class StatusPlugin(b3.plugin.Plugin):
 
         'mysql': {
 
-            'svars': """CREATE TABLE IF NOT EXISTS `%(svars)s` (
-                            `id` INT(11) NOT NULL AUTO_INCREMENT,
-                            `name` VARCHAR(255) NOT NULL,
-                            `value` VARCHAR(255) NOT NULL,
-                            PRIMARY KEY (`id`), UNIQUE KEY `name` (`name`)
+            'svars': """CREATE TABLE IF NOT EXISTS %(svars)s (
+                            id INT(11) NOT NULL AUTO_INCREMENT,
+                            name VARCHAR(255) NOT NULL,
+                            value VARCHAR(255) NOT NULL,
+                            PRIMARY KEY (id), UNIQUE KEY name (name)
                          ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;""",
 
-            'cvars': """CREATE TABLE IF NOT EXISTS `%(cvars)s` (
-                            `id` INT(3) NOT NULL AUTO_INCREMENT,
-                            `Updated` VARCHAR(25) NOT NULL ,
-                            `Name` VARCHAR(32) NOT NULL ,
-                            `Level` INT(10) NOT NULL ,
-                            `DBID` INT(10) NOT NULL ,
-                            `CID` VARCHAR(32) NOT NULL ,
-                            `Joined` VARCHAR(25) NOT NULL ,
-                            `Connections` INT(11) NOT NULL ,
-                            `State` INT(1) NOT NULL ,
-                            `Score` INT(10) NOT NULL ,
-                            `IP` VARCHAR(16) NOT NULL ,
-                            `GUID` VARCHAR(36) NOT NULL ,
-                            `PBID` VARCHAR(32) NOT NULL ,
-                            `Team` INT(1) NOT NULL ,
-                            `ColorName` VARCHAR(32) NOT NULL,
-                            PRIMARY KEY (`id`)
+            'cvars': """CREATE TABLE IF NOT EXISTS %(cvars)s (
+                            id INT(3) NOT NULL AUTO_INCREMENT,
+                            Updated VARCHAR(25) NOT NULL ,
+                            Name VARCHAR(32) NOT NULL ,
+                            Level INT(10) NOT NULL ,
+                            DBID INT(10) NOT NULL ,
+                            CID VARCHAR(32) NOT NULL ,
+                            Joined VARCHAR(25) NOT NULL ,
+                            Connections INT(11) NOT NULL ,
+                            State INT(1) NOT NULL ,
+                            Score INT(10) NOT NULL ,
+                            IP VARCHAR(16) NOT NULL ,
+                            GUID VARCHAR(36) NOT NULL ,
+                            PBID VARCHAR(32) NOT NULL ,
+                            Team INT(1) NOT NULL ,
+                            ColorName VARCHAR(32) NOT NULL,
+                            PRIMARY KEY (id)
                          ) ENGINE = MYISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;"""
         },
         'postgresql': {
@@ -154,10 +107,10 @@ class StatusPlugin(b3.plugin.Plugin):
         },
         'sqlite': {
 
-            'svars': """CREATE TABLE IF NOT EXISTS `%(svars)s` (
-                            `id` INTEGER PRIMARY KEY AUTOINCREMENT,
-                            `name` VARCHAR(255) NOT NULL,
-                            `value` VARCHAR(255) NOT NULL,
+            'svars': """CREATE TABLE IF NOT EXISTS %(svars)s (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            name VARCHAR(255) NOT NULL,
+                            value VARCHAR(255) NOT NULL,
                             CONSTRAINT %(svars)s_name UNIQUE (name));""",
 
             'cvars': """CREATE TABLE IF NOT EXISTS %(cvars)s (

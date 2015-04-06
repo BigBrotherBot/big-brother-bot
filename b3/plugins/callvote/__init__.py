@@ -1,4 +1,3 @@
-#
 # Callvote Plugin for BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2013 Daniele Pantaleone <fenix@bigbrotherbot.net>
 # 
@@ -15,12 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2014/05/10 - 1.11 - Fenix - added SQLite compatibility
-#                           - use the built in getCmd function if available
-# 2015/03/24 - 1.12 - Fenix - adapted plugin for built-in release
 
 __author__ = 'Fenix'
 __version__ = '1.12'
@@ -108,8 +101,6 @@ class CallvotePlugin(b3.plugin.Plugin):
         Initialize plugin settings
         """
         self.adminPlugin = self.console.getPlugin('admin')
-        if not self.adminPlugin:
-            raise AttributeError('could not start without admin plugin')
 
         # create database tables (if needed)
         if 'callvote' not in self.console.storage.getTables():

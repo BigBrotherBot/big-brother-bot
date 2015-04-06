@@ -1,4 +1,3 @@
-#
 # PowerAdmin Plugin for BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2012 Thomas LEVEIL <courgette@bigbrotherbot.net)
 # 
@@ -15,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
 
 import re
 import b3.plugin
@@ -103,11 +101,11 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         try:
             self._rsp_enable = self.config.getboolean('radio_spam_protection', 'enable')
         except ConfigParser.NoOptionError:
-            self.warning('Could not find radio_spam_protection/enable in config file, using default: %s' %
+            self.warning('could not find radio_spam_protection/enable in config file, using default: %s' %
                          self._rsp_enable)
         except ValueError, e:
-            self.error('Could not load radio_spam_protection/enable config value: %s' % e)
-            self.debug('Using default value (%s) for radio_spam_protection/enable' % self._rsp_enable)
+            self.error('could not load radio_spam_protection/enable config value: %s' % e)
+            self.debug('using default value (%s) for radio_spam_protection/enable' % self._rsp_enable)
 
         try:
 
@@ -116,15 +114,15 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
                 raise ValueError('radio_spam_protection/mute_duration cannot be lower than 1')
 
         except ConfigParser.NoOptionError:
-            self.warning('Could not find radio_spam_protection/mute_duration in config file, using default: %s' %
+            self.warning('could not find radio_spam_protection/mute_duration in config file, using default: %s' %
                          self._rsp_mute_duration)
         except ValueError, e:
             self._rsp_mute_duration = 2  # set again because it might have been overwritten
-            self.error('Could not load radio_spam_protection/mute_duration config value: %s' % e)
-            self.debug('Using default value (%s) for radio_spam_protection/mute_duration' % self._rsp_mute_duration)
+            self.error('could not load radio_spam_protection/mute_duration config value: %s' % e)
+            self.debug('using default value (%s) for radio_spam_protection/mute_duration' % self._rsp_mute_duration)
 
-        self.debug('Radio spam protection enable: %s' % self._rsp_enable)
-        self.debug('Radio spam protection mute duration: %s' % self._rsp_mute_duration)
+        self.debug('radio spam protection enable: %s' % self._rsp_enable)
+        self.debug('radio spam protection mute duration: %s' % self._rsp_mute_duration)
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -197,7 +195,7 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         (You can safely use the command without the 'pa' at the beginning)
         """
         if not data:
-            client.message('^7Invalid data, try !help pakill')
+            client.message('^7invalid data, try !help pakill')
             return
 
         sclient = self._adminPlugin.findClientPrompt(data, client)
@@ -247,7 +245,7 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         (You can safely use the command without the 'pa' at the beginning)
         """
         if not data or data not in ('on', 'off'):
-            client.message('^7Invalid or missing data, try !help paskins')
+            client.message('^7invalid or missing data, try !help paskins')
             return
 
         if data == 'on':
@@ -263,7 +261,7 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         (You can safely use the command without the 'pa' at the beginning)
         """
         if not data or data not in ('on', 'off'):
-            client.message('^7Invalid or missing data, try !help pafunstuff')
+            client.message('^7invalid or missing data, try !help pafunstuff')
             return
 
         if data == 'on':
@@ -279,7 +277,7 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         (You can safely use the command without the 'pa' at the beginning)
         """
         if not data or data not in ('on', 'off'):
-            client.message('^7Invalid or missing data, try !help pagoto')
+            client.message('^7invalid or missing data, try !help pagoto')
             return
 
         if data == 'on':
@@ -295,7 +293,7 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         (You can safely use the command without the 'pa' at the beginning)
         """
         if not data or data not in ('default', 'regain', 'infinite'):
-            client.message('^7Invalid or missing data, try !help pastamina')
+            client.message('^7invalid or missing data, try !help pastamina')
             return
 
         if data == 'default':

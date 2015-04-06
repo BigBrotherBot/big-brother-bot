@@ -1,4 +1,3 @@
-#
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2009 James "Bakes" Baker
 #
@@ -15,21 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2005/08/29 - 1.1.0 - ThorN     - converted to use new event handlers
-# 2012/08/11 - 1.2   - Courgette - Can define group for using the !spamins command different than mod_level
-#                                - can define an alias for the !spamins command
-#                                - fix bug where the !spamins command would not accept uppercase argument
-#                                - refactor the plugin to allow game specific behavior to be injected at runtime
-# 2012/08/11 - 1.3   - Courgette - improve behavior when a spammer received a warning but continues to spam
-# 2012/12/18 - 1.3.1 - Courgette - fix regression that prevented the !spamins command to be registered since v1.2
-# 2014/04/07 - 1.4   - Fenix     - PEP8 coding style guide
-#                                - improved plugin startup and configuration file loading
-# 2014/05/02 - 1.4.1 - Fenix     - make use of the new getCmd function from functions module
-# 2014/07/23 - 1.4.2 - Fenix     - let the plugin react on EVT_CLIENT_PRIVATE_SAY
-# 2014/08/31 - 1.4.3 - Fenix     - syntax cleanup
 
 import b3
 import b3.events
@@ -100,19 +84,19 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
         self.registerEvent('EVT_CLIENT_PRIVATE_SAY', self.onChat)
 
         self._adminPlugin = self.console.getPlugin('admin')
-        if self._adminPlugin:
-            # register our commands
-            if 'commands' in self.config.sections():
-                for cmd in self.config.options('commands'):
-                    level = self.config.get('commands', cmd)
-                    sp = cmd.split('-')
-                    alias = None
-                    if len(sp) == 2:
-                        cmd, alias = sp
 
-                    func = getCmd(self, cmd)
-                    if func:
-                        self._adminPlugin.registerCommand(self, cmd, level, func, alias)
+        # register our commands
+        if 'commands' in self.config.sections():
+            for cmd in self.config.options('commands'):
+                level = self.config.get('commands', cmd)
+                sp = cmd.split('-')
+                alias = None
+                if len(sp) == 2:
+                    cmd, alias = sp
+
+                func = getCmd(self, cmd)
+                if func:
+                    self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
     ####################################################################################################################
     #                                                                                                                  #

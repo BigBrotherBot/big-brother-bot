@@ -25,7 +25,6 @@ __author__ = 'xlr8or, courgette'
 Depending on the B3 parser loaded, this module will load the correct plugin version
 """
 
-
 class PoweradminurtPlugin(object):
 
     def __new__(cls, *args, **kwargs):
@@ -37,4 +36,4 @@ class PoweradminurtPlugin(object):
             from b3.plugins.poweradminurt.iourt42 import Poweradminurt42Plugin
             return Poweradminurt42Plugin(*args, **kwargs)
         else:
-            raise AssertionError("Poweradminurt plugin can only work with Urban Terror 4.1 or 4.2")
+            raise AssertionError("poweradminurt plugin can only work with Urban Terror 4.1 or 4.2")

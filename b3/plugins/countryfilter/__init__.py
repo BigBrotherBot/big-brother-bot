@@ -1,4 +1,3 @@
-#
 # CountryFilter Plugin for BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 www.xlr8or.com <xlr8or@bigbrotherbot.net>
 # 
@@ -15,28 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-#
-# 08/11/2009 - 1.1.6  - Courgette - now uses PurePythonGeoIP bundled in b3.lib
-#                                 - reading config, makes use of getpath whenever applicable (allow to use @b3 and @conf)
-# 20/06/2010 - 1.1.7  - xlr8or    - added client's maxlevel for filtering
-# 22/06/2010 - 1.1.8b - xlr8or    - added some debug info
-# 30/06/2010 - 1.1.8  - xlr8or    - tested
-# 29/07/2010 - 1.2.0  - xlr8or    - added support for BF:BC2 (PB enabled servers only!)
-# 30/10/2010 - 1.2.1  - xlr8or    - added support for MOH (PB enabled servers only!)
-# 09/11/2010 - 1.3    - Courgette - added support for BF3 (PB enabled servers only!)
-# 04/12/2014 - 1.4    - xlr8or    - moved maxlevel setting to 'settings section'
-#                                 - added ip blocking function and section in config file
-#                                 - fixed and re-ordered config file.
-# 04/12/2014 - 1.4.1  - xlr8or    - removed faulty semicolon
-# 05/12/2014 - 1.5    - xlr8or    - added player check on plugin start
-#                                 - added bf4
-#                                 - PEP 8 changes
-# 25/03/2015 - 1.6    - Fenix     - make plugin dependent from geolocation plugin
-#                                 - changes for built-in release
-#                                 - removed redundancy with location plugin
-#                                 - stop processing events after applying kick penalty
-#                                 - added cf_announce_accept, cf_announce_reject configuration values
 
 __version__ = '1.6'
 __author__ = 'guwashi / xlr8or'
@@ -63,8 +40,8 @@ class CountryfilterPlugin(b3.plugin.Plugin):
     block_ips = []
 
     _default_messages = {
-        'cf_allow_message': '^^7$name ^2(country: $country)^7 is accepted by B3.',
-        'cf_deny_message': '^7%(name)s ^1(Country: %(country)s)^7 was rejected by B3.'
+        'cf_allow_message': '^^7$name ^2(country: $country)^7 is accepted by B3',
+        'cf_deny_message': '^7%(name)s ^1(country: %(country)s)^7 was rejected by B3'
     }
 
     ####################################################################################################################

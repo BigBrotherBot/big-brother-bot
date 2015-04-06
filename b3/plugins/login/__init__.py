@@ -1,4 +1,3 @@
-#
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
 #
@@ -15,17 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 1.0.1 - 23/08/2009 - Courgette - fix indentation problem
-# 1.0.2 - 28/08/2009 - xlr8or    - minor update
-# 1.0.3 - 17/04/2010 - Bakes     - use hashlib if available instead of the deprecated md5
-# 1.1   - 25/11/2012 - Courgette - always read password from database to prevent security issues arising from bugged
-#                                  b3 game parsers
-# 1.2   - 06/04/2014 - Fenix     - PEP8 coding standards
-#                                - improved plugin startup and configuration file loading
-# 1.3   - 31/08/2014 - Fenix     - syntax cleanup
 
 import string
 import b3.events
@@ -80,9 +68,6 @@ class LoginPlugin(b3.plugin.Plugin):
         Plugin startup.
         """
         self._adminPlugin = self.console.getPlugin('admin')
-        if not self._adminPlugin:
-            self.critical('could not start without admin plugin')
-            return False
 
         # register the events needed
         self.registerEvent('EVT_CLIENT_AUTH', self.onAuth)
