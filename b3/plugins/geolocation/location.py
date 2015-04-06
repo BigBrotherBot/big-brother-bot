@@ -20,7 +20,6 @@ import unicodedata
 
 class Location(object):
 
-
     def __init__(self, country=None, region=None, city=None, cc=None, rc=None, isp=None, lat=None, lon=None, timezone=None, zipcode=None):
         """
         :param country: The country name
