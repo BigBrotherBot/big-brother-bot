@@ -43,12 +43,12 @@ paskins-skins: 20       ; set the use of client skins <on/off>
     def test_missing_parameter(self):
         self.moderator.message_history = []
         self.moderator.says("!skins")
-        self.assertListEqual(["Invalid or missing data, try !help paskins"], self.moderator.message_history)
+        self.assertListEqual(["invalid or missing data, try !help paskins"], self.moderator.message_history)
 
     def test_junk(self):
         self.moderator.message_history = []
         self.moderator.says("!skins qsdf")
-        self.assertListEqual(["Invalid or missing data, try !help paskins"], self.moderator.message_history)
+        self.assertListEqual(["invalid or missing data, try !help paskins"], self.moderator.message_history)
 
     def test_on(self):
         self.moderator.says("!skins on")
