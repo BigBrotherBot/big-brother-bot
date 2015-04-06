@@ -51,9 +51,10 @@
 #                                  unsupported games inside plugins)
 # 25/03/2015 - 1.9.5 - Fenix     - added loadAfterPlugins attribute: specify a list of plugins which needs to be loaded
 #                                  before the current one
+# 06/04/2015 - 1.9.6 - Fenix     - inherit from object class (new-style-class format to support super() in methods call)
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.9.5'
+__version__ = '1.9.6'
 
 import b3.config
 import b3.events
@@ -62,7 +63,7 @@ import b3.functions
 from ConfigParser import NoOptionError
 
 
-class Plugin:
+class Plugin(object):
 
     ################################## PLUGIN DEVELOPERS: CUSTOMIZE THE FOLLOWING ######################################
 
