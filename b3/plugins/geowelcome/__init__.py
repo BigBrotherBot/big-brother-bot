@@ -34,7 +34,7 @@ from b3.plugins.welcome import F_CUSTOM_GREETING
 class GeowelcomePlugin(WelcomePlugin):
 
     requiresPlugins = ['geolocation']
-    loadAfterPlugins = ['countryfilter']
+    loadAfterPlugins = ['countryfilter', 'welcome']
 
     _default_messages = {
         'first': '^7Welcome $name^7, this must be your first visit, you are player ^3#$id. Type !help for help',
@@ -84,6 +84,11 @@ class GeowelcomePlugin(WelcomePlugin):
         # register events needed
         self.registerEvent('EVT_CLIENT_GEOLOCATION_SUCCESS', self.onGeolocationSuccess)
         self.registerEvent('EVT_CLIENT_GEOLOCATION_FAILURE', self.onGeolocationFailure)
+
+        welcomePlugin = self.console.getPlugin('welcome')
+        if welcomePlugin:
+            self.info('NOTE: to run this plugin you don\'t need to load also the Welcome plugin: disabling Welcome plugin')
+            welcomePlugin.disable()
 
     ####################################################################################################################
     #                                                                                                                  #
