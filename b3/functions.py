@@ -48,6 +48,7 @@
 # 08/02/2015 - 1.18  - Fenix          - added escape function
 # 14/02/2015 - 1.19  - Fenix          - changed main_is_frozen() to work with cx_Freeze instead of py2exe
 # 09/03/2015 - 1.20  - Fenix          - added topological_sort() function: topological sort implementation
+# 06/04/2015 - 1.21  - Fenix          - added zipdir function: create a ZIP archive of a the provided directory
 # 23/05/2015 - 1.21  - Fenix          - added decode() function: decode a string using the system default encoding
 # 26/05/2015 - 1.22  - Fenix          - added console_exit function: terminate the current console application
 #                                     - moved clearscreen() function from b3.__init__
@@ -627,6 +628,19 @@ def unzip(filepath, directory):
             mkdir(directory)
         with zipfile.ZipFile(filepath, 'r') as z:
             z.extractall(directory)
+
+
+def zipdir(dir_path, zip_path):
+    """
+    Compress a directory into a ZIP file.
+    :param dir_path: The directory path
+    :param zip_path: The path of the compressed archive
+    """
+    zipf = zipfile.ZipFile(zip_path, 'w')
+    for root, dirs, files in os.walk(dir_path):
+        for ff in files:
+            zipf.write(os.path.join(root, ff))
+    zipf.close()
 
 
 def getBytes(size):
