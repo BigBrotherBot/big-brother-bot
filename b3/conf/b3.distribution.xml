@@ -136,6 +136,7 @@
         <!-- <plugin name="ipban" config="@conf/plugin_ipban.ini" /> -->
         <!-- <plugin name="location" config="@conf/plugin_location.ini" /> -->
         <!-- <plugin name="translator" config="@conf/plugin_translator.ini" /> -->
+        <!-- <plugin name="xlrstats" config="@conf/plugin_xlrstats.ini" /> -->
 
         <!-- BF3 -->
         <!-- <plugin name="poweradminbf3" config="@conf/plugin_poweradminbf3.ini" /> -->
@@ -148,9 +149,6 @@
         <!-- UrT 4.1 / 4.2 -->
         <!-- <plugin name="poweradminurt" config="@conf/plugin_poweradminurt.ini" /> -->
         <!-- <plugin name="urtserversidedemo" config="@conf/plugin_urtserversidedemo.ini" /> -->
-
-        <!-- The next plugins are external, 3rd party plugins and should reside in the external_dir. Example: -->
-        <!-- <plugin name="newplugin" config="@b3/extplugins/newplugin/conf/plugin_newplugin.ini" /> -->
 
     </plugins>
 </configuration>

@@ -20,7 +20,8 @@
 #
 # 2015-03-08 - 1.0 - Fenix - initial release
 # 2015-03-09 - 1.1 - Fenix - added ProgrammingError exception class
-# 2015-04-20 - 1.2 - Fenix - added DatabaseError exception class
+# 2015-04-06 - 1.2 - Fenix - added UpdateError exception class
+# 2015-04-20 - 1.3 - Fenix - added DatabaseError exception class
 
 
 class ConfigFileNotFound(Exception):
@@ -78,4 +79,18 @@ class DatabaseError(Exception):
         Exception.__init__(self, message)
 
     def __str__(self):
+        return repr(self.message)
+
+
+class UpdateError(Exception):
+    """
+    Raised whenever we fail in updating B3 sources.
+    """
+    def __init__(self, message, throwable=None):
+        Exception.__init__(self, message)
+        self.throwable = throwable
+
+    def __str__(self):
+        if self.throwable:
+            return '%s - %r' % (self.message, repr(self.throwable))
         return repr(self.message)
