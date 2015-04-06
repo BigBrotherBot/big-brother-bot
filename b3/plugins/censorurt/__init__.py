@@ -1,4 +1,3 @@
-#
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2010 courgette@bigbrotherbot.net
 # 
@@ -14,13 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# 21/10/2008 0.1.1 (courgette) - extends Censor plugin v2.1.0
-#                              - move added mute code from xlr8or to that new plugin
-#                              - changed _muteonly to _warnafter, so after a defined number of mute, the client get warned
-# 22/10/2008 0.1.2 (xlr8or)    - added slap function
-# 25/03/2015 0.1.3 (Fenix)     - made censorurt a built-in plugin
-#                              - fix indent
 
 __author__  = 'xlr8or & courgette'
 __version__ = '0.1.3'

@@ -1,4 +1,3 @@
-#
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
 #
@@ -15,13 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-#
-# 1.2   - committed built-in release
-# 1.2.1 - allow to specify a parameter in !spree command
 
 __author__ = 'Walker, ThorN'
 __version__ = '1.2.1'
-
 
 import b3
 import b3.events
@@ -56,9 +51,6 @@ class SpreePlugin(b3.plugin.Plugin):
         """
         # get the plugin so we can register commands
         self._adminPlugin = self.console.getPlugin('admin')
-        if not self._adminPlugin:
-            # something is wrong, can't start without admin plugin
-            raise AttributeError('could not find admin plugin')
 
         # register our commands
         if 'commands' in self.config.sections():

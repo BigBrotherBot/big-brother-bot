@@ -1,4 +1,3 @@
-#
 # Geolocation Plugin for BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2015 Daniele Pantaleone <fenix@bigbrotherbot.net>
 # 
@@ -15,16 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2015/03/12 - 1.0 - Fenix - initial version
-# 2015/03/17 - 1.1 - Fenix - now plugin reacts also on EVT_CLIENT_UPDATE: see http://bit.ly/1LmHpIJ
-# 2015/03/19 - 1.2 - Fenix - do not import everything from locators module: specify separate classes
-# 2015/03/20 - 1.3 - Fenix - reworked external module imports
-#                          - renamed Locator class (and all inherited ones) into Geolocator: updated module name
-#                          - moved GeoIP.dat file into lib/geoip/db folder
-# 2015/03/26 - 1.4 - Fenix - make use of EVT_PUNKBUSTER_NEW_CONNECTION if we are running a Frostbite based game
 
 __author__ = 'Fenix'
 __version__ = '1.4'

@@ -1,4 +1,3 @@
-#
 # PowerAdmin Plugin for BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2008 Mark Weirath (xlr8or@xlr8or.com)
 #
@@ -15,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
 
 import b3
 import b3.events
@@ -124,16 +122,12 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
     requiresParsers = ['iourt41']
 
-
     def onStartup(self):
         """
         Initialize plugin settings
         """
         # get the admin plugin so we can register commands
         self._adminPlugin = self.console.getPlugin('admin')
-        if not self._adminPlugin:
-            # something is wrong, can't start without admin plugin
-            raise AttributeError('could not find admin plugin')
 
         # get some constants from the B3 parser
         

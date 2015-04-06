@@ -1,4 +1,3 @@
-#
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
 #
@@ -15,18 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 08/31/2014 - 1.4   - Fenix  - syntax cleanup
-# 02/05/2014 - 1.3.1 - Fenix  - make use of the new getCmd function from functions module
-# 06/04/2014 - 1.3   - Fenix  - PEP8 coding style guide
-#                             - improved plugin startup and configuration file loading
-# 04/23/2010 - 1.2.2 - Bakes  - fix to !ci after bug reported by sgt
-# 03/28/2010 - 1.2.1 - xlr8or - add default _minLevel for !ci if config option is missing
-# 03/21/2010 - 1.2.0 - Bakes  - added the !ci command from the admin plugin
-# 11/30/2005 - 1.1.3 - ThorN  - use PluginCronTab instead of CronTab
-# 08/29/2005 - 1.1.0 - ThorN  - converted to use new event handlers
 
 __author__ = 'ThorN'
 __version__ = '1.4'
@@ -95,9 +82,6 @@ class PingwatchPlugin(b3.plugin.Plugin):
         Initialize plugin.
         """
         self._adminPlugin = self.console.getPlugin('admin')
-        if not self._adminPlugin:
-            self.critical('could not start without admin plugin')
-            return False
 
         # register events needed
         self.registerEvent('EVT_GAME_EXIT', self.onGameExit)

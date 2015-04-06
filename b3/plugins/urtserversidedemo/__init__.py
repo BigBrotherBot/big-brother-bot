@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
+
 import re
 
 from threading import Timer
@@ -65,12 +65,10 @@ class UrtserversidedemoPlugin(Plugin):
         """
         # get the admin plugin so we can register commands
         self._adminPlugin = self.console.getPlugin('admin')
-        if not self._adminPlugin:
-            raise AttributeError('could not find admin plugin')
 
         if not self.has_startserverdemo_cmd():
-            self.error("This plugin can only work with ioUrTded server with server-side demo recording capabilities. "
-                       "See http://www.urbanterror.info/forums/topic/28657-server-side-demo-recording/")
+            self.error("this plugin can only work with ioUrTded server with server-side demo recording capabilities: "
+                       "see http://www.urbanterror.info/forums/topic/28657-server-side-demo-recording/")
             self.disable()
             return
         else:

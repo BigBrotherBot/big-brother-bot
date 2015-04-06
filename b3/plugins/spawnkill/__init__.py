@@ -1,4 +1,3 @@
-#
 # Spawnkill Plugin for BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2013 Daniele Pantaleone <fenix@bigbrotherbot.net>
 #
@@ -15,16 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2014-05-09 - 1.2 - Fenix - make use of time.time() instead of self.console.time(): storage methods uses time.time() to
-#                            get the timestamp vaue, and using self.console.time() will break data consistency
-#                          - added automated tests
-# 2015-02-07 - 1.3 - Fenix - changed plugin module structure
-#                          - do not let the plugin shutdown B3 when invalid parser is being used (just unload the plugin)
-# 2015-03-22 - 1.4 - Fenix - adapted plugin after committing first built-in release
-
 
 __author__ = 'Fenix'
 __version__ = '1.4'

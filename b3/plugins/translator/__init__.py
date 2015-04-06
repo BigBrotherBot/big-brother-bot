@@ -16,17 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-#
-# CHANGELOG
-#
-# 2014/05/11 - 2.7 - Fenix - use the new built-in getCmd function (if available)
-#                          - removed threading interface: RCON doesn't support multithreading after all
-#                          - keep backward compatibility with B3 v1.9.x
-#                          - let transauto use only the default target language: speed up the translation and B3 won't hang on
-#                          - general improvements
-#                          - added automated tests
-# 2015/02/07 - 2.8 - Fenix - new plugin module structure
-# 2015/03/24 - 2.9 - Fenix - adapted plugin for built-in release
 
 __author__ = 'Fenix'
 __version__ = '2.9'
@@ -158,8 +147,6 @@ class TranslatorPlugin(b3.plugin.Plugin):
         Initialize plugin settings
         """
         self.adminPlugin = self.console.getPlugin('admin')
-        if not self.adminPlugin:    
-            raise AttributeError('could not start without admin plugin')
         
         # register our commands
         if 'commands' in self.config.sections():

@@ -1,0 +1,19 @@
+27/01/2015 - 1.2.4 - Thomas LEVEIL  - better handling of errors
+30/08/2014 - 1.2.3 - Fenix          - syntax cleanup
+15/04/2014 - 1.2.2 - Fenix          - PEP8 coding standards
+24/10/2013 - 1.2.1 - Courgette      - fix issue when public_ip and rcon_ip are different in b3.xml or when a domain
+                                      name is used in place of an IP
+                                    - get rid of "no handler found for paramiko.transport" errors
+23/10/2013 - 1.2   - Courgette      - add support for encrypted private keys
+23/10/2013 - 1.1   - Courgette      - known_hosts file can be set in the plugin config file
+                                    - authentication can be made by public-key auth
+                                    - private key file can be set in the plugin config file
+22/05/2012 - 1.0.3 - Courgette      - local_game_log config option can now use the @conf and @b3 shortcuts
+26/05/2011 - 1.0.2 - 82ndab-Bravo17 - append to local log implemented
+27/04/2011 - 1.0.1 - 82ndab-Bravo17 - auto assign of unique local games_mp log file
+22/10/2010 - 1.0   - Courgette      - obey the SFTP URI scheme as described in
+                                      http://tools.ietf.org/html/draft-ietf-secsh-scp-sftp-ssh-uri-04
+07/09/2010 - 0.1.1 - GrosBedo       - b3/delay option now specify the delay between each ftp log fetching
+                                    - b3/local_game_log option to specify the temporary local log name (permits to
+                                      manage remotely several servers at once)
+01/09/2010 - 0.1   - Courgette      - first attempt. Briefly tested. Seems to work
