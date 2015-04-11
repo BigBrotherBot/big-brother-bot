@@ -16,56 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG (see xlrstats-v2-changelog.txt for v1 and v2 history and credits)
-#
-# 22-11-2012 - 3.0.0b1       - Mark Weirath   - preparations for version 3.0 of XLRstats
-# 11-08-2013 - 3.0.0b2       - Mark Weirath   - purging of the history tables added, compatibility fixes for v2-v3, draft
-#                                               of BattleLog subPlugin, comment headers
-# 16-02-2014 - 3.0.0-beta.3  - Mark Weirath -   moved min_players checking to XLRstats plugin, obsoleted the subPlugin:
-#                                               XLRstatsControllerPlugin
-#                                             - switched to semantic versioning (http://semver.org/)
-# 23-02-2014 - 3.0.0-beta.4  - Mark Weirath   - added provisional ranking, auto correction of stat pool and auto purge
-#                                               ability
-#                                             - added cmd_xlrstatus
-# 02-03-2014 - 3.0.0-beta.5  - Mark Weirath   - protect world client in auto correction, minor improvements
-# 21-04-2014 - 3.0.0-beta.6  - 82ndab-Bravo17 - change default messages to new format
-# 31-05-2014 - 3.0.0-beta.7  - Mark Weirath   - fix provisional ranking when both players are below threshold
-# 10-08-2014 - 3.0.0-beta.8  - Thomas LEVEIL  - fix gh-201 - unkown column 'None' in where clause on player join
-# 31-08-2014 - 3.0.0-beta.9  - Fenix          - syntax cleanup
-#                                             - make use of the new getCmd function defined in b3.functions
-#                                             - make use of self.getEventID() to retrieve events ids
-#                                             - make use of the new event handler system in XLRstatsPlugin
-#                                             - make use of the new event handler system in CtimePlugin
-#                                             - make use of the new event handler system in BattlestatsPlugin
-#                                             - added debug information on plugin configuration file loading
-#                                             - correctly declare Kfactor attribute in PlayerStats class
-#                                             - replaced variables names using python built-in keywords
-#                                             - match also 'yes' and 'no' keywords in !xlrhide command
-#                                             - added missing call to super constructor in XlrstatshistoryPlugin
-#                                             - added missing call to super constructor in CtimePlugin
-#                                             - added missing call to super constructor in BattlestatsPlugin
-# 04-09-2014 - 3.0.0-beta.10 - Fenix          - make use of data binding in SQL queries: fix issue #151
-#                                             - make use of the client 'bot' attribute to identify BOT clients: do not
-#                                               mess with GUIDs since that's already done in parsers (where it should be)
-# 23-11-2014 - 3.0.0-beta.11 - Fenix          - added requiresConfigFile = False attribute to Ctime and XlrstatsHistory subplugins
-# 08-02-2014 - 3.0.0-beta.12 - Fenix          - fixed SQL queries quote escaping
-# 17-03-2015 - 3.0.0-beta.13 - Fenix          - replaced deprecated startup() with onStartup()
-# 19-03-2015 - 3.0.0-beta.14 - Fenix          - fixed test for membership using 'if not X in Y' (now use 'if X not in Y')
-#                                             - fixed instance check using type() instead of isinstance()
-#                                             - removed deprecated usage of dict.has_key (us 'in dict' instead)
-#                                             - remove several unused variables
-
-# This section is DoxuGen information. More information on how to comment your code
-# is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
-
-## @file
-# XLRstats Real Time playerstats plugin
 
 __author__ = 'xlr8or & ttlogic'
-__version__ = '3.0.0-beta.14'
-
-# Version = major.minor.patches(-development.version)
+__version__ = '3.0.0-beta.15'
 
 import b3
 import b3.events
@@ -74,6 +27,7 @@ import b3.cron
 import b3.timezones
 import datetime
 import time
+import os
 import re
 import thread
 import threading
@@ -87,11 +41,10 @@ KILLER = "killer"
 VICTIM = "victim"
 ASSISTER = "assister"
 
-
 ########################################################################################################################
-##                                                                                                                    ##
-##  MAIN PLUGIN XLRSTATS - HANDLES ALL CORE STATISTICS FUNCTIONALITY                                                  ##
-##                                                                                                                    ##
+#                                                                                                                      #
+#   MAIN PLUGIN XLRSTATS - HANDLES ALL CORE STATISTICS FUNCTIONALITY                                                   #
+#                                                                                                                      #
 ########################################################################################################################
 
 class XlrstatsPlugin(b3.plugin.Plugin):
@@ -195,10 +148,12 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         :param console: The console instance
         :param config: The plugin configuration
         """
-        self._adminPlugin = None          # admin plugin object reference
-        self._xlrstatstables = []         # will contain a list of the xlrstats database tables
+        self._adminPlugin = None            # admin plugin object reference
+        self._xlrstatsHistoryPlugin = None
+        self._ctimePlugin = None
+        self._xlrstatstables = []           # will contain a list of the xlrstats database tables
         self._cronTabCorrectStats = None
-        self.query = None                 # shortcut to the storage.query function
+        self.query = None                   # shortcut to the storage.query function
         b3.plugin.Plugin.__init__(self, console, config)
 
     def onStartup(self):
@@ -207,10 +162,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         """
         # get the admin plugin so we can register commands
         self._adminPlugin = self.console.getPlugin('admin')
-        if not self._adminPlugin:
-            # something is wrong, can't start without admin plugin
-            self.error('could not start without admin plugin')
-            return False
+
+        # build database schema if needed
+        self.build_database_schema()
 
         # register our commands
         if 'commands' in self.config.sections():
@@ -253,6 +207,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         sclient = self.console.clients.getByGUID("WORLD")
         if sclient is None:
             sclient = self.console.clients.getByGUID("Server")
+
         if sclient is not None:
             self._world_clientid = sclient.id
             self.debug('got client id for B3: %s; %s' % (self._world_clientid, sclient.name))
@@ -264,38 +219,25 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         # determine the ability to work with damage based assists
         if self.console.gameName in self._damage_able_games:
-            self._damage_ability = True
             self.assist_timespan = self.damage_assist_release
+            self._damage_ability = True
 
         # investigate if we can and want to keep a history
         self._xlrstatstables = [self.playerstats_table, self.weaponstats_table, self.weaponusage_table,
                                 self.bodyparts_table, self.playerbody_table, self.opponents_table, self.mapstats_table,
                                 self.playermaps_table, self.actionstats_table, self.playeractions_table]
+
         if self.keep_history:
             self._xlrstatstables = [self.playerstats_table, self.weaponstats_table, self.weaponusage_table,
                                     self.bodyparts_table, self.playerbody_table, self.opponents_table,
                                     self.mapstats_table, self.playermaps_table, self.actionstats_table,
                                     self.playeractions_table, self.history_monthly_table, self.history_weekly_table]
-            _tables = self.showTables(xlrstats=True)
-            if self.history_monthly_table in _tables and self.history_monthly_table in _tables:
-                self.verbose('History tables are present! Starting Subplugin XLRstatsHistory')
-                #start the xlrstats history plugin
-                p = XlrstatshistoryPlugin(self.console, self.history_weekly_table,
-                                          self.history_monthly_table, self.playerstats_table)
-                p.onStartup()
-            else:
-                self.keep_history = False
-                self._xlrstatstables = [self.playerstats_table, self.weaponstats_table, self.weaponusage_table,
-                                        self.bodyparts_table, self.playerbody_table, self.opponents_table,
-                                        self.mapstats_table, self.playermaps_table, self.actionstats_table,
-                                        self.playeractions_table]
-                self.error('History Tables are NOT present! Please run b3/docs/xlrstats.sql on your database to '
-                           'install missing tables!')
 
-        #check and update columns in existing tables // This is not working with MySQL server 5.5!
-        #self.updateTableColumns()
-        #optimize xlrstats tables
-        #self.optimizeTables(self._xlrstatstables)
+            self.verbose('starting subplugin XLRstats History')
+            self._xlrstatsHistoryPlugin = XlrstatshistoryPlugin(self.console, self.history_weekly_table,
+                                                                self.history_monthly_table, self.playerstats_table)
+            self._xlrstatsHistoryPlugin.onStartup()
+
 
         # let's try and get some variables from our webfront installation
         if self.webfront_url and self.webfront_url != '':
@@ -303,7 +245,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             thread1 = threading.Thread(target=self.getWebsiteVariables)
             thread1.start()
         else:
-            self.debug('no Webfront Url available: using default')
+            self.debug('no webfront url available: using default')
 
         # Analyze the ELO pool of points
         self.correctStats()
@@ -319,8 +261,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 
         # start the ctime subplugin
         if self.keep_time:
-            p = CtimePlugin(self.console, self.ctime_table)
-            p.onStartup()
+            self._ctimePlugin = CtimePlugin(self.console, self.ctime_table)
+            self._ctimePlugin.onStartup()
 
         #start the xlrstats controller
         #p = XlrstatscontrollerPlugin(self.console, self.min_players, self.silent)
@@ -334,20 +276,12 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         # check number of online players (if available)
         self.checkMinPlayers()
 
-        msg = 'XLRstats v. %s by %s started' % (__version__, __author__)
-        self.console.say(msg)
+        self.console.say('XLRstats v%s by %s started' % (__version__, __author__))
         # end startup sequence
 
     def onLoadConfig(self):
         """
         Load plugin configuration.
-        """
-        self.load_config_settings()
-        self.load_config_tables()
-
-    def load_config_settings(self):
-        """
-        Load configuration settings.
         """
         try:
             self.provisional_ranking = self.config.getboolean('settings', 'provisional_ranking')
@@ -524,37 +458,52 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         except (NoOptionError, ValueError):
             self.debug('using default value (%s) for settings::keep_time', self.keep_time)
 
-    def load_config_tables(self):
+    def build_database_schema(self):
         """
-        Load config section 'tables'
+        Build the database schema checking if all the needed tables have been properly created.
+        If not, it will attempt to create them automatically
         """
-        def load_conf(property_to_set, setting_option):
-            assert hasattr(self, property_to_set)
-            try:
-                table_name = self.config.get('tables', setting_option)
-                if not table_name:
-                    raise ValueError("invalid table name for %s: %r" % (setting_option, table_name))
-                setattr(self, property_to_set, table_name)
-                self._defaultTableNames = False
-            except NoOptionError, err:
-                self.debug(err)
-            except Exception, err:
-                self.error(err)
-            self.info('using value "%s" for tables::%s' % (property_to_set, setting_option))
+        needed_tables = set([getattr(self, x) for x in dir(self) if x.endswith('_table')])
+        current_tables = set(self.console.storage.getTables())
+        missing_tables = current_tables - needed_tables
+        if missing_tables:
+            self.debug('missing database tables : %s : importing xlrstats.sql...' % missing_tables)
+            sql_path_main = b3.getAbsolutePath('@b3/plugins/xlrstats/sql')
+            sql_path = os.path.join(sql_path_main, self.console.storage.dsnDict['protocol'], 'xlrstats.sql')
+            self.console.storage.queryFromFile(sql_path)
 
-        load_conf('playerstats_table', 'playerstats')
-        load_conf('actionstats_table', 'actionstats')
-        load_conf('weaponstats_table', 'weaponstats')
-        load_conf('weaponusage_table', 'weaponusage')
-        load_conf('bodyparts_table', 'bodyparts')
-        load_conf('playerbody_table', 'playerbody')
-        load_conf('opponents_table', 'opponents')
-        load_conf('mapstats_table', 'mapstats')
-        load_conf('playermaps_table', 'playermaps')
-        load_conf('playeractions_table', 'playeractions')
-        load_conf('history_monthly_table', 'history_monthly')
-        load_conf('history_weekly_table', 'history_weekly')
-        load_conf('ctime_table', 'ctime')
+    # OBSOLETE: stick with default names for database schema auto-generation
+    # def load_config_tables(self):
+    #     """
+    #     Load config section 'tables'
+    #     """
+    #     def load_conf(property_to_set, setting_option):
+    #         assert hasattr(self, property_to_set)
+    #         try:
+    #             table_name = self.config.get('tables', setting_option)
+    #             if not table_name:
+    #                 raise ValueError("invalid table name for %s: %r" % (setting_option, table_name))
+    #             setattr(self, property_to_set, table_name)
+    #             self._defaultTableNames = False
+    #         except NoOptionError, err:
+    #             self.debug(err)
+    #         except Exception, err:
+    #             self.error(err)
+    #         self.info('using value "%s" for tables::%s' % (property_to_set, setting_option))
+    #
+    #     load_conf('playerstats_table', 'playerstats')
+    #     load_conf('actionstats_table', 'actionstats')
+    #     load_conf('weaponstats_table', 'weaponstats')
+    #     load_conf('weaponusage_table', 'weaponusage')
+    #     load_conf('bodyparts_table', 'bodyparts')
+    #     load_conf('playerbody_table', 'playerbody')
+    #     load_conf('opponents_table', 'opponents')
+    #     load_conf('mapstats_table', 'mapstats')
+    #     load_conf('playermaps_table', 'playermaps')
+    #     load_conf('playeractions_table', 'playeractions')
+    #     load_conf('history_monthly_table', 'history_monthly')
+    #     load_conf('history_weekly_table', 'history_weekly')
+    #     load_conf('ctime_table', 'ctime')
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -614,14 +563,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         """
         if self._xlrstats_active:
             self.action(event.client, event.data)
-
-    def dumpEvent(self, event):
-        """
-        Dump an event in the log file.
-        :param event: The event to dump
-        """
-        self.debug('xlrstats.dumpEvent -- type %s, client %s, target %s, data %s',
-                   event.type, event.client, event.target, event.data)
 
     ####################################################################################################################
     #                                                                                                                  #
