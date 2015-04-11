@@ -15,13 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-#
-# CHANGELOG:
-#
-
 
 __author__ = 'Fenix'
-__version__ = '1.3.2'
+__version__ = '1.3.3'
 
 import b3
 import b3.plugin
@@ -74,6 +70,12 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
 
         # patch the admin module
         patch_admin_module(self._adminPlugin)
+
+        # create database tables (if needed)
+        if 'cmdgrants' not in self.console.storage.getTables():
+            sql_path_main = b3.getAbsolutePath('@b3/plugins/cmdmanager/sql')
+            sql_path = os.path.join(sql_path_main, self.console.storage.dsnDict['protocol'], 'cmdmanager.sql')
+            self.console.storage.queryFromFile(sql_path)
 
         # register our commands
         if 'commands' in self.config.sections():

@@ -36,11 +36,6 @@ CREATE TABLE IF NOT EXISTS `clients` (
   CONSTRAINT `guid` UNIQUE (`guid`)
 );
 
-CREATE TABLE IF NOT EXISTS `cmdgrants` (
-  `id` INTEGER PRIMARY KEY,
-  `commands` TEXT NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS `groups` (
   `id` INTEGER PRIMARY KEY,
   `name` VARCHAR(32) NOT NULL DEFAULT '',
