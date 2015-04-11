@@ -36,7 +36,7 @@ from tests import B3TestCase
 from tests import logging_disabled
 
 
-DEFAULT_XLRSTATS_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), 'extplugins', 'xlrstats', 'conf', 'plugin_xlrstats.ini')
+DEFAULT_XLRSTATS_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf", "plugin_xlrstats.ini"))
 DEFAULT_ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf", "plugin_admin.ini"))
 
 # Setup the logging level we'd like to be spammed with during the tests
@@ -60,7 +60,6 @@ class XlrstatsTestCase(B3TestCase):
             self.console.gameName = "MyGame"
             self.parser_conf.add_section('b3')
             self.parser_conf.set('b3', 'time_zone', 'GMT')
-
 
             # we make our own AdminPlugin and make sure it is the one return in any case
             self.adminPlugin = AdminPlugin(self.console, DEFAULT_ADMIN_CONFIG_FILE)
