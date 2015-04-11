@@ -9,9 +9,3 @@ ALTER TABLE `xlr_playerstats` ADD `id_token` VARCHAR(10) NOT NULL DEFAULT '';
 
 -- Update time_expire column value for Kick penalties
 UPDATE `penalties` SET `time_expire`=-1 WHERE `type` = 'Kick';
-
--- Create Cmdmanager related tables
-CREATE TABLE IF NOT EXISTS cmdgrants (
-  id INTEGER PRIMARY KEY,
-  commands TEXT NOT NULL
-);

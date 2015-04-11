@@ -11,10 +11,3 @@ ALTER TABLE `xlr_history_weekly` CHANGE `id` `id` INT(11) UNSIGNED NOT NULL AUTO
 
 -- Update time_expire column value for Kick penalties
 UPDATE `penalties` SET `time_expire`=-1 WHERE `type` = 'Kick';
-
--- Create Cmdmanager related tables
-CREATE TABLE IF NOT EXISTS cmdgrants (
-   id int(11) NOT NULL,
-   commands TEXT NOT NULL,
-   PRIMARY KEY (id)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
