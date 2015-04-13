@@ -22,6 +22,7 @@
 # 2015-03-29 - 0.1 - Fenix         - adjust server variabled for BFH
 #                                  - removed commander: BFH seems not to have commander feature
 #                                  - removed EVT_CLIENT_COMROSE and EVT_CLIENT_DISCONNECT_REASON
+# 2015-04-13 - 0.2 - Thomas LEVEIL - adjust BFH_REQUIRED_VERSION
 
 import b3
 import b3.clients
@@ -37,11 +38,11 @@ from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 
 __author__ = 'Thomas LEVEIL, Fenix'
-__version__ = '0.1'
+__version__ = '0.2'
 
 csv.register_dialect('dice', delimiter=';', quoting=csv.QUOTE_NONE)
 
-BFH_REQUIRED_VERSION = 000000  # TODO: figure out current version
+BFH_REQUIRED_VERSION = 525698
 
 BFH_PLAYER = 0                 # normal player
 BFH_SPECTATOR = 1              # spectator which is not visible in the game for other player but visible as player for b3
@@ -402,11 +403,11 @@ class BfhParser(AbstractParser):
     def checkVersion(self):
         version = self.output.write('version')
         self.info('Server version : %s' % version)
-        # if version[0] != 'BFH':
-        #     raise Exception('the BFH parser can only work with Battlefield Hardline')
-        # if int(version[1]) < BFH_REQUIRED_VERSION:
-        #     raise Exception("the BF4 parser can only work with Battlefield 4 server version %s and above. "
-        #                     "You are trying to connect to %s v%s" % (BFH_REQUIRED_VERSION, version[0], version[1]))
+        if version[0] != 'BFHL':
+            raise Exception('the BFH parser can only work with Battlefield Hardline')
+        if int(version[1]) < BFH_REQUIRED_VERSION:
+            raise Exception("the BFH parser can only work with Battlefield Hardline server version %s and above. "
+                            "You are trying to connect to %s v%s" % (BFH_REQUIRED_VERSION, version[0], version[1]))
 
     def getClient(self, cid, guid=None):
         """
