@@ -23,6 +23,7 @@
 #                                  - removed commander: BFH seems not to have commander feature
 #                                  - removed EVT_CLIENT_COMROSE and EVT_CLIENT_DISCONNECT_REASON
 # 2015-04-13 - 0.2 - Thomas LEVEIL - adjust BFH_REQUIRED_VERSION
+#                                  - fix map recognition
 
 import b3
 import b3.clients
@@ -148,12 +149,12 @@ mp_offshore;Riptide;TurfWarLarge0,TurfWarSmall0,Heist0,Hotwire0,Bloodmoney0,Hit0
 """
 
 # game maps: dict('Engine name'='Human-readable name')
-MAP_NAME_BY_ID = dict([(x['Engine name'], x['Human-readable name']) for x in
+MAP_NAME_BY_ID = dict([(x['Engine name'].lower(), x['Human-readable name']) for x in
                        csv.DictReader(maps_csv.splitlines(), dialect='dice')])
 
 MAP_ID_BY_NAME = {name.lower(): x for x, name in MAP_NAME_BY_ID.items()}
 
-GAME_MODES_BY_MAP_ID = dict([(x['Engine name'], x['Game modes,,,,,,,,,'].split(',')) for x in
+GAME_MODES_BY_MAP_ID = dict([(x['Engine name'].lower(), x['Game modes,,,,,,,,,'].split(',')) for x in
                              csv.DictReader(maps_csv.splitlines(), dialect='dice')])
 
 
@@ -322,8 +323,8 @@ class BfhParser(AbstractParser):
 
     def OnPlayerSquadchange(self, action, data):
         """
-        player.onSquadChange <soldier name: player name> <team: Team ID> <squad: Squad ID>    
-        
+        player.onSquadChange <soldier name: player name> <team: Team ID> <squad: Squad ID>
+
         Effect: Player might have changed squad
         NOTE: this event also happens after a player left the game
         """
@@ -461,7 +462,7 @@ class BfhParser(AbstractParser):
         Change level name to real name.
         """
         try:
-            return MAP_NAME_BY_ID[mapname]
+            return MAP_NAME_BY_ID[mapname.lower()]
         except KeyError:
             self.warning('unknown level name \'%s\': please report this on B3 forums' % mapname)
             return mapname

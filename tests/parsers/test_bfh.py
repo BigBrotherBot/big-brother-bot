@@ -205,11 +205,13 @@ class Test_bfh_events(BFHTestCase):
             '', 'true', 'true', 'false', '428710', '6019', '108.61.98.177:40000', '', 'true', 'EU', 'ams', 'NL', '0',
             'IN_GAME'])
         # WHEN
-        self.parser.routeFrostbitePacket(['server.onLevelLoaded', 'MP_Glades', 'TeamDeathMatch0', '0', '1'])
+        with patch.object(self.parser, "warning") as warning_mock:
+            self.parser.routeFrostbitePacket(['server.onLevelLoaded', 'MP_Glades', 'TeamDeathMatch0', '0', '1'])
         # THEN
         event = self.parser.queueEvent.call_args[0][0]
         self.assertEqual('Game Warmup', self.parser.getEventName(event.type))
         self.assertEquals('MP_Glades', event.data)
+        self.assertListEqual([], warning_mock.mock_calls)
 
 
 class Test_punkbuster_events(BFHTestCase):
