@@ -168,7 +168,6 @@ class BfhParser(AbstractParser):
         'alwaysAllowSpectators',          # <bool>  Set whether spectators need to be in the spectator list before joining
         'autoBalance',                    # <bool>  Set if the server should autobalance
         'bulletDamage',                   # <modifier: percent>  Set bullet damage scale factor
-        'Hacker ',                        # <bool>  Set if Hacker is allowed or not on the game server (works after map switch)
         'crossHair',                      # <bool>  Set if crosshair for all weapons is enabled
         'forceReloadWholeMags',           # <bool>  Set hardcore reload on or off
         'friendlyFire',                   # <bool>  Set if the server should allow team damage
@@ -529,7 +528,6 @@ class BfhParser(AbstractParser):
         self.game['alwaysAllowSpectators'] = get_cvar('alwaysAllowSpectators', 'bool')
         self.game['autoBalance'] = get_cvar('autoBalance', 'bool')
         self.game['bulletDamage'] = get_cvar('bulletDamage', 'int')
-        self.game['Hacker'] = get_cvar('Hacker', 'hacker')
         self.game['crossHair'] = get_cvar('crossHair', 'bool')
         self.game['forceReloadWholeMags'] = get_cvar('forceReloadWholeMags', 'bool')
         self.game['friendlyFire'] = get_cvar('friendlyFire', 'bool')
