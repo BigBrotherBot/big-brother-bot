@@ -76,189 +76,58 @@ class BFHTestCase(unittest.TestCase):
             self.parser.working = False
 
 
-class Test_getServerInfo(unittest.TestCase):
-    # BF4 server version R17
-    # on default return get_test_data
-    # ('BF4 Server', '0', '16', 'Domination0', 'MP_Naval', '0', '1', '2', '600', '600', '0', '', 'true', 'true',
-    # 'false', '86400', '60', '1.2.3.4:25501', 'v1.880 | A1390 C2.332', 'true', 'EU', 'ams', 'DE', '0', 'IN_GAME',)
+class Test_getServerInfo(BFHTestCase):
+    def setUp(self):
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("""[configuration]""")
+        self.parser = BfhParser(self.conf)
+        self.parser.startup()
 
-    def get_test_data(self, **kwargs):
-        serverName = kwargs.get('serverName', 'BFH Server')
-        numPlayers = kwargs.get('numPlayers', '0')
-        maxPlayers = kwargs.get('maxPlayers', '16')
-        gamemode = kwargs.get('gamemode', 'Domination0')
-        level = kwargs.get('level', 'MP_Naval')
-        roundsPlayed = kwargs.get('roundsPlayed', '0')
-        roundsTotal = kwargs.get('roundsTotal', '1')
-        numTeams = kwargs.get('numTeams', '2')
-        team1score = kwargs.get('team1score', '600')
-        team2score = kwargs.get('team2score', '600')
-        team3score = kwargs.get('team3score', )
-        team4score = kwargs.get('team4score', )
-        targetScore = kwargs.get('targetScore', '0')
-        onlineState = kwargs.get('onlineState', '')
-        isRanked = kwargs.get('isRanked', 'true')
-        hasPunkbuster = kwargs.get('hasPunkbuster', 'true')
-        hasPassword = kwargs.get('hasPassword', 'false')
-        serverUptime = kwargs.get('serverUptime', '86400')
-        roundTime = kwargs.get('roundTime', '60')
-        gameIpAndPort = kwargs.get('gameIpAndPort', '1.2.3.4:25501')
-        punkBusterVersion = kwargs.get('punkBusterVersion', 'v1.880 | A1390 C2.332')
-        joinQueueEnabled = kwargs.get('joinQueueEnabled', 'true')
-        region = kwargs.get('region', 'EU')
-        closestPingSite = kwargs.get('closestPingSite', 'ams')
-        country = kwargs.get('country', 'DE')
-        blazePlayerCount = kwargs.get('blazePlayerCount', '0')
-        blazeGameState = kwargs.get('blazeGameState', 'IN_GAME')
+    def test_getServerInfo(self):
+        # GIVEN
+        when(self.parser).write(('serverInfo',)).thenReturn([
+            '[WASP] Hotwire all maps -- Working kick on kills',
+            '0',
+            '14',
+            'Hotwire0',
+            'MP_Eastside',
+            '0',
+            '2',
+            '0',
+            '0',
+            '',
+            'true',
+            'true',
+            'false',
+            '428710',
+            '6019',
+            '108.61.98.177:40000',
+            '',
+            'true',
+            'EU',
+            'ams',
+            'NL',
+            '0',
+            'IN_GAME'
+        ])
 
-        if numTeams == '4':
-            return (serverName, numPlayers, maxPlayers, gamemode, level, roundsPlayed, roundsTotal, numTeams,
-                    team1score, team2score, team3score, team4score, targetScore, onlineState, isRanked, hasPunkbuster,
-                    hasPassword, serverUptime, roundTime, gameIpAndPort, punkBusterVersion, joinQueueEnabled, region,
-                    closestPingSite, country, blazePlayerCount, blazeGameState)
-        else:
-            return (serverName, numPlayers, maxPlayers, gamemode, level, roundsPlayed, roundsTotal, numTeams,
-                    team1score, team2score, targetScore, onlineState, isRanked, hasPunkbuster, hasPassword,
-                    serverUptime, roundTime, gameIpAndPort, punkBusterVersion, joinQueueEnabled, region,
-                    closestPingSite, country, blazePlayerCount, blazeGameState)
-
-    # ranked server info after map loaded with 0 player and 600 tickets for each team
-    R17_RANKED_0PLAYER_DOMINATION = (
-        'BF4 Server', '0', '16', 'Domination0', 'MP_Naval', '0', '1', '2', '600', '600', '0', '', 'true', 'true',
-        'false', '86400', '60', '1.2.3.4:25501', 'v1.880 | A1390 C2.332', 'true', 'EU', 'ams', 'DE', '0', 'IN_GAME',
-    )
-
-    def test_decodeServerinfo_R17(self):
-        self.maxDiff = None
-
-        # test with given default data
-        self.assertDictEqual({
-            'serverName': 'BFH Server',
-            'numPlayers': '0',
-            'maxPlayers': '16',
-            'gamemode': 'Domination0',
-            'level': 'MP_Naval',
-            'roundsPlayed': '0',
-            'roundsTotal': '1',
-            'numTeams': '2',
-            'team1score': '600',
-            'team2score': '600',
-            'team3score': None,
-            'team4score': None,
-            'targetScore': '0',
-            'onlineState': '',
-            'isRanked': 'true',
-            'hasPunkbuster': 'true',
-            'hasPassword': 'false',
-            'serverUptime': '86400',  # server is 1day up
-            'roundTime': '60',  # round running 1min
-            'gameIpAndPort': '1.2.3.4:25501',
-            'punkBusterVersion': 'v1.880 | A1390 C2.332',
-            'joinQueueEnabled': 'true',
-            'region': 'EU',
-            'closestPingSite': 'ams',
-            'country': 'DE',
-            'blazePlayerCount': '0',
-            'blazeGameState': 'IN_GAME'
-        }, BfhParser.decodeServerinfo(self.get_test_data()))
-
-        # test unranked server
-        self.assertDictEqual({
-            'serverName': 'BFH Server',
-            'numPlayers': '0',
-            'maxPlayers': '16',
-            'gamemode': 'Domination0',
-            'level': 'MP_Naval',
-            'roundsPlayed': '0',
-            'roundsTotal': '1',
-            'numTeams': '2',
-            'team1score': '600',
-            'team2score': '600',
-            'team3score': None,
-            'team4score': None,
-            'targetScore': '0',
-            'onlineState': '',
-            'isRanked': 'false',
-            'hasPunkbuster': 'true',
-            'hasPassword': 'false',
-            'serverUptime': '86400',  # server is 1day up
-            'roundTime': '60',  # round running 1min
-            'gameIpAndPort': '1.2.3.4:25501',
-            'punkBusterVersion': 'v1.880 | A1390 C2.332',
-            'joinQueueEnabled': 'true',
-            'region': 'EU',
-            'closestPingSite': 'ams',
-            'country': 'DE',
-            'blazePlayerCount': '0',
-            'blazeGameState': 'IN_GAME'
-        }, BfhParser.decodeServerinfo(self.get_test_data(isRanked='false')))
-
-        # test PB is disabled
-        self.assertDictEqual({
-            'serverName': 'BFH Server',
-            'numPlayers': '0',
-            'maxPlayers': '16',
-            'gamemode': 'Domination0',
-            'level': 'MP_Naval',
-            'roundsPlayed': '0',
-            'roundsTotal': '1',
-            'numTeams': '2',
-            'team1score': '600',
-            'team2score': '600',
-            'team3score': None,
-            'team4score': None,
-            'targetScore': '0',
-            'onlineState': '',
-            'isRanked': 'true',
-            'hasPunkbuster': 'false',
-            'hasPassword': 'false',
-            'serverUptime': '86400',  # server is 1day up
-            'roundTime': '60',  # round running 1min
-            'gameIpAndPort': '1.2.3.4:25501',
-            'punkBusterVersion': 'v1.880 | A1390 C2.332',
-            'joinQueueEnabled': 'true',
-            'region': 'EU',
-            'closestPingSite': 'ams',
-            'country': 'DE',
-            'blazePlayerCount': '0',
-            'blazeGameState': 'IN_GAME'
-        }, BfhParser.decodeServerinfo(self.get_test_data(hasPunkbuster='false')))
-
-        # test 4 teams squad deathmatch
-        self.assertDictEqual({
-            'serverName': 'BFH Server',
-            'numPlayers': '0',
-            'maxPlayers': '16',
-            'gamemode': 'SquadDeathMatch0',
-            'level': 'MP_Naval',
-            'roundsPlayed': '0',
-            'roundsTotal': '1',
-            'numTeams': '4',
-            'team1score': '0',
-            'team2score': '1',
-            'team3score': '23',
-            'team4score': '14',
-            'targetScore': '0',
-            'onlineState': '',
-            'isRanked': 'true',
-            'hasPunkbuster': 'true',
-            'hasPassword': 'false',
-            'serverUptime': '86400',  # server is 1day up
-            'roundTime': '60',  # round running 1min
-            'gameIpAndPort': '1.2.3.4:25501',
-            'punkBusterVersion': 'v1.880 | A1390 C2.332',
-            'joinQueueEnabled': 'true',
-            'region': 'EU',
-            'closestPingSite': 'ams',
-            'country': 'DE',
-            'blazePlayerCount': '0',
-            'blazeGameState': 'IN_GAME'
-        }, BfhParser.decodeServerinfo(self.get_test_data(gamemode='SquadDeathMatch0',
-                                                         numTeams='4',
-                                                         team1score='0',
-                                                         team2score='1',
-                                                         team3score='23',
-                                                         team4score='14')))
+        # WHEN
+        self.parser.getServerInfo()
+        # THEN
+        self.assertEqual('[WASP] Hotwire all maps -- Working kick on kills', self.parser.game.sv_hostname)
+        self.assertEqual(14, self.parser.game.sv_maxclients)
+        self.assertEqual("MP_Eastside", self.parser.game.mapName)
+        self.assertEqual("Hotwire0", self.parser.game.gameType)
+        self.assertEqual("108.61.98.177", self.parser._publicIp)
+        self.assertEqual('40000', self.parser._gamePort)
+        self.assertDictEqual(
+            {'punkBusterVersion': '', 'team2score': None, 'numPlayers': '0', 'maxPlayers': '14', 'targetScore': '0',
+             'closestPingSite': 'ams', 'blazeGameState': 'IN_GAME', 'onlineState': '',
+             'serverName': '[WASP] Hotwire all maps -- Working kick on kills', 'gamemode': 'Hotwire0',
+             'hasPunkbuster': 'true', 'hasPassword': 'false', 'numTeams': '0', 'team1score': None, 'roundTime': '6019',
+             'blazePlayerCount': '0', 'isRanked': 'true', 'roundsPlayed': '0', 'serverUptime': '428710',
+             'team4score': None, 'level': 'MP_Eastside', 'country': 'NL', 'region': 'EU', 'joinQueueEnabled': 'true',
+             'roundsTotal': '2', 'gameIpAndPort': '108.61.98.177:40000', 'team3score': None}, self.parser.game.serverinfo)
 
 
 class Test_bfh_events(BFHTestCase):
