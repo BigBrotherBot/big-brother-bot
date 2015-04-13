@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 13/04/2015 - 1.6.4  - Fenix           - changed database column CID to VARCHAR(32) to support Frostbite games
 # 17/03/2015 - 1.6.3  - 82ndab.Bravo17  - escape ' characters when updating current_clients table
 # 16/02/2015 - 1.6.2  - 82ndab.Bravo17  - Set default score to zero
 # 04/02/2015 - 1.6.1  - Fenix           - fixed exception being generated when not using database to store status information
@@ -113,7 +114,7 @@ class StatusPlugin(b3.plugin.Plugin):
                             `Name` VARCHAR(32) NOT NULL ,
                             `Level` INT(10) NOT NULL ,
                             `DBID` INT(10) NOT NULL ,
-                            `CID` INT(3) NOT NULL ,
+                            `CID` VARCHAR(32) NOT NULL ,
                             `Joined` VARCHAR(25) NOT NULL ,
                             `Connections` INT(11) NOT NULL ,
                             `State` INT(1) NOT NULL ,
@@ -140,7 +141,7 @@ class StatusPlugin(b3.plugin.Plugin):
                             Name VARCHAR(32) NOT NULL,
                             Level INTEGER NOT NULL,
                             DBID INTEGER NOT NULL,
-                            CID SMALLINT NOT NULL,
+                            CID VARCHAR(32) NOT NULL,
                             Joined VARCHAR(25) NOT NULL,
                             Connections INTEGER NOT NULL,
                             State SMALLINT NOT NULL,
@@ -159,22 +160,22 @@ class StatusPlugin(b3.plugin.Plugin):
                             `value` VARCHAR(255) NOT NULL,
                             CONSTRAINT %(svars)s_name UNIQUE (name));""",
 
-            'cvars': """CREATE TABLE IF NOT EXISTS `%(cvars)s` (
-                            `id` INTEGER PRIMARY KEY AUTOINCREMENT,
-                            `Updated` VARCHAR(25) NOT NULL ,
-                            `Name` VARCHAR(32) NOT NULL ,
-                            `Level` INTEGER NOT NULL ,
-                            `DBID` INTEGER NOT NULL ,
-                            `CID` SMALLINT NOT NULL ,
-                            `Joined` VARCHAR(25) NOT NULL ,
-                            `Connections` INTEGER NOT NULL ,
-                            `State` SMALLINT NOT NULL ,
-                            `Score` INTEGER NOT NULL ,
-                            `IP` VARCHAR(16) NOT NULL ,
-                            `GUID` VARCHAR(36) NOT NULL ,
-                            `PBID` VARCHAR(32) NOT NULL ,
-                            `Team` SMALLINT NOT NULL ,
-                            `ColorName` VARCHAR(32) NOT NULL);""",
+            'cvars': """CREATE TABLE IF NOT EXISTS %(cvars)s (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            Updated VARCHAR(25) NOT NULL ,
+                            Name VARCHAR(32) NOT NULL ,
+                            Level INTEGER NOT NULL ,
+                            DBID INTEGER NOT NULL ,
+                            CID VARCHAR(32) NOT NULL ,
+                            Joined VARCHAR(25) NOT NULL ,
+                            Connections INTEGER NOT NULL ,
+                            State SMALLINT NOT NULL ,
+                            Score INTEGER NOT NULL ,
+                            IP VARCHAR(16) NOT NULL ,
+                            GUID VARCHAR(36) NOT NULL ,
+                            PBID VARCHAR(32) NOT NULL ,
+                            Team SMALLINT NOT NULL ,
+                            ColorName VARCHAR(32) NOT NULL);""",
         }
 
     }
