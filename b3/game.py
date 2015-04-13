@@ -67,10 +67,13 @@ class Game(object):
     def _get_mapName(self):
         if not self._mapName:
             try:
-                # try to get the mapname from the server but do not generate EVT_GAME_MAP_CHANGE
-                self._mapName = self.console.getMap()
+                # try to get the mapname from the server
+                mapname = self.console.getMap()
             except Exception:
                 self._mapName = None
+            else:
+                # set using _set_mapName to generate EVT_GAME_MAP_CHANGE
+                self._set_mapName(mapname)
         return self._mapName
 
     def _set_mapName(self, newmap):
