@@ -655,7 +655,7 @@ class BfhParser(AbstractParser):
         <matchMakingEnabled: boolean>
         <blazePlayerCount: integer>
         <blazeGameState: string>
-        ['BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '2', '300', '300', '0', '', 'true', 'true', 'false', '5148', '455']
+        ['[WASP] Hotwire all maps -- Working kick on kills', '0', '14', 'Hotwire0', 'MP_Eastside', '0', '2', '0', '0', '', 'true', 'true', 'false', '428710', '6019', '108.61.98.177:40000', '', 'true', 'EU', 'ams', 'NL', '0', 'IN_GAME']
         """
         numOfTeams = 0
         if data[7] != '':

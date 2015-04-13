@@ -140,6 +140,11 @@ class Test_bfh_events(BFHTestCase):
         self.parser.queueEvent = Mock(name="queueEvent method")
         self.joe = Mock(name="Joe", spec=Client)
 
+        def event_repr(self):
+            return "Event(%r, data=%r, client=%r, target=%r)" % (b3.events.eventManager.getName(self.type), self.data,
+                                                                 self.client, self.target)
+        b3.events.Event.__repr__ = event_repr
+
     def test_cmd_rotateMap_generates_EVT_GAME_ROUND_END(self):
         # prepare fake BFH server responses
         def fake_write(data):
@@ -182,7 +187,6 @@ class Test_bfh_events(BFHTestCase):
         self.assertEquals('test team', event.data)
         self.assertEqual(self.joe, event.client)
 
-
     def test_player_onChat_event_squad(self):
         self.parser.getClient = Mock(return_value=self.joe)
 
@@ -193,6 +197,20 @@ class Test_bfh_events(BFHTestCase):
         self.assertEqual("Squad Say", self.parser.getEventName(event.type))
         self.assertEquals('test squad', event.data)
         self.assertEqual(self.joe, event.client)
+
+    def test_server_onLevelLoaded(self):
+        # GIVEN
+        when(self.parser).write(('serverInfo',)).thenReturn([
+            '[WASP] Hotwire all maps -- Working kick on kills', '0', '14', 'Hotwire0', 'MP_Eastside', '0', '2', '0', '0',
+            '', 'true', 'true', 'false', '428710', '6019', '108.61.98.177:40000', '', 'true', 'EU', 'ams', 'NL', '0',
+            'IN_GAME'])
+        # WHEN
+        self.parser.routeFrostbitePacket(['server.onLevelLoaded', 'MP_Glades', 'TeamDeathMatch0', '0', '1'])
+        # THEN
+        event = self.parser.queueEvent.call_args[0][0]
+        self.assertEqual('Game Warmup', self.parser.getEventName(event.type))
+        self.assertEquals('MP_Glades', event.data)
+
 
 class Test_punkbuster_events(BFHTestCase):
     def setUp(self):
