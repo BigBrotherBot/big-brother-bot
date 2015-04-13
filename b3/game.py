@@ -23,9 +23,10 @@
 # 21/07/2014 - 1.4   - Fenix      - syntax cleanup
 #                                 - removed hardcoded test case
 # 19/03/2015 - 1.5   - Fenix      - removed deprecated usage of dict.has_key (us 'in dict' instead)
+# 13/04/2015 - 1.6   - Fenix      - try to get the mapname from in _get_mapName if it has not been retrieved already
 
 __author__  = 'ThorN'
-__version__ = '1.5'
+__version__ = '1.6'
 
 
 class Game(object):
@@ -64,6 +65,12 @@ class Game(object):
         return self.__dict__[key]
 
     def _get_mapName(self):
+        if not self._mapName:
+            try:
+                # try to get the mapname from the server but do not generate EVT_GAME_MAP_CHANGE
+                self._mapName = self.console.getMap()
+            except Exception:
+                self._mapName = None
         return self._mapName
 
     def _set_mapName(self, newmap):
@@ -95,7 +102,6 @@ class Game(object):
         """
         if not self._mapTimeStart:
             self.startMap()
-
         self._roundTimeStart = self.console.time()
         self.rounds += 1
 
@@ -105,7 +111,6 @@ class Game(object):
         """
         if mapName:
             self.mapName = mapName
-
         self._mapTimeStart = self.console.time()
 
     def mapEnd(self):
