@@ -25,6 +25,7 @@ from mock import ANY
 from ConfigParser import NoOptionError
 from mockito import when
 from b3.config import CfgConfigParser
+from b3.exceptions import MissingRequirement
 from b3.plugin import Plugin
 from b3.events import Event
 from tests import B3TestCase
@@ -408,4 +409,4 @@ class Test_Plugin_requiresParser(B3TestCase):
         with patch.object(self.console, 'error') as error_mock:
             self.console.loadPlugins()
         # THEN
-        self.assertListEqual([call("Could not load plugin testplugin2 : 'plugin testplugin2 is not compatible with None parser : supported games are : Dummy'")], error_mock.mock_calls)
+        self.assertListEqual([call('Could not load plugin testplugin2', exc_info=MissingRequirement('plugin testplugin2 is not compatible with None parser : supported games are : Dummy',))], error_mock.mock_calls)

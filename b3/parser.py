@@ -18,12 +18,14 @@
 #
 # CHANGELOG
 #
+# 2015/04/14 - 1.42.5 - Fenix           - print more verbose information in log file when a plugin fails in being loaded
+#                                       - simplify exception logging on plugin configuration load and plugin startup
 # 2015/03/21 - 1.42.4 - Fenix           - added support for the new plugin attribute 'requiresParsers'
 # 2015/03/16 - 1.42.3 - Fenix           - minor fixes to plugin dependency loading
 # 2015/03/09 - 1.42.2 - Fenix           - added plugin dependency loading
 # 2015/03/01 - 1.42.1 - Fenix           - added unregisterHandler method
 # 2015/02/25 - 1.42   - Fenix           - added automatic timezone offset detection
-# 2015/02/15 - 1.41.8 - Fenix           - fix broken 1.41.8
+# 2015/02/15 - 1.41.8 - Fenix           - fix broken 1.41.7
 # 2015/02/15 - 1.41.7 - Fenix           - make game log reading work properly in osx
 # 2015/02/04 - 1.41.6 - Fenix           - optionally specify a log file size: 'logsize' option in 'b3' section of main cfg
 # 2015/02/02 - 1.41.5 - 82ndab.Bravo17  - Remove color codes at start of getWrap if not valid for game
@@ -175,7 +177,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.42.4'
+__version__ = '1.42.5'
 
 
 import os
@@ -202,7 +204,6 @@ import b3.parsers.q3a.rcon
 import b3.timezones
 
 from ConfigParser import NoOptionError
-from ConfigParser import NoSectionError
 from collections import OrderedDict
 from b3.clients import Clients
 from b3.clients import Group
@@ -859,8 +860,8 @@ class Parser(object):
                 clz = getattr(mod, '%sPlugin' % p['name'].title())
                 cfg = _get_plugin_config(p['name'], clz, p['conf'])
                 plugins[p['name']] = PluginData(name=p['name'], module=mod, clazz=clz, conf=cfg, disabled=p['disabled'])
-            except Exception:
-                self.error('Could not load plugin %s : %s' % (p['name'], extract_tb(sys.exc_info()[2])))
+            except Exception, err:
+                self.error('Could not load plugin %s' % p['name'], exc_info=err)
 
         # check for AdminPlugin
         if not 'admin' in plugins:
@@ -921,8 +922,8 @@ class Parser(object):
         for plugin_name, plugin_data in plugins.items():
             try:
                 plugin_list += _get_plugin_data(plugin_data)
-            except MissingRequirement, e:
-                self.error('Could not load plugin %s : %s' % (plugin_name, e))
+            except MissingRequirement, err:
+                self.error('Could not load plugin %s' % plugin_name, exc_info=err)
 
         plugin_dict = {x.name: x for x in plugin_list}      # dict(str, PluginData)
         plugin_data = plugin_dict.pop('admin')              # remove admin plugin from dict
@@ -930,7 +931,7 @@ class Parser(object):
         sorted_plugin_list.append(plugin_data)              # put admin plugin as first and discard from the sorting
 
         # sort remaining plugins according to their inclusion requirements
-        self.bot('Sorting plugins according to their inclusion requirements...')
+        self.bot('Sorting plugins according to their dependency tree...')
         sorted_list = [y for y in topological_sort([(x.name, set(x.clazz.requiresPlugins)) for x in plugin_list])]
         for plugin_name in sorted_list:
             sorted_plugin_list.append(plugin_dict[plugin_name])
@@ -960,7 +961,7 @@ class Parser(object):
                 self.bot('Loading plugin #%s %s [%s]', plugin_num, plugin_data.name, plugin_conf_path)
                 self._plugins[plugin_data.name] = plugin_data.clazz(self, plugin_data.conf)
             except Exception, err:
-                self.error('Could not load plugin %s : %s' % (plugin_data.name, extract_tb(sys.exc_info()[2])))
+                self.error('Could not load plugin %s' % plugin_data.name, exc_info=err)
                 self.screen.write('x')
             else:
                 if plugin_data.disabled:
@@ -986,41 +987,43 @@ class Parser(object):
         """
         Load must have plugins.
         """
+        # if we fail to load one of those plugins, B3 will exit
+        _mandatory_plugins = ['ftpytail', 'sftpytail', 'httpytail']
+
         def _load_plugin(console, plugin_name):
             """
             Helper which takes care of loading a single plugin.
             :param console: The current console instance
             :param plugin_name: The name of the plugin to load
             """
-            console.bot('Loading plugin %s', plugin_name)
-            plugin_module = console.pluginImport(plugin_name)
-            console._plugins[plugin_name] = getattr(plugin_module, '%sPlugin' % plugin_name.title())(console)
-            version = getattr(plugin_module, '__version__', 'Unknown Version')
-            author = getattr(plugin_module, '__author__', 'Unknown Author')
-            console.bot('Plugin %s (%s - %s) loaded', plugin_name, version, author)
-            console.screen.write('.')
-            console.screen.flush()
+            try:
+                console.bot('Loading plugin %s', plugin_name)
+                plugin_module = console.pluginImport(plugin_name)
+                console._plugins[plugin_name] = getattr(plugin_module, '%sPlugin' % plugin_name.title())(console)
+                version = getattr(plugin_module, '__version__', 'Unknown Version')
+                author = getattr(plugin_module, '__author__', 'Unknown Author')
+            except Exception, e:
+                console.screen.write('x')
+                if plugin_name in _mandatory_plugins:
+                    # critical will stop B3 from running
+                    console.critical('Could not start B3 without %s plugin' % plugin_name, exc_info=e)
+                else:
+                    console.error('Could not load plugin %s' % plugin_name, exc_info=e)
+            else:
+                console.screen.write('.')
+                console.bot('Plugin %s (%s - %s) loaded', plugin_name, version, author)
+            finally:
+                console.screen.flush()
 
         if 'publist' not in self._plugins:
-            try:
-                _load_plugin(self, 'publist')
-            except Exception, err:
-                self.error('Could not load plugin publist', exc_info=err)
+            _load_plugin(self, 'publist')
 
         if not main_is_frozen():
-            # load the updater plugin if we are running B3 from sources
             if 'updater' not in self._plugins:
-                try:
-                    update_channel = self.config.get('update', 'channel')
-                    if update_channel == 'skip':
-                        self.debug('Not loading plugin updater: update channel not specified in B3 configuration file')
-                    else:
-                        try:
-                            _load_plugin(self, 'updater')
-                        except Exception, err:
-                            self.error('Could not load plugin updater', exc_info=err)
-                except (NoSectionError, NoOptionError):
-                    self.debug('Not loading plugin updater: update section missing in B3 main configuration file')
+                if self.config.has_option('update', 'channel') and self.config.get('update', 'channel') != 'skip':
+                    _load_plugin(self, 'updater')
+                else:
+                    self.debug('Not loading plugin updater: update channel not specified in B3 configuration file')
 
         if self.config.has_option('server', 'game_log'):
             game_log = self.config.get('server', 'game_log')
@@ -1033,11 +1036,7 @@ class Parser(object):
                 remote_log_plugin = 'httpytail'
 
             if remote_log_plugin and remote_log_plugin not in self._plugins:
-                try:
-                    _load_plugin(self, remote_log_plugin)
-                except Exception, err:
-                    self.critical('Error loading plugin %s' % remote_log_plugin, exc_info=err)
-                    raise SystemExit('ERROR while loading %s' % remote_log_plugin)
+                _load_plugin(self, remote_log_plugin)
 
         self.screen.write(' (%s)\n' % len(self._plugins.keys()))
         self.screen.flush()
@@ -1081,21 +1080,33 @@ class Parser(object):
         self.screen.write('Starting plugins : ')
         self.screen.flush()
 
-        def start_plugin(p_name):
-            p = self._plugins[p_name]
-            self.bot('Starting plugin %s', p_name)
+        def start_plugin(console, p_name):
+            """
+            Helper which handles the startup of a single plugin
+            :param console: the console instance
+            :param p_name: the plugin name
+            """
+            p = console._plugins[p_name]
             p.onStartup()
             p.start()
-            self.screen.write('.')
-            self.screen.flush()
+
+        plugin_num = 1
 
         for plugin_name in self._plugins:
+
             try:
-                start_plugin(plugin_name)
+                self.bot('Starting plugin #%s %s', (plugin_num, plugin_name))
+                start_plugin(self, plugin_name)
             except Exception, err:
                 self.error("Could not start plugin %s" % plugin_name, exc_info=err)
+                self.screen.write('x')
+            else:
+                self.screen.write('.')
+                plugin_num += 1
+            finally:
+                self.screen.flush()
 
-        self.screen.write(' (%s)\n' % (len(self._plugins) + 1))
+        self.screen.write(' (%s)\n' % str(plugin_num - 1))
 
     def disablePlugins(self):
         """
