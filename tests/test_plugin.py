@@ -25,11 +25,10 @@ from mock import ANY
 from ConfigParser import NoOptionError
 from mockito import when
 from b3.config import CfgConfigParser
-from b3.exceptions import MissingRequirement
 from b3.plugin import Plugin
 from b3.events import Event
 from tests import B3TestCase
-from tests.fakePlugins import __file__ as external_plugins__file__
+from tests.fakeplugins import __file__ as external_plugins__file__
 
 external_plugins_dir = os.path.dirname(external_plugins__file__)
 testplugin_config_file = os.path.join(external_plugins_dir, "testplugin/conf/plugin_testplugin.ini")
