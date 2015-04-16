@@ -882,10 +882,10 @@ class Test_config(BFHTestCase):
             self.parser = BfhParser(self.conf)
 
     def assert_big_b3_private_responses(self, expected, config):
-        self.parser._settings['big_b3_private_responses'] = None
+        self.parser._big_b3_private_responses = None
         self.conf.loadFromString(config)
         self.parser.load_conf_big_b3_private_responses()
-        self.assertEqual(expected, self.parser._settings['big_b3_private_responses'])
+        self.assertEqual(expected, self.parser._big_b3_private_responses)
 
     def test_big_b3_private_responses_on(self):
         self.assert_big_b3_private_responses(True, dedent("""
@@ -902,10 +902,10 @@ class Test_config(BFHTestCase):
             big_b3_private_responses:"""))
 
     def assert_big_msg_duration(self, expected, config):
-        self.parser._settings['big_msg_duration'] = None
+        self.parser._big_msg_duration = None
         self.conf.loadFromString(config)
         self.parser.load_conf_big_msg_duration()
-        self.assertEqual(expected, self.parser._settings['big_msg_duration'])
+        self.assertEqual(expected, self.parser._big_msg_duration)
 
     def test_big_msg_duration(self):
         default_value = 4
@@ -929,11 +929,11 @@ class Test_config(BFHTestCase):
             big_msg_duration:"""))
 
     def assert_big_msg_repeat(self, expected, config):
-        self.parser._settings['big_msg_repeat'] = None
+        self.parser._big_msg_repeat = None
         self.conf.loadFromString(config)
         self.parser.load_conf_big_b3_private_responses()
         self.parser.load_conf_big_msg_repeat()
-        self.assertEqual(expected, self.parser._settings['big_msg_repeat'])
+        self.assertEqual(expected, self.parser._big_msg_repeat)
 
     def test_big_msg_repeat(self):
         default_value = 'pm'
