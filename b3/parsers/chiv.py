@@ -46,7 +46,7 @@ __author__ = 'tliszak'
 __version__ = '1.8'
 
 
-class MessageType:
+class MessageType(object):
 
     SERVER_CONNECT = 0
     SERVER_CONNECT_SUCCESS = 1

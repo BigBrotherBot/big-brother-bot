@@ -57,7 +57,8 @@
 # 01/09/2014 - 1.3.1  - add color code options for new getWrap method
 # 12/07/2014 = 1.3.2  - add 'Unknown' chat type for some radios
 #                     - correct capitalization in _use_color_codes
-# 16704/2015 - 1.3.3  - uniform class variables (dict -> variable)
+# 16/04/2015 - 1.3.3  - uniform class variables (dict -> variable)
+#                     - implement missing abstract class methods
 
 import b3.cron
 import b3.cvar
@@ -716,7 +717,7 @@ class AbstractParser(b3.parser.Parser):
 
     def OnUnknownEvent(self, data):
         return False
-    
+
     ####################################################################################################################
     #                                                                                                                  #
     #   B3 PARSER INTERFACE IMPLEMENTATION                                                                             #
@@ -1075,29 +1076,18 @@ class AbstractParser(b3.parser.Parser):
                                                               'admin': admin} , client))
 
     def getMap(self):
-        """
-        Return the current level name (not easy map name).
-        """
+        pass
+
+    def getNextMap(self):
         pass
 
     def getMaps(self):
-        """
-        Return the map list for the current rotation. (as easy map names)
-        This does not return all available maps
-        """
         pass
 
     def rotateMap(self):
-        """
-        Load the next map/level
-        """
         pass
 
     def changeMap(self, map_name, gamemode_id=None):
-        """
-        Load a given map/level
-        Return a list of suggested map names in cases it fails to recognize the map that was provided
-        """
         pass
 
     def getPlayerPings(self, filter_client_ids=None):
@@ -1120,10 +1110,6 @@ class AbstractParser(b3.parser.Parser):
         return pings
 
     def getPlayerScores(self):
-        """
-        Ask the server for a given client's team.
-        """
-        scores = {}
         pass
 
     def getBanlist(self):
@@ -1166,7 +1152,6 @@ class AbstractParser(b3.parser.Parser):
         except Exception, e:
             self.error(e)
 
-            
     def restart(self):
         """
         Stop B3 with the restart exit status (221)

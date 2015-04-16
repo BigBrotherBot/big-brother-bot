@@ -25,6 +25,7 @@
 # 18/07/2014 - 1.3 - Fenix - updated abstract parser to comply with the new get_wrap implementation
 # 11/08/2014 - 1.4 - Fenix - syntax cleanup
 # 16/04/2015 - 1.5 - Fenix - uniform class variables (dict -> variable)
+#                          - implement missing abstract class methods
 
 __author__ = 'xlr8or, ~cGs*Pr3z, ~cGs*AQUARIUS'
 __version__ = '1.5'
@@ -627,6 +628,9 @@ class Sof2Parser(AbstractParser):
     #   B3 PARSER INTERFACE IMPLEMENTATION                                                                             #
     #                                                                                                                  #
     ####################################################################################################################
+
+    def getNextMap(self):
+        pass
 
     def message(self, client, text):
         """

@@ -41,7 +41,8 @@
 # 2014-07-17 - 1.4   - Fenix     - updated abstract parser to comply with the new get_wrap implementation
 #                                - updated rcon command patterns
 # 2014-08-11 - 1.5   - Fenix     - syntax cleanup
-# 2015-04-16 - 1.6 - Fenix     - uniform class variables (dict -> variable)
+# 2015-04-16 - 1.6   - Fenix     - uniform class variables (dict -> variable)
+#                                - implement missing abstract class methods
 
 __author__ = 'xlr8or, Courgette'
 __version__ = '1.6'
@@ -640,6 +641,15 @@ class Wop15Parser(AbstractParser):
                 self.verbose2(event)
         finally:
             return b3.parser.Parser.queueEvent(self, event, expire)
+
+    ####################################################################################################################
+    #                                                                                                                  #
+    #   B3 PARSER INTERFACE IMPLEMENTATION                                                                             #
+    #                                                                                                                  #
+    ####################################################################################################################
+
+    def getNextMap(self):
+        pass
 
 # ------ Documentation -------------------------------------------------------------------------------------------------
 #

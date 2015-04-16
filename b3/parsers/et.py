@@ -27,9 +27,10 @@
 # 04/08/2014 - 0.0.4 - Fenix - fixed world client generation using a non existent method
 #                            - make use of self.getEvent when registering events: removes warnings
 # 29/08/2014 - 0.0.5 - Fenix - syntax cleanup
+# 16/04/2015 - 0.0.6 - Fenix - implement missing abstract class methods
 
 __author__  = 'ThorN'
-__version__ = '0.0.5'
+__version__ = '0.0.6'
 
 import re
 import string
@@ -236,3 +237,6 @@ class EtParser(AbstractParser):
         for line in self.getWrap(message):
             lines.append(self.getCommand('message', message=line))
         self.writelines(lines)
+
+    def getNextMap(self):
+        pass

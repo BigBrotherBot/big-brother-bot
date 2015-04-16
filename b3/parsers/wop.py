@@ -29,6 +29,7 @@
 #                                - make use of self.getEvent when producing events
 #                                - fixed unresolved reference MOD_CHANGE_TEAM in OnKill()
 # 16/04/2015 - 1.5   - Fenix     - uniform class variables (dict -> variable)
+#                                - implement missing abstract class methods
 
 __author__ = 'xlr8or'
 __version__ = '1.5'
@@ -485,3 +486,12 @@ class WopParser(AbstractParser):
             gametype = 'bb'
 
         return gametype
+
+    ####################################################################################################################
+    #                                                                                                                  #
+    #   B3 PARSER INTERFACE IMPLEMENTATION                                                                             #
+    #                                                                                                                  #
+    ####################################################################################################################
+
+    def getNextMap(self):
+        pass

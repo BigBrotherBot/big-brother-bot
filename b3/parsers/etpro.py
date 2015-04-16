@@ -66,6 +66,7 @@ from b3.parsers.q3a.abstractParser import AbstractParser
 
 
 class EtproParser(AbstractParser):
+
     gameName = 'etpro'
     PunkBuster = None
     IpsOnly = False  # Setting True will use ip's only for identification.

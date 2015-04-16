@@ -32,6 +32,7 @@
 #                              - fixed get_player_pings method declaration not matching the method in Parser class
 # 2014-07-16 - 1.4 - Fenix     - added admin key in EVT_CLIENT_KICK data dict when available
 # 2014-08-12 - 1.5 - Fenix     - syntax cleanup
+# 2015-04-06 - 1.6 - Fenix     - implement missing abstract class methods
 
 import b3
 import b3.clients
@@ -44,14 +45,14 @@ from b3.events import Event
 from b3.parser import Parser
 
 __author__ = 'Courgette'
-__version__ = '1.5'
+__version__ = '1.6'
 
 
 class AltitudeParser(Parser):
     """
     B3 parser for the Altitude game. See http://altitudegame.com.
     """
-    ## parser code name to use in b3.xml
+    ## parser code name to use in b3.ini
     gameName = 'altitude'
     
     ## extract the time off a log line
@@ -485,7 +486,6 @@ class AltitudeParser(Parser):
         ## to a specific method
         command = altitude_event['command']
         method_name = "OnAltitudeCommand%s%s" % (command[:1].upper(), command[1:])
-        event = None
         if not hasattr(self, method_name):
             # no handling method for such command
             # we fallback on creating a generic EVT_CLIENT_CONSOLE_COMMAND event
@@ -697,23 +697,17 @@ class AltitudeParser(Parser):
                                                                    'duration': duration,
                                                                    'admin': admin}, client=client))
 
+    def getNextMap(self):
+        pass
+
     def getMap(self):
-        """
-        Return the current map/level name
-        """
-        raise NotImplementedError
+        pass
 
     def getMaps(self):
-        """
-        Return the available maps/levels name
-        """
-        raise NotImplementedError
+        pass
 
     def rotateMap(self):
-        """
-        Load the next map/level
-        """
-        raise NotImplementedError
+        pass
         
     def changeMap(self, mapname):
         """

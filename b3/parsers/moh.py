@@ -49,11 +49,11 @@
 # 2014-05-02 - 1.5.1 - Fenix     - replace attribute names using python built-in ones
 # 2014-08-06 - 1.6   - Fenix     - removed line length configuration loading: it's built-in in the parser module now
 #                                - make use of self.getEvent when creating events
-# 2014-09-02 - 1.7   - Fenix     - syntax cleanup
-
+# 2014-09-02 - 1.8   - Fenix     - syntax cleanup
+# 2015-04-16 - 1.9   - Fenix     - implement missing abstract class methods
 
 __author__ = 'Bakes, Courgette'
-__version__ = '1.7'
+__version__ = '1.9'
 
 import time
 import b3.clients
@@ -596,3 +596,10 @@ class MohParser(AbstractParser):
             time.sleep(1)
             self.write(('mapList.nextLevelIndex', nextIndex))
             self.write(('admin.runNextRound', ))
+
+    def saybig(self, msg):
+        """
+        Broadcast a message to all players.
+        :param msg: The message to be broadcasted
+        """
+        self.say(msg)

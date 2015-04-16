@@ -50,6 +50,7 @@
 # 2015-03-19 - 1.46 - removed deprecated usage of dict.has_key (us 'in dict' instead)
 #                   - removed several unused variables
 # 2015-04-16 - 1.47 - uniform class variables (dict -> variable)
+#                   - implement missing abstract class methods
 
 import b3
 import b3.cron
@@ -834,6 +835,13 @@ class Ro2Parser(b3.parser.Parser):
         msg = prefixText([self.msgPrefix], self.stripMsgColors(msg))
         for line in self.getWrap(msg):
             self.write(self.getCommand('say', message=line))
+
+    def saybig(self, msg):
+        """
+        Broadcast a message to all players.
+        :param msg: The message to be broadcasted
+        """
+        self.say(msg)
 
     def message(self, client, text):
         """

@@ -48,6 +48,7 @@
 #                                - major fixes in B3 parser interface methods
 # 19/03/2015 - 1.8.1 - Fenix     - raise NotImplementedError instead of NotImplemented
 # 16/04/201  - 1.8.2 - Fenix     - uniform class variables (dict -> variable)
+#                                - implement missing abstract class methods
 
 __author__  = 'Courgette'
 __version__ = '1.8.2'
@@ -992,6 +993,15 @@ class AbstractParser(b3.parser.Parser):
         if levelnames[nextLevelIndex] == self.getMap():
             nextLevelIndex = (nextLevelIndex+1)%len(levelnames)
         return nextLevelIndex
+
+    def saybig(self, msg):
+        pass
+
+    def rotateMap(self):
+        pass
+
+    def changeMap(self, map_name):
+        pass
 
     def getMaps(self):
         """

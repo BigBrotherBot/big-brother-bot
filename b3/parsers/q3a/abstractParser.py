@@ -19,6 +19,7 @@
 # CHANGELOG
 #
 # 2015/04/16 - 1.8.1 - Fenix          - uniform class variables (dict -> variable)
+#                                     - implement missing abstract class methods
 # 2014/08/02 - 1.8   - Fenix          - syntax cleanup
 #                                     - reformat changelog
 #                                     - added missing documentation to Parser methods
@@ -835,10 +836,10 @@ class AbstractParser(b3.parser.Parser):
         return None
 
     def getMaps(self):
-        """
-        Return the available maps/levels name
-        """
-        return None
+        pass
+
+    def getNextMap(self):
+        pass
 
     def sync(self):
         """
