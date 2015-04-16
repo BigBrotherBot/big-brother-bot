@@ -53,6 +53,7 @@
 # 2014-07-18 - 1.1.7 - updated parser to comply with the new get_wrap implementation
 #                    - updated rcon command patterns
 # 2014-08-12 - 1.1.8 - syntax cleanup
+# 2015-04-16 - 1.1.9 - fixed regression introduced in 1.1.7
 
 
 import b3
@@ -79,7 +80,7 @@ from b3.parsers.homefront.protocol import ChannelType
 
 
 __author__ = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.1.8'
+__version__ = '1.1.9'
 
 
 class HomefrontParser(b3.parser.Parser):
@@ -140,8 +141,6 @@ class HomefrontParser(b3.parser.Parser):
         """
         Called after the parser is created before run().
         """
-        self.debug("starting parser...")
-        
         # create the 'Server' client
         self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=b3.TEAM_UNKNOWN)
 
@@ -149,11 +148,11 @@ class HomefrontParser(b3.parser.Parser):
             # open ini file
             ini_file = self.config.get('server','inifile')
             if ini_file[0:6] == 'ftp://':
-                    self.ftpconfig = functions.splitDSN(ini_file)
-                    self._ini_file = 'ftp'
-                    self.bot('ftp supported')
+                self.ftpconfig = functions.splitDSN(ini_file)
+                self._ini_file = 'ftp'
+                self.bot('FTP supported')
             elif ini_file[0:7] == 'sftp://':
-                self.bot('sftp currently not supported')
+                self.bot('SFTP currently not supported')
             else:
                 self.bot('Getting configs from %s', ini_file)
                 f = self.config.getpath('server', 'inifile')
@@ -173,7 +172,6 @@ class HomefrontParser(b3.parser.Parser):
         self.Events.createEvent('EVT_CLIENT_VOTE_START', 'Client Vote Start')
         self.Events.createEvent('EVT_CLIENT_VOTE', 'Client Vote')
         self.Events.createEvent('EVT_SERVER_VOTE_END', 'Server Vote End')
-        #self.Events.createEvent('EVT_CLIENT_SQUAD_CHANGE', 'Client Squad Change')
                 
         ## read game server info and store as much of it in self.game wich
         ## is an instance of the b3.game.Game class
@@ -743,8 +741,7 @@ class HomefrontParser(b3.parser.Parser):
         """
         Returns a list of client objects
         """
-        clients = self.clients.getList()
-        return clients
+        return self.clients.getList()
 
     def authorizeClients(self):
         """
@@ -784,7 +781,7 @@ class HomefrontParser(b3.parser.Parser):
         Broadcast a message to all players.
         :param text: The message to be sent.
         """
-        message = self.stripColors(prefixText([self.msgPrefix], text)).strip
+        message = self.stripColors(prefixText([self.msgPrefix], text)).strip()
         for line in self.getWrap(message):
             self.write(self.getCommand('say', message=line))
 
@@ -793,7 +790,7 @@ class HomefrontParser(b3.parser.Parser):
         Broadcast a message to all players in a way that will catch their attention.
         :param msg: The message to be sent.
         """
-        message = self.stripColors(prefixText([self.msgPrefix], msg)).strip
+        message = self.stripColors(prefixText([self.msgPrefix], msg)).strip()
         for line in self.getWrap(message):
             self.write(self.getCommand('saybig', message=line))
 
@@ -927,9 +924,7 @@ class HomefrontParser(b3.parser.Parser):
         else:
             self.write(self.getCommand('kick', playerid=client.cid))
             
-        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason, 
-                                                              'duration': duration, 
-                                                              'admin': admin}, client))
+        self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', {'reason': reason, 'duration': duration, 'admin': admin}, client))
         client.disconnect()
 
     def getMap(self):
