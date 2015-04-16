@@ -47,9 +47,10 @@
 # 2014-08-27 - 1.8   - Fenix     - syntax cleanup
 #                                - major fixes in B3 parser interface methods
 # 19/03/2015 - 1.8.1 - Fenix     - raise NotImplementedError instead of NotImplemented
+# 16/04/201  - 1.8.2 - Fenix     - uniform class variables (dict -> variable)
 
 __author__  = 'Courgette'
-__version__ = '1.8.1'
+__version__ = '1.8.2'
 
 
 import sys
@@ -94,11 +95,9 @@ class AbstractParser(b3.parser.Parser):
     # in order to get stripColors working
     _reColor = re.compile(r'(\^[0-9])') 
     
-    _settings = {
-        'line_length': 100,
-        'message_delay': 2,
-        'line_color_prefix': '',
-    }
+    _line_length = 100
+    _message_delay = 2
+    _line_color_prefix = ''
 
     _gameServerVars = () # list available cvars
 
@@ -278,7 +277,7 @@ class AbstractParser(b3.parser.Parser):
             message = self.stripColors(prefixText([self.msgPrefix], message)).strip()
             for line in self.getWrap(message):
                 self.write(self.getCommand('say', message=line))
-                time.sleep(self._settings['message_delay'])
+                time.sleep(self._message_delay)
 
     def joinPlayers(self):
         self.info('Joining players...')

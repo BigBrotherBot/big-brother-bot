@@ -75,7 +75,7 @@ class MessageType:
 
 class ChivParser(Parser):
     
-    ## parser code name to use in b3.xml
+    ## parser code name to use in b3.ini
     gameName = 'chiv'
     
     _client = None

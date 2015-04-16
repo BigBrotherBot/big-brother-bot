@@ -560,7 +560,7 @@ class Iourt41Parser(AbstractParser):
         player_id, info = string.split(info, ' ', 1)
 
         if info[:1] != '\\':
-            info = '\\' + info
+            info += '\\'
 
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
 

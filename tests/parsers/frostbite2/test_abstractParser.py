@@ -77,7 +77,7 @@ class Test_saybig(AbstractParser_TestCase):
                 </configuration>
             """)
         self.parser = ConcretegameParser(self.conf)
-        self.parser._settings['big_msg_duration'] = '3.1'
+        self.parser._big_msg_duration = '3.1'
 
         self.write_patcher = patch.object(AbstractParser, 'write')
         self.write_mock = self.write_patcher.start()
@@ -88,7 +88,7 @@ class Test_saybig(AbstractParser_TestCase):
 
     def test_saybig_big_msg_repeat_off(self):
         # GIVEN
-        self.parser._settings['big_msg_repeat'] = 'off'
+        self.parser._big_msg_repeat = 'off'
         # WHEN
         self.parser.saybig('test')
         # THEN
@@ -96,7 +96,7 @@ class Test_saybig(AbstractParser_TestCase):
 
     def test_saybig_big_msg_repeat_pm(self):
         # GIVEN
-        self.parser._settings['big_msg_repeat'] = 'pm'
+        self.parser._big_msg_repeat = 'pm'
         # WHEN
         self.parser.saybig('test')
         # THEN
@@ -104,7 +104,7 @@ class Test_saybig(AbstractParser_TestCase):
 
     def test_saybig_when_big_msg_repeat_all(self):
         # GIVEN
-        self.parser._settings['big_msg_repeat'] = 'all'
+        self.parser._big_msg_repeat = 'all'
         # WHEN
         self.parser.saybig('test')
         # THEN
@@ -121,7 +121,7 @@ class Test_message(AbstractParser_TestCase):
         self.conf.loadFromString(config_content)
         self.parser = ConcretegameParser(self.conf)
         self.parser.startup()
-        self.parser._settings['big_msg_duration'] = '3.1'
+        self.parser._big_msg_duration = '3.1'
 
         self.write_patcher = patch.object(AbstractParser, 'write')
         self.write_mock = self.write_patcher.start()
@@ -539,10 +539,10 @@ class Test_config(AbstractParser_TestCase):
 
 
     def assert_big_b3_private_responses(self, expected, config):
-        self.parser._settings['big_b3_private_responses'] = None
+        self.parser._big_b3_private_responses = None
         self.conf.loadFromString(config)
         self.parser.load_conf_big_b3_private_responses()
-        self.assertEqual(expected, self.parser._settings['big_b3_private_responses'])
+        self.assertEqual(expected, self.parser._big_b3_private_responses)
 
     def test_big_b3_private_responses_on(self):
         self.assert_big_b3_private_responses(True, """<configuration>
@@ -577,10 +577,10 @@ class Test_config(AbstractParser_TestCase):
 
 
     def assert_big_msg_duration(self, expected, config):
-        self.parser._settings['big_msg_duration'] = None
+        self.parser._big_msg_duration = None
         self.conf.loadFromString(config)
         self.parser.load_conf_big_msg_duration()
-        self.assertEqual(expected, self.parser._settings['big_msg_duration'])
+        self.assertEqual(expected, self.parser._big_msg_duration)
 
     def test_big_msg_duration(self):
         default_value = 4
@@ -621,11 +621,11 @@ class Test_config(AbstractParser_TestCase):
                 </configuration>""")
 
     def assert_big_msg_repeat(self, expected, config):
-        self.parser._settings['big_msg_repeat'] = None
+        self.parser._big_msg_repeat = None
         self.conf.loadFromString(config)
         self.parser.load_conf_big_b3_private_responses()
         self.parser.load_conf_big_msg_repeat()
-        self.assertEqual(expected, self.parser._settings['big_msg_repeat'])
+        self.assertEqual(expected, self.parser._big_msg_repeat)
 
     def test_big_msg_repeat(self):
         default_value = 'pm'
@@ -721,7 +721,7 @@ class Test_bf3_config_message_delay(AbstractParser_TestCase):
         self.conf.loadFromString("""<configuration/>""")
         self.parser = ConcretegameParser(self.conf)
 
-        self.MESSAGE_DELAY__DEFAULT = self.parser._settings['message_delay']
+        self.MESSAGE_DELAY__DEFAULT = self.parser._message_delay
         self.MESSAGE_DELAY__MIN = .5
         self.MESSAGE_DELAY__MAX = 3
 
@@ -737,7 +737,7 @@ class Test_bf3_config_message_delay(AbstractParser_TestCase):
             """ % (('<set name="message_delay">%s</set>' % conf_data) if conf_data is not None else ''))
         self.parser.load_config_message_delay()
         if expected:
-            self.assertEqual(expected, self.parser._settings['message_delay'])
+            self.assertEqual(expected, self.parser._message_delay)
 
 
     def test_message_delay__None(self):
@@ -1079,7 +1079,7 @@ class Test_patch_b3_client_yell(AbstractParser_TestCase):
                 </configuration>
             """)
         self.parser = ConcretegameParser(self.conf)
-        self.parser._settings['big_msg_duration'] = '3.1'
+        self.parser._big_msg_duration = '3.1'
         # setup context
         self.joe = self.parser.clients.newClient(cid='joe', name='joe', guid="bbbbbbbb5555555")
 

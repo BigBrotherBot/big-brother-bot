@@ -70,9 +70,11 @@
 # 03/08/2014 - 1.5      - Fenix          - syntax cleanup
 # 15/10/2014 - 1.5.1    - 82ndab.Bravo17 - show current minimum guid length if one that is too short is found
 # 19/03/2015 - 1.5.2    - Fenix          - removed deprecated usage of dict.has_key (us 'in dict' instead)
+# 16/04/2015 - 1.5.3    - Fenix          - uniform class variables (dict -> variable)
+#                                        - fixed some regression instroduced in 1.5
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.5.2'
+__version__ = '1.5.3'
 
 
 import b3
@@ -96,10 +98,8 @@ class CodParser(AbstractParser):
     _logSync = 3                                             # Value for unbuffered game logging (append mode)
     _counter = {}
 
-    _settings = {
-        'line_length': 65,
-        'line_color_prefix': '',
-    }
+    _line_length = 65,
+    _line_color_prefix = ''
 
     _commands = {
         'message': 'tell %(cid)s %(message)s',
@@ -281,7 +281,7 @@ class CodParser(AbstractParser):
             self.debug('Authentication method: Using IP instead of GUID!')
             # add the world client
 
-        client = self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
+        self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
 
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
             result = self.write('PB_SV_Ver')
@@ -386,9 +386,9 @@ class CodParser(AbstractParser):
 
         eventkey = 'EVT_CLIENT_DAMAGE'
         if attacker.cid == victim.cid:
-            event = 'EVT_CLIENT_DAMAGE_SELF'
+            eventkey = 'EVT_CLIENT_DAMAGE_SELF'
         elif attacker.team != b3.TEAM_UNKNOWN and attacker.team == victim.team:
-            event = 'EVT_CLIENT_DAMAGE_TEAM'
+            eventkey = 'EVT_CLIENT_DAMAGE_TEAM'
 
         data = (float(match.group('damage')), match.group('aweap'), match.group('dlocation'), match.group('dtype'))
         return self.getEvent(eventkey, data=data, client=attacker, target=victim)
@@ -541,7 +541,7 @@ class CodParser(AbstractParser):
                 self.warning('ERROR: decoding data: %r', msg)
 
         client.name = match.group('name')
-        return self.getEvent('EVT_CLIENT_PRIVATE_SAY', data=data, client=client, target=client)
+        return self.getEvent('EVT_CLIENT_PRIVATE_SAY', data=data, client=client, target=tclient)
 
     def OnInitgame(self, action, data, match=None):
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', data)

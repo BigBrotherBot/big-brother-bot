@@ -1121,7 +1121,6 @@ class Bf4Parser(AbstractParser):
             """
             Queries the type of player from the server.
             """
-            _player_type = 0
             _player_name = self.name
             try:
                 _player_info_block = PlayerInfoBlock(self.console.write(('admin.listPlayers', 'player', _player_name)))

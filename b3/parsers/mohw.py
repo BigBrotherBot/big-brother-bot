@@ -20,7 +20,8 @@
 #
 # 2014/07/18 - 0.2 - Fenix - updated parser to comply with the new get_wrap implementation
 # 2014/08/06 - 0.3 - Fenix - make use of self.getEvent when creating events
-# 2014/09/02 - 0.4 - Fenix - syntax clenaup
+# 2014/09/02 - 0.4 - Fenix - syntax cleanup
+# 2015/04/16 - 0.5 - Fenix - uniform class variables (dict -> variable)
 
 
 import b3
@@ -34,7 +35,7 @@ from b3.parsers.frostbite2.util import PlayerInfoBlock
 from b3.parsers.frostbite2.util import MapListBlockError
 
 __author__  = 'Freelander'
-__version__ = '0.3'
+__version__ = '0.5'
 
 MOHW_REQUIRED_VERSION = 323174
 
@@ -290,7 +291,7 @@ class MohwParser(AbstractParser):
             elif client.cid is None:
                 pass
             else:
-                cmd_name = 'bigmessage' if self._settings['big_b3_private_responses'] else 'message'
+                cmd_name = 'bigmessage' if self._big_b3_private_responses else 'message'
                 self.write(self.getCommand(cmd_name, message=text, teamId=client.teamId))
         except Exception, err:
             self.warning(err)

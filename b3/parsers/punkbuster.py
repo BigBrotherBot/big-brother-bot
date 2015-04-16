@@ -36,6 +36,7 @@ import re
 
 
 class PunkBuster(object):
+
     console = None
 
     # : Player List: [Slot #] [GUID] [Address] [Status] [Power] [Auth Rate] [Recent SS] [O/S] [Name]

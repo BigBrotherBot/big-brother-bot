@@ -41,9 +41,10 @@
 # 2014-07-17 - 1.4   - Fenix     - updated abstract parser to comply with the new get_wrap implementation
 #                                - updated rcon command patterns
 # 2014-08-11 - 1.5   - Fenix     - syntax cleanup
+# 2015-04-16 - 1.6 - Fenix     - uniform class variables (dict -> variable)
 
 __author__ = 'xlr8or, Courgette'
-__version__ = '1.5'
+__version__ = '1.6'
 
 import b3
 import b3.events
@@ -98,10 +99,8 @@ class Wop15Parser(AbstractParser):
 
     gameName = 'wop15'
 
-    _settings = {
-        'line_length': 65,
-        'line_color_prefix': '',
-    }
+    _line_length = 65
+    _line_color_prefix = ''
 
     _commands = {
         'message': 'stell %(cid)s "%(message)s"',

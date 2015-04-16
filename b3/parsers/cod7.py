@@ -396,9 +396,9 @@ class Cod7Parser(b3.parsers.cod5.Cod5Parser):
 
 
 ########################################################################################################################
-##                                                                                                                    ##
-##  ALTER THE WAY THE PARSER WORKS FOR GAME LOGS STARTING WITH HTTP://                                                ##
-##                                                                                                                    ##
+#                                                                                                                      #
+#   ALTER THE WAY THE PARSER WORKS FOR GAME LOGS STARTING WITH HTTP://                                                 #
+#                                                                                                                      #
 ########################################################################################################################
 
 from b3.parser import Parser

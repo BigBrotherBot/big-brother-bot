@@ -192,13 +192,12 @@ class AltitudeParser(Parser):
             vaporId = None
 
         client = self.newClient(altitude_event['player'], guid=vaporId, 
-                               name=altitude_event['nickname'], team=b3.TEAM_UNKNOWN, 
-                               ip=altitude_event['ip'].split(':')[0])
+                                name=altitude_event['nickname'], team=b3.TEAM_UNKNOWN,
+                                ip=altitude_event['ip'].split(':')[0])
         client.data = {
             'level': altitude_event['level'],
             'aceRank': altitude_event['aceRank']
         }
-
 
     def OnAltitudeClientRemove(self, altitude_event):
         """

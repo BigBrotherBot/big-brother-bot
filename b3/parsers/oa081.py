@@ -65,9 +65,10 @@
 #                                 - make use of self.getEvent() when creating events instead of referencing dynamically
 #                                   created attributes (does nothing new but removes several warnings)
 # 29/08/2014 - 0.13   - Fenix     - syntax cleanup
+# 16/04/2015 - 0.14   - Fenix     - uniform class variables (dict -> variable)
 
 __author__ = 'Courgette, GrosBedo'
-__version__ = '0.13'
+__version__ = '0.14'
 
 import b3
 import b3.clients
@@ -87,11 +88,8 @@ class Oa081Parser(AbstractParser):
     _empty_name_default = 'EmptyNameDefault'
     _maplist = None
 
-
-    _settings = {
-        'line_length': 65,
-        'line_color_prefix': '',
-    }
+    _line_length = 65
+    _line_color_prefix = ''
 
     _commands = {
         'message': 'say %(message)s',
@@ -363,7 +361,7 @@ class Oa081Parser(AbstractParser):
         """
         player_id, info = string.split(info, ' ', 1)
         if info[:1] != '\\':
-            info = '\\' + info
+            info += '\\'
 
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
         data = dict()

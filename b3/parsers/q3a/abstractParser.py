@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/04/16 - 1.8.1 - Fenix          - uniform class variables (dict -> variable)
 # 2014/08/02 - 1.8   - Fenix          - syntax cleanup
 #                                     - reformat changelog
 #                                     - added missing documentation to Parser methods
@@ -64,7 +65,7 @@
 # 23/07/2005 - 1.0.1 - ThorN          - added log message for when ban() decides to do a tempban
 
 __author__ = 'ThorN, xlr8or'
-__version__ = '1.8'
+__version__ = '1.8.1'
 
 
 import re
@@ -94,11 +95,6 @@ class AbstractParser(b3.parser.Parser):
     PunkBuster = None
 
     _clientConnectID = None
-
-    _settings = {
-        'line_length': 80,
-        'line_color_prefix': '',
-    }
 
     _commands = {
         'ban': 'banid %(cid)s %(reason)s',

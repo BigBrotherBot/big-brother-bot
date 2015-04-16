@@ -47,9 +47,10 @@
 #                                - make use of self.getEvent() when producing events
 #                                - fixed current mapname retrieval
 # 19/03/2015 - 0.9.5 - Fenix     - removed deprecated usage of dict.has_key (us 'in dict' instead)
+# 16/04/2015 - 0.9.6 - Fenix     - uniform class variables (dict -> variable)
 
 __author__ = 'xlr8or, Courgette'
-__version__ = '0.9.5'
+__version__ = '0.9.6'
 
 import re
 import string
@@ -69,10 +70,8 @@ class Smg11Parser(AbstractParser):
     _connectingSlots = []
     _maplist = None
     
-    _settings = {
-        'line_length': 65,
-        'line_color_prefix': '',
-    }
+    _line_length = 65
+    _line_color_prefix = ''
 
     _commands = {
         'message': 'tell %(cid)s %(message)s',
@@ -279,7 +278,7 @@ class Smg11Parser(AbstractParser):
         player_id, info = string.split(info, ' ', 1)
 
         if info[:1] != '\\':
-            info = '\\' + info
+            info += '\\'
 
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
 

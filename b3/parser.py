@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/04/16 - 1.42.6 - Fenix           - uniform class variables (dict -> variable)
 # 2015/04/14 - 1.42.5 - Fenix           - print more verbose information in log file when a plugin fails in being loaded
 #                                       - simplify exception logging on plugin configuration load and plugin startup
 # 2015/03/21 - 1.42.4 - Fenix           - added support for the new plugin attribute 'requiresParsers'
@@ -177,7 +178,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.42.5'
+__version__ = '1.42.6'
 
 
 import os
@@ -291,14 +292,12 @@ class Parser(object):
     # default outputclass set to the q3a rcon class
     OutputClass = b3.parsers.q3a.rcon.Rcon
 
+    # in-game message related variables
+    _line_color_prefix = ''
+    _line_length = 80
+    _message_delay = 0
     _use_color_codes = True
 
-    _settings = {
-        'line_length': 80,
-        'line_color_prefix': '',
-        'message_delay': 0
-    }
-    
     _eventsStats_cronTab = None
     _reColor = re.compile(r'\^[0-9a-z]')
     _cron = None
@@ -553,7 +552,17 @@ class Parser(object):
             custom_socket_timeout = self.config.getfloat('server', 'rcon_timeout')
             self.output.socket_timeout = custom_socket_timeout
             self.bot('Setting rcon socket timeout to: %0.3f sec' % custom_socket_timeout)
-        
+
+        # allow configurable max line length
+        if self.config.has_option('server', 'max_line_length'):
+            self._line_length = self.config.getint('server', 'max_line_length')
+            self.bot('Setting line_length to: %s' % self._line_length)
+
+        # allow configurable line color prefix
+        if self.config.has_option('server', 'line_color_prefix'):
+            self._line_color_prefix = self.config.get('server', 'line_color_prefix')
+            self.bot('Setting line_color_prefix to: "%s"' % self._line_color_prefix)
+
         # testing rcon
         if self.rconTest:
             res = self.output.write('status')
@@ -582,26 +591,16 @@ class Parser(object):
         self.loadPlugins()
         self.loadArbPlugins()
 
-        # allow configurable max line length
-        if self.config.has_option('server', 'max_line_length'):
-            self._settings['line_length'] = self.config.getint('server', 'max_line_length')
-
-        # allow configurable line color prefix
-        if self.config.has_option('server', 'line_color_prefix'):
-            self._settings['line_color_prefix'] = self.config.get('server', 'line_color_prefix')
-
-        self.bot('Setting line_length to: %s' % self._settings['line_length'])
-        self.bot('Setting line_color_prefix to: "%s"' % self._settings['line_color_prefix'])
-
         self.game = b3.game.Game(self, self.gameName)
-        
+
         try:
             queuesize = self.config.getint('b3', 'event_queue_size')
         except NoOptionError:
             queuesize = 50
-        except Exception, err:
-            self.warning(err)
+        except ValueError, err:
             queuesize = 50
+            self.warning(err)
+
         self.debug("Creating the event queue with size %s", queuesize)
         self.queue = Queue.Queue(queuesize)    # event queue
 
@@ -1548,13 +1547,13 @@ class Parser(object):
 
         if not self.wrapper:
             # initialize the text wrapper if not already instantiated
-            self.wrapper = TextWrapper(width=self._settings['line_length'], drop_whitespace=True,
+            self.wrapper = TextWrapper(width=self._line_length, drop_whitespace=True,
                                        break_long_words=True, break_on_hyphens=False)
 
         wrapped_text = self.wrapper.wrap(text)
         if self._use_color_codes:
             lines = []
-            color = self._settings['line_color_prefix']
+            color = self._line_color_prefix
             for line in wrapped_text:
                 if not lines:
                     lines.append('%s%s' % (color, line))

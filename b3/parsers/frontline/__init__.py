@@ -25,6 +25,7 @@
 # 2014-08-12 - 0.4.5 - Fenix         - make use of the GameEventRouter decorator
 # 2014-08-29 - 0.4.6 - Fenix         - syntax cleanup
 # 2015/02/07 - 0.4.7 - Thomas LEVEIL - correctly initialize Server client
+# 2015/04/16 - 0.4.8 - Fenix         - uniform class variables (dict -> variable)
 
 import asyncore
 import b3
@@ -44,7 +45,7 @@ from b3.parser import Parser
 from ConfigParser import NoOptionError
 
 __author__ = 'Courgette'
-__version__ = '0.4.7'
+__version__ = '0.4.8'
 
 ger = GameEventRouter()
 
@@ -72,10 +73,8 @@ class FrontlineParser(b3.parser.Parser):
     _nbConsecutiveConnFailure = 0
     _server_banlist = {}
 
-    _settings = {
-        'line_length': 200,
-        'line_color_prefix': '',
-    }
+    _line_length = 200
+    _line_color_prefix = ''
 
     ####################################################################################################################
     #                                                                                                                  #

@@ -57,6 +57,7 @@
 # 01/09/2014 - 1.3.1  - add color code options for new getWrap method
 # 12/07/2014 = 1.3.2  - add 'Unknown' chat type for some radios
 #                     - correct capitalization in _use_color_codes
+# 16704/2015 - 1.3.3  - uniform class variables (dict -> variable)
 
 import b3.cron
 import b3.cvar
@@ -81,7 +82,7 @@ from b3.clients import Clients
 from logging import Formatter
 
 __author__  = '82ndab-Bravo17, Courgette'
-__version__ = '1.3.2'
+__version__ = '1.3.3'
 
 
 # disable the authorizing timer that come by default with the b3.clients.Clients class
@@ -117,13 +118,11 @@ class AbstractParser(b3.parser.Parser):
     _reColor = re.compile(r'(\^[0-9])')
     _reSafename = re.compile(r"('|\\)")
 
-    _settings = {
-        'line_length': 128,
-        'line_color_prefix': '',
-        'message_delay': .8,
-    }
-
+    _line_length = 128
+    _line_color_prefix = ''
+    _message_delay = .8
     _use_color_codes = False
+
     # list available cvar
     _gameServerVars = ()
 
@@ -351,12 +350,12 @@ class AbstractParser(b3.parser.Parser):
 
     def load_conf_max_say_line_length(self):
         # Fenix: changed to use the new line_length configuration in the Parser module
-        if self._settings['line_length'] > self.SAY_LINE_MAX_LENGTH:
+        if self._line_length > self.SAY_LINE_MAX_LENGTH:
             self.warning('line_length cannot be greater than %s' % self.SAY_LINE_MAX_LENGTH)
-            self._settings['line_length'] = self.SAY_LINE_MAX_LENGTH
-        if self._settings['line_length'] < 20:
+            self._line_length = self.SAY_LINE_MAX_LENGTH
+        if self._line_length < 20:
             self.warning('line_length is way too short: using minimum value 20')
-            self._settings['line_length'] = 20
+            self._line_length = 20
 
     def load_config_message_delay(self):
         if self.config.has_option(self.gameName, 'message_delay'):
@@ -368,11 +367,11 @@ class AbstractParser(b3.parser.Parser):
                 if delay_sec < .5:
                     self.warning('message_delay cannot be less than 0.5 second.')
                     delay_sec = .5
-                self._settings['message_delay'] = delay_sec
+                self._message_delay = delay_sec
             except Exception, err:
                 self.error('failed to read message_delay setting "%s" : %s' %
                            (self.config.get(self.gameName, 'message_delay'), err))
-        self.debug('message_delay: %s' % self._settings['message_delay'])
+        self.debug('message_delay: %s' % self._message_delay)
 
     def load_protocol_logging(self):
         if self.config.has_option('b3', 'protocol_log'):
@@ -727,7 +726,7 @@ class AbstractParser(b3.parser.Parser):
     def _say(self, msg):
         for line in self.getWrap(self.stripColors(prefixText([self.msgPrefix], msg))):
             self.write(self.getCommand('say', message=line))
-            time.sleep(self._settings['message_delay'])
+            time.sleep(self._message_delay)
 
     def write(self, msg, *args, **kwargs):
         """

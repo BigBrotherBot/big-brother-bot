@@ -79,6 +79,7 @@
 #                                         "Became_VIP", "Killed_A_Hostage"
 # 2015-02-05 - 1.7.7 - Fenix            - correctly initialize Server client
 # 2015-02-05 - 1.7.8 - Thomaxius        - Recognize Spectator team correctly
+# 2015-04-16 - 1.7.9 - Fenix            - uniform class variables (dict -> variable)
 
 import re
 import time
@@ -98,7 +99,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '1.7.8'
+__version__ = '1.7.9'
 
 
 # GAME SETUP
@@ -171,12 +172,10 @@ class CsgoParser(Parser):
     # in order to get stripColors working
     _reColor = re.compile(r'(\^[0-9])')
 
-    _settings = {
-        'line_length': 200,
-        'line_color_prefix': '',
-    }
+    _line_length = 200
+    _line_color_prefix = ''
+    _use_color_codes = False
 
-    _use_color_codes= False
     ####################################################################################################################
     #                                                                                                                  #
     #   PARSER INITIALIZATION                                                                                          #

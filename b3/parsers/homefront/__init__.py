@@ -940,7 +940,6 @@ class HomefrontParser(b3.parser.Parser):
         """
         Return the name of the next map
         """
-        nextmap=''
         self.getMaps()
         no_maps = len(self.maplist)
         currentmap = self.getMap()
@@ -952,7 +951,6 @@ class HomefrontParser(b3.parser.Parser):
                 nextmap =self.mapgamelist[0]
         else:
             nextmap = 'Unknown'
-        
         return nextmap
         
     def getMaps(self):

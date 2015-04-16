@@ -49,6 +49,7 @@
 #                   - fixed undefined reference in handle_chat()
 # 2015-03-19 - 1.46 - removed deprecated usage of dict.has_key (us 'in dict' instead)
 #                   - removed several unused variables
+# 2015-04-16 - 1.47 - uniform class variables (dict -> variable)
 
 import b3
 import b3.cron
@@ -69,14 +70,14 @@ from b3.parser import Parser
 from ftplib import FTP
 
 __author__ = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
-__version__ = '1.46'
+__version__ = '1.47'
 
 
 class Ro2Parser(b3.parser.Parser):
     """
     The Red Orchestra 2 B3 parser class.
     """
-    gameName = "redorchestra2"
+    gameName = 'ro2'
     privateMsg = True
     PunkBuster = None 
     ftpconfig = None
@@ -111,6 +112,9 @@ class Ro2Parser(b3.parser.Parser):
     map_cycle_no = 0
     active_map_cycle = 0
 
+    _line_length = 90
+    _line_color_prefix = ''
+
     _gametypes = {
         "TE": "ROGame.ROGameInfoTerritories",
         "CD": "ROGame.ROGameInfoCountdown",
@@ -131,11 +135,6 @@ class Ro2Parser(b3.parser.Parser):
         'kick': 'adminkick+%(playerid)s',
         'ban': 'adminkickban+%(playerid)s',
         'tempban': 'adminkick+%(playerid)s',
-    }
-    
-    _settings = {
-        'line_length': 90,
-        'line_color_prefix': '',
     }
 
     ####################################################################################################################
@@ -694,7 +693,7 @@ class Ro2Parser(b3.parser.Parser):
         clients = self.clients.getList()
         return clients
 
-    def write(self, msg, maxRetries=None):
+    def write(self, msg, maxRetries=None, socketTimeout=None):
         """
         Write a message to Console via Ajax.
         """

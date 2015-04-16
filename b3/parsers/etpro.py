@@ -301,7 +301,7 @@ class EtproParser(AbstractParser):
         """
         player_id, info = string.split(info, ' ', 1)
         if info[:1] != '\\':
-            info = '\\' + info
+            info += '\\'
 
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
 
@@ -389,8 +389,8 @@ class EtproParser(AbstractParser):
                 if nguid != '':
                     guid = nguid
 
-                client = self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'],
-                                                state=b3.STATE_ALIVE, guid=guid, data={'guid': guid})
+                self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'],
+                                       state=b3.STATE_ALIVE, guid=guid, data={'guid': guid})
 
         return None
 

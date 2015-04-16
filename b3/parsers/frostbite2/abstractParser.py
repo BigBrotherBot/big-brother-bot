@@ -18,42 +18,43 @@
 #
 # CHANGELOG
 #
-# 1.0   - update parser for BF3 R20
-# 1.1   - add event EVT_GAMESERVER_CONNECT which is triggered every time B3 connects to the game server
-# 1.1.1 - fix and refactor admin.yell
-# 1.2   - introduce new setting 'big_b3_private_responses'
-# 1.3   - introduce new setting 'big_msg_duration'
-#       - refactor the code that reads the config file
-# 1.4   - commands can now start with just the '/' character if the user wants to hide the command from
-#         other players instead of having to type '/!'
-# 1.4.1 - add a space between the bot name and the message in saybig()
-# 1.4.2 - fixes bug regarding round count on round change events
-# 1.4.3 - 1.4.5 - improves handling of commands prefixed only with '/' instead of usual command prefixes. Leading '/'
-#         is removed if followed by an existing command name or if followed by a command prefix.
-# 1.5   - parser can now create EVT_CLIENT_TEAM_SAY events (requires BF3 server R21)
-# 1.5.1 - fixes issue with BF3 failing to provide EA_GUID https://github.com/courgette/big-brother-bot/issues/69
-# 1.5.2 - fixes issue that made B3 fail to ban/tempban a client with empty guid
-# 1.6   - replace admin plugin !map command with a Frostbite2 specific implementation. Now can
-#         call !map <map>, <gamemode>
-#       - refactor get_maps_sounding_like
-#       - add get_gamemode_sounding_like
-# 1.7   - replace admin plugin !map command with a Frostbite2 specific implementation. Now can call
-#         !map <map>[, <gamemode>[, <num of rounds>]] when returning map info, provide : map name (gamemode) # rounds
-# 1.8   - isolate the patching code in a module function
-# 1.8.1 - improve punkbuster event parsing
-# 1.9   - fix never ending thread sayqueuelistener_worker (would make B3 process hang on keyboard interrupt)
-# 1.10  - fix bug in code patching the admin plugin cmd_map function that would break the command if a map
-#         was loaded for an incompatible gamemode
-# 1.11  - rewrote import statements
-#       - replaced variable names using python built-in names
-# 1.12  - added admin key in EVT_CLIENT_KICK data dict when available
-# 1.13  - updated abstract parser to comply with the new get_wrap implementation
-# 1.14  - syntax cleanup
-#       - reformat changelog
-# 1.14.1 - Add color code options for new getWrap method
+# 1.0    - update parser for BF3 R20
+# 1.1    - add event EVT_GAMESERVER_CONNECT which is triggered every time B3 connects to the game server
+# 1.1.1  - fix and refactor admin.yell
+# 1.2    - introduce new setting 'big_b3_private_responses'
+# 1.3    - introduce new setting 'big_msg_duration'
+#        - refactor the code that reads the config file
+# 1.4    - commands can now start with just the '/' character if the user wants to hide the command from
+#          other players instead of having to type '/!'
+# 1.4.1  - add a space between the bot name and the message in saybig()
+# 1.4.2  - fixes bug regarding round count on round change events
+# 1.4.3  - 1.4.5 - improves handling of commands prefixed only with '/' instead of usual command prefixes. Leading '/'
+#          is removed if followed by an existing command name or if followed by a command prefix.
+# 1.5    - parser can now create EVT_CLIENT_TEAM_SAY events (requires BF3 server R21)
+# 1.5.1  - fixes issue with BF3 failing to provide EA_GUID https://github.com/courgette/big-brother-bot/issues/69
+# 1.5.2  - fixes issue that made B3 fail to ban/tempban a client with empty guid
+# 1.6    - replace admin plugin !map command with a Frostbite2 specific implementation. Now can
+#          call !map <map>, <gamemode>
+#        - refactor get_maps_sounding_like
+#        - add get_gamemode_sounding_like
+# 1.7    - replace admin plugin !map command with a Frostbite2 specific implementation. Now can call
+#          !map <map>[, <gamemode>[, <num of rounds>]] when returning map info, provide : map name (gamemode) # rounds
+# 1.8    - isolate the patching code in a module function
+# 1.8.1  - improve punkbuster event parsing
+# 1.9    - fix never ending thread sayqueuelistener_worker (would make B3 process hang on keyboard interrupt)
+# 1.10   - fix bug in code patching the admin plugin cmd_map function that would break the command if a map
+#          was loaded for an incompatible gamemode
+# 1.11   - rewrote import statements
+#        - replaced variable names using python built-in names
+# 1.12   - added admin key in EVT_CLIENT_KICK data dict when available
+# 1.13   - updated abstract parser to comply with the new get_wrap implementation
+# 1.14   - syntax cleanup
+#        - reformat changelog
+# 1.14.1 - add color code options for new getWrap method
+# 1.14.2 - uniform class variables (dict -> variable)
 
 __author__ = 'Courgette'
-__version__ = '1.14.1'
+__version__ = '1.14.2'
 
 
 import re
@@ -109,14 +110,12 @@ class AbstractParser(b3.parser.Parser):
     # need this property in order to get stripColors working
     _reColor = re.compile(r'(\^[0-9])')
 
-    _settings = {
-        'line_length': 128,
-        'line_color_prefix': '',
-        'message_delay': .8,
-        'big_msg_duration': 4,
-        'big_b3_private_responses': False,
-        'big_msg_repeat': 'off',
-    }
+    _line_length = 128
+    _line_color_prefix = ''
+    _message_delay = .8
+    _big_msg_duration = 4
+    _big_b3_private_responses = False
+    _big_msg_repeat = 'off'
 
     _use_color_codes = False
     _gameServerVars = () # list available cvar
@@ -423,7 +422,7 @@ class AbstractParser(b3.parser.Parser):
                 for line in self.getWrap(self.stripColors(prefixText([self.msgPrefix], msg))):
                     self.write(self.getCommand('say', message=line))
                     if self.working:
-                        time.sleep(self._settings['message_delay'])
+                        time.sleep(self._message_delay)
                 self.sayqueue.task_done()
             except Queue.Empty:
                 #self.verbose2("sayqueuelistener: had nothing to do in the last %s sec" % self.sayqueue_get_timeout)
@@ -916,9 +915,9 @@ class AbstractParser(b3.parser.Parser):
             text = self.stripColors(prefixText([self.msgPrefix], msg))
             for line in self.getWrap(text):
                 self.write(self.getCommand('yell', message=line,
-                                           big_msg_duration=int(float(self._settings['big_msg_duration']))))
+                                           big_msg_duration=int(float(self._big_msg_duration))))
 
-        if self._settings['big_msg_repeat'] == 'all':
+        if self._big_msg_repeat == 'all':
             self.write(self.getCommand('say', message=msg))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
@@ -964,10 +963,10 @@ class AbstractParser(b3.parser.Parser):
             elif client.cid is None:
                 pass
             else:
-                cmd_name = 'bigmessage' if self._settings['big_b3_private_responses'] else 'message'
+                cmd_name = 'bigmessage' if self._big_b3_private_responses else 'message'
                 self.write(self.getCommand(cmd_name, message=text, cid=client.cid,
-                                           big_msg_duration=int(float(self._settings['big_msg_duration']))))
-                if self._settings['big_msg_repeat'] in ('all', 'pm'):
+                                           big_msg_duration=int(float(self._big_msg_duration))))
+                if self._big_msg_repeat in ('all', 'pm'):
                     self.write(self.getCommand('message', message=text, cid=client.cid))
         except Exception, err:
             self.warning(err)
@@ -1051,7 +1050,7 @@ class AbstractParser(b3.parser.Parser):
         self.debug('UNBAN: name: %s - ip: %s - guid: %s' %(client.name, client.ip, client.guid))
         if client.ip:
             try:
-                response = self.write(self.getCommand('unbanByIp', ip=client.ip, reason=reason), needConfirmation=True)
+                self.write(self.getCommand('unbanByIp', ip=client.ip, reason=reason), needConfirmation=True)
                 self.write(('banList.save',))
                 #self.verbose(response)
                 self.verbose('UNBAN: removed ip (%s) from banlist' %client.ip)
@@ -1246,6 +1245,7 @@ class AbstractParser(b3.parser.Parser):
                 if len(maps_for_current_gamemode):
                     nextMapListIndex = maps_for_current_gamemode.keys()[0]
 
+            # FIXME: some logic here is wrong (Fenix)
             # or it could be in map rotation list for another gamemode
             if nextMapListIndex is None:
                 filtered_mapList = mapList.getByName(map_id)
@@ -1310,7 +1310,7 @@ class AbstractParser(b3.parser.Parser):
                 pass
             else:
                 self.write(self.getCommand('bigmessage', message=text, cid=client.cid,
-                                           big_msg_duration=int(float(self._settings['big_msg_duration']))))
+                                           big_msg_duration=int(float(self._big_msg_duration))))
         except Exception, err:
             self.warning(err)
 
@@ -1553,14 +1553,14 @@ class AbstractParser(b3.parser.Parser):
         default_value = False
         if self.config.has_option(self.gameName, 'big_b3_private_responses'):
             try:
-                self._settings['big_b3_private_responses'] = self.config.getboolean(self.gameName, 'big_b3_private_responses')
+                self._big_b3_private_responses = self.config.getboolean(self.gameName, 'big_b3_private_responses')
                 self.info("value for setting %s.big_b3_private_responses is " % self.gameName + (
-                    'ON' if self._settings['big_b3_private_responses'] else 'OFF'))
+                    'ON' if self._big_b3_private_responses else 'OFF'))
             except ValueError, err:
-                self._settings['big_b3_private_responses'] = default_value
+                self._big_b3_private_responses = default_value
                 self.warning("Invalid value: %s: using default value '%s'" % (err, default_value))
         else:
-            self._settings['big_b3_private_responses'] = default_value
+            self._big_b3_private_responses = default_value
 
     def load_conf_big_msg_duration(self):
         """
@@ -1569,13 +1569,13 @@ class AbstractParser(b3.parser.Parser):
         default_value = 4
         if self.config.has_option(self.gameName, 'big_msg_duration'):
             try:
-                self._settings['big_msg_duration'] = self.config.getint(self.gameName, 'big_msg_duration')
-                self.info("value for setting %s.big_msg_duration is %s" % (self.gameName, self._settings['big_msg_duration']))
+                self._big_msg_duration = self.config.getint(self.gameName, 'big_msg_duration')
+                self.info("value for setting %s.big_msg_duration is %s" % (self.gameName, self._big_msg_duration))
             except ValueError, err:
-                self._settings['big_msg_duration'] = default_value
+                self._big_msg_duration = default_value
                 self.warning("Invalid value: %s: using default value '%s'" % (err, default_value))
         else:
-            self._settings['big_msg_duration'] = default_value
+            self._big_msg_duration = default_value
 
     def load_config_message_delay(self):
         """
@@ -1590,18 +1590,17 @@ class AbstractParser(b3.parser.Parser):
                 if delay_sec < .5:
                     self.warning('message_delay cannot be less than 0.5 second.')
                     delay_sec = .5
-                self._settings['message_delay'] = delay_sec
-            except Exception, err:
-                self.error('Failed to read message_delay setting "%s" : '
-                           '%s' % (self.config.get(self.gameName, 'message_delay'), err))
+                self._message_delay = delay_sec
+            except Exception, e:
+                self.error('Failed to read message_delay setting "%s" : %s' % (self.config.get(self.gameName, 'message_delay'), e))
 
-        self.debug('message_delay: %s' % self._settings['message_delay'])
+        self.debug('message_delay: %s' % self._message_delay)
 
     def load_conf_big_msg_repeat(self):
         """
-        Load big_msg_repeat from config into self._settings['big_msg_repeat']
+        Load big_msg_repeat from config into self._big_msg_repeat
 
-        Configure with _settings['big_msg_repeat'] repetition of big displayed messages.
+        Configure with _big_msg_repeat repetition of big displayed messages.
         This is useful if you want to ensure that bigtext messages are seen by the client.
         The Frostbite2 engine display bigtext messages only when the player is spawned.
         Unless otherwise configured, B3 uses the value 'pm' as default to ensure that
@@ -1631,8 +1630,8 @@ class AbstractParser(b3.parser.Parser):
                 # We give an error message and use the default value.
                 self.error('Failed to read big_msg_repeat setting: use default: %s' % err)
 
-        # if _settings['big_b3_private_responses']:set self._settings['big_msg_repeat'] from config or use default
-        self._settings['big_msg_repeat'] = _default_value if self._settings['big_b3_private_responses'] else 'off'
+        # if _big_b3_private_responses:set self._big_msg_repeat from config or use default
+        self._big_msg_repeat = _default_value if self._big_b3_private_responses else 'off'
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -1830,7 +1829,7 @@ def patch_b3_clients():
             text = self.console.stripColors(self.console.msgPrefix + ' [pm] ' + msg)
             for line in self.console.getWrap(text):
                 self.console.write(self.console.getCommand('bigmessage', message=line, cid=self.cid,
-                                                           big_msg_duration=int(float(self.console._settings['big_msg_duration']))))
+                                                           big_msg_duration=int(float(self.console._big_msg_duration))))
 
     b3.clients.Client.messagequeueworker = frostbiteClientMessageQueueWorker
     b3.clients.Client.message = frostbiteClientMessageMethod

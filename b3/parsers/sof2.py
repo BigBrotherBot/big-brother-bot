@@ -24,9 +24,10 @@
 #                          - use the correct number of parameters while calling query_client_userinfo_by_name
 # 18/07/2014 - 1.3 - Fenix - updated abstract parser to comply with the new get_wrap implementation
 # 11/08/2014 - 1.4 - Fenix - syntax cleanup
+# 16/04/2015 - 1.5 - Fenix - uniform class variables (dict -> variable)
 
 __author__ = 'xlr8or, ~cGs*Pr3z, ~cGs*AQUARIUS'
-__version__ = '1.3'
+__version__ = '1.5'
 
 import b3
 import b3.events
@@ -51,10 +52,8 @@ class Sof2Parser(AbstractParser):
     _clientConnectIp = None
     _empty_name_default = 'EmptyNameDefault'
 
-    _settings = {
-        'line_length': 65,
-        'line_color_prefix': '',
-    }
+    _line_length = 65
+    _line_color_prefix = ''
 
     _commands = {
         'ban': 'addip %(cid)s',

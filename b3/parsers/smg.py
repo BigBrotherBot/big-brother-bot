@@ -31,9 +31,10 @@
 # 30/07/2014 - 0.1.6 - Fenix     - fixes for the new getWrap implementation
 # 11/08/2014 - 0.1.7 - Fenix     - syntax cleanup
 #                                - make use of self.getEvent() when producing events
+# 16/04/2015 - 0.1.8 - Fenix     - uniform class variables (dict -> variable)
 
 __author__ = 'xlr8or, Courgette'
-__version__ = '0.1.7'
+__version__ = '0.1.8'
 
 import b3
 import b3.events
@@ -58,10 +59,8 @@ class SmgParser(AbstractParser):
     _clientConnectGuid = None
     _clientConnectIp = None
 
-    _settings = {
-        'line_length': 65,
-        'line_color_prefix': '',
-    }
+    _line_length = 65
+    _line_color_prefix = ''
 
     _commands = {
         'message': '%(cid)s %(message)s',
@@ -246,7 +245,7 @@ class SmgParser(AbstractParser):
         """
         player_id, info = string.split(info, ' ', 1)
         if info[:1] != '\\':
-            info = '\\' + info
+            info += '\\'
 
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
 

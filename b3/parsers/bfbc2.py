@@ -126,6 +126,7 @@
 # 2014-08-06 - 2.7    - Fenix     - make use of self.getEvent() when creating events
 #                                 - fixed get_team not being called in plugin_started()
 # 2014-08-27 - 2.8    - Fenix     - syntax cleanup
+# 2015-04-16 - 2.8.1  - Fenix     - uniform class variables (dict -> variable)
 #
 # ============================ B3 EVENTS AVAILABLE TO PLUGIN DEVELOPERS USING THIS PARSER =============================
 #
@@ -160,7 +161,7 @@
 # EVT_CLIENT_DISCONNECT
 
 __author__  = 'Courgette, SpacepiG, Bakes'
-__version__ = '2.8'
+__version__ = '2.8.1'
 
 import time
 import threading
@@ -279,7 +280,7 @@ class Bfbc2Parser(AbstractParser):
             msg = self.saybigqueue.get()
             for line in self.getWrap(self.stripColors(prefixText([self.msgPrefix], msg))):
                 self.write(self.getCommand('saybig', message=line, duration=2400))
-                time.sleep(self._settings['message_delay'])
+                time.sleep(self._message_delay)
 
     def checkVersion(self):
         version = self.output.write('version')
@@ -632,9 +633,9 @@ class Bfbc2Parser(AbstractParser):
             self.write(('admin.runNextLevel', ))
 
 ########################################################################################################################
-##                                                                                                                    ##
-##  APPLY SPECIFIC PARSER PATCHES TO B3 CORE MODULES                                                                  ##
-##                                                                                                                    ##
+#                                                                                                                      #
+#   APPLY SPECIFIC PARSER PATCHES TO B3 CORE MODULES                                                                   #
+#                                                                                                                      #
 ########################################################################################################################
 
 ## add a new method to the Client class
@@ -648,7 +649,7 @@ def frostbiteClientMessageBigQueueWorker(self):
         msg = self.messagebigqueue.get()
         if msg:
             self.console.messagebig(self, msg)
-            time.sleep(float(self.console._settings['message_delay']))
+            time.sleep(float(self.console._message_delay))
 
 ## add the Client.messagebig() method at runtime
 def frostbiteClientMessageBigMethod(self, msg):

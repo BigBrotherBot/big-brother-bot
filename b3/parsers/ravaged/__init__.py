@@ -10,33 +10,34 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
-
-# 1.0 - 2012-10-19 - feature complete - need live testing with real gameplay
-# 1.1 - 2012-10-19 - recognize a new type of game event when a player dies by crashing a vehicule
-#                  - add getNextMap()
-#                  - fix changeMap()
-#                  - improve getMapsSoundingLike()
-# 1.2 - 2012-10-20 - fix: wasn't saving player names to database
-#                  - change: reduce maximum line length in chat (or it would be truncated by the server)
-# 1.3 - 2012-10-22 - fix: kill events so stats and xlrstats plugin can do their job
-#                  - change: make getMap() crash proof
-# 1.4 - 2012-10-26 - new: recognize game type from map names
-# 1.5 - 2012-11-14 - new: get the game server hostname by querying the game server on its Source Query port
-# 1.6 - 2014-05-02 - rewrote import statements
-#                  - correctly declare getPlayerPings() method to match the one in Parser class
-#                  - removed some warnings
-#                  - fixed client retrieval in kick, ban and tempban function
-# 1.7 - 2014-07-18 - updated parser to comply with the new getWrap implementation
-# 1.8 - 2014-08-15 - produce EVT_CLIENT_KICK when a player gets kicked from the server
-# 1.9 - 2014-08-29 - syntax cleanup
+#
+# 1.0  - 2012-10-19 - feature complete - need live testing with real gameplay
+# 1.1  - 2012-10-19 - recognize a new type of game event when a player dies by crashing a vehicule
+#                   - add getNextMap()
+#                   - fix changeMap()
+#                   - improve getMapsSoundingLike()
+# 1.2  - 2012-10-20 - fix: wasn't saving player names to database
+#                   - change: reduce maximum line length in chat (or it would be truncated by the server)
+# 1.3  - 2012-10-22 - fix: kill events so stats and xlrstats plugin can do their job
+#                   - change: make getMap() crash proof
+# 1.4  - 2012-10-26 - new: recognize game type from map names
+# 1.5  - 2012-11-14 - new: get the game server hostname by querying the game server on its Source Query port
+# 1.6  - 2014-05-02 - rewrote import statements
+#                   - correctly declare getPlayerPings() method to match the one in Parser class
+#                   - removed some warnings
+#                   - fixed client retrieval in kick, ban and tempban function
+# 1.7  - 2014-07-18 - updated parser to comply with the new getWrap implementation
+# 1.8  - 2014-08-15 - produce EVT_CLIENT_KICK when a player gets kicked from the server
+# 1.9  - 2014-08-29 - syntax cleanup
+# 1.10 - 2015-04-16 - uniform class variables (dict -> variable)
 
 import logging
 import re
@@ -66,7 +67,7 @@ from Queue import Full
 from Queue import Empty
 
 __author__  = 'Courgette'
-__version__ = '1.9'
+__version__ = '1.10'
 
 ger = GameEventRouter()
 
@@ -97,15 +98,13 @@ class RavagedParser(Parser):
     game_event_queue = Queue(400)
     game_event_queue_stop_token = object()
 
-    _settings = {
-        'line_length': 180,
-        'line_color_prefix': '',
-        'private_message_color': '00FC48',
-        'say_color': 'F2C880',
-        'saybig_color': 'FC00E2',
-    }
-
+    _line_length = 180
+    _line_color_prefix = ''
+    _private_message_color = '00FC48'
+    _say_color = 'F2C880'
+    _saybig_color = 'FC00E2'
     _use_color_codes = False
+
     _serverConnection = None
     _nbConsecutiveConnFailure = 0
 
@@ -132,7 +131,6 @@ class RavagedParser(Parser):
         self.clients.newClient('Server', guid='Server', name='Server', hide=True, pbid='Server', team=TEAM_UNKNOWN)
 
         # add game specific events
-        # self.createEvent("EVT_SUPERLOGS_WEAPONSTATS", "SourceMod SuperLogs weaponstats")
         # TODO check if have game specific events
 
         if not self._publicIp:
@@ -309,9 +307,9 @@ class RavagedParser(Parser):
         :param msg: The message to be broadcasted
         """
         if msg and len(msg.strip()):
-            msg = "%s <FONT COLOR='#%s'> %s" % (self.msgPrefix, self._settings.get('say_color', 'F2C880'), msg)
+            msg = "%s <FONT COLOR='#%s'> %s" % (self.msgPrefix, self._say_color, msg)
             for line in self.getWrap(msg):
-                self.output.write("say <FONT COLOR='#%s'> %s" % (self._settings.get('say_color', 'F2C880'), line))
+                self.output.write("say <FONT COLOR='#%s'> %s" % (self._say_color, line))
 
     def saybig(self, msg):
         """
@@ -319,9 +317,9 @@ class RavagedParser(Parser):
         :param msg: The message to be broadcasted
         """
         if msg and len(msg.strip()):
-            msg = "%s <FONT COLOR='#%s'> %s" % (self.msgPrefix, self._settings.get('saybig_color', 'FC00E2'), msg)
+            msg = "%s <FONT COLOR='#%s'> %s" % (self.msgPrefix, self._saybig_color, msg)
             for line in self.getWrap(msg):
-                self.output.write("say <FONT COLOR='#%s'> %s" % (self._settings.get('saybig_color', 'FC00E2'), line))
+                self.output.write("say <FONT COLOR='#%s'> %s" % (self._saybig_color, line))
 
     def message(self, client, msg):
         """
@@ -330,9 +328,9 @@ class RavagedParser(Parser):
         :param msg: The message to be sent
         """
         if msg and len(msg.strip()):
-            msg = "%s <FONT COLOR='#%s'> %s" % (self.msgPrefix, self._settings.get('private_message_color', '00FC48'), msg)
+            msg = "%s <FONT COLOR='#%s'> %s" % (self.msgPrefix, self._private_message_color, msg)
             for line in self.getWrap(msg):
-                self.output.write("playersay %s <FONT COLOR='#%s'> %s" % (client.cid, self._settings.get('private_message_color', '00FC48'), line))
+                self.output.write("playersay %s <FONT COLOR='#%s'> %s" % (client.cid, self._private_message_color, line))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         """
@@ -352,7 +350,7 @@ class RavagedParser(Parser):
 
         if admin:
             variables = self.getMessageVariables(client=client, reason=reason, admin=admin)
-            fullreason = self.getMessage('kicked_by', )
+            fullreason = self.getMessage('kicked_by', variables)
         else:
             variables = self.getMessageVariables(client=client, reason=reason)
             fullreason = self.getMessage('kicked', variables)

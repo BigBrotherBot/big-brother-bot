@@ -87,6 +87,7 @@
 # 12/12/2014 - 1.28   - Fenix     - increased chat line length to comply with the new HUD setting (4.2.021)
 # 25/01/2015 - 1.29   - Fenix     - patch the b3.clients.getByMagic method so it's possible to lookup players using their
 #                                   auth login
+# 16/04/2015 - 1.30  - Fenix      - uniform class variables (dict -> variable)
 
 import b3
 import re
@@ -101,7 +102,7 @@ from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.29'
+__version__ = '1.30'
 
 
 class Iourt42Client(Client):
@@ -287,6 +288,7 @@ class Iourt42Parser(Iourt41Parser):
 
     # remove the time off of the line
     _lineClear = re.compile(r'^(?:[0-9:]+\s?)?')
+    _line_length = 90
 
     _lineFormats = (
         # Radio: 0 - 7 - 2 - "New Alley" - "I'm going for the flag"
@@ -613,9 +615,6 @@ class Iourt42Parser(Iourt41Parser):
             self.warning("Could not query server for gamename.", exc_info=e)
 
         Iourt41Parser.startup(self)
-
-        # change chat line default setting
-        self._settings['line_length'] = 90
 
         # add UrT 4.2 specific events
         self.Events.createEvent('EVT_CLIENT_RADIO', 'Event client radio')

@@ -54,7 +54,3 @@ class Cod2Parser(b3.parsers.cod.CodParser):
                 # override the regexp for testing PBid's
                 self.debug('Overriding pbid length for cod2 v1.2 with PB!')
                 self._pbRegExp = re.compile(r'^[0-9a-f]{30,32}$', re.IGNORECASE)  # RegExp to match a PunkBuster ID
-            else:
-                pass
-        else:
-            pass

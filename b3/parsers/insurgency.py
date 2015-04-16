@@ -66,7 +66,8 @@
 # 2015/13/01 - 0.14  - 82ndab-Bravo17 - don't authorize Console when it says something in game
 #                                     - bots should now stay authed if still on server during sync
 # 2015/03/07 - 0.15  - Thomas LEVEIL  - disconnect client after kicking them
-# 2015/13/03 - 0.16  - 82ndab-Bravo17 - Get map name from host_map cvar since it is no longer returned by status
+# 2015/13/03 - 0.16  - 82ndab-Bravo17 - get map name from host_map cvar since it is no longer returned by status
+# 2015-04-16 - 0.17  - Fenix          - uniform class variables (dict -> variable)
 
 import re
 import time
@@ -88,7 +89,7 @@ from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
 
 __author__ = 'Courgette'
-__version__ = '0.16'
+__version__ = '0.17'
 
 
 # GAME SETUP
@@ -165,12 +166,10 @@ class InsurgencyParser(Parser):
     # game engine does not support color code, so we need this property
     # in order to get stripColors working
     _reColor = re.compile(r'(\^[0-9])')
-    _use_color_codes = False
 
-    _settings = {
-        'line_length': 120,
-        'line_color_prefix': '',
-    }
+    _line_length = 120
+    _line_color_prefix = ''
+    _use_color_codes = False
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -669,9 +668,9 @@ class InsurgencyParser(Parser):
                 else:
                     self.debug('no-sync, disconnect client %s <> %s', client.guid, c.guid)
                     client.disconnect()
-                    client = self.getClientOrCreate(c.cid, c.guid, c.name)
+                    self.getClientOrCreate(c.cid, c.guid, c.name)
             else:
-                client = self.getClientOrCreate(c.cid, c.guid, c.name)
+                self.getClientOrCreate(c.cid, c.guid, c.name)
 
         # now we need to remove any players that have left
         if self.clients:
@@ -1041,12 +1040,10 @@ class InsurgencyParser(Parser):
         client = self.clients.getByGUID(guid)
         if client and client.cid != cid:
             self.sync()
-            client = None
 
         client = self.clients.getByCID(cid)
         if client and client.guid != guid:
             self.sync()
-            client = None
 
         client = self.clients.getByCID(cid)
 

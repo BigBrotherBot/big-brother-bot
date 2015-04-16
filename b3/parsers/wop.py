@@ -28,9 +28,10 @@
 # 11/08/2014 - 1.4   - Fenix     - syntax cleanup
 #                                - make use of self.getEvent when producing events
 #                                - fixed unresolved reference MOD_CHANGE_TEAM in OnKill()
+# 16/04/2015 - 1.5   - Fenix     - uniform class variables (dict -> variable)
 
 __author__ = 'xlr8or'
-__version__ = '1.4'
+__version__ = '1.5'
 
 import re
 import string
@@ -51,10 +52,8 @@ class WopParser(AbstractParser):
     _clientConnectGuid = None
     _clientConnectIp = None
 
-    _settings = {
-        'line_length': 65,
-        'line_color_prefix': '',
-    }
+    _line_length = 65
+    _line_color_prefix = ''
 
     _commands = {
         'message': '%(message)s',
@@ -214,7 +213,7 @@ class WopParser(AbstractParser):
         player_id, info = string.split(info, ' ', 1)
 
         if info[:1] != '\\':
-            info = '\\' + info
+            info += '\\'
 
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
 

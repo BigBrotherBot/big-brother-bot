@@ -95,29 +95,29 @@ class Test_getWrap(unittest.TestCase):
 
     def test_wrapped_initialized(self):
         self.parser._use_color_codes = False
-        self.parser._settings['line_length'] = 40
-        self.parser._settings['line_color_prefix'] = ''
+        self.parser._line_length = 40
+        self.parser._line_color_prefix = ''
         wrapped_text = self.parser.getWrap("TEST")
         self.assertIsNotNone(self.parser.wrapper)
 
     def test_with_invalid_input(self):
         self.parser._use_color_codes = False
-        self.parser._settings['line_length'] = 40
-        self.parser._settings['line_color_prefix'] = ''
+        self.parser._line_length = 40
+        self.parser._line_color_prefix = ''
         wrapped_text = self.parser.getWrap(None)
         self.assertListEqual(wrapped_text, [])
 
     def test_with_empty_string(self):
         self.parser._use_color_codes = False
-        self.parser._settings['line_length'] = 40
-        self.parser._settings['line_color_prefix'] = ''
+        self.parser._line_length = 40
+        self.parser._line_color_prefix = ''
         wrapped_text = self.parser.getWrap(None)
         self.assertListEqual(wrapped_text, [])
 
     def test_no_color_codes(self):
         self.parser._use_color_codes = False
-        self.parser._settings['line_length'] = 40
-        self.parser._settings['line_color_prefix'] = ''
+        self.parser._line_length = 40
+        self.parser._line_color_prefix = ''
         wrapped_text = self.parser.getWrap("Lorem ipsum dolor sit amet, consectetur adipisci elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua.")
         self.assertIsInstance(wrapped_text, list)
         self.assertListEqual(wrapped_text, ["Lorem ipsum dolor sit amet, consectetur",
@@ -127,8 +127,8 @@ class Test_getWrap(unittest.TestCase):
 
     def test_no_color_codes_with_color_prefix_set(self):
         self.parser._use_color_codes = False
-        self.parser._settings['line_length'] = 40
-        self.parser._settings['line_color_prefix'] = '^5'
+        self.parser._line_length = 40
+        self.parser._line_color_prefix = '^5'
         wrapped_text = self.parser.getWrap("Lorem ipsum dolor sit amet, consectetur adipisci elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua.")
         self.assertIsInstance(wrapped_text, list)
         self.assertListEqual(wrapped_text, ["Lorem ipsum dolor sit amet, consectetur",
@@ -138,8 +138,8 @@ class Test_getWrap(unittest.TestCase):
 
     def test_with_color_codes_and_color_prefix(self):
         self.parser._use_color_codes = True
-        self.parser._settings['line_length'] = 40
-        self.parser._settings['line_color_prefix'] = '^7'
+        self.parser._line_length = 40
+        self.parser._line_color_prefix = '^7'
         wrapped_text = self.parser.getWrap("Lorem ipsum dolor sit ^2amet, consectetur adipisci elit, ^1sed eiusmod ^7tempor incidunt ut ^8labore et dolore magna ^2aliqua.")
         self.assertIsInstance(wrapped_text, list)
         self.assertListEqual(wrapped_text, ["^7Lorem ipsum dolor sit ^2amet,",
@@ -149,8 +149,8 @@ class Test_getWrap(unittest.TestCase):
 
     def test_with_color_codes_and_no_color_prefix(self):
         self.parser._use_color_codes = True
-        self.parser._settings['line_length'] = 40
-        self.parser._settings['line_color_prefix'] = ''
+        self.parser._line_length = 40
+        self.parser._line_color_prefix = ''
         wrapped_text = self.parser.getWrap("Lorem ipsum dolor sit ^2amet, consectetur adipisci elit, ^1sed eiusmod ^7tempor incidunt ut ^8labore et dolore magna ^2aliqua.")
         self.assertIsInstance(wrapped_text, list)
         self.assertListEqual(wrapped_text, ["Lorem ipsum dolor sit ^2amet,",
@@ -160,8 +160,8 @@ class Test_getWrap(unittest.TestCase):
 
     def test_with_short_message_length(self):
         self.parser._use_color_codes = False
-        self.parser._settings['line_length'] = 40
-        self.parser._settings['line_color_prefix'] = ''
+        self.parser._line_length = 40
+        self.parser._line_color_prefix = ''
         wrapped_text = self.parser.getWrap("Lorem ipsum dolor sit amet")
         self.assertIsInstance(wrapped_text, list)
         self.assertListEqual(wrapped_text, ["Lorem ipsum dolor sit amet"])
