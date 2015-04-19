@@ -34,9 +34,10 @@
 #                                    - removed some warnings
 # 2015/02/18 - 3.1.2 - Fenix         - fix cx_Freeze stripping out function documentations
 # 2015/03/08 - 3.2   - Thomas LEVEIL - build up the list of requirement by reading the requirements.txt file
+# 2015/04/19 - 3.3   - Fenix         - implement bdist_mac and bdist_dmg commands
 
 __author__ = 'ThorN, xlr8or, courgette, Fenix'
-__version__ = '3.2'
+__version__ = '3.3'
 
 import re
 import os
@@ -70,7 +71,7 @@ settings = {
     },
     'darwin': {
         'binary_name': 'b3_run',
-        'icon': None,
+        'icon': os.path.join(PROJECT_DIR, 'installer/assets_common', 'b3.icns'),
     },
     'linux': {
         'binary_name': 'b3_run.x86',
@@ -111,14 +112,17 @@ cmdclass = {
     'egg_info': my_egg_info,
     'clean': CleanCommand,
 }
+
 executables = None
 
-if 'build_exe' not in sys.argv:
+if len(sys.argv) == len(set(sys.argv) - {'build_exe', 'bdist_mac', 'bdist_dmg'}):
     from setuptools import setup
 else:
     from cx_Freeze import setup
     from cx_Freeze import Executable
     from cx_Freeze import build_exe
+    from cx_Freeze import bdist_mac
+    from cx_Freeze import bdist_dmg
 
     class my_build_exe(build_exe):
         """extends the build_exe command to:
@@ -273,7 +277,171 @@ else:
                     except Exception, e:
                         log.error('could not build %s: %s' % (script_file, e))
 
+    class my_bdist_mac(bdist_mac):
+        """extends bdist_mac adding the following changes:
+           - properly lookup build_exe path (using BUILD_PATH)
+           - correctly generate Info.plist
+        """
+        binDir = None
+        bundleDir = None
+        bundle_executable = None
+        contentsDir = None
+        frameworksDir = None
+        resourcesDir = None
+
+        def run(self):
+            self.run_command('build')
+            build = self.get_finalized_command('build')
+
+            # define the paths within the application bundle
+            self.bundleDir = os.path.join(build.build_base, self.bundle_name + ".app")
+            self.contentsDir = os.path.join(self.bundleDir, 'Contents')
+            self.bundleDir = os.path.join(self.bundleDir, 'Contents')
+            self.resourcesDir = os.path.join(self.contentsDir, 'Resources')
+            self.binDir = os.path.join(self.contentsDir, 'MacOS')
+            self.frameworksDir = os.path.join(self.contentsDir, 'Frameworks')
+
+            # find the executable name
+            executable = self.distribution.executables[0].targetName
+            _, self.bundle_executable = os.path.split(executable)
+
+            # build the app directory structure
+            self.mkpath(self.resourcesDir)
+            self.mkpath(self.binDir)
+            self.mkpath(self.frameworksDir)
+
+            self.copy_tree(BUILD_PATH, self.binDir)
+
+            # copy the icon
+            if self.iconfile:
+                self.copy_file(self.iconfile, os.path.join(self.resourcesDir, 'icon.icns'))
+
+            # copy in Frameworks
+            for framework in self.include_frameworks:
+                self.copy_tree(framework, self.frameworksDir + '/' + os.path.basename(framework))
+
+            # create the Info.plist file
+            self.execute(self.create_plist, ())
+
+            # make all references to libraries relative
+            self.execute(self.setRelativeReferencePaths, ())
+
+            # for a Qt application, run some tweaks
+            self.execute(self.prepare_qt_app, ())
+
+            # sign the app bundle if a key is specified
+            if self.codesign_identity:
+                signargs = ['codesign', '-s', self.codesign_identity]
+
+                if self.codesign_entitlements:
+                    signargs.append('--entitlements')
+                    signargs.append(self.codesign_entitlements)
+
+                if self.codesign_deep:
+                    signargs.insert(1, '--deep')
+
+                if self.codesign_resource_rules:
+                    signargs.insert(1, '--resource-rules=' + self.codesign_resource_rules)
+
+                signargs.append(self.bundleDir)
+
+                if os.spawnvp(os.P_WAIT, 'codesign', signargs) != 0:
+                    raise OSError('Code signing of app bundle failed')
+
+        def create_plist(self):
+            """Create the Contents/Info.plist file"""
+            import plistlib
+            contents = {
+                'CFBundleName': 'BigBrotherBot (B3) %s' % BUILD_VER,
+                'CFBundleGetInfoString': BUILD_VER,
+                'CFBundleShortVersionString': BUILD_VER,
+                'CFBundleVersion': BUILD_VER,
+                'CFBundlePackageType': 'APPL',
+                'CFBundleIconFile': 'icon.icns',
+                'CFBundleIdentifier': 'net.bigbrotherbot.www',
+                'CFBundleInfoDictionaryVersion': '6.0',
+                'CFBundleDevelopmentRegion': 'English',
+                'CFBundleSpokenName': 'Big Brother Bot (B3)',
+                'CFBundleExecutable': self.bundle_executable
+            }
+
+            plist = open(os.path.join(self.contentsDir, 'Info.plist'), 'wb')
+            plistlib.writePlist(contents, plist)
+            plist.close()
+
+    class my_bdist_dmg(bdist_dmg):
+        """extends bdist_dmg adding the following changes:
+           - correctly package app bundle instead of app bundle content
+        """
+        dist_dir = None
+        user_options = bdist_dmg.user_options
+        user_options.extend([('dist-dir=', 'd', "directory to put final built distributions in [default: dist]")])
+
+        def initialize_options(self):
+            self.dist_dir = None
+            bdist_dmg.initialize_options(self)
+
+        def finalize_options(self):
+            if self.dist_dir is None:
+                self.dist_dir = 'dist'
+            bdist_dmg.finalize_options(self)
+
+        def buildDMG(self):
+            # remove DMG if it already exists
+            if os.path.exists(self.dmgName):
+                os.unlink(self.dmgName)
+
+            bundleDir = os.path.split(self.bundleDir)[0]
+            tmpDir = os.path.join(self.buildDir, 'tmp')
+
+            if os.path.exists(tmpDir):
+                dir_util.remove_tree(tmpDir, verbose=1)
+            self.mkpath(tmpDir)
+
+            # move the app bundle into a separate folder since hdutil copies in the dmg
+            # the content of the folder specified in the -srcfolder folder parameter, and if we
+            # specify as input the app bundle itself, its content will be copied and not the bundle
+            if os.spawnvp(os.P_WAIT, 'cp', ['cp', '-R', bundleDir, tmpDir]):
+                raise OSError('could not move app bundle in staging directory')
+
+            createargs = [
+                'hdiutil', 'create', '-fs', 'HFSX', '-format', 'UDZO',
+                self.dmgName, '-imagekey', 'zlib-level=9', '-srcfolder',
+                tmpDir, '-volname', self.volume_label
+            ]
+
+            if self.applications_shortcut:
+                scriptargs = [
+                    'osascript', '-e', 'tell application "Finder" to make alias \
+                    file to POSIX file "/Applications" at POSIX file "%s"' %
+                    os.path.realpath(self.buildDir)
+                ]
+
+                if os.spawnvp(os.P_WAIT, 'osascript', scriptargs) != 0:
+                    raise OSError('creation of Applications shortcut failed')
+
+                createargs.append('-srcfolder')
+                createargs.append(self.buildDir + '/Applications')
+
+            # create the dmg
+            if os.spawnvp(os.P_WAIT, 'hdiutil', createargs) != 0:
+                raise OSError('creation of the dmg failed')
+
+            # remove the temporary folder
+            dir_util.remove_tree(tmpDir, verbose=1)
+
+        def run(self):
+            if not os.path.isdir(self.dist_dir):
+                os.mkdir(self.dist_dir)
+            # call original run method
+            bdist_dmg.run(self)
+            # move the file into the dist directory
+            self.move_file(self.dmgName, self.dist_dir)
+
     cmdclass['build_exe'] = my_build_exe
+    cmdclass['bdist_mac'] = my_bdist_mac
+    cmdclass['bdist_dmg'] = my_bdist_dmg
+
     executables = [
         Executable(
             script='b3_run.py',
@@ -366,6 +534,15 @@ setup(
         },
         'bdist_egg': {
             'dist_dir': DIST_DIR,
+        },
+        'bdist_mac': {
+            'iconfile': settings[PLATFORM]['icon'],
+            'bundle_name': 'BigBrotherBot (B3) %s' % BUILD_VER,
+        },
+        'bdist_dmg': {
+            'dist_dir': DIST_DIR,
+            'volume_label': 'BigBrotherBot (B3) %s' % BUILD_VER,
+            'applications_shortcut': False,
         },
         'build_exe': {
             'dist_dir': DIST_DIR,
