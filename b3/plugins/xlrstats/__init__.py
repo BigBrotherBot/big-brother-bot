@@ -35,6 +35,7 @@ import urllib2
 
 from b3.functions import escape
 from b3.functions import getCmd
+from b3.functions import right_cut
 from ConfigParser import NoOptionError
 
 KILLER = "killer"
@@ -127,8 +128,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     # default table name for the ctime subplugin
     ctime_table = 'ctime'
     # default tablenames for the Battlestats subplugin
-    battlestats_table = 'xlr_battlestats'
-    playerbattles_table = 'xlr_playerbattles'
+    # battlestats_table = 'xlr_battlestats'
+    # playerbattles_table = 'xlr_playerbattles'
 
     _defaultTableNames = True
     _default_messages = {
@@ -458,52 +459,65 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         except (NoOptionError, ValueError):
             self.debug('using default value (%s) for settings::keep_time', self.keep_time)
 
+        # load custom table names
+        self.load_config_tables()
+
     def build_database_schema(self):
         """
         Build the database schema checking if all the needed tables have been properly created.
         If not, it will attempt to create them automatically
         """
-        needed_tables = set([getattr(self, x) for x in dir(self) if x.endswith('_table')])
-        current_tables = set(self.console.storage.getTables())
-        missing_tables = current_tables - needed_tables
-        if missing_tables:
-            self.debug('missing database tables : %s : importing xlrstats.sql...' % missing_tables)
-            sql_path_main = b3.getAbsolutePath('@b3/plugins/xlrstats/sql')
-            sql_path = os.path.join(sql_path_main, self.console.storage.dsnDict['protocol'], 'xlrstats.sql')
-            self.console.storage.queryFromFile(sql_path)
+        xlr_tables = {x: getattr(self, x) for x in dir(self) if x.endswith('_table')}
+        current_tables = self.console.storage.getTables()
 
-    # OBSOLETE: stick with default names for database schema auto-generation
-    # def load_config_tables(self):
-    #     """
-    #     Load config section 'tables'
-    #     """
-    #     def load_conf(property_to_set, setting_option):
-    #         assert hasattr(self, property_to_set)
-    #         try:
-    #             table_name = self.config.get('tables', setting_option)
-    #             if not table_name:
-    #                 raise ValueError("invalid table name for %s: %r" % (setting_option, table_name))
-    #             setattr(self, property_to_set, table_name)
-    #             self._defaultTableNames = False
-    #         except NoOptionError, err:
-    #             self.debug(err)
-    #         except Exception, err:
-    #             self.error(err)
-    #         self.info('using value "%s" for tables::%s' % (property_to_set, setting_option))
-    #
-    #     load_conf('playerstats_table', 'playerstats')
-    #     load_conf('actionstats_table', 'actionstats')
-    #     load_conf('weaponstats_table', 'weaponstats')
-    #     load_conf('weaponusage_table', 'weaponusage')
-    #     load_conf('bodyparts_table', 'bodyparts')
-    #     load_conf('playerbody_table', 'playerbody')
-    #     load_conf('opponents_table', 'opponents')
-    #     load_conf('mapstats_table', 'mapstats')
-    #     load_conf('playermaps_table', 'playermaps')
-    #     load_conf('playeractions_table', 'playeractions')
-    #     load_conf('history_monthly_table', 'history_monthly')
-    #     load_conf('history_weekly_table', 'history_weekly')
-    #     load_conf('ctime_table', 'ctime')
+        for k, v in xlr_tables.items():
+            if v not in current_tables:
+                sql_script_name = right_cut(k, '_table') + '.sql'
+                sql_path_main = b3.getAbsolutePath('@b3/plugins/xlrstats/sql')
+                sql_path = os.path.join(sql_path_main, self.console.storage.dsnDict['protocol'], sql_script_name)
+                if os.path.isfile(sql_path):
+                    try:
+                        with open(sql_path, 'r') as sqlfile:
+                            query = self.console.storage.getQueriesFromFile(sqlfile)[0]
+                        self.console.storage.query(query % v)
+                    except Exception, e:
+                        self.error("could not create schema for database table '%s': %s" % (v, e))
+                    else:
+                        self.info('created database table: %s' % v)
+                else:
+                    self.error("could not create schema for database table '%s': missing SQL script '%s'" % (v, sql_path))
+
+    def load_config_tables(self):
+        """
+        Load config section 'tables'
+        """
+        def load_conf(property_to_set, setting_option):
+            assert hasattr(self, property_to_set)
+            try:
+                table_name = self.config.get('tables', setting_option)
+                if not table_name:
+                    raise ValueError("invalid table name for %s: %r" % (setting_option, table_name))
+                setattr(self, property_to_set, table_name)
+                self._defaultTableNames = False
+            except NoOptionError, err:
+                self.debug(err)
+            except Exception, err:
+                self.error(err)
+            self.info('using value "%s" for tables::%s' % (property_to_set, setting_option))
+
+        load_conf('playerstats_table', 'playerstats')
+        load_conf('actionstats_table', 'actionstats')
+        load_conf('weaponstats_table', 'weaponstats')
+        load_conf('weaponusage_table', 'weaponusage')
+        load_conf('bodyparts_table', 'bodyparts')
+        load_conf('playerbody_table', 'playerbody')
+        load_conf('opponents_table', 'opponents')
+        load_conf('mapstats_table', 'mapstats')
+        load_conf('playermaps_table', 'playermaps')
+        load_conf('playeractions_table', 'playeractions')
+        load_conf('history_monthly_table', 'history_monthly')
+        load_conf('history_weekly_table', 'history_weekly')
+        load_conf('ctime_table', 'ctime')
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -866,10 +880,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             #self.debug('Updating using: %r', q)
             self.query(q)
 
-        #print 'save_Stat: q= ', q    
+        #print 'save_Stat: q= ', q
         #self.query(q)
-        # we could not really do anything with error checking on saving. 
-        # If it fails, that's just bad luck. 
+        # we could not really do anything with error checking on saving.
+        # If it fails, that's just bad luck.
         return
 
     def check_Assists(self, client, target, data, etype=None):
@@ -1750,7 +1764,10 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         """
         if data:
             sclient = self._adminPlugin.findClientPrompt(data, client)
-            if not sclient: return
+            if not sclient:
+                # a player matchin the name was not found, a list of closest matches will be displayed
+                # we can exit here and the user will retry with a more specific player
+                return
         else:
             sclient = client
 
@@ -1759,7 +1776,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         if stats:
             if stats.hide == 1:
                 client.message('^3XLR Stats: ^7stats for %s are not available (hidden)' % sclient.exactName)
-                return None
             else:
                 message_vars = {
                     'name': sclient.exactName,
@@ -1774,14 +1790,11 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         else:
             client.message('^3XLR Stats: ^7could not find stats for %s' % sclient.exactName)
 
-        return
-
     def cmd_xlrtopstats(self, data, client, cmd=None, ext=False):
         """
         [<#>] - list the top # players of the last 14 days.
         """
         thread.start_new_thread(self.doTopList, (data, client, cmd, ext))
-        return
 
     def doTopList(self, data, client, cmd=None, ext=False):
         """
@@ -1827,11 +1840,8 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             c = 1
             while not cursor.EOF:
                 r = cursor.getRow()
-                message = self.getMessage('cmd_xlrtopstats', {'number': c,
-                                                              'name': r['name'],
-                                                              'skill': '%1.02f' % r['skill'],
-                                                              'ratio': '%1.02f' % r['ratio'],
-                                                              'kills': r['kills']})
+                message = self.getMessage('cmd_xlrtopstats', {'number': c, 'name': r['name'], 'skill': '%1.02f' % r['skill'],
+                                                              'ratio': '%1.02f' % r['ratio'], 'kills': r['kills']})
                 if ext:
                     self.console.say(message)
                 else:
@@ -1848,9 +1858,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                 self.console.say(message)
             else:
                 cmd.sayLoudOrPM(client, message)
-            return None
-
-        return
 
     def cmd_xlrhide(self, data, client, cmd=None):
         """
@@ -1864,7 +1871,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             if not sclient:
                 # a player matchin the name was not found, a list of closest matches will be displayed
                 # we can exit here and the user will retry with a more specific player
-                return False
+                return
         else:
             client.message('^7Invalid data, try !help xlrhide')
             return
@@ -1893,8 +1900,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             player.hide = int(hide)
             self.save_Stat(player)
 
-        return
-
     def cmd_xlrid(self, data, client, cmd=None):
         """
         <player ID Token> - identify yourself to the XLRstats website, get your token in your profile on the xlrstats website (v3)
@@ -1914,8 +1919,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             self.save_Stat(player)
             client.message('^3Token saved!')
 
-        return
-
     def cmd_xlrstatus(self, data, client, cmd=None):
         """
         - exposes current plugin status and major settings
@@ -1932,14 +1935,29 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         client.message('^3auto_correct: %s, auto_purge: %s, k_b: %s, as_b: %s, ac_b: %s' %
                        (self.auto_correct, self.auto_purge, self.kill_bonus, self.assist_bonus, self.action_bonus))
 
+    def cmd_xlrinit(self, data, client, cmd=None):
+        """
+        - initialize XLRstats database schema (!!!will remove all the collected stats!!!)
+        """
+        xlr_tables = [getattr(self, x) for x in dir(self) if x.endswith('_table')]
+        current_tables = self.console.storage.getTables()
+
+        # truncate database tables
+        for table in xlr_tables:
+            if table in current_tables:
+                self.info('inizializing table: %s' % table)
+                self.console.storage.truncateTable(table)
+
+        # eventually rebuild missing tables
+        self.build_database_schema()
+        client.message('^3XLRstats database schema initialized')
 
 ########################################################################################################################
-##                                                                                                                    ##
-##  SUB PLUGIN CONTROLLER - CONTROLS STARTING AND STOPPING OF MAIN XLRSTATS PLUGIN BASED ON PLAYERCOUNT               ##
-##  OBSOLETE! REMOVED SINCE IT ALSO AFFECTED THE COMMANDS BEING UNAVAILABLE WHEN INACTIVE                            ##
-##                                                                                                                    ##
+#                                                                                                                      #
+#   SUB PLUGIN CONTROLLER - CONTROLS STARTING AND STOPPING OF MAIN XLRSTATS PLUGIN BASED ON PLAYERCOUNT                #
+#   OBSOLETE! REMOVED SINCE IT ALSO AFFECTED THE COMMANDS BEING UNAVAILABLE WHEN INACTIVE                              #
+#                                                                                                                      #
 ########################################################################################################################
-
 
 # class XlrstatscontrollerPlugin(b3.plugin.Plugin):
 #     """This is a helper class/plugin that enables and disables the main XLRstats plugin
@@ -1992,7 +2010,6 @@ class XlrstatsPlugin(b3.plugin.Plugin):
 #             else:
 #                 _status = 'Disabled'
 #             self.debug('Nothing to do at the moment. XLRstats is already %s' % _status)
-
 
 ########################################################################################################################
 ##                                                                                                                    ##

@@ -37,5 +37,6 @@ CHANGELOG (see xlrstats-v2-changelog.txt for v1 and v2 history and credits)
                                             - removed deprecated usage of dict.has_key (us 'in dict' instead)
                                             - remove several unused variables
 11-04-2015 - 3.0.0-beta.15 - Fenix          - moved SQL dedicated code into plugin directory
-                                            - removed possibility to customize database table names: allow B3 to auto
-                                              generate missing database tables for easier setup
+                                            - automatically generate missing database tables
+                                            - added command !xlrinit: initialize database schema (meant to replace the
+                                              recreate-xlrstats.sql script)
