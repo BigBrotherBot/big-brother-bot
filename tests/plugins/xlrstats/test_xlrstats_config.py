@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
+
 import logging
 import os
 
@@ -1552,3 +1552,344 @@ class Test_conf_settings_auto_purge(Conf_settings_test_case):
         self.init('auto_purge: false')
         # THEN
         self.assertFalse(self.p.auto_purge)
+        
+        
+class Conf_tables_test_case(XlrstatsTestCase):
+
+    def init(self, option_snippet=''):
+        """
+        Load the XLRstats plugin with an empty config file except for the option_snippet given as a parameter which will
+        be injected in the "tables" section.
+        Then call the plugin onLoadConfig method.
+        """
+        self.conf.loadFromString(r"""
+[tables]
+%s
+""" % option_snippet)
+        self.p.onLoadConfig()
+
+
+class Test_conf_tables_playerstats(Conf_tables_test_case):
+    DEFAULT_VALUE = 'xlr_playerstats'
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.playerstats_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_empty(self):
+        # WHEN
+        self.init('playerstats: ')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.playerstats_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_nominal(self):
+        # WHEN
+        self.init('playerstats: f00')
+        # THEN
+        self.assertEqual('f00', self.p.playerstats_table)
+        self.assertFalse(self.p._defaultTableNames)
+
+
+class Test_conf_tables_weaponstats(Conf_tables_test_case):
+    DEFAULT_VALUE = 'xlr_weaponstats'
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.weaponstats_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_empty(self):
+        # WHEN
+        self.init('weaponstats: ')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.weaponstats_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_nominal(self):
+        # WHEN
+        self.init('weaponstats: f00')
+        # THEN
+        self.assertEqual('f00', self.p.weaponstats_table)
+        self.assertFalse(self.p._defaultTableNames)
+
+
+class Test_conf_tables_weaponusage(Conf_tables_test_case):
+    DEFAULT_VALUE = 'xlr_weaponusage'
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.weaponusage_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_empty(self):
+        # WHEN
+        self.init('weaponusage: ')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.weaponusage_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_nominal(self):
+        # WHEN
+        self.init('weaponusage: f00')
+        # THEN
+        self.assertEqual('f00', self.p.weaponusage_table)
+        self.assertFalse(self.p._defaultTableNames)
+
+
+class Test_conf_tables_bodyparts(Conf_tables_test_case):
+    DEFAULT_VALUE = 'xlr_bodyparts'
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.bodyparts_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_empty(self):
+        # WHEN
+        self.init('bodyparts: ')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.bodyparts_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_nominal(self):
+        # WHEN
+        self.init('bodyparts: f00')
+        # THEN
+        self.assertEqual('f00', self.p.bodyparts_table)
+        self.assertFalse(self.p._defaultTableNames)
+
+
+class Test_conf_tables_playerbody(Conf_tables_test_case):
+    DEFAULT_VALUE = 'xlr_playerbody'
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.playerbody_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_empty(self):
+        # WHEN
+        self.init('playerbody: ')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.playerbody_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_nominal(self):
+        # WHEN
+        self.init('playerbody: f00')
+        # THEN
+        self.assertEqual('f00', self.p.playerbody_table)
+        self.assertFalse(self.p._defaultTableNames)
+
+
+class Test_conf_tables_opponents(Conf_tables_test_case):
+    DEFAULT_VALUE = 'xlr_opponents'
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.opponents_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_empty(self):
+        # WHEN
+        self.init('opponents: ')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.opponents_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_nominal(self):
+        # WHEN
+        self.init('opponents: f00')
+        # THEN
+        self.assertEqual('f00', self.p.opponents_table)
+        self.assertFalse(self.p._defaultTableNames)
+
+
+class Test_conf_tables_mapstats(Conf_tables_test_case):
+    DEFAULT_VALUE = 'xlr_mapstats'
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.mapstats_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_empty(self):
+        # WHEN
+        self.init('mapstats: ')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.mapstats_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_nominal(self):
+        # WHEN
+        self.init('mapstats: f00')
+        # THEN
+        self.assertEqual('f00', self.p.mapstats_table)
+        self.assertFalse(self.p._defaultTableNames)
+
+
+class Test_conf_tables_playermaps(Conf_tables_test_case):
+    DEFAULT_VALUE = 'xlr_playermaps'
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.playermaps_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_empty(self):
+        # WHEN
+        self.init('playermaps: ')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.playermaps_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_nominal(self):
+        # WHEN
+        self.init('playermaps: f00')
+        # THEN
+        self.assertEqual('f00', self.p.playermaps_table)
+        self.assertFalse(self.p._defaultTableNames)
+
+
+class Test_conf_tables_actionstats(Conf_tables_test_case):
+    DEFAULT_VALUE = 'xlr_actionstats'
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.actionstats_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_empty(self):
+        # WHEN
+        self.init('actionstats: ')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.actionstats_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_nominal(self):
+        # WHEN
+        self.init('actionstats: f00')
+        # THEN
+        self.assertEqual('f00', self.p.actionstats_table)
+        self.assertFalse(self.p._defaultTableNames)
+
+
+class Test_conf_tables_playeractions(Conf_tables_test_case):
+    DEFAULT_VALUE = 'xlr_playeractions'
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.playeractions_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_empty(self):
+        # WHEN
+        self.init('playeractions: ')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.playeractions_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_nominal(self):
+        # WHEN
+        self.init('playeractions: f00')
+        # THEN
+        self.assertEqual('f00', self.p.playeractions_table)
+        self.assertFalse(self.p._defaultTableNames)
+
+
+class Test_conf_tables_history_monthly(Conf_tables_test_case):
+    DEFAULT_VALUE = 'xlr_history_monthly'
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.history_monthly_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_empty(self):
+        # WHEN
+        self.init('history_monthly: ')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.history_monthly_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_nominal(self):
+        # WHEN
+        self.init('history_monthly: f00')
+        # THEN
+        self.assertEqual('f00', self.p.history_monthly_table)
+        self.assertFalse(self.p._defaultTableNames)
+
+
+class Test_conf_tables_history_weekly(Conf_tables_test_case):
+    DEFAULT_VALUE = 'xlr_history_weekly'
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.history_weekly_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_empty(self):
+        # WHEN
+        self.init('history_weekly: ')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.history_weekly_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_nominal(self):
+        # WHEN
+        self.init('history_weekly: f00')
+        # THEN
+        self.assertEqual('f00', self.p.history_weekly_table)
+        self.assertFalse(self.p._defaultTableNames)
+
+
+class Test_conf_tables_ctime(Conf_tables_test_case):
+    DEFAULT_VALUE = 'ctime'
+
+    def test_missing(self):
+        # WHEN
+        self.init('')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.ctime_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_empty(self):
+        # WHEN
+        self.init('ctime: ')
+        # THEN
+        self.assertEqual(self.DEFAULT_VALUE, self.p.ctime_table)
+        self.assertTrue(self.p._defaultTableNames)
+
+    def test_nominal(self):
+        # WHEN
+        self.init('ctime: f00')
+        # THEN
+        self.assertEqual('f00', self.p.ctime_table)
+        self.assertFalse(self.p._defaultTableNames)
+

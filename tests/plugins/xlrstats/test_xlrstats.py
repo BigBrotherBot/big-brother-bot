@@ -99,8 +99,7 @@ class Test_get_PlayerAnon(XlrstatsTestCase):
 
     def setUp(self):
         XlrstatsTestCase.setUp(self)
-        with logging_disabled():
-            self.init()
+        self.init()
 
     def test(self):
         # WHEN
@@ -128,10 +127,9 @@ class Test_get_PlayerStats(XlrstatsTestCase):
 
     def setUp(self):
         XlrstatsTestCase.setUp(self)
-        with logging_disabled():
-            self.init()
-            self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID")
-            self.p1.connects("1")
+        self.init()
+        self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID")
+        self.p1.connects("1")
 
     def test_unregistered_player(self):
         # WHEN
@@ -199,14 +197,11 @@ class Test_cmd_xlrstats(XlrstatsTestCase):
 
     def setUp(self):
         XlrstatsTestCase.setUp(self)
-        with logging_disabled():
-            self.init()
-
-            self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID")
-            self.p1.connects("1")
-
-            self.p2 = FakeClient(console=self.console, name="P2", guid="P2_GUID")
-            self.p2.connects("2")
+        self.init()
+        self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID")
+        self.p1.connects("1")
+        self.p2 = FakeClient(console=self.console, name="P2", guid="P2_GUID")
+        self.p2.connects("2")
 
     def test_unregistered_player(self):
         # GIVEN
@@ -260,10 +255,9 @@ class Test_cmd_xlrid(XlrstatsTestCase):
 
     def setUp(self):
         XlrstatsTestCase.setUp(self)
-        with logging_disabled():
-            self.init()
-            self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID", groupBits=1)
-            self.p1.connects("1")
+        self.init()
+        self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID", groupBits=1)
+        self.p1.connects("1")
 
     def test_no_parameters(self):
         # WHEN
@@ -287,15 +281,14 @@ class Test_kill(XlrstatsTestCase):
 
     def setUp(self):
         XlrstatsTestCase.setUp(self)
-        with logging_disabled():
-            self.init()
-            # GIVEN two players P1 and P2 (P1 being a registered user)
-            self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID", team=TEAM_BLUE)
-            self.p1.connects("1")
-            self.p1.says("!register")
-            self.p2 = FakeClient(console=self.console, name="P2", guid="P2_GUID", team=TEAM_RED)
-            self.p2.connects("2")
-            self.p._xlrstats_active = True
+        self.init()
+        # GIVEN two players P1 and P2 (P1 being a registered user)
+        self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID", team=TEAM_BLUE)
+        self.p1.connects("1")
+        self.p1.says("!register")
+        self.p2 = FakeClient(console=self.console, name="P2", guid="P2_GUID", team=TEAM_RED)
+        self.p2.connects("2")
+        self.p._xlrstats_active = True
 
     def test_p1_kills_p2(self):
         # GIVEN
@@ -356,8 +349,7 @@ class Test_storage(XlrstatsTestCase):
 
     def setUp(self):
         XlrstatsTestCase.setUp(self)
-        with logging_disabled():
-            self.init()
+        self.init()
 
     def test_PlayerStats(self):
         # GIVEN
@@ -649,28 +641,27 @@ class Test_events(XlrstatsTestCase):
 
     def setUp(self):
         XlrstatsTestCase.setUp(self)
-        with logging_disabled():
-            self.init(dedent("""
-                [settings]
-                minplayers: 1
-                prematch_maxtime: 0
-            """))
-            self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID", groupBits=1)
-            self.p1.connects("1")
+        self.init(dedent("""
+            [settings]
+            minplayers: 1
+            prematch_maxtime: 0
+        """))
+        self.p1 = FakeClient(console=self.console, name="P1", guid="P1_GUID", groupBits=1)
+        self.p1.connects("1")
 
-            map_stats = self.p.get_MapStats("Map1")
-            self.p.save_Stat(map_stats)
-            self.map1_id = map_stats.id
+        map_stats = self.p.get_MapStats("Map1")
+        self.p.save_Stat(map_stats)
+        self.map1_id = map_stats.id
 
-            map_stats = self.p.get_MapStats("Map1")
-            self.p.save_Stat(map_stats)
-            self.map2_id = map_stats.id
+        map_stats = self.p.get_MapStats("Map1")
+        self.p.save_Stat(map_stats)
+        self.map2_id = map_stats.id
 
-            player_stats = self.p.get_PlayerStats(client=self.p1)
-            self.p.save_Stat(player_stats)
-            self.p1stats_id = player_stats.id
+        player_stats = self.p.get_PlayerStats(client=self.p1)
+        self.p.save_Stat(player_stats)
+        self.p1stats_id = player_stats.id
 
-            self.console.game.mapName = "Map1"
+        self.console.game.mapName = "Map1"
 
     def fireEvent(self, event_name, *args, **kwargs):
         self.console.queueEvent(self.console.getEvent(event_name, *args, **kwargs))
