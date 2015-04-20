@@ -61,7 +61,7 @@ class Bf3TestCase(unittest.TestCase):
 
         # alter a few settings to speed up the tests
         self.console.sayqueue_get_timeout = 0
-        self.console._settings['message_delay'] = 0
+        self.console._message_delay = 0
 
         with logging_disabled():
             self.console.startup()

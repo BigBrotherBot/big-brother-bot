@@ -19,6 +19,7 @@ from mock import Mock
 from b3.events import Event
 from tests.plugins.urtserversidedemo import PluginTestCase
 from b3.fake import FakeClient
+from time import sleep
 
 
 class Test_player_connect_event(PluginTestCase):
@@ -46,6 +47,7 @@ stopserverdemo = 20
         self.console.queueEvent(Event(self.console.getEventID('EVT_CLIENT_JOIN'), self.joe, self.joe))
 
         # THEN
+        sleep(.5) # sleep so the thread has time of doing its job
         self.assertTrue(self.p.start_recording_player.called)
         self.p.start_recording_player.assert_called_with(self.joe, None)
 
@@ -57,5 +59,6 @@ stopserverdemo = 20
         self.joe.connects("2")
 
         # THEN
+        sleep(.5) # sleep so the thread has time of doing its job
         self.assertFalse(self.p.start_recording_player.called)
 
