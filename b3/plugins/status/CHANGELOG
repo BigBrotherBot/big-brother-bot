@@ -1,3 +1,4 @@
+13/04/2015 - 1.6.4  - Fenix           - changed database column CID to VARCHAR(32) to support Frostbite games
 17/03/2015 - 1.6.3  - 82ndab.Bravo17  - escape ' characters when updating current_clients table
 16/02/2015 - 1.6.2  - 82ndab.Bravo17  - Set default score to zero
 04/02/2015 - 1.6.1  - Fenix           - fixed exception being generated when not using database to store status information
