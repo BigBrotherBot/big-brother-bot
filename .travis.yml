@@ -54,7 +54,7 @@ before_script:
   - psql -c "CREATE DATABASE b3_test WITH OWNER = postgres ENCODING = 'UTF8';" -U postgres
 
 script: 
-  - nosetests --where=tests --verbosity=3 --with-cov --cov b3 --cov-report term-missing --cov-config .coveragerc
+  - nosetests --where=tests --verbosity=3 --with-cov --cov b3 --cov-report term-missing --cov-config .coveragerc --exclude-dir-file=tests/exclude_dir.txt --exclude-test-file=tests/exclude_test.txt
   - python setup.py egg_info --tag-build .dev${TRAVIS_COMMIT:0:7} --tag-date sdist bdist_wheel
   - python setup.py build_exe
 
