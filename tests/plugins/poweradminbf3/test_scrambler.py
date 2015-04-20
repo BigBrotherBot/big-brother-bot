@@ -32,6 +32,7 @@ class Test_events(Bf3TestCase):
         with logging_disabled():
             self.p = Poweradminbf3Plugin(self.console, self.conf)
         when(self.console).write(('vars.roundStartPlayerCount',)).thenReturn(['0'])
+        when(self.console).write(('vars.roundLockdownCountdown',)).thenReturn(['3'])
         self.scrambleTeams_mock = self.p._scrambler.scrambleTeams = Mock(name="scrambleTeams", wraps=self.p._scrambler.scrambleTeams)
         self.scrambleTeams_mock.reset_mock()
 
