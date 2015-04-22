@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/04/22 - 1.42.7 - Fenix           - fixed typo in startPlugins: was causing B3 to crash upon startup
 # 2015/04/16 - 1.42.6 - Fenix           - uniform class variables (dict -> variable)
 # 2015/04/14 - 1.42.5 - Fenix           - print more verbose information in log file when a plugin fails in being loaded
 #                                       - simplify exception logging on plugin configuration load and plugin startup
@@ -178,7 +179,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.42.6'
+__version__ = '1.42.7'
 
 
 import os
@@ -1094,7 +1095,7 @@ class Parser(object):
         for plugin_name in self._plugins:
 
             try:
-                self.bot('Starting plugin #%s %s', (plugin_num, plugin_name))
+                self.bot('Starting plugin #%s %s' % (plugin_num, plugin_name))
                 start_plugin(self, plugin_name)
             except Exception, err:
                 self.error("Could not start plugin %s" % plugin_name, exc_info=err)
