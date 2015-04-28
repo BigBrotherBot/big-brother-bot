@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/04/28 - 1.42.8 - Fenix           - code cleanup
 # 2015/04/22 - 1.42.7 - Fenix           - fixed typo in startPlugins: was causing B3 to crash upon startup
 # 2015/04/16 - 1.42.6 - Fenix           - uniform class variables (dict -> variable)
 # 2015/04/14 - 1.42.5 - Fenix           - print more verbose information in log file when a plugin fails in being loaded
@@ -179,7 +180,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.42.7'
+__version__ = '1.42.8'
 
 
 import os
@@ -215,7 +216,6 @@ from b3.functions import getModule
 from b3.functions import vars2printf
 from b3.functions import main_is_frozen
 from b3.functions import splitDSN
-from b3.functions import getBytes
 from b3.functions import right_cut
 from b3.functions import topological_sort
 from b3.plugin import PluginData
@@ -231,18 +231,59 @@ except ImportError:
 
 class Parser(object):
 
+    OutputClass = b3.parsers.q3a.rcon.Rcon  # default output class set to the q3a rcon class
+
+    _commands = {}  # will hold RCON commands for the current game
+    _cron = None  # cron instance
+    _events = {}  # available events (K=>EVENT)
+    _eventNames = {}  # available event names (K=>NAME)
+    _eventsStats_cronTab = None  # crontab used to log event statistics
+    _handlers = {}  # event handlers
+    _lineTime = None  # used to track log file time changes
     _lineFormat = re.compile('^([a-z ]+): (.*?)', re.IGNORECASE)
-
-    _handlers = {}
-    _plugins = OrderedDict()
-    _debug = True
-    _paused = False
-    _pauseNotice = False
-    _events = {}
-    _eventNames = {}
-    _commands = {}
-
+    _line_color_prefix = ''  # a color code prefix to be added to every line resulting from getWrap
+    _line_length = 80  # max wrap length
     _messages = {}  # message template cache
+    _message_delay = 0  # delay between consequent sent say messages (apply also to private messages)
+    _paused = False  # set to True when B3 is paused
+    _pauseNotice = False  # whether to notice B3 being paused
+    _plugins = OrderedDict()  # plugin instances
+    _port = 0  # the port used by the gameserver for clients connection
+    _publicIp = ''  # game server public ip address
+    _rconIp = ''  # the ip address where to forward RCON commands
+    _rconPort = None  # the virtual port where to forward RCON commands
+    _rconPassword = ''  # the rcon password set on the server
+    _reColor = re.compile(r'\^[0-9a-z]') # regex used to strip out color codes from a given string
+    _timeStart = None  # timestamp when B3 has first started
+    _use_color_codes = True  # whether the game supports color codes or not
+
+    autorestart = False  # whether B3 has been started in autorestart mode
+    clients = None
+    config = None  # parser configuration file instance
+    delay = 0.33  # time between each game log lines fetching
+    delay2 = 0.02  # time between each game log line processing: max number of lines processed in one second
+    encoding = 'latin-1'
+    game = None
+    gameName = None # console name
+    log = None  # logger instance
+    logTime = 0  # time in seconds of epoch of game log
+    name = 'b3'  # bot name
+    output = None  # will contain the instance used to send data to the game server (default to b3.parsers.q3a.rcon.Rcon)
+    privateMsg = False  # will be set to True if the game supports private messages
+    queue = None  # event queue
+    rconTest = False  # whether to perform RCON testing or not
+    remoteLog = False
+    replay = False
+    screen = None
+    storage = None  # storage module instance
+    type = None
+    working = True
+    wrapper = None  # textwrapper instance
+
+    deadPrefix = '[DEAD]^7'  # say dead prefix
+    msgPrefix = ''  # say prefix
+    pmPrefix = '^8[pm]^7'  # private message prefix
+    prefix = '^2%s:^3'  # B3 prefix
 
     # default messages in case one is missing from config file
     _messages_default = {
@@ -255,65 +296,6 @@ class Parser(object):
         "unbanned_by": "$clientname^7 was un-banned by $adminname^7 $reason",
         "unbanned": "$clientname^7 was un-banned $reason",
     }
-
-    _lineTime = None
-    _timeStart = None
-
-    encoding = 'latin-1'
-    clients = None
-
-    game = None
-    gameName = None
-    type = None
-    working = True
-    wrapper = None
-    queue = None
-    config = None
-    storage = None
-    output = None
-    log = None
-    replay = False
-    remoteLog = False
-    autorestart = False
-    screen = None
-    rconTest = False
-    privateMsg = False
-
-    # to apply between each game log lines fetching:
-    # max time beforeva command is detected by the bot + (delay2 * nb_of_lines)
-    delay = 0.33
-
-    # to apply between each game log line processing:
-    # max number of lines processed in one second
-    delay2 = 0.02
-
-    # time in seconds of epoch of game log
-    logTime = 0
-
-    # default outputclass set to the q3a rcon class
-    OutputClass = b3.parsers.q3a.rcon.Rcon
-
-    # in-game message related variables
-    _line_color_prefix = ''
-    _line_length = 80
-    _message_delay = 0
-    _use_color_codes = True
-
-    _eventsStats_cronTab = None
-    _reColor = re.compile(r'\^[0-9a-z]')
-    _cron = None
-
-    name = 'b3'
-    prefix = '^2%s:^3'
-    pmPrefix = '^8[pm]^7'
-    msgPrefix = ''
-    deadPrefix = '[DEAD]^7'
-
-    _publicIp = ''
-    _rconIp = ''
-    _rconPort = None
-    _port = 0
-    _rconPassword = ''
 
     # === Exiting ===
     #
@@ -383,10 +365,11 @@ class Parser(object):
             self.config.getboolean('devmode', 'log2console')
 
         try:
-            logsize = getBytes(self.config.get('b3', 'logsize'))
+            logsize = b3.functions.getBytes(self.config.get('b3', 'logsize'))
         except (TypeError, NoOptionError):
-            logsize = getBytes('10MB')
+            logsize = b3.functions.getBytes('10MB')
 
+        # create the main logger instance
         self.log = b3.output.getInstance(logfile, self.config.getint('b3', 'log_level'), logsize, log2console)
 
         # save screen output to self.screen
@@ -541,8 +524,8 @@ class Parser(object):
                 self.error('Error reading file: %s', f)
                 raise SystemExit('ERROR reading file %s\n' % f)
 
-        # setup rcon
         try:
+            # setup rcon
             self.output = self.OutputClass(self, (self._rconIp, self._rconPort), self._rconPassword)
         except Exception, err:
             self.screen.write(">>> Cannot setup RCON. %s" % err)
@@ -572,14 +555,15 @@ class Parser(object):
             self.screen.flush()
             badRconReplies = ['Bad rconpassword.', 'Invalid password.']
             if res in badRconReplies:
-                self.screen.write('>>> Oops: Bad RCON password\n>>> Hint: This will lead to errors and '
-                                  'render B3 without any power to interact!\n')
+                self.screen.write('>>> Oops: Bad RCON password\n'
+                                  '>>> Hint: This will lead to errors and render B3 without any power to interact!\n')
                 self.screen.flush()
                 time.sleep(2)
             elif res == '':
-                self.screen.write('>>> Oops: No response\n>>> Could be something wrong with the rcon '
-                                  'connection to the server!\n>>> Hint 1: The server is not running or it '
-                                  'is changing maps.\n>>> Hint 2: Check your server-ip and port.\n')
+                self.screen.write('>>> Oops: No response\n'
+                                  '>>> Could be something wrong with the rcon connection to the server!\n'
+                                  '>>> Hint 1: The server is not running or it is changing maps.\n'
+                                  '>>> Hint 2: Check your server-ip and port.\n')
                 self.screen.flush()
                 time.sleep(2)
             else:
