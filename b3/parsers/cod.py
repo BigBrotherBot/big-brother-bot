@@ -72,6 +72,7 @@
 # 19/03/2015 - 1.5.2    - Fenix          - removed deprecated usage of dict.has_key (us 'in dict' instead)
 # 16/04/2015 - 1.5.3    - Fenix          - uniform class variables (dict -> variable)
 #                                        - fixed some regression instroduced in 1.5
+# 28/04/2015 - 1.5.4    - Fenix          - fixed _line_length being declared as a tuple
 
 __author__ = 'ThorN, xlr8or'
 __version__ = '1.5.3'
@@ -98,7 +99,7 @@ class CodParser(AbstractParser):
     _logSync = 3                                             # Value for unbuffered game logging (append mode)
     _counter = {}
 
-    _line_length = 65,
+    _line_length = 65
     _line_color_prefix = ''
 
     _commands = {
