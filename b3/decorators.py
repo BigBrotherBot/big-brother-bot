@@ -20,20 +20,18 @@
 #
 # 19/07/2014 - 1.2   - Fenix - added @deprecated decorator: mark a callable as deprecated
 # 30/08/2014 - 1.2.1 - Fenix - removed @deprecated decorator since it's not compatible with python 2.6
+# 03/05/2015 - 1.3   - Fenix - added @Singleton decorator class
+#                            - renamed @memoize to @Memoize accorcing to PEP8
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.2.1'
+__version__ = '1.3'
 
 import re
 import functools
 
-########################################################################################################################
-##                                                                                                                    ##
-##    CACHING                                                                                                         ##
-##                                                                                                                    ##
-########################################################################################################################
+from b3.exceptions import ProgrammingError
 
-class memoize(object):
+class Memoize(object):
     """
     Cache the return value of a method
 
@@ -60,7 +58,7 @@ class memoize(object):
         """
         self.func = func
 
-    def __get__(self, obj, objtype=None):
+    def __get__(self, obj, _):
         """
         Return cached result (if already computed) or
         the result returned by the cached function.
@@ -85,59 +83,48 @@ class memoize(object):
             res = cache[key] = self.func(*args, **kw)
         return res
 
-########################################################################################################################
-##                                                                                                                    ##
-##  GAME EVENT ROUTER                                                                                                 ##
-##                                                                                                                    ##
-########################################################################################################################
-
-# This module helps defining handlers functions to be called when a game event is received by providing :
-#
-#   - a decorator for associating a regular expression to a handling function : @ger.gameEvent(<regular expression>,...)
-#   - a method getHandler(<text>) that return a tuple <func, dict> where *func* is the first handler function defined
-#     with the gameEvent decorator that matches the given *text* and *dict* is a dict of all matched groups from the
-#     regular expression that was associated to *func* with the decorator.
-#
-#
-# USAGE :
-# -------
-#
-# This tool is meant to be used by B3 game parsers which need to parse game event (in the form of a string) and call
-# a function that takes action for this type of game event.
-#
-# To make a B3 parser take advantage of the GameEventRouter, the B3 parser needs to redefine the *parseLine* method
-# as follow :
-#
-# from b3.decorators import GameEventRouter
-#
-# ger = GameEventRouter()
-#
-# def parseLine(self, line):
-#     if line is None:
-#         return
-#     hfunc, param_dict = ger.getHandler(line)
-#     if hfunc:
-#         self.verbose2("calling %s%r" % (hfunc.func_name, param_dict))
-#         event = hfunc(self, **param_dict)
-#         if event:
-#             self.queueEvent(event)
-#
-#
-# Let say you need to print "Robin joined team BLUE" when parsing a game event which is "join: Robin, BLUE"
-# then you would have the following method in your B3 game parser :
-#
-# @ger.gameEvent("^join: (?P<name>.+), (?P<team>.+)$")
-# def on_connect(self, name, team):
-#     print "%s joined team %s" % (name, team)
-#
-#
-# Note that the handler function must have parameters that matches the regular expression groups.
-#
-# The @ger.gameEvent decorator accepts multiple parameters if you need to have one handling function for multiple
-# kind of game events. Note that those regular expressions should all define the same groups.
 
 class GameEventRouter(object):
+    """
+    This module helps defining handlers functions to be called when a game event is received by providing :
+      - a decorator for associating a regular expression to a handling function: @ger.gameEvent(<regular expression>,...)
+      - a method getHandler(<text>) that return a tuple <func, dict> where *func* is the first handler function defined
+        with the gameEvent decorator that matches the given *text* and *dict* is a dict of all matched groups from the
+        regular expression that was associated to *func* with the decorator.
 
+    USAGE :
+    -------
+    This tool is meant to be used by B3 game parsers which need to parse game event (in the form
+    of a string) and call a function that takes action for this type of game event.
+    
+    To make a B3 parser take advantage of the GameEventRouter, the B3 parser needs to redefine
+    the *parseLine* method as follow :
+    
+    >>> from b3.decorators import GameEventRouter
+    >>>
+    >>> ger = GameEventRouter()
+    >>>
+    >>> def parseLine(self, line):
+    >>>     if line is None:
+    >>>         return
+    >>>     hfunc, param_dict = ger.getHandler(line)
+    >>>     if hfunc:
+    >>>         self.verbose2("calling %s%r" % (hfunc.func_name, param_dict))
+    >>>         event = hfunc(self, **param_dict)
+    >>>         if event:
+    >>>             self.queueEvent(event)
+
+    Let say you need to print "Robin joined team BLUE" when parsing a game event which is
+    "join: Robin, BLUE" then you would have the following method in your B3 game parser:
+    
+    >>> @ger.gameEvent("^join: (?P<name>.+), (?P<team>.+)$")
+    >>> def on_connect(self, name, team):
+    >>>     print "%s joined team %s" % (name, team)
+    
+    Note that the handler function must have parameters that matches the regular expression groups.
+    The @ger.gameEvent decorator accepts multiple parameters if you need to have one handling function for
+    multiple kind of game events. Note that those regular expressions should all define the same groups.
+    """
     def __init__(self):
         # will hold mapping between regular expressions and handler functions
         self._gameevents_mapping = list()
@@ -167,3 +154,52 @@ class GameEventRouter(object):
             if match:
                 return hfunc, match.groupdict()
         return None, {}
+
+
+class Singleton(object):
+    """
+    A non-thread-safe helper class to ease implementing singletons.
+    This should be used as a decorator -- not a metaclass -- to the class that should be a singleton.
+
+    The decorated class can define one `__init__` function that takes only the `self` argument.
+    Other than that, there are no restrictions that apply to the decorated class.
+
+    To get the singleton instance, use the `Instance` method. Trying to use `__call__` will result
+    in a `b3.exceptions.ProgrammingError` being raised.
+
+    Limitations: The decorated class cannot be inherited from.
+    Source: http://stackoverflow.com/a/7346105
+
+    USAGE:
+    ------
+
+    >>> from b3.decorators import Singleton
+    >>>
+    >>> @Singleton
+    >>> class Foo(object):
+    >>>     def __init__(self):
+    >>>         print 'Foo created'
+    >>>
+    >>> f = Foo() # raise b3.exceptions.ProgrammingError
+    >>> g = Foo.Instance() # Good. Being explicit is in line with the Python Zen
+    >>> h = Foo.Instance() # Returns already created instance
+    >>>
+    >>> print f is g # True
+    """
+    def __init__(self, decorated):
+        self._decorated = decorated
+
+    def Instance(self, *args, **kwargs):
+        """
+        Returns the singleton instance. Upon its first call, it creates a
+        new instance of the decorated class and calls its `__init__` method.
+        On all subsequent calls, the already created instance is returned.
+        """
+        try:
+            return self._instance
+        except AttributeError:
+            self._instance = self._decorated(*args, **kwargs)
+            return self._instance
+
+    def __call__(self):
+        raise ProgrammingError('Singletons must be accessed through `instance()`.')
