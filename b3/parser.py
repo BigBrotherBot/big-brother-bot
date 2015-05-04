@@ -297,7 +297,6 @@ class Parser(object):
         "unbanned": "$clientname^7 was un-banned $reason",
     }
 
-
     # === Exiting ===
     #
     # The parser runs two threads: main and handler.  The main thread is
@@ -375,7 +374,9 @@ class Parser(object):
 
         # save screen output to self.screen
         self.screen = sys.stdout
-        print('Activating log   : %s' % logfile)
+        self.screen.write('Activating log   : %s\n' % os.path.abspath(b3.getAbsolutePath(logfile)))
+        self.screen.flush()
+
         sys.stdout = b3.output.STDOutLogger(self.log)
         sys.stderr = b3.output.STDErrLogger(self.log)
 
