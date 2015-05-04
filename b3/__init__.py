@@ -27,6 +27,7 @@
 # 2014/09/07 - 1.2.1    - Courgette - fix getAbsolutePath @b3 and @conf expansion on path using windows style separators
 # 2014/12/14 - 1.3      - Fenix     - let the parser know if we are running B3 in auto-restart mode or not
 # 2015/05/04 - 1.4      - Fenix     - changed getConfPath to be == getB3Path() + '/conf'
+#                                   - added getPlatform() function: return the current platform name
 
 import os
 import re
@@ -90,17 +91,23 @@ def loadParser(pname, configFile, nosetup=False):
     return mod
 
 
+def getPlatform():
+    """
+    Return the current platform name.
+    :return: win32, darwin, linux
+    """
+    if sys.platform not in ('win32', 'darwin'):
+        return 'linux'
+    return sys.platform
+
+
 def getB3versionString():
     """
     Return the B3 version as a string.
     """
     sversion = re.sub(r'\^[0-9a-z]', '', version)
     if main_is_frozen():
-        try:
-            platmapping = {'win32': 'Win32', 'darwin': 'OSX', 'linux2': 'Linux'}
-            sversion = "%s [%s standalone]" % (sversion, platmapping[sys.platform])
-        except:
-            sversion = "%s [standalone]" % sversion
+        sversion = "%s [%s standalone]" % (sversion, getPlatform())
     return sversion
 
 

@@ -39,6 +39,7 @@
 __author__ = 'ThorN, xlr8or, courgette, Fenix'
 __version__ = '3.3'
 
+import b3
 import re
 import os
 import sys
@@ -53,16 +54,13 @@ from distutils import dir_util, log
 from setuptools.command.egg_info import egg_info as orig_egg_info
 from time import strftime
 
-PLATFORM = sys.platform
-if PLATFORM not in ('win32', 'darwin'):
-    PLATFORM = 'linux'
 
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))  # directory where this file is in
 DIST_DIR = os.path.join(PROJECT_DIR, 'dist')  # directory where all the final builds will be found
 BUILD_DIR = os.path.join(PROJECT_DIR, 'build')  # directory where all work will be done
 BUILD_VER = '.'.join(map(str, B3version(b3_version).version))  # current build version (extracted from b3 version)
 BUILD_TIME = strftime('%Y%m%d')  # current build time (for distribution zip name)
-BUILD_PATH = os.path.join(BUILD_DIR, 'b3-%s-%s-%s' % (BUILD_VER, BUILD_TIME, PLATFORM))  # frozen distribution path
+BUILD_PATH = os.path.join(BUILD_DIR, 'b3-%s-%s-%s' % (BUILD_VER, BUILD_TIME, b3.getPlatform()))  # frozen distribution path
 
 settings = {
     'win32': {
@@ -277,7 +275,7 @@ else:
 
     cmdclass['build_exe'] = my_build_exe
 
-    if PLATFORM == 'darwin':
+    if b3.getPlatform() == 'darwin':
         # those are available only on Mac OSX
         from cx_Freeze import bdist_mac
         from cx_Freeze import bdist_dmg
@@ -452,8 +450,8 @@ else:
             base='Console',
             compress=True,
             copyDependentFiles=True,
-            targetName=settings[PLATFORM]['binary_name'],
-            icon=settings[PLATFORM]['icon'],
+            targetName=settings[b3.getPlatform()]['binary_name'],
+            icon=settings[b3.getPlatform()]['icon'],
         )
     ]
 
@@ -540,7 +538,7 @@ setup(
             'dist_dir': DIST_DIR,
         },
         'bdist_mac': {
-            'iconfile': settings[PLATFORM]['icon'],
+            'iconfile': settings[b3.getPlatform()]['icon'],
             'bundle_name': 'BigBrotherBot (B3) %s' % BUILD_VER,
         },
         'bdist_dmg': {
@@ -550,7 +548,7 @@ setup(
         },
         'build_exe': {
             'dist_dir': DIST_DIR,
-            'linux_binary_name': settings[PLATFORM]['binary_name'],
+            'linux_binary_name': settings[b3.getPlatform()]['binary_name'],
             'build_exe': BUILD_PATH,
             'silent': False,
             'optimize': 1,

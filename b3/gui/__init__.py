@@ -38,7 +38,6 @@ from b3.decorators import Singleton
 from b3.exceptions import DatabaseError, ConfigFileNotValid
 from functools import partial
 from time import time, sleep
-from threading import Thread
 from Queue import Queue
 from PyQt5.QtCore import Qt, QSize, QObject, pyqtSignal, pyqtSlot, QThread
 from PyQt5.QtGui import QCursor, QTextCursor
@@ -47,10 +46,6 @@ from PyQt5.QtWidgets import QPushButton, QApplication, QMainWindow, QAction, QDe
                             QMessageBox, QDialog, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QSplashScreen, \
                             QTableWidget, QAbstractItemView, QTableWidgetItem, QHeaderView, QProgressBar, QStatusBar, \
                             QTextEdit
-
-PLATFORM = sys.platform
-if PLATFORM not in ('win32', 'darwin'):
-    PLATFORM = 'linux'
 
 ## STRINGS
 B3_TITLE = 'BigBrotherBot (B3) %s' % b3_version
@@ -1063,7 +1058,7 @@ class MainWindow(QMainWindow):
         help_menu = self.menuBar().addMenu('&Help')
         help_menu.addAction(about)
 
-        if PLATFORM != 'darwin':
+        if b3.getPlatform() != 'darwin':
             help_menu.addSeparator()
 
         help_menu.addAction(wiki)
