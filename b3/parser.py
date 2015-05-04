@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/05/04 - 1.42.9 - Fenix           - removed reply mode: it's messing up GUI and it's needed only to debug cod4
 # 2015/04/28 - 1.42.8 - Fenix           - code cleanup
 # 2015/04/22 - 1.42.7 - Fenix           - fixed typo in startPlugins: was causing B3 to crash upon startup
 # 2015/04/16 - 1.42.6 - Fenix           - uniform class variables (dict -> variable)
@@ -180,7 +181,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.42.8'
+__version__ = '1.42.9'
 
 
 import os
@@ -210,7 +211,7 @@ from ConfigParser import NoOptionError
 from collections import OrderedDict
 from b3.clients import Clients
 from b3.clients import Group
-from b3.decorators import memoize
+from b3.decorators import Memoize
 from b3.exceptions import MissingRequirement
 from b3.functions import getModule
 from b3.functions import vars2printf
@@ -273,7 +274,6 @@ class Parser(object):
     queue = None  # event queue
     rconTest = False  # whether to perform RCON testing or not
     remoteLog = False
-    replay = False
     screen = None
     storage = None  # storage module instance
     type = None
@@ -296,6 +296,7 @@ class Parser(object):
         "unbanned_by": "$clientname^7 was un-banned by $adminname^7 $reason",
         "unbanned": "$clientname^7 was un-banned $reason",
     }
+
 
     # === Exiting ===
     #
@@ -456,13 +457,6 @@ class Parser(object):
             if delay2 > 0:
                 self.delay2 = 1/delay2
 
-        # demo mode: use log time
-        if self.config.has_option('devmode', 'replay'):
-            self.replay = self.config.getboolean('devmode', 'replay')
-            if self.replay:
-                self._timeStart = 0
-                self.bot('Replay mode enabled')
-
         try:
             # setup storage module
             dsn = self.config.get('b3', 'database')
@@ -510,11 +504,7 @@ class Parser(object):
 
             if os.path.isfile(f):
                 self.input = file(f, 'r')
-    
-                # seek to point in log file?
-                if self.replay:
-                    pass
-                elif self.config.has_option('server', 'seek'):
+                if self.config.has_option('server', 'seek'):
                     seek = self.config.getboolean('server', 'seek')
                     if seek:
                         self.input.seek(0, os.SEEK_END)
@@ -595,6 +585,7 @@ class Parser(object):
     def getAbsolutePath(path):
         """
         Return an absolute path name and expand the user prefix (~)
+        :param path: the relative path we want to expand
         """
         return b3.getAbsolutePath(path)
 
@@ -772,7 +763,7 @@ class Parser(object):
                 :param match: The plugin name
                 """
                 # first look in the built-in plugins directory
-                search = '%s%s*%s*' % (self.getAbsolutePath('@b3\\conf'), os.path.sep, match)
+                search = '%s%s*%s*' % (self.getAbsolutePath('@conf\\'), os.path.sep, match)
                 self.debug('Searching for configuration file(s) matching: %s' % search)
                 collection = glob.glob(search)
                 if len(collection) > 0:
@@ -1180,7 +1171,7 @@ class Parser(object):
 
         return cmd % kwargs
 
-    @memoize
+    @Memoize
     def getGroup(self, data):
         """
         Return a valid Group from storage.
@@ -1298,9 +1289,6 @@ class Parser(object):
                                 self.logTime += log_time_current - log_time_last
                                 log_time_last = log_time_current
 
-                            if self.replay:                    
-                                self.debug('log time %d' % self.logTime)
-
                             self.console(line)
 
                             try:
@@ -1417,11 +1405,7 @@ class Parser(object):
         """
         Write a message to Rcon/Console
         """
-        if self.replay:
-            self.bot('Sent rcon message: %s' % msg)
-        elif self.output is None:
-            pass
-        else:
+        if self.output:
             res = self.output.write(msg, maxRetries=maxRetries, socketTimeout=socketTimeout)
             self.output.flush()
             return res
@@ -1431,13 +1415,7 @@ class Parser(object):
         Write a sequence of messages to Rcon/Console. Optimized for speed.
         :param msg: The message to be sent to Rcon/Console.
         """
-        if self.replay:
-            self.bot('Sent rcon message: %s' % msg)
-        elif self.output is None:
-            pass
-        elif not msg:
-            pass
-        else:
+        if self.output and msg:
             res = self.output.writelines(msg)
             self.output.flush()
             return res
@@ -1621,8 +1599,6 @@ class Parser(object):
         """
         Return the current time in GMT/UTC.
         """
-        if self.replay:
-            return self.logTime
         return int(time.time())
 
     def _get_cron(self):
@@ -1786,9 +1762,3 @@ class Parser(object):
         /!\ This method must return True if the penalty was inflicted.
         """
         pass
-
-if __name__ == '__main__':
-    import config
-    parser = Parser(config.load('conf/b3.xml'))
-    print parser
-    print parser.start()

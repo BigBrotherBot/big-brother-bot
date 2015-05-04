@@ -740,9 +740,7 @@ class AbstractParser(b3.parser.Parser):
         else:
             # Then we got a command, so unpack it
             cmd = ' '.join(msg).strip()
-            if self.replay:
-                self.bot('Sent rcon message: %s' % cmd)
-            elif self.output:
+            if self.output:
                 return self.output.write(cmd)
     
     def getPlayerList(self, maxRetries=None):

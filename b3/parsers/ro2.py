@@ -698,28 +698,18 @@ class Ro2Parser(b3.parser.Parser):
         """
         Write a message to Console via Ajax.
         """
-        if self.replay:
-            self.bot('Sent rcon message: %s' % msg)
-        elif self.output is None:
-            pass
-        else:
+        if self.output:
             msg = self.stripMsgColors(msg)
             self._write_queue.append(msg)
-            return
 
     def writelines(self, msg):
         """
         Write a sequence of messages to Console via Ajax.
         """
-        if self.replay:
-            self.bot('Sent rcon message: %s' % msg)
-        elif self.output is None:
-            pass
-        else:
+        if self.output and msg:
             for line in msg:
                 self.write(line)
                 time.sleep(0.1)
-            return
             
     def writeAdminCommand(self, cmd):
         """
