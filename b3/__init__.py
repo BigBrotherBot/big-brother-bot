@@ -26,6 +26,7 @@
 # 2014/07/20 - 1.2      - Fenix     - syntax cleanup
 # 2014/09/07 - 1.2.1    - Courgette - fix getAbsolutePath @b3 and @conf expansion on path using windows style separators
 # 2014/12/14 - 1.3      - Fenix     - let the parser know if we are running B3 in auto-restart mode or not
+# 2015/05/04 - 1.4      - Fenix     - changed getConfPath to be == getB3Path() + '/conf'
 
 import os
 import re
@@ -55,13 +56,14 @@ version = '^8www.bigbrotherbot.net ^0(^8b3^0) ^9%s ^9[^3PoisonIvy^9]^3' % versio
 _confDir = None
 console = None
 
-# some constants
+# TEAMS
 TEAM_UNKNOWN = -1
 TEAM_FREE = 0
 TEAM_SPEC = 1
 TEAM_RED = 2
 TEAM_BLUE = 3
 
+# PLAYER STATE
 STATE_DEAD = 1
 STATE_ALIVE = 2
 STATE_UNKNOWN = 3
@@ -71,7 +73,7 @@ def loadParser(pname, configFile, nosetup=False):
     """
     Load the parser module given it's name.
     :param pname: The parser name
-    :param configFile: The parser configuration file (namely b3.xml)
+    :param configFile: The parser configuration file
     :param nosetup: Whether or not to run the B3 setup
     :return The parser module
     """
@@ -94,7 +96,11 @@ def getB3versionString():
     """
     sversion = re.sub(r'\^[0-9a-z]', '', version)
     if main_is_frozen():
-        sversion = "%s [Win32 standalone]" % sversion
+        try:
+            platmapping = {'win32': 'Win32', 'darwin': 'OSX', 'linux2': 'Linux'}
+            sversion = "%s [%s standalone]" % (sversion, platmapping[sys.platform])
+        except:
+            sversion = "%s [standalone]" % sversion
     return sversion
 
 
@@ -103,25 +109,21 @@ def getB3Path():
     Return the path to the main B3 directory.
     """
     if main_is_frozen():
-        # which happens when running from the py2exe build
         return os.path.dirname(sys.executable)
     return modulePath
 
 
 def getConfPath():
     """
-    Return the path to the main configuration file.
+    Return the path to the B3 main configuration directory.
     """
-    if _confDir is not None:
-        return _confDir
-    else:
-        # try to get info from b3.console (assuming it is loaded)
-        return os.path.dirname(console.config.fileName)
+    return os.path.join(getB3Path(), 'conf')
 
 
 def getAbsolutePath(path):
     """
     Return an absolute path name and expand the user prefix (~).
+    :param path: the relative path we want to expand
     """
     if path[0:4] == '@b3\\' or path[0:4] == '@b3/':
         path = os.path.join(getB3Path(), path[4:])
