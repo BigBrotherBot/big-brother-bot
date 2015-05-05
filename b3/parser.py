@@ -277,7 +277,7 @@ class Parser(object):
     screen = None
     storage = None  # storage module instance
     type = None
-    working = True
+    working = True  # whether B3 is running or not
     wrapper = None  # textwrapper instance
 
     deadPrefix = '[DEAD]^7'  # say dead prefix
@@ -305,27 +305,27 @@ class Parser(object):
     # including raising ``SystemExit'' when a user-requested exit is needed.
     #
     # The ``SystemExit'' exception bubbles up only as far as the top of the handler
-    # thread -- the ``handle_events'' method.  To expose the exit status to the
+    # thread -- the ``handleEvents'' method.  To expose the exit status to the
     # ``run'' method in the main thread, we store the value in ``exitcode''.
     #
-    # Since the teardown steps in ``run'' and ``handle_events'' would occur in
+    # Since the teardown steps in ``run'' and ``handleEvents'' would occur in
     # parallel, we use a lock (``exiting'') to ensure that ``run'' waits for
-    # ``handle_events'' to finish before proceeding.
+    # ``handleEvents'' to finish before proceeding.
     #
     # How exiting works, in detail:
     #
-    #   - the parallel loops in run() and handle_events() are terminated only when working==False.
+    #   - the parallel loops in run() and handleEvents() are terminated only when working==False.
     #   - die() or restart() invokes shutdown() from the handler thread.
     #   - the exiting lock is acquired by shutdown() in the handler thread before it sets working=False to
     #     end both loops.
     #   - die() or restart() raises SystemExit in the handler thread after shutdown() and a few seconds delay.
-    #   - when SystemExit is caught by handle_events(), its exit status is pushed to the main context via exitcode.
-    #   - handle_events() ensures the exiting lock is released when it finishes.
+    #   - when SystemExit is caught by handleEvents(), its exit status is pushed to the main context via exitcode.
+    #   - handleEvents() ensures the exiting lock is released when it finishes.
     #   - run() waits to acquire the lock in the main thread before proceeding with teardown, repeating
     #     sys.exit(exitcode) from the main thread if set.
     #
     #   In the case of an abnormal exception in the handler thread, ``exitcode''
-    #   will be None and the ``exiting'' lock will be released when``handle_events''
+    #   will be None and the ``exiting'' lock will be released when``handleEvents''
     #   finishes so the main thread can still continue.
     #
     #   Exits occurring in the main thread do not need to be synchronised.
@@ -578,7 +578,7 @@ class Parser(object):
             self.warning(err)
 
         self.debug("Creating the event queue with size %s", queuesize)
-        self.queue = Queue.Queue(queuesize)    # event queue
+        self.queue = Queue.Queue(queuesize)
 
         atexit.register(self.shutdown)
 
@@ -591,6 +591,9 @@ class Parser(object):
         return b3.getAbsolutePath(path)
 
     def _dumpEventsStats(self):
+        """
+        Dump event statistics into the B3 log file.
+        """
         self._eventsStats.dumpStats()
 
     def start(self):
@@ -1252,10 +1255,8 @@ class Parser(object):
         Main worker thread for B3
         """
         self.screen.write('Startup complete : B3 is running! Let\'s get to work!\n\n')
-        self.screen.write('(If you run into problems, check %s in the B3 root directory for '
-                          'detailed log info)\n' % self.config.getpath('b3', 'logfile'))
-        
-        #self.screen.flush()
+        self.screen.write('If you run into problems check your B3 log file for more information\n')
+        self.screen.flush()
         self.updateDocumentation()
 
         log_time_start = None
@@ -1596,7 +1597,8 @@ class Parser(object):
         """
         self.log.critical(msg, *args, **kwargs)
 
-    def time(self):
+    @staticmethod
+    def time():
         """
         Return the current time in GMT/UTC.
         """

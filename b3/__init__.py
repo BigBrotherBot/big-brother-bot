@@ -1,3 +1,4 @@
+# coding=utf-8
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
@@ -26,8 +27,8 @@
 # 2014/07/20 - 1.2      - Fenix     - syntax cleanup
 # 2014/09/07 - 1.2.1    - Courgette - fix getAbsolutePath @b3 and @conf expansion on path using windows style separators
 # 2014/12/14 - 1.3      - Fenix     - let the parser know if we are running B3 in auto-restart mode or not
-# 2015/05/04 - 1.4      - Fenix     - changed getConfPath to be == getB3Path() + '/conf'
-#                                   - added getPlatform() function: return the current platform name
+# 2015/05/04 - 1.4      - Fenix     - added getPlatform() function: return the current platform name
+#                                   - better update data printing in stdout
 
 import os
 import re
@@ -36,7 +37,6 @@ import pkg_handler
 import traceback
 import time
 import signal
-import platform
 import config
 
 from b3.functions import main_is_frozen
@@ -54,7 +54,7 @@ versionOs = os.name
 versionId = 'v%s [%s]' % (__version__, versionOs)
 version = '^8www.bigbrotherbot.net ^0(^8b3^0) ^9%s ^9[^3PoisonIvy^9]^3' % versionId
 
-_confDir = None
+confdir = None
 console = None
 
 # TEAMS
@@ -124,7 +124,9 @@ def getConfPath():
     """
     Return the path to the B3 main configuration directory.
     """
-    return os.path.join(getB3Path(), 'conf')
+    if confdir is not None:
+        return confdir
+    return os.path.dirname(console.config.fileName)
 
 
 def getAbsolutePath(path):
@@ -154,8 +156,8 @@ def start(configFile, nosetup=False, autorestart=False):
     conf = None
     if os.path.exists(configFile):
         print 'Using config file: %s' % configFile
-        global _confDir
-        _confDir = os.path.dirname(configFile)
+        global confdir
+        confdir = os.path.dirname(configFile)
         conf = config.MainConfig(config.load(configFile))
     else:
         # this happens when a config was entered on
@@ -164,24 +166,26 @@ def start(configFile, nosetup=False, autorestart=False):
             raise SystemExit('ERROR: could not find config file %s' % configFile)
         Setup(configFile)
 
-    # check if a newer version of B3 is available
-    update_channel = None
-
     try:
         update_channel = conf.get('update', 'channel')
     except (NoSectionError, NoOptionError):
         pass
-
-    if update_channel == 'skip':
-        print "Skipping check if a update is available."
     else:
-        _update = checkUpdate(__version__, channel=update_channel, singleLine=False, showErrormsg=True)
-        if _update:
-            print _update
-            time.sleep(5)
+        sys.stdout.write('Checking update  : ')
+        sys.stdout.flush()
+        if update_channel == 'skip':
+            sys.stdout.write('SKIP\n')
+            sys.stdout.flush()
         else:
-            print "...no update available."
-            time.sleep(1)
+            updatetext = checkUpdate(__version__, channel=update_channel, singleLine=True, showErrormsg=True)
+            if updatetext:
+                sys.stdout.write('%s\n' % updatetext)
+                sys.stdout.flush()
+                time.sleep(2)
+            else:
+                sys.stdout.write('no update available\n')
+                sys.stdout.flush()
+                time.sleep(1)
 
     try:
 
@@ -192,7 +196,7 @@ def start(configFile, nosetup=False, autorestart=False):
         try:
             parser = loadParser(parserType, configFile, nosetup)
         except ImportError, err:
-            raise SystemExit("CRITICAL: could not find parser '%s': check you main config file (b3.xml)\n"
+            raise SystemExit("CRITICAL: could not find parser '%s': check you main config file\n"
                              "B3 failed to start.\n%r" % (parserType, err))
         
         global console
@@ -237,7 +241,7 @@ def clearScreen():
     """
     Clear the current shell screen according to the OS being used.
     """
-    if platform.system() in ('Windows', 'Microsoft'):
+    if getPlatform() == 'win32':
         os.system('cls')
     else:
         os.system('clear')
