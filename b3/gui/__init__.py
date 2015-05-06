@@ -246,7 +246,7 @@ class B3(QProcess):
                 program = os.path.abspath(os.path.join(b3.getB3Path(), 'b3_run.x86'))
 
         # append the configuration file path
-        program = '%s --config %s' % (program, self.config_path)
+        program = '%s --config %s --console' % (program, self.config_path)
 
         # create the console window (hidden by default)
         self.stdout_dialog = STDOutDialog(process=self)
