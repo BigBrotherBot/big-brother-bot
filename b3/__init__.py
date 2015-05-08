@@ -29,6 +29,7 @@
 # 2014/12/14 - 1.3      - Fenix     - let the parser know if we are running B3 in auto-restart mode or not
 # 2015/05/04 - 1.4      - Fenix     - added getPlatform() function: return the current platform name
 #                                   - better update data printing in stdout
+#                                   - added getWritableFilePath function: return a valid writable filepath
 
 import os
 import re
@@ -42,6 +43,7 @@ import config
 from b3.functions import main_is_frozen
 from b3.update import checkUpdate
 from b3.setup import Setup
+from tempfile import TemporaryFile
 from ConfigParser import NoOptionError
 from ConfigParser import NoSectionError
 
@@ -68,6 +70,11 @@ TEAM_BLUE = 3
 STATE_DEAD = 1
 STATE_ALIVE = 2
 STATE_UNKNOWN = 3
+
+# APP HOME DIRECTORY
+HOMEDIR = os.path.normpath(os.path.expanduser('~/BigBrotherBot'))
+if not os.path.isdir(HOMEDIR):
+    os.mkdir(HOMEDIR)
 
 
 def loadParser(pname, configFile, nosetup=False):
@@ -139,6 +146,25 @@ def getAbsolutePath(path):
     elif path[0:6] == '@conf\\' or path[0:6] == '@conf/':
         path = os.path.join(getConfPath(), path[6:])
     return os.path.normpath(os.path.expanduser(path))
+
+
+def getWritableFilePath(filepath):
+    """
+    Return an absolute filepath making sure the current user can write it.
+    If the given path is not writable by the current user, the path will be converted into an
+    absolute path pointing inside the B3 home directory (defined in the `HOMEDIR` global variable)
+    which is assumed to be writable.
+    :param filepath: the relative path we want to expand
+    """
+    filepath = getAbsolutePath(filepath)
+    if not filepath.startswith(HOMEDIR):
+        try:
+            tmp = TemporaryFile(dir=os.path.dirname(filepath))
+        except (OSError, IOError):
+            filepath = os.path.join(HOMEDIR, os.path.basename(filepath))
+        else:
+            tmp.close()
+    return filepath
 
 
 def start(configFile, nosetup=False, autorestart=False):
