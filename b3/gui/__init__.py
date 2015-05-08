@@ -1,7 +1,7 @@
 # coding=utf-8
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2015 Daniele Pantaleone <fenix@bigbrotherbot.net>
+# Copyright (C) 2005 Michael "ThorN" Thornton
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,25 +25,29 @@
 #                  - changed MessageBox to use Button class instead of the default StandardButton: this enable
 #                    the mouse cursor transition upon MessageBox button enterEvent and leaveEvent
 #                  - added update check feature
+# 07/05/2015 - 0.3 - added loggin facility
+#                  - moved database file into user HOME folder (will survive updates)
 
 
 __author__ = 'Fenix'
-__version__ = '0.2'
+__version__ = '0.3'
 
 import b3
 import bisect
 import os
 import re
 import json
+import logging
 import sqlite3
 import sys
 import urllib2
 import webbrowser
 
 from b3 import __version__ as b3_version
+from b3 import HOMEDIR
 from b3.config import MainConfig, load as load_config
 from b3.decorators import Singleton
-from b3.exceptions import DatabaseError, ConfigFileNotValid
+from b3.exceptions import ConfigFileNotValid
 from b3.functions import main_is_frozen
 from b3.update import getDefaultChannel, B3version, URL_B3_LATEST_VERSION
 from functools import partial
@@ -66,12 +70,15 @@ B3_WEBSITE = 'http://www.bigbrotherbot.net'
 B3_WIKI = 'http://wiki.bigbrotherbot.net/'
 B3_CONFIG_GENERATOR = 'http://config.bigbrotherbot.net/'
 
-## PATHS
+## USER PATHS
+B3_STORAGE = b3.getWritableFilePath(os.path.join(HOMEDIR, 'app.db'))
+B3_LOG = b3.getWritableFilePath(os.path.join(HOMEDIR, 'app.log'))
+
+## RESOURCE PATHS
 B3_BANNER = b3.getAbsolutePath('@b3/gui/assets/main.png')
 B3_ICON = b3.getAbsolutePath('@b3/gui/assets/icon.png')
 B3_SPLASH = b3.getAbsolutePath('@b3/gui/assets/splash.png')
-B3_STORAGE = b3.getAbsolutePath('@b3/conf/b3.db')
-B3_STORAGE_SQL = b3.getAbsolutePath('@b3/sql/sqlite/b3-gui.sql')
+B3_SQL = b3.getAbsolutePath('@b3/sql/sqlite/b3-gui.sql')
 ICON_DEL = b3.getAbsolutePath('@b3/gui/assets/del.png')
 ICON_CONSOLE = b3.getAbsolutePath('@b3/gui/assets/console.png')
 ICON_LOG = b3.getAbsolutePath('@b3/gui/assets/log.png')
@@ -177,6 +184,7 @@ CONFIG_VALID = 0b10
 
 ## OTHERS
 RE_COLOR = re.compile(r'(\^\d)')
+LOG = None
 
 
 class B3(QProcess):
@@ -236,17 +244,16 @@ class B3(QProcess):
         otherwise the Frozen executables) handing over necessary startup parameters.
         """
         if not main_is_frozen():
-            program = 'python %s' % os.path.abspath(os.path.join(b3.getB3Path(), '..', 'b3_run.py'))
+            program = 'python %s --config %s --console' % (os.path.abspath(os.path.join(b3.getB3Path(), '..', 'b3_run.py')), self.config_path)
         else:
             if b3.getPlatform() == 'win32':
-                program = os.path.abspath(os.path.join(b3.getB3Path(), 'b3_run.exe'))
+                program = '%s --config %s --console' % (os.path.abspath(os.path.join(b3.getB3Path(), 'b3_run.exe')), self.config_path)
             elif b3.getPlatform() == 'darwin':
-                program = os.path.abspath(os.path.join(b3.getB3Path(), 'Contents', 'MacOS', 'b3_run'))
+                program = '"%s" --config "%s" --console' % (os.path.abspath(os.path.join(b3.getB3Path(), 'b3_run')), self.config_path)
             else:
-                program = os.path.abspath(os.path.join(b3.getB3Path(), 'b3_run.x86'))
+                program = '%s --config %s --console' % (os.path.abspath(os.path.join(b3.getB3Path(), 'b3_run.x86')), self.config_path)
 
-        # append the configuration file path
-        program = '%s --config %s --console' % (program, self.config_path)
+        LOG.info('starting %s process: %s' % (self.name, program))
 
         # create the console window (hidden by default)
         self.stdout_dialog = STDOutDialog(process=self)
@@ -254,6 +261,7 @@ class B3(QProcess):
         self.readyReadStandardOutput.connect(self.stdout_dialog.read_stdout)
 
         # configure signal handlers
+        self.error.connect(self.process_error)
         self.finished.connect(self.process_finished)
 
         # start the program
@@ -270,6 +278,7 @@ class B3(QProcess):
         cursor = B3App.Instance().storage.cursor()
         cursor.execute("INSERT INTO b3 (config) VALUES (?)", (self.config.fileName,))
         self.id = cursor.lastrowid
+        LOG.debug('stored new process in the database: @%s:%s' % (self.id, self.config_path))
         cursor.close()
         # store in the QApplication
         if self not in B3App.Instance().processes:
@@ -281,6 +290,7 @@ class B3(QProcess):
         """
         cursor = B3App.Instance().storage.cursor()
         cursor.execute("UPDATE b3 SET config=? WHERE id=?", (self.config.fileName, self.id))
+        LOG.debug('updated process in the database: @%s:%s' % (self.id, self.config_path))
         cursor.close()
 
     def delete(self):
@@ -291,6 +301,7 @@ class B3(QProcess):
         # remove from the storage
         cursor = B3App.Instance().storage.cursor()
         cursor.execute("DELETE FROM b3 WHERE id=?", (self.id,))
+        LOG.debug('removed process from the database: @%s:%s' % (self.id, self.config_path))
         cursor.close()
         # remove QApplication reference
         if self in B3App.Instance().processes:
@@ -373,12 +384,20 @@ class B3(QProcess):
 
     ############################################# SIGNAL HANDLERS ######################################################
 
+    def process_error(self, error):
+        """
+        Executed when the process errors
+        :param error: the QProcess.ProcessError value
+        """
+        LOG.error('%s errored: %s' % self.name)
+
     def process_finished(self, exit_code, _):
         """
         Executed when the process terminate
         :param exit_code: the process exit code
         """
         if exit_code != 0:
+            LOG.error('%s exited with status %s' % (self.name, exit_code))
             msgbox = MessageBox(icon=QMessageBox.Critical)
             msgbox.setText('%s terminated unexpectedly: you can find more information in the B3 log file' % self.name)
             msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
@@ -755,6 +774,7 @@ class UpdateDialog(QDialog):
                 """
                 # sleep a bit to show the initial message
                 sleep(.5)
+                LOG.info('checking for updates...')
 
                 try:
                     channel = getDefaultChannel(b3_version)
@@ -762,19 +782,24 @@ class UpdateDialog(QDialog):
                     versioninfo = json.loads(jsondata)
                 except urllib2.URLError, err:
                     self.message = 'ERROR: could not connect to the update server: %s' % err.reason
+                    LOG.error('could not connect to the update server: %s' % err.reason)
                 except IOError, err:
                     self.message = 'ERROR: could not read data: %s' % err
+                    LOG.error('could not read data: %s' % err)
                 except Exception, err:
                     self.message = 'ERROR: unknown error: %s' % err
+                    LOG.error('ERROR: unknown error: %s' % err)
                 else:
                     channels = versioninfo['B3']['channels']
                     if channel not in channels:
                         self.message = 'ERROR: unknown channel \'%s\': expecting (%s)' % (channel, ', '.join(channels.keys()))
+                        LOG.error('unknown channel \'%s\': expecting (%s)' % (channel, ', '.join(channels.keys())))
                     else:
                         try:
                             latestversion = channels[channel]['latest-version']
                         except KeyError:
                             self.message = 'ERROR: could not get latest B3 version for channel: %s' % channel
+                            LOG.error('could not get latest B3 version for channel: %s' % channel)
                         else:
                             if B3version(b3_version) < B3version(latestversion):
                                 try:
@@ -783,8 +808,10 @@ class UpdateDialog(QDialog):
                                     url = B3_WEBSITE
 
                                 self.message = 'update available: <a href="%s">%s</a>' % (url, latestversion)
+                                LOG.info('update available: %s - %s' % (url, latestversion))
                             else:
                                 self.message = 'no update available'
+                                LOG.info('no update available')
 
         self.updatecheck = UpdateCheck(self)
         self.updatecheck.finished.connect(self.finished)
@@ -1308,11 +1335,54 @@ class B3App(QApplication):
     def init(self):
         """
         Initialize the application.
+        :return MainWindow: the reference to the main window object
         """
+        self.__init_home()
+        self.__init_log()
         self.__init_storage()
         self.__init_processes()
         self.__init_signals()
         self.__init_main_window()
+        return self.main_window
+
+    @staticmethod
+    def __init_home():
+        """
+        Initialize B3 HOME directory.
+        """
+        if not os.path.isdir(HOMEDIR):
+            os.mkdir(HOMEDIR)
+
+    @staticmethod
+    def __init_log():
+        """
+        Initialize the GUI log.
+        """
+        global LOG
+
+        class CustomHandler(logging.Logger):
+
+            def __init__(self, name, level=logging.NOTSET):
+                """
+                Object constructor.
+                :param name: The logger name
+                :param level: The default logging level
+                """
+                logging.Logger.__init__(self, name, level)
+
+            def critical(self, msg, *args, **kwargs):
+                """
+                Log 'msg % args' with severity 'CRITICAL' and raise an Exception.
+                """
+                logging.Logger.critical(self, msg, *args, **kwargs)
+                raise Exception(msg % args)
+
+        logging.setLoggerClass(CustomHandler)
+        LOG = logging.getLogger(__name__)
+        handler = logging.FileHandler(B3_LOG)
+        handler.setFormatter(logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)r', '%y%m%d %H:%M:%S'))
+        LOG.addHandler(handler)
+        LOG.setLevel(logging.DEBUG)
 
     def __init_storage(self):
         """
@@ -1328,12 +1398,14 @@ class B3App(QApplication):
             self.__build_schema()
         else:
             # check database schema
+            LOG.debug('checking database schema')
             cursor = self.storage.cursor()
             cursor.execute("""SELECT * FROM sqlite_master WHERE type='table'""")
             tables = [row[1] for row in cursor.fetchall()]
             cursor.close()
 
             if not 'b3' in tables:
+                LOG.debug('database schema is corrupted: asking the user if he wants to rebuild it')
                 msgbox = MessageBox(icon=QMessageBox.Critical)
                 msgbox.setText('The database schema is corrupted and must be rebuilt. Do you want to proceed?')
                 msgbox.setInformativeText('NOTE: all the previously saved data will be lost!')
@@ -1342,23 +1414,24 @@ class B3App(QApplication):
                 msgbox.exec_()
 
                 if msgbox.clickedButton() == button_no:
-                    # an exception being raised will terminate the QApplication
-                    raise DatabaseError('Could not start B3: database schema is corrupted!')
+                    # critical will raise an exception which will terminate the QApplication
+                    LOG.critical('could not start B3: database schema is corrupted!')
 
                 try:
                     os.remove(B3_STORAGE)
                     self.__build_schema()
                 except Exception, err:
-                    raise DatabaseError('Could initialize SQLite database: %s (%s) '
-                                        'Make sure B3 has permissions to operate on this file, '
-                                        'or remove it manually.' % (B3_STORAGE, err))
+                    raise LOG.critical('could initialize SQLite database: %s (%s): make sure B3 has permissions to '
+                                       'operate on this file, or remove it manually' % (B3_STORAGE, err))
 
     def __init_processes(self):
         """
         Load available B3 processes from the database.
         """
+        LOG.debug('loading B3 process instances from the storage')
         self.processes = B3.get_list_from_storage()
         self.processes.sort()
+        LOG.info('%s B3 processes available' % len(self.processes))
 
     def __init_signals(self):
         """
@@ -1373,14 +1446,14 @@ class B3App(QApplication):
         # set the icon here so it's global
         self.setWindowIcon(QIcon(B3_ICON))
         self.main_window = MainWindow()
-        self.main_window.show()
 
     def __build_schema(self):
         """
         Build the database schema.
         Will import the B3 schema SQL script into the database, to create missing tables.
         """
-        with open(B3_STORAGE_SQL, 'r') as schema:
+        with open(B3_SQL, 'r') as schema:
+            LOG.debug('initializing database schema')
             self.storage.executescript(schema.read())
 
     def shutdown(self):
@@ -1389,9 +1462,15 @@ class B3App(QApplication):
         This is executed when the `aboutToQuit` signal is emitted, before `quit()
         or when the user shutdown the Desktop session`.
         """
+        LOG.debug('shutdown requested')
         for process in self.processes:
             if process.state() != QProcess.NotRunning:
+                LOG.info('shutting down %s process' % process.name)
                 process.close()
+
+        for handler in LOG.handlers:
+            handler.close()
+            LOG.removeHandler(handler)
 
 
 if __name__ == "__main__":

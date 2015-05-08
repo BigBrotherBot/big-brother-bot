@@ -196,8 +196,8 @@ def run_gui(options):
     app = B3App.Instance(sys.argv)
 
     try:
-        with SplashScreen(min_splash_time=0):
-            app.init()
+        with SplashScreen(min_splash_time=2):
+            mainwindow = app.init()
     except Exception, e:
         box = MessageBox(icon=MessageBox.Critical)
         box.setWindowTitle('CRITICAL')
@@ -206,6 +206,7 @@ def run_gui(options):
         box.exec_()
         sys.exit(127)
     else:
+        mainwindow.show()
         sys.exit(app.exec_())
 
 
