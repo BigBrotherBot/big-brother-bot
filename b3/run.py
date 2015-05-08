@@ -42,6 +42,7 @@ import pkg_handler
 import time
 import traceback
 
+from b3 import HOMEDIR
 from b3.functions import main_is_frozen
 from b3.setup import Setup
 from b3.setup import Update
@@ -141,7 +142,9 @@ def run(config=None, nosetup=False, autorestart=False):
     if config:
         config = b3.getAbsolutePath(config)
     else:
-        for p in ('b3.%s', 'conf/b3.%s', 'b3/conf/b3.%s', '~/b3.%s', '~/conf/b3.%s', '~/b3/conf/b3.%s', '@b3/conf/b3.%s'):
+        for p in ('b3.%s', 'conf/b3.%s', 'b3/conf/b3.%s',
+                  os.path.join(HOMEDIR, 'b3.%s'), os.path.join(HOMEDIR, 'conf', 'b3.%s'),
+                  os.path.join(HOMEDIR, 'b3', 'conf', 'b3.%s'), '@b3/conf/b3.%s'):
             for e in ('ini', 'cfg', 'xml'):
                 path = b3.getAbsolutePath(p % e)
                 print 'Searching for config file: %s' % path
