@@ -19,6 +19,7 @@
 # CHANGELOG
 #
 # 2015/05/04 - 1.42.9 - Fenix           - removed reply mode: it's messing up GUI and it's needed only to debug cod4
+#                                       - make sure that the logfile path is actually writable by B3, else it crashes
 # 2015/04/28 - 1.42.8 - Fenix           - code cleanup
 # 2015/04/22 - 1.42.7 - Fenix           - fixed typo in startPlugins: was causing B3 to crash upon startup
 # 2015/04/16 - 1.42.6 - Fenix           - uniform class variables (dict -> variable)
@@ -364,6 +365,9 @@ class Parser(object):
         log2console = self.config.has_option('devmode', 'log2console') and \
             self.config.getboolean('devmode', 'log2console')
 
+        # make sure the logfile is writable
+        logfile = b3.getWritableFilePath(logfile)
+
         try:
             logsize = b3.functions.getBytes(self.config.get('b3', 'logsize'))
         except (TypeError, NoOptionError):
@@ -483,6 +487,9 @@ class Parser(object):
                     logext = str(self._rconIp.replace('.', '_'))
                     logext = 'games_mp_' + logext + '_' + str(self._port) + '.log'
                     f = os.path.normpath(os.path.expanduser(logext))
+
+                # make sure game log file can be written
+                f = b3.getWritableFilePath(f)
 
                 if self.config.has_option('server', 'log_append'):
                     if not (self.config.getboolean('server', 'log_append') and os.path.isfile(f)):

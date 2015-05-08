@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+# 08/05/2015 - 1.9   - Fenix          - make sure that the game log file can be written to disk
+#                                     - removed python 2.7 version check: 2.6 version support has been dropped
 # 06/03/2015 - 1.8   - Thomas LEVEIL  - check Python version to be minimum 2.7
 # 18/01/2015 - 1.7.4 - 82ndab.Bravo17 - move windows 2008 fix config settings back to B3 xml file
 # 30/08/2014 - 1.7.3 - Fenix          - syntax cleanup
@@ -55,10 +57,10 @@
 #                                     - in case of connection failure, try to reconnect every second for the first 30s
 # 12/12/2009 - 1.1.1 - Courgette      - gracefully stop thread when B3 is shutting down
 #                                     - add tests
-# 28/08/2009 - 1.1 - Bakes            - connects with parser.py to provide real remote b3.
-# 17/06/2009 - 1.0 - Bakes            - initial Plugin, basic functionality.
+# 28/08/2009 - 1.1   - Bakes          - connects with parser.py to provide real remote b3.
+# 17/06/2009 - 1.0   - Bakes          - initial Plugin, basic functionality.
  
-__version__ = '1.8'
+__version__ = '1.9'
 __author__ = 'Bakes, Courgette'
 
 import b3
@@ -78,9 +80,9 @@ from b3 import functions
 class FtpytailPlugin(b3.plugin.Plugin):
 
     requiresConfigFile = False
-    ftpconfig = None
     buffer = None
     file = None
+    ftpconfig = None
     lgame_log = None
     url_path = None
 
@@ -115,22 +117,16 @@ class FtpytailPlugin(b3.plugin.Plugin):
         """
         Initialize plugin
         """
-        versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
-        version = int(versionsearch.group(3))
-        if version < 7:
-            self.error('python version %s is not supported and may lead to hangs: '
-                       'please update python to 2.7' % versionsearch.group(1))
-            self.console.die()
-
         if self.console.config.has_option('server', 'delay'):
             self._gamelog_read_delay = self.console.config.getfloat('server', 'delay')
         
         if self.console.config.has_option('server', 'local_game_log'):
             self.lgame_log = self.console.config.getpath('server', 'local_game_log')
         else:
-            # get B3 actual locally opened game log
             self.lgame_log = os.path.normpath(os.path.expanduser(self.console.input.name))
-            self.debug('local game log is: %s' % self.lgame_log)
+
+        self.lgame_log = b3.getWritableFilePath(self.lgame_log)
+        self.debug('local game log is: %s' % self.lgame_log)
 
         if self.console.config.get('server', 'game_log')[0:6] == 'ftp://':
             self.init_thread(self.console.config.get('server', 'game_log'))
@@ -150,12 +146,13 @@ class FtpytailPlugin(b3.plugin.Plugin):
             self.debug('loaded server/use_windows_cache_fix: %s' % self._use_windows_cache_fix)
         except NoOptionError:
             self.debug('could not find server/use_windows_cache_fix in B3 config file, '
-                         'using default: %s' % self._use_windows_cache_fix)
+                       'using default: %s' % self._use_windows_cache_fix)
         except ValueError, e:
             self.error('could not load server/use_windows_cache_fix config value from B3 config file: %s' % e)
             self.debug('using default value (%s) for use_windows_cache_fix' % self._use_windows_cache_fix)
 
         if self._use_windows_cache_fix:
+
             try:
                 self._cache_refresh_delay = self.console.config.getint('server', 'cache_refresh_delay')
                 self.debug('loaded server/cache_refresh_delay: %s' % self._cache_refresh_delay)
@@ -166,7 +163,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
                 self.error('could not load server/cache_refresh_delay config value from B3 config file: %s' % e)
                 self.debug('using default value (%s) for server/cache_refresh_delay' % self._cache_refresh_delay)
 
-        #Then see if ftpytail has a config file before trying to load the rest of the values
+        # see if ftpytail has a config file before trying to load the rest of the values
         if self.config is None:
             return
 
@@ -250,7 +247,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
             else:
                 self.buffer = self.buffer + block
         
-        def force_windows_cache_reload(dummy):
+        def force_windows_cache_reload(_):
             # no need to do anything here so
             return
             

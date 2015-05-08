@@ -55,23 +55,23 @@
 # 22/05/2012 - 1.0.17 - Courgette     - local_game_log config option can now use the @conf and @b3 shortcuts
 # 30/08/2014 - 1.0.18 - Fenix         - syntax cleanup
 # 06/03/2015 - 1.1    - Thomas LEVEIL - check Python version to be minimum 2.7
-#
+# 08/05/2015 - 1.2    - Fenix         - make sure that the game log file can be written to disk
+#                                     - removed python 2.7 check: 2.6 version support has been dropped
+
 
 ## @file
 #  This plugin downloads and maintains CoD7 game log file
 
 __author__ = 'Freelander, Bravo17, Just a baka'
-__version__ = '1.1'
+__version__ = '1.2'
 
 import b3
 import b3.events
 import b3.plugin
 import os.path
 import gzip
-import re
 import socket
 import StringIO
-import sys
 import time
 import threading
 import urllib2
@@ -116,12 +116,6 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
         """
         Sets and loads config values from the main config file.
         """
-        versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
-        version = int(versionsearch.group(3))
-        if version < 7:
-            self.error('python version %s is not supported and may lead to hangs: '
-                       'please update python to 2.7' % versionsearch.group(1))
-            self.console.die()
 
         if self.console.config.has_option('server', 'local_game_log'):
             self.locallog = self.console.config.getpath('server', 'local_game_log')
@@ -139,7 +133,9 @@ class Cod7HttpPlugin(b3.plugin.Plugin):
             logext = str(self._publicIp.replace('.', '_'))
             logext = 'games_mp_' + logext + '_' + str(self._port) + '.log'
             self.locallog = os.path.normpath(os.path.expanduser(logext))
-            self.debug('Local Game Log is %s' % self.locallog)
+
+        self.locallog = b3.getWritableFilePath(self.locallog)
+        self.debug('local game log is :%s' % self.locallog)
 
         if self.console.config.has_option('server', 'log_append'):
             self._logAppend =self.console.config.getboolean('server', 'log_append')
