@@ -27,6 +27,7 @@
 #                  - added update check feature
 # 07/05/2015 - 0.3 - added loggin facility
 #                  - moved database file into user HOME folder (will survive updates)
+#                  - implement B3 log open through UI
 
 
 __author__ = 'Fenix'
@@ -47,7 +48,7 @@ from b3 import __version__ as b3_version
 from b3 import HOMEDIR
 from b3.config import MainConfig, load as load_config
 from b3.decorators import Singleton
-from b3.exceptions import ConfigFileNotValid
+from b3.exceptions import ConfigFileNotValid, ConfigFileNotFound
 from b3.functions import main_is_frozen
 from b3.update import getDefaultChannel, B3version, URL_B3_LATEST_VERSION
 from functools import partial
@@ -103,9 +104,9 @@ CONSOLE_STDOUT_HEIGHT = 200
 MAIN_TABLE_WIDTH = 500
 MAIN_TABLE_HEIGHT = 280
 MAIN_TABLE_VERTICAL_SPACING = 4
-MAIN_TABLE_COLUMN_NAME_WIDTH = 220
-MAIN_TABLE_COLUMN_STATUS_WIDTH = 139
-MAIN_TABLE_COLUMN_TOOLBAR_WIDTH = 139
+MAIN_TABLE_COLUMN_NAME_WIDTH = 226
+MAIN_TABLE_COLUMN_STATUS_WIDTH = 180
+MAIN_TABLE_COLUMN_TOOLBAR_WIDTH = 92
 PROGRESS_WIDTH = 240
 PROGRESS_HEIGHT = 20
 UPDATE_DIALOG_WIDTH = 400
@@ -131,6 +132,12 @@ STYLE_BUTTON_ICON = """
 STYLE_WIDGET_GENERAL = """
   QWidget, QDialog, QMessageBox {
     background: #F2F2F2;
+  }
+"""
+STYLE_WIDGET_TABLE_ITEM = """
+  QWidget, QDialog, QMessageBox {
+    background: #FFFFFF;
+    border: 0;
   }
 """
 STYLE_TABLE = """
@@ -189,6 +196,7 @@ LOG = None
 
 class B3(QProcess):
 
+    config_path = 'N/A'
     config_status = 0
     stdout_dialog = None
 
@@ -208,10 +216,10 @@ class B3(QProcess):
             self.config_status |= CONFIG_FOUND
         else:
             try:
-                if not os.path.isfile(config):
-                    raise OSError('configuration file (%s) could not be found' % config)
-                self.config = MainConfig(load_config(config))
                 self.config_path = config
+                if not os.path.isfile(self.config_path):
+                    raise OSError('configuration file (%s) could not be found' % self.config_path)
+                self.config = MainConfig(load_config(self.config_path))
             except OSError:
                 self.config_status &= ~CONFIG_FOUND
                 self.config_status &= ~CONFIG_VALID
@@ -389,7 +397,7 @@ class B3(QProcess):
         Executed when the process errors
         :param error: the QProcess.ProcessError value
         """
-        LOG.error('%s errored: %s' % self.name)
+        LOG.error('%s errored: %s' % (self.name, error))
 
     def process_finished(self, exit_code, _):
         """
@@ -431,6 +439,14 @@ class MessageBox(QMessageBox):
         self.setIcon(icon)
         self.setStyleSheet(STYLE_WIDGET_GENERAL + STYLE_BUTTON)
         self.setWindowFlags(Qt.Dialog|Qt.MSWindowsFixedSizeDialogHint|Qt.WindowTitleHint|Qt.WindowSystemMenuHint|Qt.CustomizeWindowHint)
+
+    def exec_(self):
+        """
+        Override default exec_ method to make sure we restore original
+        mouse cursor when the MessageBox dialog goes out of focus.
+        """
+        QMessageBox.exec_(self)
+        B3App.Instance().restoreOverrideCursor()
 
 
 class SplashScreen(QSplashScreen):
@@ -948,18 +964,26 @@ class MainTable(QTableWidget):
             """
             Paint the B3 instance name in the 1st column.
             """
-            name = re.sub(RE_COLOR, '', proc.config.get('b3', 'bot_name')).strip()
+            name = re.sub(RE_COLOR, '', proc.name).strip()
             parent.setItem(numrow, 0, QTableWidgetItem(name))
 
         def __paint_column_status(parent, numrow, proc):
             """
             Paint the B3 instance status in the 2nd column.
             """
-            value, background = ('IDLE', Qt.yellow) if proc.state() != QProcess.Running else ('RUNNING', Qt.green)
+            if proc.state() == QProcess.Running:
+                value, background, foregound = 'RUNNING', Qt.green, Qt.white
+            else:
+                if proc.config_status & CONFIG_VALID:
+                    value, background, foregound = 'IDLE', Qt.yellow, Qt.black
+                else:
+                    value, background, foregound = 'ERROR', Qt.red, Qt.white
+
             value = QTableWidgetItem(value)
             value.setTextAlignment(Qt.AlignCenter)
             parent.setItem(numrow, 1, value)
             parent.item(numrow, 1).setBackground(background)
+            parent.item(numrow, 1).setForeground(foregound)
 
         def __paint_column_toolbar(parent, numrow, proc):
             """
@@ -1003,15 +1027,12 @@ class MainTable(QTableWidget):
             layout.setSpacing(2)
             widget = QWidget(parent)
             widget.setLayout(layout)
-            widget.setStyleSheet('border: 0;')
+            widget.setStyleSheet(STYLE_WIDGET_TABLE_ITEM)
             parent.setCellWidget(numrow, 2, widget)
 
         __paint_column_name(self, row, process)
         __paint_column_status(self, row, process)
         __paint_column_toolbar(self, row, process)
-
-        ## FIXME: this is needed otherwise the cursor will be set to pointing hand after B3 startup
-        B3App.Instance().restoreOverrideCursor()
 
     ############################################ TOOLBAR HANDLERS  #####################################################
 
@@ -1021,8 +1042,20 @@ class MainTable(QTableWidget):
         :param row: the number of the row displaying the process state
         :param process: the QProcess instance to start
         """
-        process.stateChanged.connect(partial(self.paint_row, row=row))
-        process.start()
+        if process.config_status & CONFIG_VALID:
+            process.stateChanged.connect(partial(self.paint_row, row=row))
+            process.start()
+        else:
+            if process.config_status & CONFIG_FOUND:
+                reason= 'configuration file is not valid: %s' % process.config_path
+            else:
+                reason = 'configuration not found: %s' % process.config_path
+
+
+            msgbox = MessageBox(parent=self, icon=QMessageBox.Warning)
+            msgbox.setText('%s startup failure: %s' % (process.name, reason))
+            msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
+            msgbox.exec_()
 
     def process_shutdown(self, process):
         """
@@ -1066,6 +1099,12 @@ class MainTable(QTableWidget):
         Open the B3 instance log file.
         """
         try:
+
+            if not process.config_status & CONFIG_FOUND:
+                raise ConfigFileNotFound('missing configuration file (%s)' % process.config_path)
+            elif not process.config_status & CONFIG_VALID:
+                raise ConfigFileNotValid('invalid configuration file (%s)' % process.config_path)
+
             if not process.config.has_option('b3', 'logfile'):
                 raise Exception('missing b3::logfile option in %s configuration file' % process.name)
 
@@ -1085,8 +1124,12 @@ class MainTable(QTableWidget):
             msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
             msgbox.exec_()
         else:
-            # open in a web browser so it works if the .log extension is not associated
-            webbrowser.open_new_tab(path)
+            if b3.getPlatform() == 'win32':
+                os.system('start %s' % path)
+            elif b3.getPlatform() == 'darwin':
+                os.system('open "%s"' % path)
+            else:
+                os.system('xdg-open "%s"' % path)
 
 
 class CentralWidget(QWidget):
@@ -1432,6 +1475,8 @@ class B3App(QApplication):
         self.processes = B3.get_list_from_storage()
         self.processes.sort()
         LOG.info('%s B3 processes available' % len(self.processes))
+        for proc in self.processes:
+            LOG.debug('%s: @%s:%s' % (proc.name, proc.id, proc.config_path))
 
     def __init_signals(self):
         """

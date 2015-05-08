@@ -201,9 +201,10 @@ def run_gui(options):
     except Exception, e:
         box = MessageBox(icon=MessageBox.Critical)
         box.setWindowTitle('CRITICAL')
-        box.setText(e.message)
+        box.setText('CRITICAL: %s' % e.message)
         box.addButton(Button(text='Ok'), MessageBox.AcceptRole)
         box.exec_()
+        #print traceback.extract_tb(sys.exc_info()[2])
         sys.exit(127)
     else:
         mainwindow.show()
