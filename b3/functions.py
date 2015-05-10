@@ -578,11 +578,13 @@ def split_extension(filename):
 
 def unzip(filepath, directory):
     """
-    Unzip a file in the specified directory. Will create the directory where to store zip content.
+    Unzip a file in the specified directory. Will create the directory
+    where to store zip content if such directory does not exists.
     :raise: OSError if the directory can't be created.
     """
     if os.path.isfile(filepath):
-        mkdir(directory)
+        if not os.path.isdir(directory):
+            mkdir(directory)
         with zipfile.ZipFile(filepath, 'r') as z:
             z.extractall(directory)
 

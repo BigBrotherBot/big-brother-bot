@@ -37,8 +37,11 @@ import b3
 import bisect
 import os
 import re
+import glob
+import imp
 import json
 import logging
+import shutil
 import sqlite3
 import sys
 import urllib2
@@ -49,11 +52,11 @@ from b3 import HOMEDIR
 from b3.config import MainConfig, load as load_config
 from b3.decorators import Singleton
 from b3.exceptions import ConfigFileNotValid, ConfigFileNotFound
-from b3.functions import main_is_frozen
+from b3.functions import main_is_frozen, unzip
 from b3.update import getDefaultChannel, B3version, URL_B3_LATEST_VERSION
 from functools import partial
 from time import time, sleep
-from PyQt5.QtCore import Qt, QSize, QProcess, pyqtSlot, QThread
+from PyQt5.QtCore import Qt, QSize, QProcess, pyqtSlot, QThread, pyqtSignal
 from PyQt5.QtGui import QCursor, QTextCursor
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QPushButton, QApplication, QMainWindow, QAction, QDesktopWidget, QFileDialog, \
@@ -111,6 +114,8 @@ PROGRESS_WIDTH = 240
 PROGRESS_HEIGHT = 20
 UPDATE_DIALOG_WIDTH = 400
 UPDATE_DIALOG_HEIGHT = 120
+PLUGIN_INSTALL_DIALOG_WIDTH = 500
+PLUGIN_INSTALL_DIALOG_HEIGHT = 140
 
 STYLE_BUTTON = """
   QPushButton {
@@ -744,7 +749,7 @@ class UpdateDialog(QDialog):
     layout = None
     message = None
     progress = None
-    updatecheck = None
+    updatecheckthread = None
 
     def __init__(self, parent=None):
         """
@@ -777,18 +782,16 @@ class UpdateDialog(QDialog):
     def checkupdate(self):
         """
         Initialize a Thread which deals with the update check.
-        UI updates is then handled through signals
+        UI updates is then handled through signals.
         """
         class UpdateCheck(QThread):
 
-            message = ''
+            messagesignal = pyqtSignal(str)
 
             def run(self):
                 """
                 Threaded code.
-                Will set 'message' attribute upon termination.
                 """
-                # sleep a bit to show the initial message
                 sleep(.5)
                 LOG.info('checking for updates...')
 
@@ -797,24 +800,27 @@ class UpdateDialog(QDialog):
                     jsondata = urllib2.urlopen(URL_B3_LATEST_VERSION, timeout=4).read()
                     versioninfo = json.loads(jsondata)
                 except urllib2.URLError, err:
-                    self.message = 'ERROR: could not connect to the update server: %s' % err.reason
+                    self.messagesignal.emit('ERROR: could not connect to the update server: %s' % err.reason)
                     LOG.error('could not connect to the update server: %s' % err.reason)
                 except IOError, err:
-                    self.message = 'ERROR: could not read data: %s' % err
+                    self.messagesignal.emit('ERROR: could not read data: %s' % err)
                     LOG.error('could not read data: %s' % err)
                 except Exception, err:
-                    self.message = 'ERROR: unknown error: %s' % err
+                    self.messagesignal.emit('ERROR: unknown error: %s' % err)
                     LOG.error('ERROR: unknown error: %s' % err)
                 else:
+                    self.messagesignal.emit('parsing data...')
+                    sleep(.5)
+
                     channels = versioninfo['B3']['channels']
                     if channel not in channels:
-                        self.message = 'ERROR: unknown channel \'%s\': expecting (%s)' % (channel, ', '.join(channels.keys()))
+                        self.messagesignal.emit('ERROR: unknown channel \'%s\': expecting (%s)' % (channel, ', '.join(channels.keys())))
                         LOG.error('unknown channel \'%s\': expecting (%s)' % (channel, ', '.join(channels.keys())))
                     else:
                         try:
                             latestversion = channels[channel]['latest-version']
                         except KeyError:
-                            self.message = 'ERROR: could not get latest B3 version for channel: %s' % channel
+                            self.messagesignal.emit('ERROR: could not get latest B3 version for channel: %s' % channel)
                             LOG.error('could not get latest B3 version for channel: %s' % channel)
                         else:
                             if B3version(b3_version) < B3version(latestversion):
@@ -823,23 +829,242 @@ class UpdateDialog(QDialog):
                                 except KeyError:
                                     url = B3_WEBSITE
 
-                                self.message = 'update available: <a href="%s">%s</a>' % (url, latestversion)
+                                self.messagesignal.emit('update available: <a href="%s">%s</a>' % (url, latestversion))
                                 LOG.info('update available: %s - %s' % (url, latestversion))
                             else:
-                                self.message = 'no update available'
+                                self.messagesignal.emit('no update available')
                                 LOG.info('no update available')
 
-        self.updatecheck = UpdateCheck(self)
-        self.updatecheck.finished.connect(self.finished)
-        self.updatecheck.start()
+        self.updatecheckthread = UpdateCheck(self)
+        self.updatecheckthread.messagesignal.connect(self.update_message)
+        self.updatecheckthread.finished.connect(self.finished)
+        self.updatecheckthread.start()
+
+    @pyqtSlot(str)
+    def update_message(self, message):
+        """
+        Update the status message
+        """
+        self.message.setText(message)
 
     def finished(self):
         """
         Execute when the QThread emits the finished signal.
         """
         self.progress.stop()
-        if self.updatecheck.message:
-            self.message.setText(self.updatecheck.message)
+
+
+class PluginInstallDialog(QDialog):
+    """
+    This class can be used to initialize the 'install plugin' dialog window.
+    """
+    archive = None
+    installthread = None
+    layout = None
+    message = None
+    progress = None
+
+    def __init__(self, parent=None, archive=None):
+        """
+        Initialize the 'install plugin' dialog window
+        :param parent: the parent widget
+        :param archive: the plugin archive filepath
+        """
+        QDialog.__init__(self, parent)
+        self.archive = archive
+        self.initUI()
+        self.install()
+
+    def initUI(self):
+        """
+        Initialize the Dialog layout.
+        """
+        self.setWindowTitle('Installing plugin...')
+        self.setFixedSize(PLUGIN_INSTALL_DIALOG_WIDTH, PLUGIN_INSTALL_DIALOG_HEIGHT)
+        self.setStyleSheet(STYLE_WIDGET_GENERAL)
+        self.progress = BusyProgressBar(self)
+        self.message = QLabel('initializing plugin install...', self)
+        self.message.setAlignment(Qt.AlignHCenter)
+        self.message.setWordWrap(True)
+        self.message.setOpenExternalLinks(True)
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.progress)
+        self.layout.addWidget(self.message)
+        self.layout.setAlignment(Qt.AlignCenter)
+        self.setLayout(self.layout)
+        self.setModal(True)
+
+    def install(self):
+        """
+        Initialize a QThread which deals with the plugin installation.
+        UI updates is then handled through signals.
+        """
+        class PluginInstaller(QThread):
+
+            messagesignal = pyqtSignal(str)
+
+            def __init__(self, parent=None, archive=None):
+                """
+                Initialize the QThread.
+                :param parent: the parent widget
+                :param archive: the plugin archive filepath
+                """
+                QThread.__init__(self, parent)
+                self.archive = archive
+
+            def run(self):
+                """
+                Threaded code.
+                """
+                sleep(.5)
+
+                def plugin_import(directory):
+                    """
+                    Import a plugin module: will import the first valid module found in the directory tree.
+                    It will only lookup modules composed of a directory with inside __init__.py (B3 plugins
+                    should be composed of a single module directory with inside everything needed by the plugin to work.
+                    :param directory: the source directory from where to start the module search
+                    :raise ImportError: if the plugin module is not found
+                    :return tuple(name, path, module, clazz)
+                    """
+                    fp = None
+                    clazz = None
+                    module = None
+                    module_name = None
+                    module_path = None
+                    for x in os.walk(directory):
+                        module_name = os.path.basename(x[0])
+                        module_path = x[0]
+                        try:
+                            LOG.debug('searching for python module in %s' % module_path)
+                            fp, pathname, description = imp.find_module(module_name, [os.path.join(x[0], '..')])
+                            module = imp.load_module(module_name, fp, pathname, description)
+                        except ImportError:
+                            module_name = module_path = module = clazz = None
+                        else:
+                            try:
+                                LOG.debug('python module found (%s) in %s : looking for plugin class...' % (module_name, module_path))
+                                clazz = getattr(module, '%sPlugin' % module_name.title())
+                            except AttributeError:
+                                LOG.debug('no valid plugin class found in %s module' % module_name)
+                                module_name = module_path = module = clazz = None
+                            else:
+                                LOG.debug('plugin class found (%s) in %s module' % (clazz.__name__, module_name))
+                                break
+                        finally:
+                            if fp:
+                                fp.close()
+
+                    if not module:
+                        raise ImportError('no valid plugin module found')
+
+                    return module_name, module_path, module, clazz
+
+                LOG.debug('plugin installation started...')
+                extplugins_dir = b3.getAbsolutePath('@b3/extplugins')
+                before = os.listdir(extplugins_dir)
+
+                self.messagesignal.emit('uncompressing plugin archive...')
+                LOG.debug('uncompressing plugin archive: %s' % self.archive)
+                sleep(.5)
+
+                try:
+                    unzip(self.archive, extplugins_dir)
+                except Exception, err:
+                    LOG.error('could not install plugin: %s' % err)
+                    self.messagesignal.emit('ERROR: plugin installation failed!')
+                else:
+                    # a B3 plugin is supposed to be made of a single directory to
+                    # be copied into the extplugins folder. we'll lookup the plugin
+                    # among the uncompressed files and keep only that directory
+                    self.messagesignal.emit('analyzing extplugins directory...')
+                    sleep(.5)
+
+                    difference = list(set(os.listdir(extplugins_dir)) - set(before))
+                    if len(difference) > 1:
+                        self.messagesignal.emit('ERROR: too many files in plugin archive!')
+                        LOG.error('too many files in plugin archive: unzip should have produced '
+                                  'a new folder inside extplugins directory (%s) but %s new '
+                                  'directories have been created' % (extplugins_dir, len(difference)))
+                        for entry in difference:
+                            shutil.rmtree(os.path.join(extplugins_dir, entry), True)
+                    else:
+                        source = os.path.join(extplugins_dir, difference[0])
+                        self.messagesignal.emit('searching plugin...')
+                        LOG.debug('searching plugin...')
+                        sleep(.5)
+
+                        try:
+                            name, path, mod, clz = plugin_import(source)
+                        except ImportError:
+                            self.messagesignal.emit('ERROR: no valid plugin module found!')
+                            LOG.warning('no valid plugin module found')
+                            shutil.rmtree(source, True)
+                        else:
+                            self.messagesignal.emit('plugin found: %s...' % name)
+
+                            if path != source:
+                                # in case the plugin was found inside a subdirectory, we'll move it
+                                # inside the extplugins folder and remove the source directory which is
+                                # not needed anymore: we'll also adjust the 'path' value to the new destination
+                                shutil.move(path, extplugins_dir)
+                                shutil.rmtree(source, True)
+                                path = os.path.join(extplugins_dir, name)
+
+                            instruction = 'no plugin configuration file is required'
+                            if clz.requiresConfigFile:
+                                self.messagesignal.emit('searching plugin %s configuration file...' % name)
+                                LOG.debug('searching plugin %s configuration file' % name)
+                                sleep(.5)
+
+                                collection = glob.glob('%s%s*%s*' % (os.path.join(path, 'conf'), os.path.sep, name))
+
+                                if len(collection) == 0:
+                                    self.messagesignal.emit('ERROR: no configuration file found for plugin %s' % name)
+                                    LOG.warning('no configuration file found for plugin %s' % name)
+                                    shutil.rmtree(path, True)
+                                    return
+
+                                # suppose there are multiple configuration files: we'll try all of them
+                                # till a valid one is loaded, so we can prompt the user a correct plugin
+                                # configuration file path (if no valid is found, installation is aborted)
+                                loaded_config = None
+                                for entry in collection:
+                                    try:
+                                        loaded_config = b3.config.load(entry)
+                                    except Exception:
+                                        pass
+                                    else:
+                                        break
+
+                                if not loaded_config:
+                                    self.messagesignal.emit('ERROR: no valid configuration file found for plugin %s' % name)
+                                    LOG.warning('no valid configuration file found for plugin %s' % name)
+                                    shutil.rmtree(path, True)
+                                    return
+
+                                instruction = 'you can specify %s as configuration file' % loaded_config.fileName
+
+                            self.messagesignal.emit('plugin %s installed' % name)
+                            LOG.info('plugin %s installed successfully: %s' % (name, instruction))
+
+        self.installthread = PluginInstaller(self, self.archive)
+        self.installthread.messagesignal.connect(self.update_message)
+        self.installthread.finished.connect(self.finished)
+        self.installthread.start()
+
+    @pyqtSlot(str)
+    def update_message(self, message):
+        """
+        Update the status message
+        """
+        self.message.setText(message)
+
+    def finished(self):
+        """
+        Execute when the QThread emits the finished signal.
+        """
+        self.progress.stop()
 
 
 class STDOutText(QTextEdit):
@@ -1250,6 +1475,13 @@ class MainWindow(QMainWindow):
         new_process.setShortcut('Ctrl+N')
         new_process.setStatusTip('Add a new B3')
         new_process.triggered.connect(self.new_process)
+        new_process.setVisible(True)
+        ### INSTALL PLUGIN SUBMENU ENTRY
+        install_plugin = QAction('Install Plugin', self)
+        install_plugin.setShortcut('Ctrl+P')
+        install_plugin.setStatusTip('Install a new B3 plugin')
+        install_plugin.triggered.connect(self.install_plugin)
+        install_plugin.setVisible(True)
         ####  QUIT SUBMENU ENTRY
         quit_btn = QAction('Quit', self)
         quit_btn.setShortcut('Ctrl+Q')
@@ -1259,6 +1491,7 @@ class MainWindow(QMainWindow):
         ## FILE MENU ENTRY
         file_menu = self.menuBar().addMenu('&File')
         file_menu.addAction(new_process)
+        file_menu.addAction(install_plugin)
         file_menu.addAction(quit_btn)
         #### ABOUT SUBMENU ENTRY
         about = QAction('About', self)
@@ -1343,6 +1576,16 @@ class MainWindow(QMainWindow):
                         process.insert()
                         main_table = self.centralWidget().main_table
                         main_table.repaint()
+
+    def install_plugin(self):
+        """
+        Handle the install of a new B3 plugin
+        """
+        init = b3.getAbsolutePath('~')
+        path, _ = QFileDialog.getOpenFileName(self.centralWidget(), 'Select plugin package', init, 'ZIP (*.zip)')
+        if path:
+            install = PluginInstallDialog(self.centralWidget(), path)
+            install.show()
 
     def show_about(self):
         """
