@@ -86,10 +86,33 @@ B3_SQL = b3.getAbsolutePath('@b3/sql/sqlite/b3-gui.sql')
 ICON_DEL = b3.getAbsolutePath('@b3/gui/assets/del.png')
 ICON_CONSOLE = b3.getAbsolutePath('@b3/gui/assets/console.png')
 ICON_LOG = b3.getAbsolutePath('@b3/gui/assets/log.png')
+ICON_REFRESH = b3.getAbsolutePath('@b3/gui/assets/refresh.png')
 ICON_START = b3.getAbsolutePath('@b3/gui/assets/start.png')
 ICON_STOP = b3.getAbsolutePath('@b3/gui/assets/stop.png')
 
-## GEOMETRY
+## OS DEPENDENT GEOMETRY
+GEOMETRY = {
+    'win32': {
+        'MAIN_TABLE_HEIGHT': 260,
+        'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_RIGHT': 11,
+        'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_BOTTOM': 52,
+        'MAIN_WINDOW_BOTTOM_LAYOUT_SPACING': 10,
+    },
+    'darwin': {
+        'MAIN_TABLE_HEIGHT': 280,
+        'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_RIGHT': 16,
+        'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_BOTTOM': 40,
+        'MAIN_WINDOW_BOTTOM_LAYOUT_SPACING': 20,
+    },
+    'linux': {
+        'MAIN_TABLE_HEIGHT': 280,
+        'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_RIGHT': 16,
+        'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_BOTTOM': 40,
+        'MAIN_WINDOW_BOTTOM_LAYOUT_SPACING': 20,
+    }
+}
+
+## FIXED GEOMETRY
 ABOUT_DIALOG_WIDTH = 400
 ABOUT_DIALOG_HEIGHT = 500
 B3_WIDTH = 520
@@ -105,11 +128,11 @@ CONSOLE_DIALOG_HEIGHT = 300
 CONSOLE_STDOUT_WIDTH = 600
 CONSOLE_STDOUT_HEIGHT = 200
 MAIN_TABLE_WIDTH = 500
-MAIN_TABLE_HEIGHT = 280
+MAIN_TABLE_HEIGHT = GEOMETRY[b3.getPlatform()]['MAIN_TABLE_HEIGHT']
 MAIN_TABLE_VERTICAL_SPACING = 4
-MAIN_TABLE_COLUMN_NAME_WIDTH = 220
+MAIN_TABLE_COLUMN_NAME_WIDTH = 200
 MAIN_TABLE_COLUMN_STATUS_WIDTH = 180
-MAIN_TABLE_COLUMN_TOOLBAR_WIDTH = 98
+MAIN_TABLE_COLUMN_TOOLBAR_WIDTH = 118
 PROGRESS_WIDTH = 240
 PROGRESS_HEIGHT = 20
 UPDATE_DIALOG_WIDTH = 400
@@ -123,6 +146,18 @@ STYLE_BUTTON = """
     border: 0;
     color: #484848;
     min-width: 70px;
+    min-height: 40px;
+  }
+  QPushButton:hover {
+    background: #C2C2C2;
+  }
+"""
+STYLE_BUTTON_LARGE = """
+  QPushButton {
+    background: #B7B7B7;
+    border: 0;
+    color: #484848;
+    min-width: 100px;
     min-height: 40px;
   }
   QPushButton:hover {
@@ -191,8 +226,9 @@ STYLE_PROGRESS_BAR_STOPPED = """
 """
 
 ## BIT FLAGS
-CONFIG_FOUND = 0b01
-CONFIG_VALID = 0b10
+CONFIG_FOUND = 0b0001   # configuration file has been found
+CONFIG_VALID = 0b0010   # configuration file has been parsed correctly
+CONFIG_READY = 0b0100   # configuration file is ready for deploy
 
 ## OTHERS
 RE_COLOR = re.compile(r'(\^\d)')
@@ -201,7 +237,8 @@ LOG = None
 
 class B3(QProcess):
 
-    config_path = 'N/A'
+    name = 'N/A'
+    config_path = None
     config_status = 0
     stdout_dialog = None
 
@@ -220,20 +257,35 @@ class B3(QProcess):
             self.config_status |= CONFIG_VALID
             self.config_status |= CONFIG_FOUND
         else:
-            try:
-                self.config_path = config
-                if not os.path.isfile(self.config_path):
-                    raise OSError('configuration file (%s) could not be found' % self.config_path)
-                self.config = MainConfig(load_config(self.config_path))
-            except OSError:
-                self.config_status &= ~CONFIG_FOUND
-                self.config_status &= ~CONFIG_VALID
-            except ConfigFileNotValid:
-                self.config_status |= CONFIG_FOUND
-                self.config_status &= ~CONFIG_VALID
-            else:
-                self.config_status |= CONFIG_VALID
-                self.config_status |= CONFIG_FOUND
+            self.load_config(config)
+
+    ################################### CONFIGURATION FILES RELATED METHODS ############################################
+
+    def load_config(self, config):
+        """
+        Load the process configuration file and set config status flags
+        """
+        try:
+            self.config_path = config
+            if not os.path.isfile(self.config_path):
+                raise OSError('configuration file (%s) could not be found' % self.config_path)
+            self.config = MainConfig(load_config(self.config_path))
+        except OSError:
+            self.config_status &= ~CONFIG_FOUND
+            self.config_status &= ~CONFIG_VALID
+            self.config_status &= ~CONFIG_READY
+        except ConfigFileNotValid:
+            self.config_status |= CONFIG_FOUND
+            self.config_status &= ~CONFIG_VALID
+            self.config_status &= ~CONFIG_READY
+        else:
+            self.config_status |= CONFIG_VALID
+            self.config_status |= CONFIG_FOUND
+
+        self.name = 'N/A'
+        if self.config_status & CONFIG_VALID:
+            if self.config.has_option('b3', 'bot_name'):
+                self.name = re.sub(RE_COLOR, '', self.config.get('b3', 'bot_name')).strip()
 
         if self.config_status & CONFIG_VALID:
             # run again the config analysis: we run it when creating the new instance
@@ -241,12 +293,9 @@ class B3(QProcess):
             # construction, since the user can modify the configuration file (which will
             # be loaded by a B3 instance) and then run the application.
             if self.config.analyze():
-                self.config_status &= ~CONFIG_VALID
-
-        self.name = 'N/A'
-        if self.config_status & CONFIG_VALID:
-            if self.config.has_option('b3', 'bot_name'):
-                self.name = re.sub(RE_COLOR, '', self.config.get('b3', 'bot_name')).strip()
+                self.config_status &= ~CONFIG_READY
+            else:
+                self.config_status |= CONFIG_READY
 
     ############################################# PROCESS STARTUP ######################################################
 
@@ -409,13 +458,6 @@ class B3(QProcess):
         Executed when the process terminate
         :param exit_code: the process exit code
         """
-        if exit_code != 0:
-            LOG.error('%s exited with status %s' % (self.name, exit_code))
-            msgbox = MessageBox(icon=QMessageBox.Critical)
-            msgbox.setText('%s terminated unexpectedly: you can find more information in the B3 log file' % self.name)
-            msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
-            msgbox.exec_()
-
         self.stdout_dialog.hide()
         self.stdout_dialog = None
 
@@ -1011,42 +1053,39 @@ class PluginInstallDialog(QDialog):
                                 shutil.rmtree(source, True)
                                 path = os.path.join(extplugins_dir, name)
 
-                            instruction = 'no plugin configuration file is required'
                             if clz.requiresConfigFile:
                                 self.messagesignal.emit('searching plugin %s configuration file...' % name)
                                 LOG.debug('searching plugin %s configuration file' % name)
                                 sleep(.5)
 
                                 collection = glob.glob('%s%s*%s*' % (os.path.join(path, 'conf'), os.path.sep, name))
-
                                 if len(collection) == 0:
                                     self.messagesignal.emit('ERROR: no configuration file found for plugin %s' % name)
                                     LOG.warning('no configuration file found for plugin %s' % name)
                                     shutil.rmtree(path, True)
-                                    return
+                                else:
+                                    # suppose there are multiple configuration files: we'll try all of them
+                                    # till a valid one is loaded, so we can prompt the user a correct plugin
+                                    # configuration file path (if no valid is found, installation is aborted)
+                                    loaded = None
+                                    for entry in collection:
+                                        try:
+                                            loaded = b3.config.load(entry)
+                                        except Exception:
+                                            pass
+                                        else:
+                                            break
 
-                                # suppose there are multiple configuration files: we'll try all of them
-                                # till a valid one is loaded, so we can prompt the user a correct plugin
-                                # configuration file path (if no valid is found, installation is aborted)
-                                loaded_config = None
-                                for entry in collection:
-                                    try:
-                                        loaded_config = b3.config.load(entry)
-                                    except Exception:
-                                        pass
+                                    if not loaded:
+                                        self.messagesignal.emit('ERROR: no valid configuration file found for plugin %s' % name)
+                                        LOG.warning('no valid configuration file found for plugin %s' % name)
+                                        shutil.rmtree(path, True)
                                     else:
-                                        break
-
-                                if not loaded_config:
-                                    self.messagesignal.emit('ERROR: no valid configuration file found for plugin %s' % name)
-                                    LOG.warning('no valid configuration file found for plugin %s' % name)
-                                    shutil.rmtree(path, True)
-                                    return
-
-                                instruction = 'you can specify %s as configuration file' % loaded_config.fileName
-
-                            self.messagesignal.emit('plugin %s installed' % name)
-                            LOG.info('plugin %s installed successfully: %s' % (name, instruction))
+                                        self.messagesignal.emit('plugin %s installed' % name)
+                                        LOG.info('plugin %s installed successfully: you can specify %s as configuration file' % (name, loaded.fileName))
+                            else:
+                                self.messagesignal.emit('plugin %s installed' % name)
+                                LOG.info('plugin %s installed successfully: no configuration file is required' % name)
 
         self.installthread = PluginInstaller(self, self.archive)
         self.installthread.messagesignal.connect(self.update_message)
@@ -1199,7 +1238,7 @@ class MainTable(QTableWidget):
             if proc.state() == QProcess.Running:
                 value, background, foregound = 'RUNNING', Qt.green, Qt.white
             else:
-                if proc.config_status & CONFIG_VALID:
+                if proc.config_status & CONFIG_READY:
                     value, background, foregound = 'IDLE', Qt.yellow, Qt.black
                 else:
                     value, background, foregound = 'ERROR', Qt.red, Qt.white
@@ -1219,6 +1258,11 @@ class MainTable(QTableWidget):
             btn_del.setStatusTip('Remove %s' % proc.name)
             btn_del.setVisible(True)
             btn_del.clicked.connect(partial(parent.process_delete, process=proc))
+            ## REFRESH BUTTON
+            btn_refresh = IconButton(parent=parent, icon=QIcon(ICON_REFRESH))
+            btn_refresh.setStatusTip('Refresh %s configuration' % proc.name)
+            btn_refresh.setVisible(True)
+            btn_refresh.clicked.connect(partial(parent.process_refresh, process=proc))
             ## CONSOLE BUTTON
             btn_console = IconButton(parent=parent, icon=QIcon(ICON_CONSOLE))
             btn_console.setStatusTip('Show %s console output' % proc.name)
@@ -1244,6 +1288,7 @@ class MainTable(QTableWidget):
 
             layout = QHBoxLayout()
             layout.addWidget(btn_del)
+            layout.addWidget(btn_refresh)
             layout.addWidget(btn_console)
             layout.addWidget(btn_log)
             layout.addWidget(btn_ctrl)
@@ -1267,7 +1312,7 @@ class MainTable(QTableWidget):
         :param row: the number of the row displaying the process state
         :param process: the QProcess instance to start
         """
-        if process.config_status & CONFIG_VALID:
+        if process.config_status & CONFIG_READY:
             process.stateChanged.connect(partial(self.paint_row, row=row))
             process.start()
         else:
@@ -1275,7 +1320,6 @@ class MainTable(QTableWidget):
                 reason= 'configuration file is not valid: %s' % process.config_path
             else:
                 reason = 'configuration not found: %s' % process.config_path
-
 
             msgbox = MessageBox(parent=self, icon=QMessageBox.Warning)
             msgbox.setText('%s startup failure: %s' % (process.name, reason))
@@ -1300,6 +1344,19 @@ class MainTable(QTableWidget):
             self.process_shutdown(process)
         process.delete()
         self.repaint()
+
+    def process_refresh(self, process):
+        """
+        Refresh a process configuration file
+        """
+        if process.state() == QProcess.Running:
+            msgbox = MessageBox(parent=self, icon=QMessageBox.Information)
+            msgbox.setText('%s is currently running. You need to stop it to refresh the configuration file.' % process.name)
+            msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
+            msgbox.exec_()
+        else:
+            process.load_config(process.config_path)
+            self.repaint()
 
     def process_console(self, process):
         """
@@ -1333,19 +1390,18 @@ class MainTable(QTableWidget):
             if not process.config.has_option('b3', 'logfile'):
                 raise Exception('missing b3::logfile option in %s configuration file' % process.name)
 
-            path = process.config.get('b3', 'logfile')
-            if len([x for x in os.path.split(path) if x]) == 1:
-                # if not path is specified but just a filename then look for the
-                # file in the main b3 folder (namely outside the @b3 directory)
-                path = os.path.join(b3.getAbsolutePath('@b3'), '..', path)
-
-            path = b3.getAbsolutePath(path)
+            path = process.config.getpath('b3', 'logfile')
             if not os.path.isfile(path):
-                raise Exception('file not found (%s)' % path)
+                message = '- missing: %s' % path
+                path = os.path.join(HOMEDIR, os.path.basename(path))
+                if not os.path.isfile(path):
+                    raise Exception(message + '\n- missing: %s' % path)
 
         except Exception, err:
             msgbox = MessageBox(parent=self.parent(), icon=QMessageBox.Warning)
-            msgbox.setText('Could not open %s log file: %s' % (process.name, err.message))
+            msgbox.setText('Could not find %s log file' % process.name)
+            msgbox.setDetailedText(err.message)
+            msgbox.setStyleSheet(STYLE_WIDGET_GENERAL + STYLE_BUTTON_LARGE)
             msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
             msgbox.exec_()
         else:
@@ -1407,8 +1463,9 @@ class CentralWidget(QWidget):
             layout.addWidget(btn_new)
             layout.addWidget(btn_quit)
             layout.setAlignment(Qt.AlignBottom | Qt.AlignRight)
-            layout.setContentsMargins(0, 0, 16, 40)
-            layout.setSpacing(20)
+            layout.setContentsMargins(0, 0, GEOMETRY[b3.getPlatform()]['MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_RIGHT'],
+                                            GEOMETRY[b3.getPlatform()]['MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_BOTTOM'])
+            layout.setSpacing(GEOMETRY[b3.getPlatform()]['MAIN_WINDOW_BOTTOM_LAYOUT_SPACING'])
             return layout
 
         main_layout = QVBoxLayout()
@@ -1543,12 +1600,7 @@ class MainWindow(QMainWindow):
         NOTE: this actually handle also the repainting of the main table but
         since it's not a toolbar button handler it has been implemented here instead.
         """
-        extensions = [
-            'INI (*.ini)',
-            'XML (*.xml)',
-            'All Files (*.*)',
-        ]
-
+        extensions = ['INI (*.ini)', 'XML (*.xml)', 'All Files (*.*)']
         init = b3.getAbsolutePath('@b3/conf')
         path, _ = QFileDialog.getOpenFileName(self.centralWidget(), 'Select B3 configuration file', init, ';;'.join(extensions))
 
@@ -1568,6 +1620,7 @@ class MainWindow(QMainWindow):
                     msgbox = MessageBox(parent=self, icon=QMessageBox.Critical)
                     msgbox.setText('One or more problems have been detected in your configuration file')
                     msgbox.setDetailedText('\n'.join(analysis))
+                    msgbox.setStyleSheet(STYLE_WIDGET_GENERAL + STYLE_BUTTON_LARGE)
                     msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
                     msgbox.exec_()
                 else:
@@ -1664,8 +1717,9 @@ class B3App(QApplication):
                 raise Exception(msg % args)
 
         logging.setLoggerClass(CustomHandler)
+
         LOG = logging.getLogger(__name__)
-        handler = logging.FileHandler(B3_LOG)
+        handler = logging.FileHandler(B3_LOG, mode='w')
         handler.setFormatter(logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)r', '%y%m%d %H:%M:%S'))
         LOG.addHandler(handler)
         LOG.setLevel(logging.DEBUG)
