@@ -6,7 +6,6 @@ setuptools>=0.9
 wheel>=0.21
 cx_Freeze
 pyyaml
-python-qt5
 
 # popular 3rd party plugins requirements to be included in the frozen builds
 uuid          # metabans ggcstream and telnet plugins
