@@ -28,10 +28,14 @@
 # 07/05/2015 - 0.3 - added loggin facility
 #                  - moved database file into user HOME folder (will survive updates)
 #                  - implement B3 log open through UI
+# 11/05/2015 - 0.4 - win32 graphic adjustment
+#                  - implemented process refresh feature: refresh a B3 configuration file without the need of
+#                    rebooting the application completely
+#                  - implemented plugin install feature: will deploy the plugin in the B3 default extplugins folder
 
 
 __author__ = 'Fenix'
-__version__ = '0.3'
+__version__ = '0.4'
 
 import b3
 import bisect
