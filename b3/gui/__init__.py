@@ -32,10 +32,10 @@
 #                  - implemented process refresh feature: refresh a B3 configuration file without the need of
 #                    rebooting the application completely
 #                  - implemented plugin install feature: will deploy the plugin in the B3 default extplugins folder
-
+# 13/05/2015 - 0.5 - linux graphic changes
 
 __author__ = 'Fenix'
-__version__ = '0.4'
+__version__ = '0.5'
 
 import b3
 import bisect
@@ -110,9 +110,9 @@ GEOMETRY = {
     },
     'linux': {
         'MAIN_TABLE_HEIGHT': 280,
-        'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_RIGHT': 16,
-        'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_BOTTOM': 40,
-        'MAIN_WINDOW_BOTTOM_LAYOUT_SPACING': 20,
+        'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_RIGHT': 11,
+        'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_BOTTOM': 32,
+        'MAIN_WINDOW_BOTTOM_LAYOUT_SPACING': 10,
     }
 }
 
