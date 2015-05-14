@@ -50,9 +50,11 @@
 # 03/03/2015 - 1.7.4 - Fenix     - removed python 2.6 support
 # 03/03/2015 - 1.7.5 - Fenix     - moved exception classes in a separate module
 # 19/03/2015 - 1.7.6 - Fenix     - raise NotImplementedError instead of NotImplemented
+# 22/04/2015 - 1.7.7 - Fenix     - raise ConfigFileNotValid in ConfigParser.readfp for consistency with XmlConfigParser
+#                                - added 'analyze()' method in MainConfig
 
 __author__  = 'ThorN, Courgette, Fenix'
-__version__ = '1.7.6'
+__version__ = '1.7.7'
 
 import os
 import re
@@ -74,7 +76,7 @@ ConfigFileNotValid = b3.exceptions.ConfigFileNotValid
 # list of plugins that cannot be loaded as disabled from configuration file
 MUST_HAVE_PLUGINS = ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail')
 
-class B3ConfigParserMixin:
+class B3ConfigParserMixin(object):
     """
     Mixin implementing ConfigParser methods more useful for B3 business.
     """
@@ -376,6 +378,15 @@ class CfgConfigParser(B3ConfigParserMixin, ConfigParser.ConfigParser):
         self.fileMtime = time.time()
         return True
 
+    def readfp(self, fp, filename=None):
+        """
+        Inherits from ConfigParser.ConfigParser to throw our custom exception if needed
+        """
+        try:
+            ConfigParser.ConfigParser.readfp(self, fp, filename)
+        except Exception, e:
+            raise ConfigFileNotValid("%s" % e)
+
     def save(self):
         """
         Save the configuration file.
@@ -434,10 +445,8 @@ def load(filename):
 class MainConfig(B3ConfigParserMixin):
     """
     Class to use to parse the B3 main config file.
-
     Responsible for reading the file either in xml or ini format.
     """
-
     def __init__(self, config_parser):
         self._config_parser = config_parser
         self._plugins = []
@@ -513,11 +522,58 @@ class MainConfig(B3ConfigParserMixin):
         """
         return self._config_parser.get(*args, **kwargs)
 
+    def analyze(self):
+        """
+        Analyze the main configuration file checking for common mistakes.
+        This will mostly check configuration file values and will not perform any futher check related,
+        i.e: connection with the database can be established using the provided dsn, rcon password is valid etc.
+        Such validations needs to be handled somewhere else.
+        :return: A list of strings highlighting problems found (so they can be logged/displayed easily)
+        """
+        analysis = []
+
+        def _mandatory_option(section, option):
+            if not self.has_option(section, option):
+                analysis.append('missing configuration value %s::%s' % (section, option))
+
+        _mandatory_option('b3', 'parser')
+        _mandatory_option('b3', 'database')
+        _mandatory_option('b3', 'bot_name')
+
+        ## PARSER CHECK
+        if self.has_option('b3', 'parser'):
+            try:
+                b3.functions.getModule('b3.parsers.%s' % self.get('b3', 'parser'))
+            except ImportError:
+                analysis.append('invalid parser specified in b3::parser (%s)' % self.get('b3', 'parser'))
+
+        ## DSN DICT
+        if self.has_option('b3', 'database'):
+            if not b3.functions.splitDSN(self.get('b3', 'database')):
+                analysis.append('invalid database source name specified in b3::database (%s)' % self.get('b3', 'database'))
+
+        ## ADMIN PLUGIN CHECK
+        has_admin = False
+        has_admin_config = False
+        for plugin in self.get_plugins():
+            if plugin['name'] == 'admin':
+                has_admin = True
+                if plugin['conf']:
+                    has_admin_config = True
+            break
+
+        if not has_admin:
+            analysis.append('missing admin plugin in plugins section')
+        elif not has_admin_config:
+            analysis.append('missing configuration file for admin plugin')
+
+        return analysis
+
     def __getattr__(self, name):
         """
         Act as a proxy in front of self._config_parser.
-        Any attribute or method call which does not exists in this object (MainConfig) is then tried on
-        the self._config_parser
+        Any attribute or method call which does not exists in this
+        object (MainConfig) is then tried on the self._config_parser
         :param name: str Attribute or method name
         """
         if hasattr(self._config_parser, name):

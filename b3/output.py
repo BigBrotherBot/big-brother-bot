@@ -48,6 +48,9 @@ logging.addLevelName(VERBOSE2, 'VERBOS2')
 # has been causing problems with threaded applications logging
 logging._srcfile = None
 
+# logger object instance
+__output = None
+
 
 class OutputHandler(logging.Logger):
 
@@ -140,13 +143,6 @@ class STDErrLogger:
 
 logging.setLoggerClass(OutputHandler)
 
-#handler = logging.StreamHandler(sys.stdout)
-#handler = handlers.RotatingFileHandler(__main__.cp.config.get('b3', 'logfile'), 'a', 10485760, 5)
-#handler.setFormatter(logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s', '%y%m%d %H:%I:%S'))
-#output.addHandler(handler)
-#output.setLevel(__main__.cp.config.get('b3', 'log_level'))
-
-__output = None
 
 def getInstance(logfile='b3.log', loglevel=21, logsize=10485760, log2console=False):
     """
@@ -154,16 +150,15 @@ def getInstance(logfile='b3.log', loglevel=21, logsize=10485760, log2console=Fal
     :param logfile: The logfile name.
     :param loglevel: The logging level.
     :param logsize: The size of the log file (in bytes)
-    :log2console: Whether or not to extend logging to the console.
+    :param log2console: Whether or not to extend logging to the console.
     """
     global __output
 
     if __output is None:
 
-        # configure the logger
         __output = logging.getLogger('output')
 
-        # add the log file handler
+        # FILE HANDLER
         file_formatter = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)r', '%y%m%d %H:%M:%S')
         handler = handlers.RotatingFileHandler(logfile, maxBytes=logsize, backupCount=5, encoding="UTF-8")
         handler.doRollover()
@@ -172,7 +167,7 @@ def getInstance(logfile='b3.log', loglevel=21, logsize=10485760, log2console=Fal
         __output.addHandler(handler)
 
         if log2console:
-            # add the console handler
+            # CONSOLE HANDLER
             console_formatter = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)r', '%M:%S')
             handler2 = logging.StreamHandler(sys.stdout)
             handler2.setFormatter(console_formatter)
@@ -188,40 +183,3 @@ def getInstance(logfile='b3.log', loglevel=21, logsize=10485760, log2console=Fal
         __output.setLevel(loglevel)
 
     return __output
-
-########################################################################################################################
-##                                                                                                                    ##
-##  LOG TEST CASE                                                                                                     ##
-##                                                                                                                    ##
-########################################################################################################################
-#
-# if __name__ == '__main__':
-#     # test output handler
-#     log = getInstance('test.log', 1, True)
-#     log.error('Test error')
-#     log.debug('Test debug')
-#     log.console('Test console')
-#     log.bot('Test bot')
-#     log.verbose('Test verbose')
-#     log.verbose2('Test verbose')
-#     log.warning('Test warning')
-#     log.info('Test info')
-#
-#     try:
-#         raise Exception('error test')
-#     except:
-#         log.exception('Test exception')
-#         log.error('Test error with exc_info',  exc_info=True)
-#
-#     try:
-#         log.raiseError(Exception, 'Test raiseError')
-#     except Exception, e:
-#         # expected behavior
-#         log.debug('Got expected Exception %s', e)
-#     else:
-#         # unexpected behavior
-#         raise Exception('raiseError should have raised an exception')
-#
-#     # critical will exit
-#     log.critical('Test info')
-#     raise Exception('log.critical should have exited')

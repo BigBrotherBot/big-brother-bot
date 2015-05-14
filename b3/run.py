@@ -30,9 +30,10 @@
 # 2014/12/15 - 1.5.1 - Fenix     - let the parser know if we are running B3 in auto-restart mode or not
 # 2015/02/02 - 1.5.2 - Fenix     - keep looking for xml configuration files if ini/cfg are not found
 # 2015/02/14 - 1.5.3 - Fenix     - removed _check_arg_configfile in favor of configuration file lookup
+# 2015/05/07 - 1.6   - Fenix     - add GUI startup
 
 __author__  = 'ThorN'
-__version__ = '1.5.3'
+__version__ = '1.6'
 
 import b3
 import os
@@ -41,6 +42,7 @@ import pkg_handler
 import time
 import traceback
 
+from b3 import HOMEDIR
 from b3.functions import main_is_frozen
 from b3.setup import Setup
 from b3.setup import Update
@@ -67,9 +69,9 @@ def run_autorestart(args=None):
             script += 'c'
 
     if args:
-        script = '%s %s %s --autorestart' % (sys.executable, script, ' '.join(args))
+        script = '%s %s %s --console --autorestart' % (sys.executable, script, ' '.join(args))
     else:
-        script = '%s %s --autorestart' % (sys.executable, script)
+        script = '%s %s --console --autorestart' % (sys.executable, script)
 
     while True:
         try:
@@ -140,9 +142,9 @@ def run(config=None, nosetup=False, autorestart=False):
     if config:
         config = b3.getAbsolutePath(config)
     else:
-        # search for the config file
-        config = None
-        for p in ('b3.%s', 'conf/b3.%s', 'b3/conf/b3.%s', '~/b3.%s', '~/conf/b3.%s', '~/b3/conf/b3.%s', '@b3/conf/b3.%s'):
+        for p in ('b3.%s', 'conf/b3.%s', 'b3/conf/b3.%s',
+                  os.path.join(HOMEDIR, 'b3.%s'), os.path.join(HOMEDIR, 'conf', 'b3.%s'),
+                  os.path.join(HOMEDIR, 'b3', 'conf', 'b3.%s'), '@b3/conf/b3.%s'):
             for e in ('ini', 'cfg', 'xml'):
                 path = b3.getAbsolutePath(p % e)
                 print 'Searching for config file: %s' % path
@@ -160,12 +162,14 @@ def run(config=None, nosetup=False, autorestart=False):
 
     b3.start(config, nosetup, autorestart)
 
+
 def run_setup(config=None):
     """
     Run the B3 setup.
     :param config: The B3 configuration file instance
     """
     Setup(config)
+
 
 def run_update(config=None):
     """
@@ -175,20 +179,83 @@ def run_update(config=None):
     Update(config)
 
 
+def run_gui(options):
+    """
+    Run B3 graphical user interface.
+    Will raise an exception if the GUI cannot be initialized so we can fallback into console mode.
+    :param options: command line options
+    """
+    from b3.gui import B3App
+    from b3.gui import SplashScreen
+    from b3.gui import MessageBox
+    from b3.gui import Button
+
+    if options.console:
+        raise EnvironmentError
+
+    # initialize outside try/except so if PyQT5 is not avaiable or there is
+    # no display adapter available, this will raise an exception and we can
+    # fallback into console mode
+    app = B3App.Instance(sys.argv)
+
+    try:
+        with SplashScreen(min_splash_time=2):
+            mainwindow = app.init()
+    except Exception, e:
+        box = MessageBox(icon=MessageBox.Critical)
+        box.setWindowTitle('CRITICAL')
+        box.setText('CRITICAL: %s' % e.message)
+        box.addButton(Button(text='Ok'), MessageBox.AcceptRole)
+        box.exec_()
+        #print traceback.extract_tb(sys.exc_info()[2])
+        sys.exit(127)
+    else:
+        mainwindow.show()
+        sys.exit(app.exec_())
+
+
+def run_console(options):
+    """
+    Run B3 in console mode.
+    :param options: command line options
+    """
+    try:
+        run(config=options.config, nosetup=options.nosetup, autorestart=options.autorestart)
+    except SystemExit, msg:
+        if main_is_frozen():
+            if sys.stdout != sys.__stdout__:
+                sys.stdout = sys.__stdout__
+                sys.stderr = sys.__stderr__
+            print msg
+            raw_input("press any key to continue...")
+        raise
+    except:
+        if sys.stdout != sys.__stdout__:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+        traceback.print_exc()
+    if main_is_frozen():
+        if sys.stdout != sys.__stdout__:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+        raw_input("press any key to continue...")
+
+
 def main():
     """
     Main execution.
     """
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', dest='config', default=None, metavar='b3.ini', help='B3 config file. Example: -c b3.ini')
-    parser.add_argument('-r', '--restart', action='store_true', dest='restart', default=False, help='Auto-restart B3 on crash')
-    parser.add_argument('-s', '--setup',  action='store_true', dest='setup', default=False, help='Setup main b3.ini config file')
-    parser.add_argument('-u', '--update', action='store_true', dest='update', default=False, help='Update B3 database to latest version')
-    parser.add_argument('-n', '--nosetup', action="store_true", dest='nosetup', default=False, help='Do not enter setup mode when config is missing')
-    parser.add_argument('-v', '--version', action='version', default=False, version=b3.getB3versionString(), help='Show Version and exit')
-    parser.add_argument('-a', '--autorestart', action='store_true', dest='autorestart', default=False, help=argparse.SUPPRESS)
+    p = argparse.ArgumentParser()
+    p.add_argument('-c', '--config', dest='config', default=None, metavar='b3.ini', help='B3 config file. Example: -c b3.ini')
+    p.add_argument('-x', '--console', action='store_true', dest='console', default=False, help='Force B3 execution in console mode')
+    p.add_argument('-r', '--restart', action='store_true', dest='restart', default=False, help='Auto-restart B3 on crash')
+    p.add_argument('-s', '--setup',  action='store_true', dest='setup', default=False, help='Setup main b3.ini config file')
+    p.add_argument('-n', '--nosetup', action="store_true", dest='nosetup', default=False, help='Do not enter setup mode when config is missing')
+    p.add_argument('-u', '--update', action='store_true', dest='update', default=False, help='Update B3 database to latest version')
+    p.add_argument('-v', '--version', action='version', default=False, version=b3.getB3versionString(), help='Show B3 version and exit')
+    p.add_argument('-a', '--autorestart', action='store_true', dest='autorestart', default=False, help=argparse.SUPPRESS)
 
-    (options, args) = parser.parse_known_args()
+    (options, args) = p.parse_known_args()
 
     if not options.config and len(args) == 1:
         options.config = args[0]
@@ -206,33 +273,10 @@ def main():
             run_autorestart([])
     else:
         try:
-            run(config=options.config, nosetup=options.nosetup, autorestart=options.autorestart)
-        except SystemExit, msg:
-            # This needs some work, is ugly a.t.m. but works... kinda
-            if main_is_frozen():
-                if sys.stdout != sys.__stdout__:
-                    # make sure we are not writing to the log:
-                    sys.stdout = sys.__stdout__
-                    sys.stderr = sys.__stderr__
-                print msg
-                raw_input("Press the [ENTER] key")
-            raise
-        except:
-            if sys.stdout != sys.__stdout__:
-                # make sure we are not writing to the log:
-                sys.stdout = sys.__stdout__
-                sys.stderr = sys.__stderr__
-            traceback.print_exc()
-        if main_is_frozen():
-            # which happens when running from the py2exe build
-            # we wait for keyboad keypress to give a chance to the 
-            # user to see the error message
-            if sys.stdout != sys.__stdout__:
-                # make sure we are not writing to the log:
-                sys.stdout = sys.__stdout__
-                sys.stderr = sys.__stderr__
-            raw_input("Press the [ENTER] key")
-     
+            run_gui(options)
+        except Exception:
+            run_console(options)
+
     
 if __name__ == '__main__':
     main()

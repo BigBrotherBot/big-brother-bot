@@ -34,15 +34,17 @@
 # 09/03/2014 - 1.8   - Fenix        - added EVT_PLUGIN_ENABLED, EVT_PLUGIN_DISABLED, EVT_PLUGIN_LOADED,
 #                                     EVT_PLUGIN_UNLOADED
 # 19/03/2015 - 1.8.1 - Fenix        - fixed test for membership using 'if not X in Y' (now use 'if X not in Y')
+# 04/05/2015 - 1.8.2 - Fenix        - removed reference to global variable b3.console on b3.console.time(): using
+#                                     time.time() instead (changed after reply mode removal)
 
 __author__ = 'ThorN, xlr8or, Courgette'
-__version__ = '1.8'
+__version__ = '1.8.2'
 
-import b3
 import re
+import time
 
 from b3.functions import meanstdv
-from b3.decorators import memoize
+from b3.decorators import Memoize
 from b3.output import VERBOSE
 from collections import deque
 from logging import DEBUG
@@ -136,7 +138,7 @@ class Events:
             except KeyError:
                 return None
 
-    @memoize
+    @Memoize
     def getKey(self, event_id):
         """
         Get the key of a given event ID.
@@ -185,7 +187,7 @@ class Event(object):
         :param client: The client source of this event
         :param target: The target of this event
         """
-        self.time = b3.console.time()
+        self.time = int(time.time())
         self.type = type
         self.data = data
         self.client = client

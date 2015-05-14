@@ -1,3 +1,4 @@
+# coding=utf-8
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
@@ -26,6 +27,9 @@
 # 2014/07/20 - 1.2      - Fenix     - syntax cleanup
 # 2014/09/07 - 1.2.1    - Courgette - fix getAbsolutePath @b3 and @conf expansion on path using windows style separators
 # 2014/12/14 - 1.3      - Fenix     - let the parser know if we are running B3 in auto-restart mode or not
+# 2015/05/04 - 1.4      - Fenix     - added getPlatform() function: return the current platform name
+#                                   - better update data printing in stdout
+#                                   - added getWritableFilePath function: return a valid writable filepath
 
 import os
 import re
@@ -34,12 +38,12 @@ import pkg_handler
 import traceback
 import time
 import signal
-import platform
 import config
 
 from b3.functions import main_is_frozen
 from b3.update import checkUpdate
 from b3.setup import Setup
+from tempfile import TemporaryFile
 from ConfigParser import NoOptionError
 from ConfigParser import NoSectionError
 
@@ -52,26 +56,32 @@ versionOs = os.name
 versionId = 'v%s [%s]' % (__version__, versionOs)
 version = '^8www.bigbrotherbot.net ^0(^8b3^0) ^9%s ^9[^3PoisonIvy^9]^3' % versionId
 
-_confDir = None
+confdir = None
 console = None
 
-# some constants
+# TEAMS
 TEAM_UNKNOWN = -1
 TEAM_FREE = 0
 TEAM_SPEC = 1
 TEAM_RED = 2
 TEAM_BLUE = 3
 
+# PLAYER STATE
 STATE_DEAD = 1
 STATE_ALIVE = 2
 STATE_UNKNOWN = 3
+
+# APP HOME DIRECTORY
+HOMEDIR = os.path.normpath(os.path.expanduser('~/BigBrotherBot'))
+if not os.path.isdir(HOMEDIR):
+    os.mkdir(HOMEDIR)
 
 
 def loadParser(pname, configFile, nosetup=False):
     """
     Load the parser module given it's name.
     :param pname: The parser name
-    :param configFile: The parser configuration file (namely b3.xml)
+    :param configFile: The parser configuration file
     :param nosetup: Whether or not to run the B3 setup
     :return The parser module
     """
@@ -88,13 +98,23 @@ def loadParser(pname, configFile, nosetup=False):
     return mod
 
 
+def getPlatform():
+    """
+    Return the current platform name.
+    :return: win32, darwin, linux
+    """
+    if sys.platform not in ('win32', 'darwin'):
+        return 'linux'
+    return sys.platform
+
+
 def getB3versionString():
     """
     Return the B3 version as a string.
     """
     sversion = re.sub(r'\^[0-9a-z]', '', version)
     if main_is_frozen():
-        sversion = "%s [Win32 standalone]" % sversion
+        sversion = "%s [%s standalone]" % (sversion, getPlatform())
     return sversion
 
 
@@ -103,31 +123,48 @@ def getB3Path():
     Return the path to the main B3 directory.
     """
     if main_is_frozen():
-        # which happens when running from the py2exe build
         return os.path.dirname(sys.executable)
     return modulePath
 
 
 def getConfPath():
     """
-    Return the path to the main configuration file.
+    Return the path to the B3 main configuration directory.
     """
-    if _confDir is not None:
-        return _confDir
-    else:
-        # try to get info from b3.console (assuming it is loaded)
-        return os.path.dirname(console.config.fileName)
+    if confdir is not None:
+        return confdir
+    return os.path.dirname(console.config.fileName)
 
 
 def getAbsolutePath(path):
     """
     Return an absolute path name and expand the user prefix (~).
+    :param path: the relative path we want to expand
     """
     if path[0:4] == '@b3\\' or path[0:4] == '@b3/':
         path = os.path.join(getB3Path(), path[4:])
     elif path[0:6] == '@conf\\' or path[0:6] == '@conf/':
         path = os.path.join(getConfPath(), path[6:])
     return os.path.normpath(os.path.expanduser(path))
+
+
+def getWritableFilePath(filepath):
+    """
+    Return an absolute filepath making sure the current user can write it.
+    If the given path is not writable by the current user, the path will be converted into an
+    absolute path pointing inside the B3 home directory (defined in the `HOMEDIR` global variable)
+    which is assumed to be writable.
+    :param filepath: the relative path we want to expand
+    """
+    filepath = getAbsolutePath(filepath)
+    if not filepath.startswith(HOMEDIR):
+        try:
+            tmp = TemporaryFile(dir=os.path.dirname(filepath))
+        except (OSError, IOError):
+            filepath = os.path.join(HOMEDIR, os.path.basename(filepath))
+        else:
+            tmp.close()
+    return filepath
 
 
 def start(configFile, nosetup=False, autorestart=False):
@@ -145,8 +182,8 @@ def start(configFile, nosetup=False, autorestart=False):
     conf = None
     if os.path.exists(configFile):
         print 'Using config file: %s' % configFile
-        global _confDir
-        _confDir = os.path.dirname(configFile)
+        global confdir
+        confdir = os.path.dirname(configFile)
         conf = config.MainConfig(config.load(configFile))
     else:
         # this happens when a config was entered on
@@ -155,24 +192,26 @@ def start(configFile, nosetup=False, autorestart=False):
             raise SystemExit('ERROR: could not find config file %s' % configFile)
         Setup(configFile)
 
-    # check if a newer version of B3 is available
-    update_channel = None
-
     try:
         update_channel = conf.get('update', 'channel')
     except (NoSectionError, NoOptionError):
         pass
-
-    if update_channel == 'skip':
-        print "Skipping check if a update is available."
     else:
-        _update = checkUpdate(__version__, channel=update_channel, singleLine=False, showErrormsg=True)
-        if _update:
-            print _update
-            time.sleep(5)
+        sys.stdout.write('Checking update  : ')
+        sys.stdout.flush()
+        if update_channel == 'skip':
+            sys.stdout.write('SKIP\n')
+            sys.stdout.flush()
         else:
-            print "...no update available."
-            time.sleep(1)
+            updatetext = checkUpdate(__version__, channel=update_channel, singleLine=True, showErrormsg=True)
+            if updatetext:
+                sys.stdout.write('%s\n' % updatetext)
+                sys.stdout.flush()
+                time.sleep(2)
+            else:
+                sys.stdout.write('no update available\n')
+                sys.stdout.flush()
+                time.sleep(1)
 
     try:
 
@@ -183,7 +222,7 @@ def start(configFile, nosetup=False, autorestart=False):
         try:
             parser = loadParser(parserType, configFile, nosetup)
         except ImportError, err:
-            raise SystemExit("CRITICAL: could not find parser '%s': check you main config file (b3.xml)\n"
+            raise SystemExit("CRITICAL: could not find parser '%s': check you main config file\n"
                              "B3 failed to start.\n%r" % (parserType, err))
         
         global console
@@ -228,7 +267,7 @@ def clearScreen():
     """
     Clear the current shell screen according to the OS being used.
     """
-    if platform.system() in ('Windows', 'Microsoft'):
+    if getPlatform() == 'win32':
         os.system('cls')
     else:
         os.system('clear')

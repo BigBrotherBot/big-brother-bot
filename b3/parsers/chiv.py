@@ -99,9 +99,8 @@ class ChivParser(Parser):
         Main worker thread for B3.
         """
         self.screen.write('Startup complete : B3 is running! Let\'s get to work!\n\n')
-        self.screen.write('(If you run into problems, check %s in the B3 root directory for '
-                          'detailed log info)\n' % self.config.getpath('b3', 'logfile'))
-
+        self.screen.write('If you run into problems check your B3 log file for more information\n')
+        self.screen.flush()
         self.updateDocumentation()
 
         while self.working:

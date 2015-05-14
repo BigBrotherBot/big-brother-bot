@@ -39,6 +39,7 @@
 __author__ = 'ThorN, xlr8or, courgette, Fenix'
 __version__ = '3.3'
 
+import b3
 import re
 import os
 import sys
@@ -53,16 +54,13 @@ from distutils import dir_util, log
 from setuptools.command.egg_info import egg_info as orig_egg_info
 from time import strftime
 
-PLATFORM = sys.platform
-if PLATFORM not in ('win32', 'darwin'):
-    PLATFORM = 'linux'
 
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))  # directory where this file is in
 DIST_DIR = os.path.join(PROJECT_DIR, 'dist')  # directory where all the final builds will be found
 BUILD_DIR = os.path.join(PROJECT_DIR, 'build')  # directory where all work will be done
 BUILD_VER = '.'.join(map(str, B3version(b3_version).version))  # current build version (extracted from b3 version)
 BUILD_TIME = strftime('%Y%m%d')  # current build time (for distribution zip name)
-BUILD_PATH = os.path.join(BUILD_DIR, 'b3-%s-%s-%s' % (BUILD_VER, BUILD_TIME, PLATFORM))  # frozen distribution path
+BUILD_PATH = os.path.join(BUILD_DIR, 'b3-%s-%s-%s' % (BUILD_VER, BUILD_TIME, b3.getPlatform()))  # frozen distribution path
 
 settings = {
     'win32': {
@@ -277,13 +275,14 @@ else:
 
     cmdclass['build_exe'] = my_build_exe
 
-    if PLATFORM == 'darwin':
+    if b3.getPlatform() == 'darwin':
         # those are available only on Mac OSX
         from cx_Freeze import bdist_mac
         from cx_Freeze import bdist_dmg
 
         class my_bdist_mac(bdist_mac):
-            """extends bdist_mac adding the following changes:
+            """
+            Extends bdist_mac adding the following changes:
                - properly lookup build_exe path (using BUILD_PATH)
                - correctly generate Info.plist
             """
@@ -294,6 +293,32 @@ else:
             frameworksDir = None
             resourcesDir = None
 
+            def find_qt_menu_nib(self):
+                """
+                Returns a location of a qt_menu.nib folder,
+                or None if this is not a Qt application.
+                """
+                if self.qt_menu_nib:
+                    return self.qt_menu_nib
+                elif any(n.startswith("PyQt5.QtCore") for n in os.listdir(self.binDir)):
+                    from PyQt5 import QtCore
+                else:
+                    return None
+
+                libpath = os.path.join(str(QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.DataPath)), '..')
+                subpath = 'Src/qtbase/src/plugins/platforms/cocoa/qt_menu.nib'
+                path = os.path.join(libpath, subpath)
+                if os.path.exists(path):
+                    return path
+
+                # Last resort: fixed paths (macports)
+                for path in ['/opt/local/Library/Frameworks/QtGui.framework/Versions/5/Resources/qt_menu.nib']:
+                    if os.path.exists(path):
+                        return path
+
+                print ("could not find qt_menu.nib")
+                raise IOError("could not find qt_menu.nib")
+
             def run(self):
                 self.run_command('build')
                 build = self.get_finalized_command('build')
@@ -301,7 +326,6 @@ else:
                 # define the paths within the application bundle
                 self.bundleDir = os.path.join(build.build_base, self.bundle_name + ".app")
                 self.contentsDir = os.path.join(self.bundleDir, 'Contents')
-                self.bundleDir = os.path.join(self.bundleDir, 'Contents')
                 self.resourcesDir = os.path.join(self.contentsDir, 'Resources')
                 self.binDir = os.path.join(self.contentsDir, 'MacOS')
                 self.frameworksDir = os.path.join(self.contentsDir, 'Frameworks')
@@ -396,9 +420,7 @@ else:
                 if os.path.exists(self.dmgName):
                     os.unlink(self.dmgName)
 
-                bundleDir = os.path.split(self.bundleDir)[0]
                 tmpDir = os.path.join(self.buildDir, 'tmp')
-
                 if os.path.exists(tmpDir):
                     dir_util.remove_tree(tmpDir, verbose=1)
                 self.mkpath(tmpDir)
@@ -406,7 +428,7 @@ else:
                 # move the app bundle into a separate folder since hdutil copies in the dmg
                 # the content of the folder specified in the -srcfolder folder parameter, and if we
                 # specify as input the app bundle itself, its content will be copied and not the bundle
-                if os.spawnvp(os.P_WAIT, 'cp', ['cp', '-R', bundleDir, tmpDir]):
+                if os.spawnvp(os.P_WAIT, 'cp', ['cp', '-R', self.bundleDir, tmpDir]):
                     raise OSError('could not move app bundle in staging directory')
 
                 createargs = [
@@ -446,14 +468,18 @@ else:
         cmdclass['bdist_mac'] = my_bdist_mac
         cmdclass['bdist_dmg'] = my_bdist_dmg
 
+    base = None
+    if sys.platform == 'win32':
+        base = 'Win32GUI'
+
     executables = [
         Executable(
             script='b3_run.py',
-            base='Console',
+            base=base,
             compress=True,
             copyDependentFiles=True,
-            targetName=settings[PLATFORM]['binary_name'],
-            icon=settings[PLATFORM]['icon'],
+            targetName=settings[b3.getPlatform()]['binary_name'],
+            icon=settings[b3.getPlatform()]['icon'],
         )
     ]
 
@@ -540,7 +566,7 @@ setup(
             'dist_dir': DIST_DIR,
         },
         'bdist_mac': {
-            'iconfile': settings[PLATFORM]['icon'],
+            'iconfile': settings[b3.getPlatform()]['icon'],
             'bundle_name': 'BigBrotherBot (B3) %s' % BUILD_VER,
         },
         'bdist_dmg': {
@@ -550,7 +576,7 @@ setup(
         },
         'build_exe': {
             'dist_dir': DIST_DIR,
-            'linux_binary_name': settings[PLATFORM]['binary_name'],
+            'linux_binary_name': settings[b3.getPlatform()]['binary_name'],
             'build_exe': BUILD_PATH,
             'silent': False,
             'optimize': 1,
@@ -559,12 +585,17 @@ setup(
             'append_script_to_exe': True,
             'packages': [
                 'b3.lib',
+                'b3.gui',
                 'b3.plugins',
                 'b3.parsers',
                 'b3.tools',
             ],
             'excludes': ['tcl', 'ttk', 'tkinter', 'Tkinter'],
             'includes': [
+                ### gui modules
+                'PyQt5.QtCore',
+                'PyQt5.QtGui',
+                'PyQt5.QtWidgets',
                 ### storage modules
                 'pymysql',
                 'psycopg2',
@@ -587,6 +618,7 @@ setup(
                 ('b3/extplugins/', 'extplugins/'),
                 ('b3/extplugins/xlrstats', 'extplugins/xlrstats'),
                 ('b3/extplugins/xlrstats/conf', 'extplugins/xlrstats/conf'),
+                ('b3/gui/assets', 'gui/assets'),
                 ('b3/sql', 'sql'),
                 ('b3/sql/mysql', 'sql/mysql'),
                 ('b3/sql/postgresql', 'sql/postgresql'),

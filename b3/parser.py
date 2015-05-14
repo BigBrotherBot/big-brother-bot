@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+# 2015/05/04 - 1.42.9 - Fenix           - removed reply mode: it's messing up GUI and it's needed only to debug cod4
+#                                       - make sure that the logfile path is actually writable by B3, else it crashes
 # 2015/04/28 - 1.42.8 - Fenix           - code cleanup
 # 2015/04/22 - 1.42.7 - Fenix           - fixed typo in startPlugins: was causing B3 to crash upon startup
 # 2015/04/16 - 1.42.6 - Fenix           - uniform class variables (dict -> variable)
@@ -180,7 +182,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.42.8'
+__version__ = '1.42.9'
 
 
 import os
@@ -210,7 +212,7 @@ from ConfigParser import NoOptionError
 from collections import OrderedDict
 from b3.clients import Clients
 from b3.clients import Group
-from b3.decorators import memoize
+from b3.decorators import Memoize
 from b3.exceptions import MissingRequirement
 from b3.functions import getModule
 from b3.functions import vars2printf
@@ -273,11 +275,10 @@ class Parser(object):
     queue = None  # event queue
     rconTest = False  # whether to perform RCON testing or not
     remoteLog = False
-    replay = False
     screen = None
     storage = None  # storage module instance
     type = None
-    working = True
+    working = True  # whether B3 is running or not
     wrapper = None  # textwrapper instance
 
     deadPrefix = '[DEAD]^7'  # say dead prefix
@@ -305,27 +306,27 @@ class Parser(object):
     # including raising ``SystemExit'' when a user-requested exit is needed.
     #
     # The ``SystemExit'' exception bubbles up only as far as the top of the handler
-    # thread -- the ``handle_events'' method.  To expose the exit status to the
+    # thread -- the ``handleEvents'' method.  To expose the exit status to the
     # ``run'' method in the main thread, we store the value in ``exitcode''.
     #
-    # Since the teardown steps in ``run'' and ``handle_events'' would occur in
+    # Since the teardown steps in ``run'' and ``handleEvents'' would occur in
     # parallel, we use a lock (``exiting'') to ensure that ``run'' waits for
-    # ``handle_events'' to finish before proceeding.
+    # ``handleEvents'' to finish before proceeding.
     #
     # How exiting works, in detail:
     #
-    #   - the parallel loops in run() and handle_events() are terminated only when working==False.
+    #   - the parallel loops in run() and handleEvents() are terminated only when working==False.
     #   - die() or restart() invokes shutdown() from the handler thread.
     #   - the exiting lock is acquired by shutdown() in the handler thread before it sets working=False to
     #     end both loops.
     #   - die() or restart() raises SystemExit in the handler thread after shutdown() and a few seconds delay.
-    #   - when SystemExit is caught by handle_events(), its exit status is pushed to the main context via exitcode.
-    #   - handle_events() ensures the exiting lock is released when it finishes.
+    #   - when SystemExit is caught by handleEvents(), its exit status is pushed to the main context via exitcode.
+    #   - handleEvents() ensures the exiting lock is released when it finishes.
     #   - run() waits to acquire the lock in the main thread before proceeding with teardown, repeating
     #     sys.exit(exitcode) from the main thread if set.
     #
     #   In the case of an abnormal exception in the handler thread, ``exitcode''
-    #   will be None and the ``exiting'' lock will be released when``handle_events''
+    #   will be None and the ``exiting'' lock will be released when``handleEvents''
     #   finishes so the main thread can still continue.
     #
     #   Exits occurring in the main thread do not need to be synchronised.
@@ -364,6 +365,9 @@ class Parser(object):
         log2console = self.config.has_option('devmode', 'log2console') and \
             self.config.getboolean('devmode', 'log2console')
 
+        # make sure the logfile is writable
+        logfile = b3.getWritableFilePath(logfile)
+
         try:
             logsize = b3.functions.getBytes(self.config.get('b3', 'logsize'))
         except (TypeError, NoOptionError):
@@ -374,7 +378,9 @@ class Parser(object):
 
         # save screen output to self.screen
         self.screen = sys.stdout
-        print('Activating log   : %s' % logfile)
+        self.screen.write('Activating log   : %s\n' % os.path.abspath(b3.getAbsolutePath(logfile)))
+        self.screen.flush()
+
         sys.stdout = b3.output.STDOutLogger(self.log)
         sys.stderr = b3.output.STDErrLogger(self.log)
 
@@ -456,13 +462,6 @@ class Parser(object):
             if delay2 > 0:
                 self.delay2 = 1/delay2
 
-        # demo mode: use log time
-        if self.config.has_option('devmode', 'replay'):
-            self.replay = self.config.getboolean('devmode', 'replay')
-            if self.replay:
-                self._timeStart = 0
-                self.bot('Replay mode enabled')
-
         try:
             # setup storage module
             dsn = self.config.get('b3', 'database')
@@ -489,6 +488,9 @@ class Parser(object):
                     logext = 'games_mp_' + logext + '_' + str(self._port) + '.log'
                     f = os.path.normpath(os.path.expanduser(logext))
 
+                # make sure game log file can be written
+                f = b3.getWritableFilePath(f)
+
                 if self.config.has_option('server', 'log_append'):
                     if not (self.config.getboolean('server', 'log_append') and os.path.isfile(f)):
                         self.screen.write('Creating gamelog : %s\n' % f)
@@ -510,11 +512,7 @@ class Parser(object):
 
             if os.path.isfile(f):
                 self.input = file(f, 'r')
-    
-                # seek to point in log file?
-                if self.replay:
-                    pass
-                elif self.config.has_option('server', 'seek'):
+                if self.config.has_option('server', 'seek'):
                     seek = self.config.getboolean('server', 'seek')
                     if seek:
                         self.input.seek(0, os.SEEK_END)
@@ -587,7 +585,7 @@ class Parser(object):
             self.warning(err)
 
         self.debug("Creating the event queue with size %s", queuesize)
-        self.queue = Queue.Queue(queuesize)    # event queue
+        self.queue = Queue.Queue(queuesize)
 
         atexit.register(self.shutdown)
 
@@ -595,10 +593,14 @@ class Parser(object):
     def getAbsolutePath(path):
         """
         Return an absolute path name and expand the user prefix (~)
+        :param path: the relative path we want to expand
         """
         return b3.getAbsolutePath(path)
 
     def _dumpEventsStats(self):
+        """
+        Dump event statistics into the B3 log file.
+        """
         self._eventsStats.dumpStats()
 
     def start(self):
@@ -772,7 +774,7 @@ class Parser(object):
                 :param match: The plugin name
                 """
                 # first look in the built-in plugins directory
-                search = '%s%s*%s*' % (self.getAbsolutePath('@b3\\conf'), os.path.sep, match)
+                search = '%s%s*%s*' % (self.getAbsolutePath('@conf\\'), os.path.sep, match)
                 self.debug('Searching for configuration file(s) matching: %s' % search)
                 collection = glob.glob(search)
                 if len(collection) > 0:
@@ -1180,7 +1182,7 @@ class Parser(object):
 
         return cmd % kwargs
 
-    @memoize
+    @Memoize
     def getGroup(self, data):
         """
         Return a valid Group from storage.
@@ -1260,10 +1262,8 @@ class Parser(object):
         Main worker thread for B3
         """
         self.screen.write('Startup complete : B3 is running! Let\'s get to work!\n\n')
-        self.screen.write('(If you run into problems, check %s in the B3 root directory for '
-                          'detailed log info)\n' % self.config.getpath('b3', 'logfile'))
-        
-        #self.screen.flush()
+        self.screen.write('If you run into problems check your B3 log file for more information\n')
+        self.screen.flush()
         self.updateDocumentation()
 
         log_time_start = None
@@ -1297,9 +1297,6 @@ class Parser(object):
                                 log_time_current -= log_time_start
                                 self.logTime += log_time_current - log_time_last
                                 log_time_last = log_time_current
-
-                            if self.replay:                    
-                                self.debug('log time %d' % self.logTime)
 
                             self.console(line)
 
@@ -1417,11 +1414,7 @@ class Parser(object):
         """
         Write a message to Rcon/Console
         """
-        if self.replay:
-            self.bot('Sent rcon message: %s' % msg)
-        elif self.output is None:
-            pass
-        else:
+        if self.output:
             res = self.output.write(msg, maxRetries=maxRetries, socketTimeout=socketTimeout)
             self.output.flush()
             return res
@@ -1431,13 +1424,7 @@ class Parser(object):
         Write a sequence of messages to Rcon/Console. Optimized for speed.
         :param msg: The message to be sent to Rcon/Console.
         """
-        if self.replay:
-            self.bot('Sent rcon message: %s' % msg)
-        elif self.output is None:
-            pass
-        elif not msg:
-            pass
-        else:
+        if self.output and msg:
             res = self.output.writelines(msg)
             self.output.flush()
             return res
@@ -1617,12 +1604,11 @@ class Parser(object):
         """
         self.log.critical(msg, *args, **kwargs)
 
-    def time(self):
+    @staticmethod
+    def time():
         """
         Return the current time in GMT/UTC.
         """
-        if self.replay:
-            return self.logTime
         return int(time.time())
 
     def _get_cron(self):
@@ -1786,9 +1772,3 @@ class Parser(object):
         /!\ This method must return True if the penalty was inflicted.
         """
         pass
-
-if __name__ == '__main__':
-    import config
-    parser = Parser(config.load('conf/b3.xml'))
-    print parser
-    print parser.start()

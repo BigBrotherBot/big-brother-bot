@@ -319,12 +319,8 @@ class AbstractParser(b3.parser.Parser):
             # console abuse to broadcast text
             self.say(msg)
         else:
-            # Then we got a command
-            if self.replay:
-                self.bot('Sent rcon message: %s' % msg)
-            elif self.output is None:
-                pass
-            else:
+            # then we got a command
+            if self.output:
                 res = self.output.write(msg, maxRetries=maxRetries, needConfirmation=needConfirmation)
                 self.output.flush()
                 return res

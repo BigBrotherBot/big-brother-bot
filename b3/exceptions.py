@@ -20,6 +20,7 @@
 #
 # 2015-03-08 - 1.0 - Fenix - initial release
 # 2015-03-09 - 1.1 - Fenix - added ProgrammingError exception class
+# 2015-04-20 - 1.2 - Fenix - added DatabaseError exception class
 
 
 class ConfigFileNotFound(Exception):
@@ -61,6 +62,17 @@ class MissingRequirement(Exception):
 class ProgrammingError(Exception):
     """
     Raised whenever a programming error is detected.
+    """
+    def __init__(self, message):
+        Exception.__init__(self, message)
+
+    def __str__(self):
+        return repr(self.message)
+
+
+class DatabaseError(Exception):
+    """
+    Raised whenever there are inconsistences with the database schema.
     """
     def __init__(self, message):
         Exception.__init__(self, message)

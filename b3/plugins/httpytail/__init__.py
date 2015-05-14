@@ -31,9 +31,10 @@
 #                                     - fixed unresolved reference self.webFile: need to reference a local variable
 # 06/03/2015 - 1.3   - Thomas LEVEIL  - check Python version to be minimum 2.7
 # 19/03/2015 - 1.3.1 - Fenix          - fixed exception catching order (IOError before Exception)
+# 08/05/2015 - 1.4   - Fenix          - make sure that the game log file can be written to disk
 
 __author__ = 'GrosBedo, 82ndab-Bravo17, Courgette'
-__version__ = '1.3.1'
+__version__ = '1.4'
 
 import b3
 import threading
@@ -104,7 +105,9 @@ class HttpytailPlugin(b3.plugin.Plugin):
             self.lgame_log = self.console.config.getpath('server', 'local_game_log')
         else:
             self.lgame_log = os.path.normpath(os.path.expanduser(self.console.input.name))
-            self.debug('local game log is: %s' % self.lgame_log)
+
+        self.lgame_log = b3.getWritableFilePath(self.lgame_log)
+        self.debug('local game log is: %s' % self.lgame_log)
 
         if self.console.config.get('server', 'game_log')[0:7] == 'http://':
             self.initThread(self.console.config.get('server', 'game_log'))

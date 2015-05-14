@@ -22,6 +22,7 @@
 # 21/07/2014 - Fenix - syntax cleanup
 # 13/12/2014 - Fenix - updated regular expression in getDefaultChannel to correctly match daily builds
 # 20/02/2015 - Fenix - updated regular expression in B3version to match Travis CI build names
+# 04/05/2015 - Fenix - changed update single line message to fit into console screen
 
 import json
 import re
@@ -74,9 +75,6 @@ class B3version(version.StrictVersion):
 (?:-(?P<date>20\d\d\d\d\d\d))?   # 1.10.0dev-20150215
 $''', re.VERBOSE)
     prerelease_order = {'dev': 0, 'a': 1, 'b': 2}
-
-
-
 
     def parse (self, vstring):
         """
@@ -207,11 +205,11 @@ def checkUpdate(currentVersion, channel=None, singleLine=True, showErrormsg=Fals
         version_info = json.loads(json_data)
     except IOError, e:
         if hasattr(e, 'reason'):
-            errormessage = "%s" % e.reason
+            errormessage = '%s' % e.reason
         elif hasattr(e, 'code'):
-            errormessage = "error code: %s" % e.code
+            errormessage = 'error code: %s' % e.code
         else:
-            errormessage = "%s" % e
+            errormessage = '%s' % e
     except Exception, e:
         errormessage = repr(e)
     else:
@@ -219,15 +217,15 @@ def checkUpdate(currentVersion, channel=None, singleLine=True, showErrormsg=Fals
         try:
             channels = version_info['B3']['channels']
         except KeyError, err:
-            errormessage = repr(err) + ". %s" % version_info
+            errormessage = repr(err) + '. %s' % version_info
         else:
             if channel not in channels:
-                errormessage = "unknown channel '%s'. Expecting one of '%s'"  % (channel, ", '".join(channels.keys()))
+                errormessage = "unknown channel '%s': expecting (%s)"  % (channel, ', '.join(channels.keys()))
             else:
                 try:
                     latestVersion = channels[channel]['latest-version']
                 except KeyError, err:
-                    errormessage = repr(err) + ". %s" % version_info
+                    errormessage = repr(err) + '. %s' % version_info
 
         if not errormessage:
             try:
@@ -235,12 +233,12 @@ def checkUpdate(currentVersion, channel=None, singleLine=True, showErrormsg=Fals
             except KeyError:
                 latestUrl = "www.bigbrotherbot.net"
 
-            not singleLine and sys.stdout.write("latest B3 %s version is %s\n" % (channel, latestVersion))
+            not singleLine and sys.stdout.write('latest B3 %s version is %s\n' % (channel, latestVersion))
             _lver = B3version(latestVersion)
             _cver = B3version(currentVersion)
             if _cver < _lver:
                 if singleLine:
-                    message = "*** NOTICE: B3 %s is available. See %s ! ***" % (latestVersion, latestUrl)
+                    message = 'update available (v%s : %s)' % (latestVersion, latestUrl)
                 else:
                     message = """
                  _\|/_
@@ -257,7 +255,7 @@ def checkUpdate(currentVersion, channel=None, singleLine=True, showErrormsg=Fals
         """.format(version=latestVersion, url=latestUrl)
 
     if errormessage and showErrormsg:
-        return "Could not check updates: %s" % errormessage
+        return errormessage
     elif message:
         return message
     else:

@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 08/05/2015 - 1.3   - Fenix          - make sure that the game log file can be written to disk
 # 27/01/2015 - 1.2.4 - Thomas LEVEIL  - better handling of errors
 # 30/08/2014 - 1.2.3 - Fenix          - syntax cleanup
 # 15/04/2014 - 1.2.2 - Fenix          - PEP8 coding standards
@@ -59,7 +60,7 @@ except ImportError, ee:
                  "paramiko from http://www.lag.net/paramiko/")
     raise ee
 
-__version__ = '1.2.4'
+__version__ = '1.3'
 __author__ = 'Courgette'
 
 
@@ -85,19 +86,17 @@ class SftpytailPlugin(b3.plugin.Plugin):
         self._maxGap = SftpytailPlugin.default_maxGap
         self._waitBeforeReconnect = 15
         self._connectionTimeout = SftpytailPlugin.default_connection_timeout
-
-        self.sftpconfig = None
-        self.buffer = None
-        self._remoteFileOffset = None
         self._nbConsecutiveConnFailure = 0
         self._logAppend = False
+        self._publicIp = None
+        self._remoteFileOffset = None
+        self._sftpdelay = 0.150
+        self.buffer = None
+        self.file = None
+        self.lgame_log = None
+        self.sftpconfig = None
         self.known_hosts_file = None
         self.private_key_file = None
-        self.lgame_log = None
-        self._publicIp = None
-        self.file = None
-
-        self._sftpdelay = 0.150
 
     def onStartup(self):
         """
@@ -110,7 +109,9 @@ class SftpytailPlugin(b3.plugin.Plugin):
             self.lgame_log = self.console.config.getpath('server', 'local_game_log')
         else:
             self.lgame_log = os.path.normpath(os.path.expanduser(self.console.input.name))
-            self.debug('local game log is: %s' % self.lgame_log)
+
+        self.lgame_log = b3.getWritableFilePath(self.lgame_log)
+        self.debug('local game log is: %s' % self.lgame_log)
 
         if self.console.config.get('server', 'game_log')[0:7] == 'sftp://':
             self.init_thread(self.console.config.get('server', 'game_log'))
