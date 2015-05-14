@@ -1,0 +1,17 @@
+<configuration plugin="banlist">
+	<settings name="global_settings">
+		<set name="immunity_level">60</set>
+		<set name="auto_update">yes</set>
+	</settings>
+	<settings name="commands">
+		<set name="banlistinfo-blinfo">20</set>
+		<set name="banlistupdate-blupdate">20</set>
+		<set name="banlistcheck-blcheck">20</set>
+	</settings>
+	<rules_of_combat>
+		<name>Rules of Combant</name>
+		<file>@conf/rules_of_combat.txt</file>
+		<message>$id is BANNED (RoC)</message>
+		<url><![CDATA[http://gbl.rulesofcombat.com/gbl.php]]></url>
+	</rules_of_combat>
+</configuration>

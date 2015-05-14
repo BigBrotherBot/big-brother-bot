@@ -1,0 +1,41 @@
+09/07/2008 - Courgette         - allows to define multiple banlists
+                               - understands guid banlists
+21/07/2008 - 1.0.0 - Courgette - banlist can be updated hourly from an url
+26/07/2008 - 1.1.0 - Courgette - makes use of thread while updating banlist from url
+                               - makes use of thread while checking a player
+                               - fails nicely on http error (thanks to flinkaflenkaflrsk's bug report)
+                               - when loading config, check all connected players
+                               - when loading config, if possible, update banlist files older than an hour
+                               - upon player check, if banlist file is missing, fail nicely
+                               - upon player check, if banlist file is missing and url is provided, update file
+                                 from url and check player
+                               - fix minor bug when using command !reconfig
+26/07/2008 - 1.1.1 - Courgette - better handling of network errors while updating banlist (Thx flinkaflenkaflrsk again for tests)
+                               - add !banlistinfo command
+08/08/2008 - 1.1.2 - Courgette - manage cases where client ip/guid is unknown (thx to Anubis report)
+15/10/2008 - 1.1.3 - Courgette -  add the ip/guid that triggered the kick in the kick message so it appears in the log/echelon
+27/03/2009 - 2.0.0 - Courgette - /!\ UPGRADING USERS : beware of major changes in config file format /!\
+                               - add immunity level, so admin won't be checked against banlists
+                               - add ip whitelist
+                               - add guid whitelist
+                               - add general "auto update" option
+                               - add command !banlistupdate that will update all banlist with a URL
+                               - add command !banlistcheck that will check all connected players
+                               - the force_ip_range option is now per banlist
+                               - message can contains the following keywords : $id, $ip, $guid, $name
+                               - a player found in a banlist but 'immunized' by its level is given a notice, (so it can be seen in Echelon)
+27/11/2009 - 2.1.0 - Courgette - in guid banlists, search is now case-insensitive
+29/11/2009 - 2.1.1 - Courgette - better handling of situations that can raise exceptions
+                               - add tests
+16/12/2009 - 2.1.2 - Courgette - fix typo in config file example (ip_whitelist)
+13/09/2010 - 2.2   - Courgette - in config, '~', '@b3' and '@conf' are now expanded for 'file'
+13/04/2011 - 2.3   - Courgette - add support for Rules of Combat banlist format www.rulesofcombat.com
+15/04/2011 - 2.3.1 - Courgette - explicit encoding for downloading from www.rulesofcombat.com
+29/04/2011 - 2.4   - Courgette - makes use of ETag and Last-Modified HTTP headers to avoid downloading unchanged banlist
+                               - supports gzip encoding while downloading banlists
+24/08/2011 - 2.4.1 - Courgette - fix config file validation for elements 'name' and 'file'
+01/09/2012 - 2.5   - Courgette - reduce I/O access by loading the banlist files into memory and caching check results
+02/01/2013 - 2.6   - Courgette - add support for banlist of Punkbuster ids
+12/04/2013 - 2.7   - Courgette - add support for IP range for IP ending with ".0.0" and ".0.0.0"
+14/05/2015 - 2.8   - Fenix     - committed built in release
+                               - minor fixes
