@@ -69,8 +69,6 @@ import os.path
 import threading
 import ftplib
 import time
-import re
-import sys
 
 from ConfigParser import NoOptionError
 from ftplib import FTP

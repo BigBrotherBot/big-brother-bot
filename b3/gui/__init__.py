@@ -319,7 +319,7 @@ class B3(QProcess):
             else:
                 program = '%s --config %s --console' % (os.path.abspath(os.path.join(b3.getB3Path(), 'b3_run.x86')), self.config_path)
 
-        LOG.info('starting %s process: %s' % (self.name, program))
+        LOG.info('starting %s process: %s', self.name, program)
 
         # create the console window (hidden by default)
         self.stdout_dialog = STDOutDialog(process=self)
@@ -344,7 +344,7 @@ class B3(QProcess):
         cursor = B3App.Instance().storage.cursor()
         cursor.execute("INSERT INTO b3 (config) VALUES (?)", (self.config.fileName,))
         self.id = cursor.lastrowid
-        LOG.debug('stored new process in the database: @%s:%s' % (self.id, self.config_path))
+        LOG.debug('stored new process in the database: @%s:%s', self.id, self.config_path)
         cursor.close()
         # store in the QApplication
         if self not in B3App.Instance().processes:
@@ -356,7 +356,7 @@ class B3(QProcess):
         """
         cursor = B3App.Instance().storage.cursor()
         cursor.execute("UPDATE b3 SET config=? WHERE id=?", (self.config.fileName, self.id))
-        LOG.debug('updated process in the database: @%s:%s' % (self.id, self.config_path))
+        LOG.debug('updated process in the database: @%s:%s', self.id, self.config_path)
         cursor.close()
 
     def delete(self):
@@ -367,7 +367,7 @@ class B3(QProcess):
         # remove from the storage
         cursor = B3App.Instance().storage.cursor()
         cursor.execute("DELETE FROM b3 WHERE id=?", (self.id,))
-        LOG.debug('removed process from the database: @%s:%s' % (self.id, self.config_path))
+        LOG.debug('removed process from the database: @%s:%s', self.id, self.config_path)
         cursor.close()
         # remove QApplication reference
         if self in B3App.Instance().processes:
@@ -455,7 +455,7 @@ class B3(QProcess):
         Executed when the process errors
         :param error: the QProcess.ProcessError value
         """
-        LOG.error('%s errored: %s' % (self.name, error))
+        LOG.error('%s errored: %s', self.name, error)
 
     def process_finished(self, exit_code, _):
         """
@@ -559,13 +559,13 @@ class Button(QPushButton):
         self.setShortcut(shortcut)
         self.setStyleSheet(STYLE_BUTTON)
 
-    def enterEvent(self, QEvent):
+    def enterEvent(self, _):
         """
         Executed when the mouse enter the Button.
         """
         B3App.Instance().setOverrideCursor(QCursor(Qt.PointingHandCursor))
 
-    def leaveEvent(self, QEvent):
+    def leaveEvent(self, _):
         """
         Executed when the mouse leave the Button.
         """
@@ -590,13 +590,13 @@ class IconButton(QPushButton):
         self.setIconSize(QSize(BTN_ICON_WIDTH, BTN_ICON_HEIGHT))
         self.setIcon(icon)
 
-    def enterEvent(self, QEvent):
+    def enterEvent(self, _):
         """
         Executed when the mouse enter the Button.
         """
         B3App.Instance().setOverrideCursor(QCursor(Qt.PointingHandCursor))
 
-    def leaveEvent(self, QEvent):
+    def leaveEvent(self, _):
         """
         Executed when the mouse leave the Button.
         """
@@ -672,17 +672,17 @@ class AboutDialog(QDialog):
             return layout
 
         def __get_bottom_layout(parent):
-             btn_license = Button(parent=parent, text='License')
-             btn_license.clicked.connect(self.show_license)
-             btn_license.setVisible(True)
-             btn_close = Button(parent=parent, text='Close')
-             btn_close.clicked.connect(parent.close)
-             btn_close.setVisible(True)
-             layout = QHBoxLayout()
-             layout.addWidget(btn_license)
-             layout.addWidget(btn_close)
-             layout.setAlignment(Qt.AlignHCenter)
-             return layout
+            btn_license = Button(parent=parent, text='License')
+            btn_license.clicked.connect(self.show_license)
+            btn_license.setVisible(True)
+            btn_close = Button(parent=parent, text='Close')
+            btn_close.clicked.connect(parent.close)
+            btn_close.setVisible(True)
+            layout = QHBoxLayout()
+            layout.addWidget(btn_license)
+            layout.addWidget(btn_close)
+            layout.setAlignment(Qt.AlignHCenter)
+            return layout
 
         main_layout = QVBoxLayout()
         main_layout.addLayout(__get_top_layout(self))
@@ -748,13 +748,13 @@ class LicenseDialog(QDialog):
             return layout
 
         def __get_bottom_layout(parent):
-             btn_close = Button(parent=parent, text='Close')
-             btn_close.clicked.connect(parent.close)
-             btn_close.setVisible(True)
-             layout = QHBoxLayout()
-             layout.addWidget(btn_close)
-             layout.setAlignment(Qt.AlignHCenter)
-             return layout
+            btn_close = Button(parent=parent, text='Close')
+            btn_close.clicked.connect(parent.close)
+            btn_close.setVisible(True)
+            layout = QHBoxLayout()
+            layout.addWidget(btn_close)
+            layout.setAlignment(Qt.AlignHCenter)
+            return layout
 
         main_layout = QVBoxLayout()
         main_layout.addLayout(__get_top_layout(self))
@@ -847,13 +847,13 @@ class UpdateDialog(QDialog):
                     versioninfo = json.loads(jsondata)
                 except urllib2.URLError, err:
                     self.messagesignal.emit('ERROR: could not connect to the update server: %s' % err.reason)
-                    LOG.error('could not connect to the update server: %s' % err.reason)
+                    LOG.error('could not connect to the update server: %s', err.reason)
                 except IOError, err:
                     self.messagesignal.emit('ERROR: could not read data: %s' % err)
-                    LOG.error('could not read data: %s' % err)
+                    LOG.error('could not read data: %s', err)
                 except Exception, err:
                     self.messagesignal.emit('ERROR: unknown error: %s' % err)
-                    LOG.error('ERROR: unknown error: %s' % err)
+                    LOG.error('ERROR: unknown error: %s', err)
                 else:
                     self.messagesignal.emit('parsing data...')
                     sleep(.5)
@@ -861,13 +861,13 @@ class UpdateDialog(QDialog):
                     channels = versioninfo['B3']['channels']
                     if channel not in channels:
                         self.messagesignal.emit('ERROR: unknown channel \'%s\': expecting (%s)' % (channel, ', '.join(channels.keys())))
-                        LOG.error('unknown channel \'%s\': expecting (%s)' % (channel, ', '.join(channels.keys())))
+                        LOG.error('unknown channel \'%s\': expecting (%s)', channel, ', '.join(channels.keys()))
                     else:
                         try:
                             latestversion = channels[channel]['latest-version']
                         except KeyError:
                             self.messagesignal.emit('ERROR: could not get latest B3 version for channel: %s' % channel)
-                            LOG.error('could not get latest B3 version for channel: %s' % channel)
+                            LOG.error('could not get latest B3 version for channel: %s', channel)
                         else:
                             if B3version(b3_version) < B3version(latestversion):
                                 try:
@@ -876,7 +876,7 @@ class UpdateDialog(QDialog):
                                     url = B3_WEBSITE
 
                                 self.messagesignal.emit('update available: <a href="%s">%s</a>' % (url, latestversion))
-                                LOG.info('update available: %s - %s' % (url, latestversion))
+                                LOG.info('update available: %s - %s', url, latestversion)
                             else:
                                 self.messagesignal.emit('no update available')
                                 LOG.info('no update available')
@@ -982,20 +982,20 @@ class PluginInstallDialog(QDialog):
                         module_name = os.path.basename(x[0])
                         module_path = x[0]
                         try:
-                            LOG.debug('searching for python module in %s' % module_path)
+                            LOG.debug('searching for python module in %s', module_path)
                             fp, pathname, description = imp.find_module(module_name, [os.path.join(x[0], '..')])
                             module = imp.load_module(module_name, fp, pathname, description)
                         except ImportError:
                             module_name = module_path = module = clazz = None
                         else:
                             try:
-                                LOG.debug('python module found (%s) in %s : looking for plugin class...' % (module_name, module_path))
+                                LOG.debug('python module found (%s) in %s : looking for plugin class...', module_name, module_path)
                                 clazz = getattr(module, '%sPlugin' % module_name.title())
                             except AttributeError:
-                                LOG.debug('no valid plugin class found in %s module' % module_name)
+                                LOG.debug('no valid plugin class found in %s module', module_name)
                                 module_name = module_path = module = clazz = None
                             else:
-                                LOG.debug('plugin class found (%s) in %s module' % (clazz.__name__, module_name))
+                                LOG.debug('plugin class found (%s) in %s module', clazz.__name__, module_name)
                                 break
                         finally:
                             if fp:
@@ -1011,13 +1011,13 @@ class PluginInstallDialog(QDialog):
                 before = os.listdir(extplugins_dir)
 
                 self.messagesignal.emit('uncompressing plugin archive...')
-                LOG.debug('uncompressing plugin archive: %s' % self.archive)
+                LOG.debug('uncompressing plugin archive: %s', self.archive)
                 sleep(.5)
 
                 try:
                     unzip(self.archive, extplugins_dir)
                 except Exception, err:
-                    LOG.error('could not install plugin: %s' % err)
+                    LOG.error('could not install plugin: %s', err)
                     self.messagesignal.emit('ERROR: plugin installation failed!')
                 else:
                     # a B3 plugin is supposed to be made of a single directory to
@@ -1031,7 +1031,7 @@ class PluginInstallDialog(QDialog):
                         self.messagesignal.emit('ERROR: too many files in plugin archive!')
                         LOG.error('too many files in plugin archive: unzip should have produced '
                                   'a new folder inside extplugins directory (%s) but %s new '
-                                  'directories have been created' % (extplugins_dir, len(difference)))
+                                  'directories have been created', extplugins_dir, len(difference))
                         for entry in difference:
                             shutil.rmtree(os.path.join(extplugins_dir, entry), True)
                     else:
@@ -1059,13 +1059,13 @@ class PluginInstallDialog(QDialog):
 
                             if clz.requiresConfigFile:
                                 self.messagesignal.emit('searching plugin %s configuration file...' % name)
-                                LOG.debug('searching plugin %s configuration file' % name)
+                                LOG.debug('searching plugin %s configuration file', name)
                                 sleep(.5)
 
                                 collection = glob.glob('%s%s*%s*' % (os.path.join(path, 'conf'), os.path.sep, name))
                                 if len(collection) == 0:
                                     self.messagesignal.emit('ERROR: no configuration file found for plugin %s' % name)
-                                    LOG.warning('no configuration file found for plugin %s' % name)
+                                    LOG.warning('no configuration file found for plugin %s', name)
                                     shutil.rmtree(path, True)
                                 else:
                                     # suppose there are multiple configuration files: we'll try all of them
@@ -1082,14 +1082,14 @@ class PluginInstallDialog(QDialog):
 
                                     if not loaded:
                                         self.messagesignal.emit('ERROR: no valid configuration file found for plugin %s' % name)
-                                        LOG.warning('no valid configuration file found for plugin %s' % name)
+                                        LOG.warning('no valid configuration file found for plugin %s', name)
                                         shutil.rmtree(path, True)
                                     else:
                                         self.messagesignal.emit('plugin %s installed' % name)
-                                        LOG.info('plugin %s installed successfully: you can specify %s as configuration file' % (name, loaded.fileName))
+                                        LOG.info('plugin %s installed successfully: you can specify %s as configuration file', name, loaded.fileName)
                             else:
                                 self.messagesignal.emit('plugin %s installed' % name)
-                                LOG.info('plugin %s installed successfully: no configuration file is required' % name)
+                                LOG.info('plugin %s installed successfully: no configuration file is required', name)
 
         self.installthread = PluginInstaller(self, self.archive)
         self.installthread.messagesignal.connect(self.update_message)
@@ -1154,13 +1154,13 @@ class STDOutDialog(QDialog):
         self.setModal(True)
         self.hide()
 
-    def enterEvent(self, QEvent):
+    def enterEvent(self, _):
         """
         Executed when the mouse enter the Button.
         """
         B3App.Instance().restoreOverrideCursor()
 
-    def leaveEvent(self, QEvent):
+    def leaveEvent(self, _):
         """
         Executed when the mouse leave the Button.
         """
@@ -1590,7 +1590,7 @@ class MainWindow(QMainWindow):
 
     ############################################# EVENTS HANDLERS  #####################################################
 
-    def closeEvent(self, QCloseEvent):
+    def closeEvent(self, _):
         """
         Executed when the main window is closed
         """
@@ -1748,7 +1748,7 @@ class B3App(QApplication):
             tables = [row[1] for row in cursor.fetchall()]
             cursor.close()
 
-            if not 'b3' in tables:
+            if 'b3' not in tables:
                 LOG.debug('database schema is corrupted: asking the user if he wants to rebuild it')
                 msgbox = MessageBox(icon=QMessageBox.Critical)
                 msgbox.setText('The database schema is corrupted and must be rebuilt. Do you want to proceed?')
@@ -1766,18 +1766,18 @@ class B3App(QApplication):
                     self.__build_schema()
                 except Exception, err:
                     raise LOG.critical('could initialize SQLite database: %s (%s): make sure B3 has permissions to '
-                                       'operate on this file, or remove it manually' % (B3_STORAGE, err))
+                                       'operate on this file, or remove it manually', B3_STORAGE, err)
 
     def __init_processes(self):
         """
         Load available B3 processes from the database.
         """
-        LOG.debug('loading B3 process instances from the storage')
+        LOG.debug('loading process instances from the storage')
         self.processes = B3.get_list_from_storage()
         self.processes.sort()
-        LOG.info('%s B3 processes available' % len(self.processes))
+        LOG.info('%s processes available', len(self.processes))
         for proc in self.processes:
-            LOG.debug('%s: @%s:%s' % (proc.name, proc.id, proc.config_path))
+            LOG.debug('%s: @%s:%s', proc.name, proc.id, proc.config_path)
 
     def __init_signals(self):
         """
@@ -1811,7 +1811,7 @@ class B3App(QApplication):
         LOG.debug('shutdown requested')
         for process in self.processes:
             if process.state() != QProcess.NotRunning:
-                LOG.info('shutting down %s process' % process.name)
+                LOG.info('shutting down %s process', process.name)
                 process.close()
 
         for handler in LOG.handlers:
