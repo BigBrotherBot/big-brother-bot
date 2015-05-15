@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/05/15 - 1.43   - Fenix           - fixed formatTime not converting timestamp according to timezone offset
 # 2015/05/04 - 1.42.9 - Fenix           - removed reply mode: it's messing up GUI and it's needed only to debug cod4
 #                                       - make sure that the logfile path is actually writable by B3, else it crashes
 # 2015/04/28 - 1.42.8 - Fenix           - code cleanup
@@ -182,7 +183,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.42.9'
+__version__ = '1.43'
 
 
 import os
@@ -1255,7 +1256,7 @@ class Parser(object):
 
         time_format = self.config.get('b3', 'time_format').replace('%Z', tz_name).replace('%z', tz_name)
         self.debug('Formatting time with timezone [%s], tzOffset : %s' % (tz_name, tz_offset))
-        return time.strftime(time_format, time.gmtime(gmttime + tz_offset))
+        return time.strftime(time_format, time.gmtime(gmttime + int(tz_offset * 3600)))
 
     def run(self):
         """
