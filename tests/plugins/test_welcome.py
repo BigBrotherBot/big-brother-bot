@@ -537,7 +537,7 @@ class Test_welcome(Welcome_functional_test):
         self.assertDictEqual({'connections': '2',
                               'group': u'Super Admin',
                               'id': '2',
-                              'lastVisit': '01:13PM CET 04/01/13',
+                              'lastVisit': '02:13PM CET 04/01/13',
                               'level': '100',
                               'name': 'SuperAdmin^7'}, self.p.get_client_info(self.superadmin))
         # WHEN
@@ -546,7 +546,7 @@ class Test_welcome(Welcome_functional_test):
         self.assertDictEqual({'connections': '2',
                               'group': u'Moderator',
                               'id': '2',
-                              'lastVisit': '01:13PM CET 04/01/13',
+                              'lastVisit': '02:13PM CET 04/01/13',
                               'level': '20',
                               'name': 'SuperAdmin^7'}, self.p.get_client_info(self.superadmin))
 
