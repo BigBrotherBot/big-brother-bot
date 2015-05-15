@@ -109,9 +109,10 @@ class Setup(object):
 
     _supported_parsers = ['arma2', 'arma3', 'bfbc2', 'bf3', 'bf4', 'moh', 'mohw', 'cod', 'cod2', 'cod4', 'cod5', 'cod6',
                           'cod7', 'cod8', 'iourt41', 'iourt42', 'et', 'etpro', 'altitude', 'oa081', 'smg', 'smg11',
-                          'sof2', 'wop', 'wop15', 'chiv', 'csgo', 'homefront', 'insurgency', 'ravaged', 'ro2', 'bfh']
+                          'sof2', 'wop', 'wop15', 'chiv', 'csgo', 'homefront', 'insurgency', 'ravaged', 'ro2', 'bfh',
+                          'cod4gr']
 
-    _pb_supported_parsers = ['cod', 'cod2', 'cod4', 'cod5', 'cod6', 'cod7', 'cod8']
+    _pb_supported_parsers = ['cod', 'cod2', 'cod4', 'cod5', 'cod6', 'cod7', 'cod8', 'cod4gr']
     _frostbite = ['bfbc2', 'moh', 'bf3', 'bf4', 'bfh']
 
     # those will be set later when using 'add_set'
