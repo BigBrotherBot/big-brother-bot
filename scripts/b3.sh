@@ -2,8 +2,8 @@
 
 # Big Brother Bot (B3) Management - http://www.bigbrotherbot.net
 # Maintainer: Daniele Pantaleone <fenix@bigbrotherbot.net>
-# App Version: 0.11
-# Last Edit: 17/03/2015
+# App Version: 0.12
+# Last Edit: 16/05/2015
 
 ### BEGIN INIT INFO
 # Provides:          b3
@@ -41,6 +41,7 @@
 #                                    - fix log failure detection and in case of errors, display the reason why it failed
 #  2015-03-06 - 0.10 - Fenix         - removed python 2.6 support
 #  2015-03-17 - 0.11 - Fenix         - added developer mode, temporarily activable with B3_DEV environment variable
+#  2015-05-16 - 0.12 - Fenix         - use the --console parameter when starting B3 (otherwise GUI startup is triggered)
 
 
 ### SETUP
@@ -253,9 +254,9 @@ function b3_start() {
     local PID_FILE="${SCRIPT_DIR}/${PID_DIR}/${COMMON_PREFIX}${B3}${PID_EXT}"
 
     if [ ${AUTO_RESTART} -eq 1 ]; then
-        screen -DmS "${SCREEN}" python "${PROCESS}" --restart --config "${CONFIG_FILE}" &
+        screen -DmS "${SCREEN}" python "${PROCESS}" --restart --console --config "${CONFIG_FILE}" &
     else
-        screen -DmS "${SCREEN}" python "${PROCESS}" --config "${CONFIG_FILE}" &
+        screen -DmS "${SCREEN}" python "${PROCESS}" --console --config "${CONFIG_FILE}" &
     fi
 
     echo "${!}" > "${PID_FILE}"
