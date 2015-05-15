@@ -1489,22 +1489,21 @@ class Parser(object):
         Commons operation to be done on B3 shutdown.
         Called internally by b3.parser.die()
         """
-        if os.name == 'posix':
-
+        if not main_is_frozen() and (b3.getPlatform() == 'linux' or b3.getPlatform() == 'darwin'):
+            # B3 has been started from sources under a UNIX like operating system => check for pid file
             b3_name = os.path.basename(self.config.fileName)
-            for val in ('.xml', '.ini'):
-                b3_name = right_cut(b3_name, val)
+            for x in ('.xml', '.ini'):
+                b3_name = right_cut(b3_name, x)
 
-            pid_path = os.path.join(right_cut(sys.path[0], '/b3'), 'scripts', 'pid', '%s.pid' % b3_name)
-            self.bot('Looking for PID file: %s ...' % pid_path)
-            if os.path.isfile(pid_path):
+            pidpath = os.path.join(b3.getAbsolutePath('@b3/'), '..', 'scripts', 'pid', '%s.pid' % b3_name)
+            if os.path.isfile(pidpath):
+                self.bot('Found PID file : %s : attempt to remove it...' % pidpath)
                 try:
-                    self.bot('Removing PID file: %s ...' % pid_path)
-                    os.unlink(pid_path)
+                    os.unlink(pidpath)
                 except Exception, e:
-                    self.error('Could not remove PID file: %s' % e)
-            else:
-                self.bot('PID file not found')
+                    self.error('Could not remove PID file (%s) : %s' % (pidpath, e))
+                else:
+                    self.bot('PID file removed (%s)' % pidpath)
 
     def getWrap(self, text):
         """
