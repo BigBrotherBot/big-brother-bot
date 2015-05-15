@@ -43,11 +43,11 @@ Make sure to have `pip` in your PATH environment.
 Open a command prompt window and type the following (tested on Windows 8.1 Pro):
 
  - make sure to have `qmake` and `mingw32-make` in your PATH environment variable:
-    - `PATH=C:\Qt\5.4\mingw491_32\bin;C:\Qt\Tools\mingw491_32\bin;%PATH%`
+    - `PATH=C:\Qt\Qt5.4.1\5.4\mingw491_32\bin;C:\Qt\Qt5.4.1\Tools\mingw491_32\bin;%PATH%`
  - download python [SIP Library](http://sourceforge.net/projects/pyqt/files/sip/sip-4.16.7/sip-4.16.7.zip).
  - uncompress the SIP archive and move to the new created directory using the command prompt.
  - type the following in the command prompt window:
-    - `python configure.py`
+    - `python configure.py -p win32-g++`
     - `mingw32-make && mingw32-make install`
  - download python [PyQt5 Library](http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.4.1/PyQt-gpl-5.4.1.zip).
  - uncompress the PyQt5 archive and move to the new created directory using the command prompt.
