@@ -393,12 +393,11 @@ class AdvPlugin(b3.plugin.Plugin):
         """
         if not data:
             client.message('Missing data, try !help advadd')
-            return
-
-        self._msg.put(data)
-        client.message('^3Adv: ^7"%s^7" added' % data)
-        if self._fileName:
-            self.save()
+        else:
+            self._msg.put(data)
+            client.message('^3Adv: ^7"%s^7" added' % data)
+            if self._fileName:
+                self.save()
 
     def cmd_advsave(self, data, client=None, cmd=None):
         """
@@ -442,27 +441,25 @@ class AdvPlugin(b3.plugin.Plugin):
         """
         if not data:
             client.message('Missing data, try !help advrem')
-            return
-
-        try:
-            item_index = int(data) - 1
-        except ValueError:
-            client.message("Invalid data, use the !advlist command to list valid items numbers")
-            return
-
-        if not 0 <= item_index < len(self._msg.items):
-            client.message("Invalid data, use the !advlist command to list valid items numbers")
-            return
-
-        item = self._msg.getitem(item_index)
-
-        if item:
-            self._msg.remove(int(data) - 1)
-            if self._fileName:
-                self.save()
-            client.message('^3Adv: ^7removed item: %s' % item)
         else:
-            client.message('^3Adv: ^7item %s not found' % data)
+
+            try:
+                item_index = int(data) - 1
+            except ValueError:
+                client.message("Invalid data, use the !advlist command to list valid items numbers")
+            else:
+                if not 0 <= item_index < len(self._msg.items):
+                    client.message("Invalid data, use the !advlist command to list valid items numbers")
+                else:
+                    item = self._msg.getitem(item_index)
+
+                    if item:
+                        self._msg.remove(int(data) - 1)
+                        if self._fileName:
+                            self.save()
+                        client.message('^3Adv: ^7removed item: %s' % item)
+                    else:
+                        client.message('^3Adv: ^7item %s not found' % data)
 
     def cmd_advlist(self, data, client=None, cmd=None):
         """

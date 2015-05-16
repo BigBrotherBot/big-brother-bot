@@ -21,7 +21,7 @@
 # 19/07/2014 - 1.2   - Fenix - added @deprecated decorator: mark a callable as deprecated
 # 30/08/2014 - 1.2.1 - Fenix - removed @deprecated decorator since it's not compatible with python 2.6
 # 03/05/2015 - 1.3   - Fenix - added @Singleton decorator class
-#                            - renamed @memoize to @Memoize accorcing to PEP8
+#                            - renamed @memoize to @Memoize according to PEP8
 
 __author__ = 'Courgette, Fenix'
 __version__ = '1.3'

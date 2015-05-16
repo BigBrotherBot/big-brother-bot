@@ -38,10 +38,10 @@ class Cvar(object):
         """
         self.name = name
 
-        if 'value' in kwargs.keys():
+        if 'value' in kwargs:
             self.value = kwargs['value']
 
-        if 'default' in kwargs.keys():
+        if 'default' in kwargs:
             self.default = kwargs['default']
 
     def __getitem__(self, key):
@@ -53,13 +53,13 @@ class Cvar(object):
             - value = cvar[0]
             - default = cvar[1]
         """
-        if type(key) is int:
+        if isinstance(key, int):
             if key == 0:
                 return self.value
             elif key == 1:
                 return self.default
             else:
-                raise KeyError('No key %s' % key)
+                raise KeyError('no key %s' % key)
         else:
             return self.__dict__[key]
 
@@ -112,25 +112,3 @@ class Cvar(object):
         :param console: The console to be used to send the cvar set command.
         """
         console.setCvar(self.name, self.value)
-
-########################################################################################################################
-# EXAMPLE PROGRAM                                                                                                      #
-########################################################################################################################
-#
-# if __name__ == '__main__':
-#    x = Cvar('testvar', value='1', default='1')
-#
-#    print x
-#
-#    print x.name
-#    print x.value
-#    print x.default
-#
-#    print x.getString()
-#    print x.getInt()
-#    print x.getFloat()
-#    print x.getBoolean()
-#
-#    print x[0]
-#    print x[1]
-#    print x[2]
