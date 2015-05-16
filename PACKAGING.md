@@ -52,7 +52,7 @@ Open a command prompt window and type the following (tested on Windows 8.1 Pro):
  - download python [PyQt5 Library](http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.4.1/PyQt-gpl-5.4.1.zip).
  - uncompress the PyQt5 archive and move to the new created directory using the command prompt.
  - type the following in the command prompt window:
-    - `python configure.py`
+    - `python configure.py --spec win32-g++`
     - `mingw32-make && mingw32-make install`
  - clone big brother bot repository:
     - `git clone https://github.com/BigBrotherBot/big-brother-bot.git`
