@@ -822,12 +822,17 @@ class BusyProgressBar(QProgressBar):
         QProgressBar.__init__(self, parent)
         self.setFixedSize(PROGRESS_WIDTH, PROGRESS_HEIGHT)
         self.setStyleSheet(STYLE_PROGRESS_BAR)
+
+    def start(self):
+        """
+        Start the progressbar animation.
+        """
         self.setRange(0, 0)
         self.setValue(-1)
 
     def stop(self):
         """
-        Stop the progress bar
+        Stop the progress bar.
         """
         self.setStyleSheet(STYLE_PROGRESS_BAR_STOPPED)
         self.setTextVisible(False)
@@ -861,6 +866,7 @@ class UpdateDialog(QDialog):
         self.setFixedSize(UPDATE_DIALOG_WIDTH, UPDATE_DIALOG_HEIGHT)
         self.setStyleSheet(STYLE_WIDGET_GENERAL)
         self.progress = BusyProgressBar(self)
+        self.progress.start()
         self.message = QLabel('contacting update server...', self)
         self.message.setAlignment(Qt.AlignHCenter)
         self.message.setWordWrap(True)
@@ -976,6 +982,7 @@ class PluginInstallDialog(QDialog):
         self.setFixedSize(PLUGIN_INSTALL_DIALOG_WIDTH, PLUGIN_INSTALL_DIALOG_HEIGHT)
         self.setStyleSheet(STYLE_WIDGET_GENERAL)
         self.progress = BusyProgressBar(self)
+        self.progress.start()
         self.message = QLabel('initializing plugin install...', self)
         self.message.setAlignment(Qt.AlignHCenter)
         self.message.setWordWrap(True)
@@ -1341,8 +1348,8 @@ class MainTable(QTableWidget):
             layout = QHBoxLayout()
             layout.addWidget(btn_del)
             layout.addWidget(btn_refresh)
-            layout.addWidget(btn_console)
             layout.addWidget(btn_log)
+            layout.addWidget(btn_console)
             layout.addWidget(btn_ctrl)
             layout.setAlignment(Qt.AlignCenter)
             layout.setContentsMargins(0, 0, 0, 0)
@@ -1654,7 +1661,7 @@ class MainWindow(QMainWindow):
         """
         extensions = ['INI (*.ini)', 'XML (*.xml)', 'All Files (*.*)']
         init = b3.getAbsolutePath('@b3/conf')
-        path, _ = QFileDialog.getOpenFileName(self.centralWidget(), 'Select B3 configuration file', init, ';;'.join(extensions))
+        path, _ = QFileDialog.getOpenFileName(self.centralWidget(), 'Select configuration file', init, ';;'.join(extensions))
 
         if path:
 
