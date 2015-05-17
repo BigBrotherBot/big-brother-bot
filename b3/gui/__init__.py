@@ -33,6 +33,9 @@
 #                    rebooting the application completely
 #                  - implemented plugin install feature: will deploy the plugin in the B3 default extplugins folder
 # 13/05/2015 - 0.5 - linux graphic changes
+# 18/05/2015 - 0.6 - fixed B3 process status flag (CONFIG_READY) not being refreshed correctly
+#                  - make use of properties in B3 QProcess instead of normal attributes
+
 
 __author__ = 'Fenix'
 __version__ = '0.5'
@@ -51,8 +54,8 @@ import sys
 import urllib2
 import webbrowser
 
-from b3 import __version__ as b3_version
 from b3 import HOMEDIR
+from b3 import __version__ as b3_version
 from b3.config import MainConfig, load as load_config
 from b3.decorators import Singleton
 from b3.exceptions import ConfigFileNotValid, ConfigFileNotFound
@@ -241,10 +244,12 @@ LOG = None
 
 class B3(QProcess):
 
-    name = 'N/A'
-    config_path = None
-    config_status = 0
-    stdout_dialog = None
+    _config = None
+    _config_path = None
+    _name = 'N/A'
+    _status = 0
+
+    stdout = None
 
     def __init__(self, id=None, config=None):
         """
@@ -254,52 +259,94 @@ class B3(QProcess):
         """
         QProcess.__init__(self)
         self.id = id
+        self.config = config
 
+    ############################################### PROPERTIES #########################################################
+
+    def __get_config(self):
+        """
+        Return the B3 process configuration instance.
+        """
+        return self._config
+
+    def __set_config(self, config):
+        """
+        Load the B3 process configuration instance.
+        :param config: the MainConfig instance ot the configuration file path
+        """
         if isinstance(config, MainConfig):
-            self.config = config
-            self.config_path = config.fileName
-            self.config_status |= CONFIG_VALID
-            self.config_status |= CONFIG_FOUND
+            self._config = config
+            self._config_path = config.fileName
+            self.setFlag(CONFIG_VALID)
+            self.setFlag(CONFIG_FOUND)
         else:
-            self.load_config(config)
 
-    ################################### CONFIGURATION FILES RELATED METHODS ############################################
-
-    def load_config(self, config):
-        """
-        Load the process configuration file and set config status flags
-        """
-        try:
-            self.config_path = config
-            if not os.path.isfile(self.config_path):
-                raise OSError('configuration file (%s) could not be found' % self.config_path)
-            self.config = MainConfig(load_config(self.config_path))
-        except OSError:
-            self.config_status &= ~CONFIG_FOUND
-            self.config_status &= ~CONFIG_VALID
-            self.config_status &= ~CONFIG_READY
-        except ConfigFileNotValid:
-            self.config_status |= CONFIG_FOUND
-            self.config_status &= ~CONFIG_VALID
-            self.config_status &= ~CONFIG_READY
-        else:
-            self.config_status |= CONFIG_VALID
-            self.config_status |= CONFIG_FOUND
-
-        self.name = 'N/A'
-        if self.config_status & CONFIG_VALID:
-            if self.config.has_option('b3', 'bot_name'):
-                self.name = re.sub(RE_COLOR, '', self.config.get('b3', 'bot_name')).strip()
-
-        if self.config_status & CONFIG_VALID:
-            # run again the config analysis: we run it when creating the new instance
-            # to display information messages to the user, but it's needed also upon
-            # construction, since the user can modify the configuration file (which will
-            # be loaded by a B3 instance) and then run the application.
-            if self.config.analyze():
-                self.config_status &= ~CONFIG_READY
+            try:
+                self._config_path = config
+                if not os.path.isfile(self._config_path):
+                    raise OSError('configuration file (%s) could not be found' % self._config_path)
+                self._config = MainConfig(load_config(self._config_path))
+            except OSError:
+                self.delFlag(CONFIG_FOUND)
+                self.delFlag(CONFIG_VALID)
+                self.delFlag(CONFIG_READY)
+            except ConfigFileNotValid:
+                self.setFlag(CONFIG_FOUND)
+                self.delFlag(CONFIG_VALID)
+                self.delFlag(CONFIG_READY)
             else:
-                self.config_status |= CONFIG_READY
+                self.setFlag(CONFIG_FOUND)
+                self.setFlag(CONFIG_VALID)
+                self.delFlag(CONFIG_READY)
+
+        if self.isFlag(CONFIG_VALID):
+
+            # RUN ANALYSIS
+            if self.config.analyze():
+                self.delFlag(CONFIG_READY)
+            else:
+                self.setFlag(CONFIG_READY)
+
+            # PARSE B3 NAME FOR QUICK ACCESS
+            if self.config.has_option('b3', 'bot_name'):
+                self._name = re.sub(RE_COLOR, '', self.config.get('b3', 'bot_name')).strip()
+
+    config = property(__get_config, __set_config)
+
+    def __get_config_path(self):
+        """
+        Return the configuration file path.
+        """
+        if not self._config_path and self._config:
+            self._config_path = self._config.fileName
+        return self._config_path
+
+    config_path = property(__get_config_path)
+
+    def __get_name(self):
+        """
+        Return the B3 process name.
+        """
+        if self._name == 'N/A' and self._config:
+            if self.config.has_option('b3', 'bot_name'):
+                self._name = re.sub(RE_COLOR, '', self.config.get('b3', 'bot_name')).strip()
+        return self._name
+
+    name = property(__get_name)
+
+    ########################################### STATUS FLAG METHODS ####################################################
+
+    def setFlag(self, flag):
+        """Set the given status flag"""
+        self._status |= flag
+
+    def delFlag(self, flag):
+        """Remove the given status flag"""
+        self._status &= ~flag
+
+    def isFlag(self, flag):
+        """Check whether the given flag is set"""
+        return self._status & flag
 
     ############################################# PROCESS STARTUP ######################################################
 
@@ -307,24 +354,24 @@ class B3(QProcess):
         """
         Start the B3 process.
         Will lookup the correct entry point (b3_run.py if running from sources,
-        otherwise the Frozen executables) handing over necessary startup parameters.
+        otherwise the Frozen executable) handing over necessary startup parameters.
         """
         if not main_is_frozen():
-            program = 'python %s --config %s --console' % (os.path.abspath(os.path.join(b3.getB3Path(), '..', 'b3_run.py')), self.config_path)
+            program = 'python %s --config %s --console' % (os.path.join(b3.getB3Path(), '..', 'b3_run.py'), self.config_path)
         else:
-            if b3.getPlatform() == 'win32':
-                program = '%s --config %s --console' % (os.path.abspath(os.path.join(b3.getB3Path(), 'b3_run.exe')), self.config_path)
-            elif b3.getPlatform() == 'darwin':
-                program = '"%s" --config "%s" --console' % (os.path.abspath(os.path.join(b3.getB3Path(), 'b3_run')), self.config_path)
+            if b3.getPlatform() == 'darwin':
+                # treat osx separately since the command line terms need some extra quotes
+                program = '"%s" --config "%s" --console' % (os.path.join(b3.getB3Path(), 'b3_run'), self.config_path)
             else:
-                program = '%s --config %s --console' % (os.path.abspath(os.path.join(b3.getB3Path(), 'b3_run.x86')), self.config_path)
+                executable = 'b3_run.exe' if b3.getPlatform() == 'win32' else 'b3_run.x86'
+                program = '%s --config %s --console' % (os.path.join(b3.getB3Path(), executable), self.config_path)
 
         LOG.info('starting %s process: %s', self.name, program)
 
         # create the console window (hidden by default)
-        self.stdout_dialog = STDOutDialog(process=self)
+        self.stdout = STDOutDialog(process=self)
         self.setProcessChannelMode(QProcess.MergedChannels)
-        self.readyReadStandardOutput.connect(self.stdout_dialog.read_stdout)
+        self.readyReadStandardOutput.connect(self.stdout.read_stdout)
 
         # configure signal handlers
         self.error.connect(self.process_error)
@@ -342,7 +389,7 @@ class B3(QProcess):
         """
         # store it in the database first so we get the id
         cursor = B3App.Instance().storage.cursor()
-        cursor.execute("INSERT INTO b3 (config) VALUES (?)", (self.config.fileName,))
+        cursor.execute("INSERT INTO b3 (config) VALUES (?)", (self.config_path,))
         self.id = cursor.lastrowid
         LOG.debug('stored new process in the database: @%s:%s', self.id, self.config_path)
         cursor.close()
@@ -355,7 +402,7 @@ class B3(QProcess):
         Update the current B3 instance in the database.
         """
         cursor = B3App.Instance().storage.cursor()
-        cursor.execute("UPDATE b3 SET config=? WHERE id=?", (self.config.fileName, self.id))
+        cursor.execute("UPDATE b3 SET config=? WHERE id=?", (self.config_path, self.id))
         LOG.debug('updated process in the database: @%s:%s', self.id, self.config_path)
         cursor.close()
 
@@ -462,8 +509,8 @@ class B3(QProcess):
         Executed when the process terminate
         :param exit_code: the process exit code
         """
-        self.stdout_dialog.hide()
-        self.stdout_dialog = None
+        self.stdout.hide()
+        self.stdout = None
 
     ############################################## MAGIC METHODS  ######################################################
 
@@ -1242,10 +1289,11 @@ class MainTable(QTableWidget):
             if proc.state() == QProcess.Running:
                 value, background, foregound = 'RUNNING', Qt.green, Qt.white
             else:
-                if proc.config_status & CONFIG_READY:
+                if proc.isFlag(CONFIG_READY):
                     value, background, foregound = 'IDLE', Qt.yellow, Qt.black
                 else:
-                    value, background, foregound = 'ERROR', Qt.red, Qt.white
+                    background, foregound = Qt.red, Qt.white
+                    value = 'INVALID CONFIG' if proc.isFlag(CONFIG_FOUND) else 'MISSING CONFIG'
 
             value = QTableWidgetItem(value)
             value.setTextAlignment(Qt.AlignCenter)
@@ -1316,14 +1364,14 @@ class MainTable(QTableWidget):
         :param row: the number of the row displaying the process state
         :param process: the QProcess instance to start
         """
-        if process.config_status & CONFIG_READY:
+        if process.isFlag(CONFIG_READY):
             process.stateChanged.connect(partial(self.paint_row, row=row))
             process.start()
         else:
-            if process.config_status & CONFIG_FOUND:
+            if process.isFlag(CONFIG_FOUND):
                 reason= 'configuration file is not valid: %s' % process.config_path
             else:
-                reason = 'configuration not found: %s' % process.config_path
+                reason = 'configuration file not found: %s' % process.config_path
 
             msgbox = MessageBox(parent=self, icon=QMessageBox.Warning)
             msgbox.setText('%s startup failure: %s' % (process.name, reason))
@@ -1359,7 +1407,7 @@ class MainTable(QTableWidget):
             msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
             msgbox.exec_()
         else:
-            process.load_config(process.config_path)
+            process.config = process.config_path
             self.repaint()
 
     def process_console(self, process):
@@ -1372,13 +1420,13 @@ class MainTable(QTableWidget):
             msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
             msgbox.exec_()
         else:
-            if not process.stdout_dialog:
+            if not process.stdout:
                 msgbox = MessageBox(parent=self, icon=QMessageBox.Warning)
                 msgbox.setText('%s console initialization failed' % process.name)
                 msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
                 msgbox.exec_()
             else:
-                process.stdout_dialog.show()
+                process.stdout.show()
 
     def process_log(self, process):
         """
@@ -1386,9 +1434,9 @@ class MainTable(QTableWidget):
         """
         try:
 
-            if not process.config_status & CONFIG_FOUND:
+            if not process.isFlag(CONFIG_FOUND):
                 raise ConfigFileNotFound('missing configuration file (%s)' % process.config_path)
-            elif not process.config_status & CONFIG_VALID:
+            elif not process.isFlag(CONFIG_VALID):
                 raise ConfigFileNotValid('invalid configuration file (%s)' % process.config_path)
 
             if not process.config.has_option('b3', 'logfile'):
