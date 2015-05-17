@@ -258,6 +258,8 @@ class Iourt42Parser(Iourt41Parser):
     gameName = 'iourt42'
     spamcontrolPlugin = None
 
+    _logSync = 2
+
     _permban_with_frozensand = False
     _tempban_with_frozensand = False
 

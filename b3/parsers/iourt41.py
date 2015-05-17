@@ -177,6 +177,7 @@ class Iourt41Parser(AbstractParser):
     IpCombi = False
     PunkBuster = None
 
+    _logSync = 2
     _maplist = None
     _empty_name_default = 'EmptyNameDefault'
 
@@ -308,8 +309,6 @@ class Iourt41Parser(AbstractParser):
                                 r'k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( '
                                 r'(?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.IGNORECASE)
 
-
-
     ## kill modes
     MOD_WATER = '1'
     MOD_LAVA = '3'
@@ -435,7 +434,6 @@ class Iourt41Parser(AbstractParser):
             self.critical("Your main config file is missing the 'game_log' setting in section 'server'")
             raise SystemExit(220)
 
-
         # add UrT specific events
         self.Events.createEvent('EVT_GAME_FLAG_RETURNED', 'Flag returned')
         self.Events.createEvent('EVT_CLIENT_GEAR_CHANGE', 'Client gear change')
@@ -456,6 +454,10 @@ class Iourt41Parser(AbstractParser):
             self.game.mapName = mapname
             self.info('map is: %s' % self.game.mapName)
 
+        # force g_logsync
+        self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
+        self.setCvar('g_logsync', self._logSync)
+        
         # get gamepaths/vars
         cvarlist = self.cvarList("fs_")
 

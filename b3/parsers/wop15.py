@@ -205,6 +205,10 @@ class Wop15Parser(AbstractParser):
         self.clients.newClient('-1', guid='WORLD', name='World', hide=True)
         self.clients.newClient('1022', guid='ENTITYNUM_WORLD', name='World', hide=True)
 
+        # force g_logsync
+        self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
+        self.setCvar('g_logsync', self._logSync)
+
         # get map from the status rcon command
         mapname = self.getMap()
         if mapname:

@@ -48,6 +48,8 @@ class EtParser(AbstractParser):
     privateMsg = False
     PunkBuster = None
 
+    _logSync = 2
+
     _commands = {
         'ban': 'banid %(cid)s %(reason)s',
         'kick': 'clientkick %(cid)s %(reason)s',
@@ -107,6 +109,10 @@ class EtParser(AbstractParser):
         self.PunkBuster = PunkBuster.PunkBuster(self)
         self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
         self._eventMap['restartgame'] = self.getEventID('EVT_GAME_ROUND_END')
+
+        # force g_logsync
+        self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
+        self.setCvar('g_logsync', self._logSync)
 
     ####################################################################################################################
     #                                                                                                                  #

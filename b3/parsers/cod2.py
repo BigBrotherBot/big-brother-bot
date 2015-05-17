@@ -40,6 +40,7 @@ class Cod2Parser(b3.parsers.cod.CodParser):
     IpsOnly = False
 
     _logSync = 1    # value for unbuffered game logging
+    _pbRegExp = None
 
     def setVersionExceptions(self):
         """

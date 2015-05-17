@@ -51,6 +51,7 @@ class Sof2Parser(AbstractParser):
     _clientConnectID = None
     _clientConnectGuid = None
     _clientConnectIp = None
+    _logSync = 0
     _empty_name_default = 'EmptyNameDefault'
 
     _line_length = 65
@@ -207,6 +208,10 @@ class Sof2Parser(AbstractParser):
 
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
+
+        # force g_logsync
+        self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
+        self.setCvar('g_logsync', self._logSync)
 
         # get map from the status rcon command
         mapname = self.getMap()

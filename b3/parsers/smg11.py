@@ -68,6 +68,7 @@ class Smg11Parser(AbstractParser):
 
     _empty_name_default = 'EmptyNameDefault'
     _connectingSlots = []
+    _logSync = 1
     _maplist = None
     
     _line_length = 65
@@ -222,6 +223,10 @@ class Smg11Parser(AbstractParser):
 
         self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
         self._eventMap['restartgame'] = self.getEventID('EVT_GAME_ROUND_END')
+
+        # force g_logsync
+        self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
+        self.setCvar('g_logsync', self._logSync)
 
         # get map from the status rcon command
         mapname = self.getMap()

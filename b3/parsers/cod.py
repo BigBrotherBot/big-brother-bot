@@ -305,7 +305,7 @@ class CodParser(AbstractParser):
 
         # force g_logsync
         self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
-        self.write('set g_logsync %s' % self._logSync)
+        self.setCvar('g_logsync', self._logSync)
 
         try:
             self.game.fs_game = self.getCvar('fs_game').getString()

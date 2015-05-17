@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/05/18 - 1.8.2 - Fenix          - set g_logsync to continuous logging upon startup
 # 2015/04/16 - 1.8.1 - Fenix          - uniform class variables (dict -> variable)
 #                                     - implement missing abstract class methods
 # 2014/08/02 - 1.8   - Fenix          - syntax cleanup
@@ -96,6 +97,7 @@ class AbstractParser(b3.parser.Parser):
     PunkBuster = None
 
     _clientConnectID = None
+    _logSync = 2
 
     _commands = {
         'ban': 'banid %(cid)s %(reason)s',
@@ -208,6 +210,10 @@ class AbstractParser(b3.parser.Parser):
 
         self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
         self._eventMap['shutdowngame'] = self.getEventID('EVT_GAME_ROUND_END')
+
+        # force g_logsync
+        self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
+        self.setCvar('g_logsync', self._logSync)
 
     ####################################################################################################################
     #                                                                                                                  #

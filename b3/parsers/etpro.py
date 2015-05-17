@@ -74,6 +74,8 @@ class EtproParser(AbstractParser):
 
     _empty_name_default = 'EmptyNameDefault'
 
+    _logSync = 2
+
     _commands = {
         'message': 'm %(name)s %(message)s',
         'say': 'cpmsay %(message)s',
@@ -262,11 +264,16 @@ class EtproParser(AbstractParser):
         else:
             self.info("Current b_privatemessages value: %s" % b_privatemessages)
         self.clients.newClient('-1', guid='WORLD', name='World', hide=True, pbid='WORLD')
+
         # get map from the status rcon command
         mapname = self.getMap()
         if mapname:
             self.game.mapName = mapname
             self.info('map is: %s' % self.game.mapName)
+
+        # force g_logsync
+        self.debug('Forcing server cvar g_logsync to %s' % self._logSync)
+        self.setCvar('g_logsync', self._logSync)
 
         self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
         self._eventMap['restartgame'] = self.getEventID('EVT_GAME_ROUND_END')
