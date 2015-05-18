@@ -187,8 +187,7 @@ def run_gui(options):
     """
     from b3.gui import B3App
     from b3.gui import SplashScreen
-    from b3.gui import MessageBox
-    from b3.gui import Button
+    from PyQt5.QtWidgets import QMessageBox
 
     if options.console:
         raise EnvironmentError
@@ -202,10 +201,11 @@ def run_gui(options):
         with SplashScreen(min_splash_time=2):
             mainwindow = app.init()
     except Exception, e:
-        box = MessageBox(icon=MessageBox.Critical)
+        box = QMessageBox()
+        box.setIcon(QMessageBox.Critical)
         box.setWindowTitle('CRITICAL')
         box.setText('CRITICAL: %s' % e.message)
-        box.addButton(Button(text='Ok'), MessageBox.AcceptRole)
+        box.setStandardButtons(QMessageBox.Ok)
         box.exec_()
         #print traceback.extract_tb(sys.exc_info()[2])
         sys.exit(127)

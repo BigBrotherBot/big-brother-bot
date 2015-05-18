@@ -35,10 +35,12 @@
 # 13/05/2015 - 0.5 - linux graphic changes
 # 18/05/2015 - 0.6 - fixed B3 process status flag (CONFIG_READY) not being refreshed correctly
 #                  - make use of properties in B3 QProcess instead of normal attributes
-
+# 18/05/2015 - 0.7 - added system tray icon
+#                  - remove MessageBox class: make use of the default QMessageBox one which seems to be working better
+#                  - correctly space buttons in about dialog window
 
 __author__ = 'Fenix'
-__version__ = '0.6'
+__version__ = '0.7'
 
 import b3
 import bisect
@@ -69,7 +71,7 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QPushButton, QApplication, QMainWindow, QAction, QDesktopWidget, QFileDialog, \
                             QMessageBox, QDialog, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QSplashScreen, \
                             QTableWidget, QAbstractItemView, QTableWidgetItem, QHeaderView, QStatusBar, QTextEdit, \
-                            QProgressBar
+                            QProgressBar, QMenuBar, QSystemTrayIcon, QMenu
 
 ## STRINGS
 B3_TITLE = 'BigBrotherBot (B3) %s' % b3_version
@@ -88,6 +90,7 @@ B3_LOG = b3.getWritableFilePath(os.path.join(HOMEDIR, 'app.log'))
 ## RESOURCE PATHS
 B3_BANNER = b3.getAbsolutePath('@b3/gui/assets/main.png')
 B3_ICON = b3.getAbsolutePath('@b3/gui/assets/icon.png')
+B3_ICON_SMALL = b3.getAbsolutePath('@b3/gui/assets/icon-small.png')
 B3_SPLASH = b3.getAbsolutePath('@b3/gui/assets/splash.png')
 B3_SQL = b3.getAbsolutePath('@b3/sql/sqlite/b3-gui.sql')
 ICON_DEL = b3.getAbsolutePath('@b3/gui/assets/del.png')
@@ -103,25 +106,25 @@ GEOMETRY = {
         'MAIN_TABLE_HEIGHT': 260,
         'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_RIGHT': 11,
         'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_BOTTOM': 52,
-        'MAIN_WINDOW_BOTTOM_LAYOUT_SPACING': 10,
+        'BUTTONS_SPACING': 10,
     },
     'darwin': {
         'MAIN_TABLE_HEIGHT': 280,
         'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_RIGHT': 16,
         'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_BOTTOM': 40,
-        'MAIN_WINDOW_BOTTOM_LAYOUT_SPACING': 20,
+        'BUTTONS_SPACING': 20,
     },
     'linux': {
         'MAIN_TABLE_HEIGHT': 280,
         'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_RIGHT': 11,
         'MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_BOTTOM': 32,
-        'MAIN_WINDOW_BOTTOM_LAYOUT_SPACING': 10,
+        'BUTTONS_SPACING': 10,
     }
 }
 
 ## FIXED GEOMETRY
 ABOUT_DIALOG_WIDTH = 400
-ABOUT_DIALOG_HEIGHT = 500
+ABOUT_DIALOG_HEIGHT = 520
 B3_WIDTH = 520
 B3_HEIGHT = 512
 BTN_WIDTH = 70
@@ -232,7 +235,7 @@ STYLE_PROGRESS_BAR_STOPPED = """
   }
 """
 
-## BIT FLAGS
+## STATUS FLAGS
 CONFIG_FOUND = 0b0001   # configuration file has been found
 CONFIG_VALID = 0b0010   # configuration file has been parsed correctly
 CONFIG_READY = 0b0100   # configuration file is ready for deploy
@@ -374,7 +377,6 @@ class B3(QProcess):
         self.readyReadStandardOutput.connect(self.stdout.read_stdout)
 
         # configure signal handlers
-        self.error.connect(self.process_error)
         self.finished.connect(self.process_finished)
 
         # start the program
@@ -497,20 +499,15 @@ class B3(QProcess):
 
     ############################################# SIGNAL HANDLERS ######################################################
 
-    def process_error(self, error):
-        """
-        Executed when the process errors
-        :param error: the QProcess.ProcessError value
-        """
-        LOG.error('%s errored: %s', self.name, error)
-
-    def process_finished(self, exit_code, _):
+    def process_finished(self, exit_code, exit_status):
         """
         Executed when the process terminate
         :param exit_code: the process exit code
+        :param exit_status: the process exit status
         """
-        self.stdout.hide()
-        self.stdout = None
+        if self.stdout:
+            self.stdout.hide()
+            self.stdout = None
 
     ############################################## MAGIC METHODS  ######################################################
 
@@ -521,30 +518,6 @@ class B3(QProcess):
         if self.name != 'N/A' and other.name == 'N/A':
             return True
         return self.name < other.name
-
-
-class MessageBox(QMessageBox):
-    """
-    Custom message box implementation.
-    """
-    def __init__(self, parent=None, icon=QMessageBox.Information):
-        """
-        Initialize the message box.
-        :param parent: the parent Widget
-        :param icon: the icon to display in the message box
-        """
-        QMessageBox.__init__(self, parent)
-        self.setIcon(icon)
-        self.setStyleSheet(STYLE_WIDGET_GENERAL + STYLE_BUTTON)
-        self.setWindowFlags(Qt.Dialog|Qt.MSWindowsFixedSizeDialogHint|Qt.WindowTitleHint|Qt.WindowSystemMenuHint|Qt.CustomizeWindowHint)
-
-    def exec_(self):
-        """
-        Override default exec_ method to make sure we restore original
-        mouse cursor when the MessageBox dialog goes out of focus.
-        """
-        QMessageBox.exec_(self)
-        B3App.Instance().restoreOverrideCursor()
 
 
 class SplashScreen(QSplashScreen):
@@ -616,7 +589,7 @@ class Button(QPushButton):
         """
         Executed when the mouse leave the Button.
         """
-        B3App.Instance().restoreOverrideCursor()
+        B3App.Instance().setOverrideCursor(QCursor(Qt.ArrowCursor))
 
 
 class IconButton(QPushButton):
@@ -647,7 +620,7 @@ class IconButton(QPushButton):
         """
         Executed when the mouse leave the Button.
         """
-        B3App.Instance().restoreOverrideCursor()
+        B3App.Instance().setOverrideCursor(QCursor(Qt.ArrowCursor))
 
 
 class ImageWidget(QLabel):
@@ -679,7 +652,7 @@ class AboutDialog(QDialog):
 
     def initUI(self):
         """
-        Initialize the Dialog layout.
+        Initialize the About Dialog layout.
         """
         self.setWindowTitle(B3_TITLE_SHORT)
         self.setFixedSize(ABOUT_DIALOG_WIDTH, ABOUT_DIALOG_HEIGHT)
@@ -729,6 +702,7 @@ class AboutDialog(QDialog):
             layout.addWidget(btn_license)
             layout.addWidget(btn_close)
             layout.setAlignment(Qt.AlignHCenter)
+            layout.setSpacing(GEOMETRY[b3.getPlatform()]['BUTTONS_SPACING'])
             return layout
 
         main_layout = QVBoxLayout()
@@ -1208,18 +1182,6 @@ class STDOutDialog(QDialog):
         self.setModal(True)
         self.hide()
 
-    def enterEvent(self, _):
-        """
-        Executed when the mouse enter the Button.
-        """
-        B3App.Instance().restoreOverrideCursor()
-
-    def leaveEvent(self, _):
-        """
-        Executed when the mouse leave the Button.
-        """
-        B3App.Instance().restoreOverrideCursor()
-
     @pyqtSlot()
     def read_stdout(self):
         """
@@ -1343,7 +1305,7 @@ class MainTable(QTableWidget):
                 btn_ctrl = IconButton(parent=parent, icon=QIcon(ICON_START))
                 btn_ctrl.setStatusTip('Run %s' % proc.name)
                 btn_ctrl.setVisible(True)
-                btn_ctrl.clicked.connect(partial(parent.process_start, row=numrow, process=proc))
+                btn_ctrl.clicked.connect(partial(parent.process_start, row=numrow, process=proc, warn=False))
 
             layout = QHBoxLayout()
             layout.addWidget(btn_del)
@@ -1365,25 +1327,26 @@ class MainTable(QTableWidget):
 
     ############################################ TOOLBAR HANDLERS  #####################################################
 
-    def process_start(self, row, process):
+    def process_start(self, row, process, warn=True):
         """
         Handle the startup of a B3 process.
         :param row: the number of the row displaying the process state
         :param process: the QProcess instance to start
+        :param warn: whether to warn the user of a startup failure or not
         """
-        if process.isFlag(CONFIG_READY):
-            process.stateChanged.connect(partial(self.paint_row, row=row))
-            process.start()
-        else:
-            if process.isFlag(CONFIG_FOUND):
-                reason= 'configuration file is not valid: %s' % process.config_path
+        if process.state() != QProcess.Running:
+            if process.isFlag(CONFIG_READY):
+                process.stateChanged.connect(partial(self.paint_row, row=row))
+                process.start()
             else:
-                reason = 'configuration file not found: %s' % process.config_path
-
-            msgbox = MessageBox(parent=self, icon=QMessageBox.Warning)
-            msgbox.setText('%s startup failure: %s' % (process.name, reason))
-            msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
-            msgbox.exec_()
+                if warn:
+                    suffix = 'not found' if process.isFlag(CONFIG_FOUND) else 'not valid'
+                    reason = 'configuration file %s: %s' % (suffix, process.config_path)
+                    msgbox = QMessageBox()
+                    msgbox.setIcon(QMessageBox.Warning)
+                    msgbox.setText('%s startup failure: %s' % (process.name, reason))
+                    msgbox.setStandardButtons(QMessageBox.Ok)
+                    msgbox.exec_()
 
     def process_shutdown(self, process):
         """
@@ -1392,6 +1355,7 @@ class MainTable(QTableWidget):
         """
         if process.state() != QProcess.NotRunning:
             # will emit stateChanged signal and row repaint will be triggered already
+            LOG.info('shutting down %s process', process.name)
             process.close()
 
     def process_delete(self, process):
@@ -1409,9 +1373,10 @@ class MainTable(QTableWidget):
         Refresh a process configuration file
         """
         if process.state() == QProcess.Running:
-            msgbox = MessageBox(parent=self, icon=QMessageBox.Information)
-            msgbox.setText('%s is currently running. You need to stop it to refresh the configuration file.' % process.name)
-            msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
+            msgbox = QMessageBox()
+            msgbox.setIcon(QMessageBox.Information)
+            msgbox.setText('%s is currently running: you need to stop it to refresh the configuration file.' % process.name)
+            msgbox.setStandardButtons(QMessageBox.Ok)
             msgbox.exec_()
         else:
             process.config = process.config_path
@@ -1422,15 +1387,17 @@ class MainTable(QTableWidget):
         Display the STDOut console of a process.
         """
         if process.state() == QProcess.NotRunning:
-            msgbox = MessageBox(parent=self, icon=QMessageBox.Information)
+            msgbox = QMessageBox()
+            msgbox.setIcon(QMessageBox.Information)
             msgbox.setText('%s is not running' % process.name)
-            msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
+            msgbox.setStandardButtons(QMessageBox.Ok)
             msgbox.exec_()
         else:
             if not process.stdout:
-                msgbox = MessageBox(parent=self, icon=QMessageBox.Warning)
+                msgbox = QMessageBox()
+                msgbox.setIcon(QMessageBox.Warning)
                 msgbox.setText('%s console initialization failed' % process.name)
-                msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
+                msgbox.setStandardButtons(QMessageBox.Ok)
                 msgbox.exec_()
             else:
                 process.stdout.show()
@@ -1457,11 +1424,11 @@ class MainTable(QTableWidget):
                     raise Exception(message + '\n- missing: %s' % path)
 
         except Exception, err:
-            msgbox = MessageBox(parent=self.parent(), icon=QMessageBox.Warning)
+            msgbox = QMessageBox()
+            msgbox.setIcon(QMessageBox.Warning)
             msgbox.setText('Could not find %s log file' % process.name)
             msgbox.setDetailedText(err.message)
-            msgbox.setStyleSheet(STYLE_WIDGET_GENERAL + STYLE_BUTTON_LARGE)
-            msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
+            msgbox.setStandardButtons(QMessageBox.Ok)
             msgbox.exec_()
         else:
             if b3.getPlatform() == 'win32':
@@ -1515,7 +1482,7 @@ class CentralWidget(QWidget):
             btn_new.setStatusTip('Add a new B3')
             btn_new.setVisible(True)
             btn_quit = Button(parent=parent, text='Quit', shortcut='Ctrl+Q')
-            btn_quit.clicked.connect(B3App.Instance().quit)
+            btn_quit.clicked.connect(B3App.Instance().shutdown)
             btn_quit.setStatusTip('Shutdown B3')
             btn_quit.setVisible(True)
             layout = QHBoxLayout()
@@ -1524,7 +1491,7 @@ class CentralWidget(QWidget):
             layout.setAlignment(Qt.AlignBottom | Qt.AlignRight)
             layout.setContentsMargins(0, 0, GEOMETRY[b3.getPlatform()]['MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_RIGHT'],
                                             GEOMETRY[b3.getPlatform()]['MAIN_WINDOW_BOTTOM_LAYOUT_MARGIN_BOTTOM'])
-            layout.setSpacing(GEOMETRY[b3.getPlatform()]['MAIN_WINDOW_BOTTOM_LAYOUT_SPACING'])
+            layout.setSpacing(GEOMETRY[b3.getPlatform()]['BUTTONS_SPACING'])
             return layout
 
         main_layout = QVBoxLayout()
@@ -1533,6 +1500,7 @@ class CentralWidget(QWidget):
         main_layout.addLayout(__get_bottom_layout(self))
         main_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(main_layout)
+        self.setFocus()
 
 
 class StatusBar(QStatusBar):
@@ -1545,12 +1513,152 @@ class StatusBar(QStatusBar):
         """
         QStatusBar.__init__(self, parent)
         self.setStyleSheet(STYLE_STATUS_BAR)
+        self.setSizeGripEnabled(False)
 
+
+class MainMenuBar(QMenuBar):
+    """
+    This class implements the main menu bar.
+    """
+    def __init__(self, parent=None):
+        """
+        Initialize the menubar.
+        :param parent: the parent widget
+        """
+        QMenuBar.__init__(self, parent)
+        self.initUI()
+
+    def initUI(self):
+        """
+        Initialize the menu user interface.
+        """
+        self.__init_menu_file()
+        self.__init_menu_help()
+
+    def __init_menu_file(self):
+        """
+        Initialize the 'File' menu.
+        """
+        ####  NEW B3 INSTANCE SUBMENU ENTRY
+        new_process = QAction('Add', self.parent())
+        new_process.setShortcut('Ctrl+N')
+        new_process.setStatusTip('Add a new B3')
+        new_process.triggered.connect(self.parent().new_process)
+        new_process.setVisible(True)
+        ### INSTALL PLUGIN SUBMENU ENTRY
+        install_plugin = QAction('Install Plugin', self.parent())
+        install_plugin.setShortcut('Ctrl+P')
+        install_plugin.setStatusTip('Install a new B3 plugin')
+        install_plugin.triggered.connect(self.parent().install_plugin)
+        install_plugin.setVisible(True)
+        ####  QUIT SUBMENU ENTRY
+        quit_btn = QAction('Quit', self.parent())
+        quit_btn.setShortcut('Ctrl+Q')
+        quit_btn.setStatusTip('Quit B3')
+        quit_btn.triggered.connect(B3App.Instance().shutdown)
+        quit_btn.setVisible(True)
+        ## FILE MENU ENTRY
+        file_menu = self.addMenu('&File')
+        file_menu.addAction(new_process)
+        file_menu.addAction(install_plugin)
+        file_menu.addAction(quit_btn)
+
+    def __init_menu_help(self):
+        """
+        Initialize the 'Help' menu.
+        """
+        #### ABOUT SUBMENU ENTRY
+        about = QAction('About', self.parent())
+        about.setStatusTip('Display information about B3')
+        about.triggered.connect(self.parent().show_about)
+        #### UPDATE CHECK SUBMENU ENTRY
+        update_check = QAction('Check For Updates', self.parent())
+        update_check.setStatusTip('Check if a newer version of B3 is available')
+        update_check.triggered.connect(self.parent().check_update)
+        #### B3 WIKI SUBMENU ENTRY
+        wiki = QAction('B3 Wiki', self.parent())
+        wiki.setStatusTip('Visit the B3 documentation wiki')
+        wiki.triggered.connect(lambda: webbrowser.open(B3_WIKI))
+        #### B3 CONFIG GENERATOR SUBMENU ENTRY
+        config = QAction('B3 Configuration File Generator', self.parent())
+        config.setStatusTip('Open the B3 configuration file generator web tool')
+        config.triggered.connect(lambda: webbrowser.open(B3_CONFIG_GENERATOR))
+        #### B3 FORUM LINK SUBMENU ENTRY
+        forum = QAction('B3 Forum', self.parent())
+        forum.setStatusTip('Visit the B3 forums to request support')
+        forum.triggered.connect(lambda: webbrowser.open(B3_FORUM))
+        #### B3 HOMEPAGE LINK SUBMENU ENTRY
+        website = QAction('B3 Website', self.parent())
+        website.setStatusTip('Visit the B3 website')
+        website.triggered.connect(lambda: webbrowser.open(B3_WEBSITE))
+        ## HELP MENU ENTRY
+        help_menu = self.addMenu('&Help')
+        help_menu.addAction(about)
+        help_menu.addAction(update_check)
+        help_menu.addSeparator()
+        help_menu.addAction(wiki)
+        help_menu.addAction(config)
+        help_menu.addAction(forum)
+        help_menu.addAction(website)
+
+
+class SystemTrayIcon(QSystemTrayIcon):
+    """
+    This class implements the B3 application system tray icon.
+    """
+    def __init__(self, parent=None):
+        """
+        Initialize the system tray icon.
+        """
+        QSystemTrayIcon.__init__(self, parent)
+        self.initUI()
+
+    def initUI(self):
+        """
+        Initialize the System Tray Icon user interface.
+        """
+        self.setIcon(QIcon(B3_ICON_SMALL))
+        #### SHOW ACTION
+        show = QAction('Show', self.parent())
+        show.triggered.connect(self.show_main_window)
+        show.setVisible(True)
+        #### START ALL ACTION
+        start = QAction('Start all', self.parent())
+        start.triggered.connect(B3App.Instance().start_all)
+        start.setVisible(True)
+        #### STOP ALL ACTION
+        stop = QAction('Stop all', self.parent())
+        stop.triggered.connect(B3App.Instance().stop_all)
+        stop.setVisible(True)
+        #### QUIT ACTION
+        terminate = QAction('Quit', self.parent())
+        terminate.triggered.connect(B3App.Instance().shutdown)
+        terminate.setVisible(True)
+        ## CREATE THE MENU
+        menu = QMenu(self.parent())
+        menu.addAction(show)
+        menu.addSeparator()
+        menu.addAction(start)
+        menu.addAction(stop)
+        menu.addSeparator()
+        menu.addAction(terminate)
+        ## ADD THE MENU
+        self.setContextMenu(menu)
+
+    def show_main_window(self):
+        """
+        Restore the main window and gives focus
+        """
+        if not self.parent().isVisible():
+            self.parent().setVisible(True)
+            self.parent().setFocus()
 
 class MainWindow(QMainWindow):
     """
     This class implements the main application window.
     """
+    system_tray = None
+
     def __init__(self):
         """
         Initialize the MainWindow.
@@ -1565,91 +1673,30 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(B3_TITLE)
         self.setFixedSize(B3_WIDTH, B3_HEIGHT)
         self.setWindowFlags(Qt.WindowTitleHint|Qt.WindowMinimizeButtonHint|Qt.WindowSystemMenuHint)
+        ## INIT SUBCOMPONENTS
         self.setStatusBar(StatusBar(self))
-        self.statusBar().setSizeGripEnabled(False)
-        self.__init_menu()
-        self.__init_main_widget()
-        # MOVE TO CENTER SCREEN
+        self.setMenuBar(MainMenuBar(self))
+        self.setCentralWidget(CentralWidget(self))
+        ## INIT SYSTEM TRAY ICON
+        self.system_tray = SystemTrayIcon(self)
+        self.system_tray.show()
+        ## MOVE TO CENTER SCREEN
         screen = QDesktopWidget().screenGeometry()
         position_x = (screen.width() - self.geometry().width()) / 2
         position_y = (screen.height() - self.geometry().height()) / 2
         self.move(position_x, position_y)
 
-    def __init_main_widget(self):
-        """
-        Initialize the central widget.
-        """
-        self.setCentralWidget(CentralWidget(self))
-        self.centralWidget().setFocus()
-
-    def __init_menu(self):
-        """
-        Initialize the application menu.
-        """
-        ####  NEW B3 INSTANCE SUBMENU ENTRY
-        new_process = QAction('Add', self)
-        new_process.setShortcut('Ctrl+N')
-        new_process.setStatusTip('Add a new B3')
-        new_process.triggered.connect(self.new_process)
-        new_process.setVisible(True)
-        ### INSTALL PLUGIN SUBMENU ENTRY
-        install_plugin = QAction('Install Plugin', self)
-        install_plugin.setShortcut('Ctrl+P')
-        install_plugin.setStatusTip('Install a new B3 plugin')
-        install_plugin.triggered.connect(self.install_plugin)
-        install_plugin.setVisible(True)
-        ####  QUIT SUBMENU ENTRY
-        quit_btn = QAction('Quit', self)
-        quit_btn.setShortcut('Ctrl+Q')
-        quit_btn.setStatusTip('Quit B3')
-        quit_btn.triggered.connect(B3App.Instance().quit)
-        quit_btn.setVisible(True)
-        ## FILE MENU ENTRY
-        file_menu = self.menuBar().addMenu('&File')
-        file_menu.addAction(new_process)
-        file_menu.addAction(install_plugin)
-        file_menu.addAction(quit_btn)
-        #### ABOUT SUBMENU ENTRY
-        about = QAction('About', self)
-        about.setStatusTip('Display information about B3')
-        about.triggered.connect(self.show_about)
-        #### UPDATE CHECK SUBMENU ENTRY
-        update_check = QAction('Check For Updates', self)
-        update_check.setStatusTip('Check if a newer version of B3 is available')
-        update_check.triggered.connect(self.check_update)
-        #### B3 WIKI SUBMENU ENTRY
-        wiki = QAction('B3 Wiki', self)
-        wiki.setStatusTip('Visit the B3 documentation wiki')
-        wiki.triggered.connect(lambda: webbrowser.open(B3_WIKI))
-        #### B3 CONFIG GENERATOR SUBMENU ENTRY
-        config = QAction('B3 Configuration File Generator', self)
-        config.setStatusTip('Open the B3 configuration file generator web tool')
-        config.triggered.connect(lambda: webbrowser.open(B3_CONFIG_GENERATOR))
-        #### B3 FORUM LINK SUBMENU ENTRY
-        forum = QAction('B3 Forum', self)
-        forum.setStatusTip('Visit the B3 forums to request support')
-        forum.triggered.connect(lambda: webbrowser.open(B3_FORUM))
-        #### B3 HOMEPAGE LINK SUBMENU ENTRY
-        website = QAction('B3 Website', self)
-        website.setStatusTip('Visit the B3 website')
-        website.triggered.connect(lambda: webbrowser.open(B3_WEBSITE))
-        ## HELP MENU ENTRY
-        help_menu = self.menuBar().addMenu('&Help')
-        help_menu.addAction(about)
-        help_menu.addAction(update_check)
-        help_menu.addSeparator()
-        help_menu.addAction(wiki)
-        help_menu.addAction(config)
-        help_menu.addAction(forum)
-        help_menu.addAction(website)
-
     ############################################# EVENTS HANDLERS  #####################################################
 
-    def closeEvent(self, _):
+    def closeEvent(self, event):
         """
-        Executed when the main window is closed
+        Executed when the main window is closed.
         """
-        B3App.Instance().shutdown()
+        if B3App.Instance().shutdown_requested:
+            B3App.Instance().shutdown()
+        else:
+            event.ignore()
+            self.setVisible(False)
 
     ############################################# ACTION HANDLERS  #####################################################
 
@@ -1669,18 +1716,19 @@ class MainWindow(QMainWindow):
                 abspath = b3.getAbsolutePath(path)
                 config = MainConfig(load_config(abspath))
             except ConfigFileNotValid:
-                msgbox = MessageBox(parent=self, icon=QMessageBox.Critical)
+                msgbox = QMessageBox()
+                msgbox.setIcon(QMessageBox.Critical)
                 msgbox.setText('You selected an invalid configuration file')
-                msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
+                msgbox.setStandardButtons(QMessageBox.Ok)
                 msgbox.exec_()
             else:
                 analysis = config.analyze()
                 if analysis:
-                    msgbox = MessageBox(parent=self, icon=QMessageBox.Critical)
+                    msgbox = QMessageBox()
+                    msgbox.setIcon(QMessageBox.Critical)
                     msgbox.setText('One or more problems have been detected in your configuration file')
                     msgbox.setDetailedText('\n'.join(analysis))
-                    msgbox.setStyleSheet(STYLE_WIDGET_GENERAL + STYLE_BUTTON_LARGE)
-                    msgbox.addButton(Button(parent=msgbox, text='Ok'), QMessageBox.AcceptRole)
+                    msgbox.setStandardButtons(QMessageBox.Ok)
                     msgbox.exec_()
                 else:
                     if not B3.exists(config.fileName):
@@ -1722,6 +1770,7 @@ class B3App(QApplication):
     """
     processes = []  # list of B3 processes
     main_window = None  # main application window
+    shutdown_requested = False  # set it to true when a shutdown is requested
     storage = None  # connection with the SQLite database
 
     def __init__(self, *args, **kwargs):
@@ -1739,7 +1788,6 @@ class B3App(QApplication):
         self.__init_log()
         self.__init_storage()
         self.__init_processes()
-        self.__init_signals()
         self.__init_main_window()
         return self.main_window
 
@@ -1805,14 +1853,16 @@ class B3App(QApplication):
 
             if 'b3' not in tables:
                 LOG.debug('database schema is corrupted: asking the user if he wants to rebuild it')
-                msgbox = MessageBox(icon=QMessageBox.Critical)
+
+                msgbox = QMessageBox()
+                msgbox.setIcon(QMessageBox.Critical)
                 msgbox.setText('The database schema is corrupted and must be rebuilt. Do you want to proceed?')
                 msgbox.setInformativeText('NOTE: all the previously saved data will be lost!')
-                msgbox.addButton(Button(parent=msgbox, text='Yes'), QMessageBox.YesRole)
-                button_no = msgbox.addButton(Button(parent=msgbox, text='No'), QMessageBox.NoRole)
+                msgbox.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
+                msgbox.setDefaultButton(QMessageBox.No)
                 msgbox.exec_()
 
-                if msgbox.clickedButton() == button_no:
+                if msgbox.result() == QMessageBox.No:
                     # critical will raise an exception which will terminate the QApplication
                     LOG.critical('could not start B3: database schema is corrupted!')
 
@@ -1834,18 +1884,12 @@ class B3App(QApplication):
         for proc in self.processes:
             LOG.debug('%s: @%s:%s', proc.name, proc.id, proc.config_path)
 
-    def __init_signals(self):
-        """
-        Initialize QApplication signals.
-        """
-        self.aboutToQuit.connect(self.shutdown)
-
     def __init_main_window(self):
         """
         Initialize the QApplication main window.
         """
         # set the icon here so it's global
-        self.setWindowIcon(QIcon(B3_ICON))
+        self.setWindowIcon(QIcon(B3_ICON_SMALL))
         self.main_window = MainWindow()
 
     def __build_schema(self):
@@ -1857,6 +1901,24 @@ class B3App(QApplication):
             LOG.debug('initializing database schema')
             self.storage.executescript(schema.read())
 
+    ############################################# ACTION HANDLERS ######################################################
+
+    def start_all(self):
+        """
+        Start all the available B3 processes.
+        """
+        main_table = self.main_window.centralWidget().main_table
+        for process in self.processes:
+            main_table.process_start(row=self.processes.index(process), process=process, warn=False)
+
+    def stop_all(self):
+        """
+        Stop all the available B3 processes.
+        """
+        main_table = self.main_window.centralWidget().main_table
+        for process in self.processes:
+            main_table.process_shutdown(process)
+
     def shutdown(self):
         """
         Perform cleanup operation before the application exits.
@@ -1864,15 +1926,37 @@ class B3App(QApplication):
         or when the user shutdown the Desktop session`.
         """
         LOG.debug('shutdown requested')
+        is_something_running = False
         for process in self.processes:
-            if process.state() != QProcess.NotRunning:
-                LOG.info('shutting down %s process', process.name)
-                process.close()
+            if process.state() == QProcess.Running:
+                is_something_running = True
+                break
 
+        if is_something_running:
+            # ask the use if he wants to quit for real
+            LOG.debug('some processes are still running: asking the user if he wants to terminate them...')
+            msgbox = QMessageBox()
+            msgbox.setIcon(QMessageBox.Question)
+            msgbox.setText('Are you sure you want to quit?')
+            msgbox.setInformativeText('NOTE: all the running B3 will be stopped!')
+            msgbox.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
+            msgbox.setDefaultButton(QMessageBox.No)
+            msgbox.exec_()
+
+            if msgbox.result() == QMessageBox.Yes:
+                LOG.debug('user agreed to terminate all the running processes and quit the application')
+            else:
+                LOG.debug('shutdown aborted')
+                return
+
+        self.shutdown_requested = True
+        self.stop_all()
+        ## REMOVE LOG HANDLERS
         for handler in LOG.handlers:
             handler.close()
             LOG.removeHandler(handler)
-
+        ## QUIT THE APPLICATION
+        self.quit()
 
 if __name__ == "__main__":
 
@@ -1881,10 +1965,10 @@ if __name__ == "__main__":
         with SplashScreen(min_splash_time=0):
             main.init()
     except Exception, e:
-        box = MessageBox(icon=QMessageBox.Critical)
-        box.setWindowTitle('CRITICAL')
+        box = QMessageBox()
+        box.setIcon(QMessageBox.Critical)
         box.setText(e.message)
-        box.addButton(Button(text='Ok'), QMessageBox.AcceptRole)
+        box.setStandardButtons(QMessageBox.Ok)
         box.exec_()
         sys.exit(127)
     else:
