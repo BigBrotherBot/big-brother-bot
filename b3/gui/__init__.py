@@ -38,6 +38,9 @@
 # 18/05/2015 - 0.7 - added system tray icon
 #                  - remove MessageBox class: make use of the default QMessageBox one which seems to be working better
 #                  - correctly space buttons in about dialog window
+#                  - make sure to have a visible MainWindow when a MenuBar action is triggered: on OS X the menubar
+#                    is visible even though the MainWindow is hidden, so it's possible to launch Dialogs (if such
+#                    dialogs gets closed while the MainWindow is hidden, the application terminate)
 
 __author__ = 'Fenix'
 __version__ = '0.7'
@@ -1512,6 +1515,12 @@ class StatusBar(QStatusBar):
         Initialize the status bar.
         """
         QStatusBar.__init__(self, parent)
+        self.initUI()
+
+    def initUI(self):
+        """
+        Initialize the statusbar user interface.
+        """
         self.setStyleSheet(STYLE_STATUS_BAR)
         self.setSizeGripEnabled(False)
 
@@ -1620,7 +1629,7 @@ class SystemTrayIcon(QSystemTrayIcon):
         self.setIcon(QIcon(B3_ICON_SMALL))
         #### SHOW ACTION
         show = QAction('Show', self.parent())
-        show.triggered.connect(self.show_main_window)
+        show.triggered.connect(self.parent().show)
         show.setVisible(True)
         #### START ALL ACTION
         start = QAction('Start all', self.parent())
@@ -1645,13 +1654,6 @@ class SystemTrayIcon(QSystemTrayIcon):
         ## ADD THE MENU
         self.setContextMenu(menu)
 
-    def show_main_window(self):
-        """
-        Restore the main window and gives focus
-        """
-        if not self.parent().isVisible():
-            self.parent().setVisible(True)
-            self.parent().setFocus()
 
 class MainWindow(QMainWindow):
     """
@@ -1696,7 +1698,7 @@ class MainWindow(QMainWindow):
             B3App.Instance().shutdown()
         else:
             event.ignore()
-            self.setVisible(False)
+            self.hide()
 
     ############################################# ACTION HANDLERS  #####################################################
 
@@ -1706,8 +1708,9 @@ class MainWindow(QMainWindow):
         NOTE: this actually handle also the repainting of the main table but
         since it's not a toolbar button handler it has been implemented here instead.
         """
-        extensions = ['INI (*.ini)', 'XML (*.xml)', 'All Files (*.*)']
+        self.show()
         init = b3.getAbsolutePath('@b3/conf')
+        extensions = ['INI (*.ini)', 'XML (*.xml)', 'All Files (*.*)']
         path, _ = QFileDialog.getOpenFileName(self.centralWidget(), 'Select configuration file', init, ';;'.join(extensions))
 
         if path:
@@ -1741,6 +1744,7 @@ class MainWindow(QMainWindow):
         """
         Handle the install of a new B3 plugin
         """
+        self.show()
         init = b3.getAbsolutePath('~')
         path, _ = QFileDialog.getOpenFileName(self.centralWidget(), 'Select plugin package', init, 'ZIP (*.zip)')
         if path:
@@ -1751,6 +1755,7 @@ class MainWindow(QMainWindow):
         """
         Display the 'about' dialog.
         """
+        self.show()
         about = AboutDialog(self.centralWidget())
         about.show()
 
@@ -1758,6 +1763,7 @@ class MainWindow(QMainWindow):
         """
         Display the 'update check' dialog
         """
+        self.show()
         update = UpdateDialog(self.centralWidget())
         update.show()
 
