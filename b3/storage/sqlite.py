@@ -20,6 +20,7 @@
 #
 # 26/12/2014 - Fenix - moved into separate module
 # 05/01/2015 - Fenix - added truncateTable() method: empty a database table (or multiple tables) and reset identity
+# 18/05/2015 - Fenix - make use of b3.getWritableFilePath when computing sqlite database file path
 
 import b3
 import os
@@ -51,7 +52,7 @@ class SqliteStorage(DatabaseStorage):
         :return The connection instance if established successfully, otherwise None.
         """
         import sqlite3
-        path = b3.getAbsolutePath(self.dsn[9:])
+        path = b3.getWritableFilePath(self.dsn[9:])
         self.console.bot("Using database file: %s" % path)
         is_new_database = not os.path.isfile(path)
         self.db = sqlite3.connect(path, check_same_thread=False)
