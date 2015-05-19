@@ -1634,7 +1634,8 @@ class MainMenuBar(QMenuBar):
         ## HELP MENU ENTRY
         help_menu = self.addMenu('&Help')
         help_menu.addAction(about)
-        help_menu.addSeparator()
+        if b3.getPlatform() != 'darwin':
+            help_menu.addSeparator()
         help_menu.addAction(donate)
         help_menu.addSeparator()
         help_menu.addAction(code)
