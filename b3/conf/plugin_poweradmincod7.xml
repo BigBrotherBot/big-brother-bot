@@ -1,0 +1,28 @@
+<configuration plugin="poweradmincod7">
+    <settings name="commands">
+        <!--
+        Following command works on RANKED servers only
+        -->
+        <set name="pasetmap-setmap">40</set>
+        <!--
+        Following commands work both on RANKED and UNRANKED servers
+        -->
+        <set name="paplaylist-playlist">40</set>
+        <set name="pagetplaylists-getplaylists">100</set>
+        <set name="pasetplaylist-setplaylist">100</set>
+        <set name="paexcludemaps-excludemaps">100</set>
+        <set name="paversion">1</set>
+        <set name="paident-id">40</set>
+        <set name="paset">100</set>
+        <set name="paget">100</set>
+        <set name="palistcfg-listcfg">100</set>
+        <set name="pasetdlc-setdlc">100</set>
+        <set name="paload-load">100</set>
+        <!--
+        Following commands work on UNRANKED servers only
+        -->
+        <set name="pafastrestart-fastrestart">40</set>
+        <set name="pamaprestart-maprestart">40</set>
+        <set name="pagametype-gametype">40</set>
+    </settings>
+</configuration>

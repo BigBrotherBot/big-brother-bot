@@ -143,6 +143,12 @@
         <!-- BF3 -->
         <!-- <plugin name="poweradminbf3" config="@conf/plugin_poweradminbf3.ini" /> -->
 
+        <!-- COD7 -->
+        <!-- <plugin name="poweradmincod7" config="@conf/plugin_poweradmincod7.xml" /> -->
+
+        <!-- MOH -->
+        <!-- <plugin name="poweradminmoh" config="@conf/plugin_poweradminmoh.xml" /> -->
+
         <!-- UrT 4.2 -->
         <!-- <plugin name="callvote" config="@conf/plugin_callvote.ini" /> -->
         <!-- <plugin name="jumper" config="@conf/plugin_jumper.ini" /> -->
