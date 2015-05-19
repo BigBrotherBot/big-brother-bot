@@ -137,6 +137,7 @@
         <!-- <plugin name="geowelcome" config="@conf/plugin_geowelcome.ini" /> -->
         <!-- <plugin name="ipban" config="@conf/plugin_ipban.ini" /> -->
         <!-- <plugin name="location" config="@conf/plugin_location.ini" /> -->
+        <!-- <plugin name="makeroom" config="@conf/plugin_makeroom.ini" /> -->
         <!-- <plugin name="translator" config="@conf/plugin_translator.ini" /> -->
         <!-- <plugin name="xlrstats" config="@conf/plugin_xlrstats.ini" /> -->
 
