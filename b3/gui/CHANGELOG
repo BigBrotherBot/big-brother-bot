@@ -24,3 +24,6 @@
                  - make sure MainWindow is visible when triggering stop_all and start_all
                  - handle double click event in system tray icon
                  - added Tools menu entry and moved check update submenu to Tools menu
+                 - rework plugin installation algorithm: make use of tempfile.mkdtemp and check if the plugin is already
+                   installed before copying the plugin directory inside the B3 extplugins folder (will also make sure that
+                   the user didn't delete the extplugins folder manually)

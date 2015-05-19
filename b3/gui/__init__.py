@@ -31,6 +31,7 @@ import logging
 import shutil
 import sqlite3
 import sys
+import tempfile
 import urllib2
 import webbrowser
 
@@ -987,18 +988,18 @@ class PluginInstallDialog(QDialog):
                     module = None
                     module_name = None
                     module_path = None
-                    for x in os.walk(directory):
-                        module_name = os.path.basename(x[0])
-                        module_path = x[0]
+                    for k in os.walk(directory):
+                        module_name = os.path.basename(k[0])
+                        module_path = k[0]
                         try:
                             LOG.debug('searching for python module in %s', module_path)
-                            fp, pathname, description = imp.find_module(module_name, [os.path.join(x[0], '..')])
+                            fp, pathname, description = imp.find_module(module_name, [os.path.join(k[0], '..')])
                             module = imp.load_module(module_name, fp, pathname, description)
                         except ImportError:
                             module_name = module_path = module = clazz = None
                         else:
                             try:
-                                LOG.debug('python module found (%s) in %s : looking for plugin class...', module_name, module_path)
+                                LOG.debug('python module found (%s) in %s : looking for plugin class', module_name, module_path)
                                 clazz = getattr(module, '%sPlugin' % module_name.title())
                             except AttributeError:
                                 LOG.debug('no valid plugin class found in %s module', module_name)
@@ -1015,90 +1016,117 @@ class PluginInstallDialog(QDialog):
 
                     return module_name, module_path, module, clazz
 
-                LOG.debug('plugin installation started...')
+                LOG.debug('plugin installation started')
                 extplugins_dir = b3.getAbsolutePath('@b3/extplugins')
-                before = os.listdir(extplugins_dir)
+                tmp_dir = tempfile.mkdtemp()
 
-                self.messagesignal.emit('uncompressing plugin archive...')
+                if not os.path.isdir(extplugins_dir):
+
+                    try:
+                        LOG.warning('missing %s directory: attempt to create it' % extplugins_dir)
+                        os.mkdir(extplugins_dir)
+                    except Exception, err:
+                        LOG.error('could create default extplugins directory: %s', err)
+                        self.messagesignal.emit('ERROR: could not create extplugins directory!')
+                        return
+                    else:
+                        LOG.debug('created directory %s: resuming plugin installation' % extplugins_dir)
+
+                self.messagesignal.emit('uncompressing plugin archive')
                 LOG.debug('uncompressing plugin archive: %s', self.archive)
                 sleep(.5)
 
                 try:
-                    unzip(self.archive, extplugins_dir)
+                    unzip(self.archive, tmp_dir)
                 except Exception, err:
-                    LOG.error('could not install plugin: %s', err)
+                    LOG.error('could not uncompress plugin archive: %s', err)
                     self.messagesignal.emit('ERROR: plugin installation failed!')
+                    shutil.rmtree(tmp_dir, True)
                 else:
-                    # a B3 plugin is supposed to be made of a single directory to
-                    # be copied into the extplugins folder. we'll lookup the plugin
-                    # among the uncompressed files and keep only that directory
-                    self.messagesignal.emit('analyzing extplugins directory...')
+                    self.messagesignal.emit('searching plugin')
+                    LOG.debug('searching plugin')
                     sleep(.5)
 
-                    difference = list(set(os.listdir(extplugins_dir)) - set(before))
-                    if len(difference) > 1:
-                        self.messagesignal.emit('ERROR: too many files in plugin archive!')
-                        LOG.error('too many files in plugin archive: unzip should have produced '
-                                  'a new folder inside extplugins directory (%s) but %s new '
-                                  'directories have been created', extplugins_dir, len(difference))
-                        for entry in difference:
-                            shutil.rmtree(os.path.join(extplugins_dir, entry), True)
+                    try:
+                        name, path, mod, clz = plugin_import(tmp_dir)
+                    except ImportError:
+                        self.messagesignal.emit('ERROR: no valid plugin module found!')
+                        LOG.warning('no valid plugin module found')
+                        shutil.rmtree(tmp_dir, True)
                     else:
-                        source = os.path.join(extplugins_dir, difference[0])
-                        self.messagesignal.emit('searching plugin...')
-                        LOG.debug('searching plugin...')
-                        sleep(.5)
+                        self.messagesignal.emit('plugin found: %s...' % name)
+
+                        x = None
+                        LOG.debug('checking if plugin %s is already installed', name)
 
                         try:
-                            name, path, mod, clz = plugin_import(source)
+                            # check if the plugin is already installed (built-in plugins directory)
+                            x, y, z = imp.find_module(name, [b3.getAbsolutePath('@b3/plugins')])
+                            imp.load_module(name, x, y, z)
                         except ImportError:
-                            self.messagesignal.emit('ERROR: no valid plugin module found!')
-                            LOG.warning('no valid plugin module found')
-                            shutil.rmtree(source, True)
-                        else:
-                            self.messagesignal.emit('plugin found: %s...' % name)
 
-                            if path != source:
-                                # in case the plugin was found inside a subdirectory, we'll move it
-                                # inside the extplugins folder and remove the source directory which is
-                                # not needed anymore: we'll also adjust the 'path' value to the new destination
-                                shutil.move(path, extplugins_dir)
-                                shutil.rmtree(source, True)
-                                path = os.path.join(extplugins_dir, name)
-
-                            if clz.requiresConfigFile:
-                                self.messagesignal.emit('searching plugin %s configuration file...' % name)
-                                LOG.debug('searching plugin %s configuration file', name)
-                                sleep(.5)
-
-                                collection = glob.glob('%s%s*%s*' % (os.path.join(path, 'conf'), os.path.sep, name))
-                                if len(collection) == 0:
-                                    self.messagesignal.emit('ERROR: no configuration file found for plugin %s' % name)
-                                    LOG.warning('no configuration file found for plugin %s', name)
-                                    shutil.rmtree(path, True)
-                                else:
-                                    # suppose there are multiple configuration files: we'll try all of them
-                                    # till a valid one is loaded, so we can prompt the user a correct plugin
-                                    # configuration file path (if no valid is found, installation is aborted)
-                                    loaded = None
-                                    for entry in collection:
-                                        try:
-                                            loaded = b3.config.load(entry)
-                                        except Exception:
-                                            pass
-                                        else:
-                                            break
-
-                                    if not loaded:
-                                        self.messagesignal.emit('ERROR: no valid configuration file found for plugin %s' % name)
-                                        LOG.warning('no valid configuration file found for plugin %s', name)
-                                        shutil.rmtree(path, True)
-                                    else:
-                                        self.messagesignal.emit('plugin %s installed' % name)
-                                        LOG.info('plugin %s installed successfully: you can specify %s as configuration file', name, loaded.fileName)
+                            try:
+                                # check if the plugin is already installed (extplugins directory)
+                                x, y, z = imp.find_module(name, [extplugins_dir])
+                                imp.load_module(name, x, y, z)
+                            except ImportError:
+                                pass
                             else:
-                                self.messagesignal.emit('plugin %s installed' % name)
-                                LOG.info('plugin %s installed successfully: no configuration file is required', name)
+                                self.messagesignal.emit('NOTICE: plugin %s is already installed!' % name)
+                                LOG.info('plugin %s is already installed' % name)
+                                shutil.rmtree(tmp_dir, True)
+                                return
+                            finally:
+                                if x:
+                                    x.close()
+
+                        else:
+
+                            self.messagesignal.emit('NOTICE: %s is built-in plugin!' % name)
+                            LOG.info('%s is built-in plugin' % name)
+                            shutil.rmtree(tmp_dir, True)
+                            return
+
+                        finally:
+                            if x:
+                                x.close()
+
+                        if clz.requiresConfigFile:
+                            self.messagesignal.emit('searching plugin %s configuration file' % name)
+                            LOG.debug('searching plugin %s configuration file', name)
+                            sleep(.5)
+
+                            collection = glob.glob('%s%s*%s*' % (os.path.join(path, 'conf'), os.path.sep, name))
+                            if len(collection) == 0:
+                                self.messagesignal.emit('ERROR: no configuration file found for plugin %s' % name)
+                                LOG.warning('no configuration file found for plugin %s', name)
+                                shutil.rmtree(tmp_dir, True)
+                                return
+
+                            # suppose there are multiple configuration files: we'll try all of them
+                            # till a valid one is loaded, so we can prompt the user a correct plugin
+                            # configuration file path (if no valid is found, installation is aborted)
+                            loaded = None
+                            for entry in collection:
+                                try:
+                                    loaded = b3.config.load(entry)
+                                except Exception:
+                                    pass
+                                else:
+                                    break
+
+                            if not loaded:
+                                self.messagesignal.emit('ERROR: no valid configuration file found for plugin %s' % name)
+                                LOG.warning('no valid configuration file found for plugin %s', name)
+                                shutil.rmtree(tmp_dir, True)
+                                return
+
+                        # move into extplugins folder and remove temp directory
+                        shutil.move(path, extplugins_dir)
+                        shutil.rmtree(tmp_dir, True)
+
+                        self.messagesignal.emit('plugin %s installed' % name)
+                        LOG.info('plugin %s installed successfully', name)
 
         self.installthread = PluginInstaller(self, self.archive)
         self.installthread.messagesignal.connect(self.update_message)
