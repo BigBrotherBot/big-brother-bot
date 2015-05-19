@@ -1,3 +1,4 @@
+plugins/makeroom
 plugins/poweradminbf3
 plugins/poweradminurt
 plugins/poweradminurt/common
