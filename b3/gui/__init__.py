@@ -60,6 +60,9 @@ B3_FORUM = 'http://forum.bigbrotherbot.net/'
 B3_WEBSITE = 'http://www.bigbrotherbot.net'
 B3_WIKI = 'http://wiki.bigbrotherbot.net/'
 B3_CONFIG_GENERATOR = 'http://config.bigbrotherbot.net/'
+B3_DOCUMENTATION = 'http://doc.bigbrotherbot.net/'
+B3_DONATE = 'http://www.bigbrotherbot.net/donate'
+B3_PLUGIN_REPOSITORY = 'http://forum.bigbrotherbot.net/downloads/?cat=4'
 
 ## USER PATHS
 B3_STORAGE = b3.getWritableFilePath(os.path.join(HOMEDIR, 'app.db'))
@@ -1517,6 +1520,7 @@ class MainMenuBar(QMenuBar):
         Initialize the menu user interface.
         """
         self.__init_menu_file()
+        self.__init_menu_tools()
         self.__init_menu_help()
 
     def __init_menu_file(self):
@@ -1524,13 +1528,13 @@ class MainMenuBar(QMenuBar):
         Initialize the 'File' menu.
         """
         ####  NEW B3 INSTANCE SUBMENU ENTRY
-        new_process = QAction('Add', self.parent())
+        new_process = QAction('Add B3', self.parent())
         new_process.setShortcut('Ctrl+N')
         new_process.setStatusTip('Add a new B3')
         new_process.triggered.connect(self.parent().new_process)
         new_process.setVisible(True)
         ### INSTALL PLUGIN SUBMENU ENTRY
-        install_plugin = QAction('Install Plugin', self.parent())
+        install_plugin = QAction('Add Plugin', self.parent())
         install_plugin.setShortcut('Ctrl+P')
         install_plugin.setStatusTip('Install a new B3 plugin')
         install_plugin.triggered.connect(self.parent().install_plugin)
@@ -1538,7 +1542,7 @@ class MainMenuBar(QMenuBar):
         ####  QUIT SUBMENU ENTRY
         quit_btn = QAction('Quit', self.parent())
         quit_btn.setShortcut('Ctrl+Q')
-        quit_btn.setStatusTip('Quit B3')
+        quit_btn.setStatusTip('Shutdown B3')
         quit_btn.triggered.connect(B3App.Instance().shutdown)
         quit_btn.setVisible(True)
         ## FILE MENU ENTRY
@@ -1546,6 +1550,23 @@ class MainMenuBar(QMenuBar):
         file_menu.addAction(new_process)
         file_menu.addAction(install_plugin)
         file_menu.addAction(quit_btn)
+
+    def __init_menu_tools(self):
+        """
+        Initialize the 'Tools' menu.
+        """
+        #### UPDATE CHECK SUBMENU ENTRY
+        update_check = QAction('Check For Updates', self.parent())
+        update_check.setStatusTip('Check if a newer version of B3 is available')
+        update_check.triggered.connect(self.parent().check_update)
+        #### B3 PLUGIN ARCHIVE SUBMENU ENTRY
+        plugin_repository = QAction('Plugins Repository', self.parent())
+        plugin_repository.setStatusTip('Browse all the available B3 plugins')
+        plugin_repository.triggered.connect(lambda: webbrowser.open(B3_PLUGIN_REPOSITORY))
+        ## TOOLS MENU ENTRY
+        tools_menu = self.addMenu('&Tools')
+        tools_menu.addAction(update_check)
+        tools_menu.addAction(plugin_repository)
 
     def __init_menu_help(self):
         """
@@ -1555,14 +1576,18 @@ class MainMenuBar(QMenuBar):
         about = QAction('About', self.parent())
         about.setStatusTip('Display information about B3')
         about.triggered.connect(self.parent().show_about)
-        #### UPDATE CHECK SUBMENU ENTRY
-        update_check = QAction('Check For Updates', self.parent())
-        update_check.setStatusTip('Check if a newer version of B3 is available')
-        update_check.triggered.connect(self.parent().check_update)
+        #### B3 DONATION SUBMENU ENTRY
+        donate = QAction('Donate to B3', self.parent())
+        donate.setStatusTip('Donate to the BigBrotherBot project')
+        donate.triggered.connect(lambda: webbrowser.open(B3_DONATE))
         #### B3 WIKI SUBMENU ENTRY
         wiki = QAction('B3 Wiki', self.parent())
         wiki.setStatusTip('Visit the B3 documentation wiki')
         wiki.triggered.connect(lambda: webbrowser.open(B3_WIKI))
+        #### B3 CONFIG GENERATOR SUBMENU ENTRY
+        code = QAction('B3 Code Reference', self.parent())
+        code.setStatusTip('Open the B3 code reference')
+        code.triggered.connect(lambda: webbrowser.open(B3_DOCUMENTATION))
         #### B3 CONFIG GENERATOR SUBMENU ENTRY
         config = QAction('B3 Configuration File Generator', self.parent())
         config.setStatusTip('Open the B3 configuration file generator web tool')
@@ -1578,12 +1603,14 @@ class MainMenuBar(QMenuBar):
         ## HELP MENU ENTRY
         help_menu = self.addMenu('&Help')
         help_menu.addAction(about)
-        help_menu.addAction(update_check)
         help_menu.addSeparator()
-        help_menu.addAction(wiki)
+        help_menu.addAction(donate)
+        help_menu.addSeparator()
+        help_menu.addAction(code)
         help_menu.addAction(config)
         help_menu.addAction(forum)
         help_menu.addAction(website)
+        help_menu.addAction(wiki)
 
 
 class SystemTrayIcon(QSystemTrayIcon):
@@ -1945,6 +1972,8 @@ class B3App(QApplication):
         for handler in LOG.handlers:
             handler.close()
             LOG.removeHandler(handler)
+        ## HIDE SYSTEM TRAY (ON WINDOWS IT STAYS VISIBLE SOMETIME)
+        self.main_window.system_tray.hide()
         ## QUIT THE APPLICATION
         self.quit()
 
