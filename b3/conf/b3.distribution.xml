@@ -130,6 +130,7 @@
              default. You can enable them by removing the surrounding comment symbols. -->
 
         <!-- NON GAME SPECIFIC -->
+        <!-- <plugin name="banlist" config="@conf/plugin_banlist.xml" /> -->
         <!-- <plugin name="chatlogger" config="@conf/plugin_chatlogger.ini" /> -->
         <!-- <plugin name="countryfilter" config="@conf/plugin_countryfilter.ini" /> -->
         <!-- <plugin name="customcommands" config="@conf/plugin_customcommands.ini" /> -->
