@@ -16,34 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 16/04/2015 - 0.1 - initial release
-# 05/05/2015 - 0.2 - changed GUI application to use QProcess instead of QThreads
-#                  - reimplemented STDOut redirection into QTextEdit widget
-#                  - changed MessageBox to use Button class instead of the default StandardButton: this enable
-#                    the mouse cursor transition upon MessageBox button enterEvent and leaveEvent
-#                  - added update check feature
-# 07/05/2015 - 0.3 - added loggin facility
-#                  - moved database file into user HOME folder (will survive updates)
-#                  - implement B3 log open through UI
-# 11/05/2015 - 0.4 - win32 graphic adjustment
-#                  - implemented process refresh feature: refresh a B3 configuration file without the need of
-#                    rebooting the application completely
-#                  - implemented plugin install feature: will deploy the plugin in the B3 default extplugins folder
-# 13/05/2015 - 0.5 - linux graphic changes
-# 18/05/2015 - 0.6 - fixed B3 process status flag (CONFIG_READY) not being refreshed correctly
-#                  - make use of properties in B3 QProcess instead of normal attributes
-# 18/05/2015 - 0.7 - added system tray icon
-#                  - remove MessageBox class: make use of the default QMessageBox one which seems to be working better
-#                  - correctly space buttons in about dialog window
-#                  - make sure to have a visible MainWindow when a MenuBar action is triggered: on OS X the menubar
-#                    is visible even though the MainWindow is hidden, so it's possible to launch Dialogs (if such
-#                    dialogs gets closed while the MainWindow is hidden, the application terminate)
 
 __author__ = 'Fenix'
-__version__ = '0.7'
+__version__ = '0.8'
 
 import b3
 import bisect
@@ -1653,6 +1628,14 @@ class SystemTrayIcon(QSystemTrayIcon):
         menu.addAction(terminate)
         ## ADD THE MENU
         self.setContextMenu(menu)
+        self.activated.connect(self.onActivated)
+
+    def onActivated(self, reason):
+        """
+        Handle the System Tray icon activation
+        """
+        if reason == QSystemTrayIcon.DoubleClick:
+            self.parent().show()
 
 
 class MainWindow(QMainWindow):
@@ -1674,7 +1657,6 @@ class MainWindow(QMainWindow):
         """
         self.setWindowTitle(B3_TITLE)
         self.setFixedSize(B3_WIDTH, B3_HEIGHT)
-        self.setWindowFlags(Qt.WindowTitleHint|Qt.WindowMinimizeButtonHint|Qt.WindowSystemMenuHint)
         ## INIT SUBCOMPONENTS
         self.setStatusBar(StatusBar(self))
         self.setMenuBar(MainMenuBar(self))
@@ -1913,6 +1895,7 @@ class B3App(QApplication):
         """
         Start all the available B3 processes.
         """
+        self.main_window.show()
         main_table = self.main_window.centralWidget().main_table
         for process in self.processes:
             main_table.process_start(row=self.processes.index(process), process=process, warn=False)
@@ -1921,6 +1904,7 @@ class B3App(QApplication):
         """
         Stop all the available B3 processes.
         """
+        self.main_window.show()
         main_table = self.main_window.centralWidget().main_table
         for process in self.processes:
             main_table.process_shutdown(process)

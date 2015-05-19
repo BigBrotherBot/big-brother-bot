@@ -1,0 +1,25 @@
+16/04/2015 - 0.1 - initial release
+05/05/2015 - 0.2 - changed GUI application to use QProcess instead of QThreads
+                 - reimplemented STDOut redirection into QTextEdit widget
+                 - changed MessageBox to use Button class instead of the default StandardButton: this enable
+                   the mouse cursor transition upon MessageBox button enterEvent and leaveEvent
+                 - added update check feature
+07/05/2015 - 0.3 - added loggin facility
+                 - moved database file into user HOME folder (will survive updates)
+                 - implement B3 log open through UI
+11/05/2015 - 0.4 - win32 graphic adjustment
+                 - implemented process refresh feature: refresh a B3 configuration file without the need of
+                   rebooting the application completely
+                 - implemented plugin install feature: will deploy the plugin in the B3 default extplugins folder
+13/05/2015 - 0.5 - linux graphic changes
+18/05/2015 - 0.6 - fixed B3 process status flag (CONFIG_READY) not being refreshed correctly
+                 - make use of properties in B3 QProcess instead of normal attributes
+18/05/2015 - 0.7 - added system tray icon
+                 - remove MessageBox class: make use of the default QMessageBox one which seems to be working better
+                 - correctly space buttons in about dialog window
+                 - make sure to have a visible MainWindow when a MenuBar action is triggered: on OS X the menubar
+                   is visible even though the MainWindow is hidden, so it's possible to launch Dialogs (if such
+                   dialogs gets closed while the MainWindow is hidden, the application terminate)
+19/05/2015 - 0.8 - activate back application close button
+                 - make sure MainWindow is visible when triggering stop_all and start_all
+                 - handle double click event in system tray icon
