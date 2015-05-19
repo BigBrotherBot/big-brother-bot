@@ -1344,6 +1344,9 @@ class MainTable(QTableWidget):
         :param warn: whether to warn the user of a startup failure or not
         """
         if process.state() != QProcess.Running:
+            # refresh the config before running
+            process.config = process.config_path
+            self.repaint()
             if process.isFlag(CONFIG_READY):
                 process.stateChanged.connect(partial(self.paint_row, row=row))
                 process.start()
