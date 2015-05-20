@@ -299,8 +299,7 @@ class Plugin(object):
             except TypeError, e:
                 self.error('could not parse event %s: %s' % (self.console.getEventName(event.type), e))
 
-        if event.type == self.console.getEventID('EVT_EXIT') or \
-            event.type == self.console.getEventID('EVT_STOP'):
+        if event.type == self.console.getEventID('EVT_EXIT') or event.type == self.console.getEventID('EVT_STOP'):
             self.working = False
 
     ####################################################################################################################
@@ -369,7 +368,7 @@ class Plugin(object):
         This is called after loadConfig() and if a user use the !reconfig command.
         Any plugin private variables loaded from the config need to be reset here.
         """
-        return True
+        pass
 
     def onStartup(self):
         """
@@ -428,14 +427,12 @@ class Plugin(object):
         Deprecated. Use onEvent().
         """
         self.warning('use of deprecated method: handle()')
-        pass
 
     def startup(self):
         """
         Deprecated. Use onStartup().
         """
         self.warning('use of deprecated method: startup()')
-        pass
 
 
 class PluginData(object):
