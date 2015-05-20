@@ -518,6 +518,8 @@ Changelog
   - added command !pasub: set the substitute status on the given client
   - overridden command !paswap in iourt42 module: game server now provides a swap rcon command
   - updated printGear method (iourt42 module) to use the new getWrap implementation
+1.24 - 2015/05/13 - Fenix
+  - fixed invalid plugin class reference 'requiresParsers' which was crashing B3 on startup
 
 
 Credit

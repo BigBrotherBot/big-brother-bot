@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-__version__ = '1.23'
+__version__ = '1.24'
 __author__ = 'xlr8or, courgette'
 
 
@@ -26,6 +26,11 @@ Depending on the B3 parser loaded, this module will load the correct plugin vers
 """
 
 class PoweradminurtPlugin(object):
+
+    requiresConfigFile = True
+    requiresPlugins = []
+    loadAfterPlugins = []
+    requiresParsers = ['iourt41', 'iourt42']
 
     def __new__(cls, *args, **kwargs):
         console, plugin_config = args
