@@ -434,9 +434,7 @@ class AdminPlugin(b3.plugin.Plugin):
         if not self.console.autorestart:
             if 'restart' in self._commands:
                 self.debug('unregistering !restart command: B3 is not running in autorestart mode')
-                if self._commands['restart'].alias:
-                    del self._commands[self._commands['restart'].alias]
-                del self._commands['restart']
+                self.unregisterCommand('restart')
 
         if not self.console.storage.db:
             self.error('could not retrieve database connection: unable to store or retrieve any information!')
