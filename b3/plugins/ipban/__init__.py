@@ -89,10 +89,10 @@ class IpbanPlugin(b3.plugin.Plugin):
             # check for active bans and tempbans
             if client.ip in self.getBanIps():
                 self.debug('client refused: <cid:%s,name:%s,ip:%s>' % (client.cid, client.name, client.ip))
-                client.kick('Netblocker: client refused: %s (%s) has an active Ban' % (client.ip, client.name))
+                client.kick('IPBan: client refused: %s (%s) has an active Ban' % (client.ip, client.name))
             elif client.ip in self.getTempBanIps():
                 self.debug('client refused: <cid:%s,name:%s,ip:%s>' % (client.cid, client.name, client.ip))
-                client.kick('Netblocker: client refused: %s (%s) has an active TempBan' % (client.ip, client.name))
+                client.kick('IPBan: client refused: %s (%s) has an active TempBan' % (client.ip, client.name))
             else:
                 self.debug('client accepted (no active Ban/TempBan found): <cid:%s,name:%s,ip:%s>' % (client.cid, client.name, client.ip))
 
@@ -132,6 +132,3 @@ class IpbanPlugin(b3.plugin.Plugin):
                 cursor.moveNext()
         cursor.close()
         return banned
-
-if __name__ == '__main__':
-    print '\nThis is version ' + __version__ + ' by ' + __author__ + ' for BigBrotherBot.\n'
