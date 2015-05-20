@@ -121,6 +121,7 @@ Source: {#B3_BUILD_PATH}\conf\*; DestDir: {app}\conf; Flags: recursesubdirs
 Source: {#B3_BUILD_PATH}\gui\*; DestDir: {app}\gui; Flags: recursesubdirs
 Source: {#B3_BUILD_PATH}\imageformats\*; DestDir: {app}\imageformats; Flags: recursesubdirs
 Source: {#B3_BUILD_PATH}\platforms\*; DestDir: {app}\platforms; Flags: recursesubdirs
+Source: {#B3_BUILD_PATH}\plugins\*; DestDir: {app}\plugins; Flags: recursesubdirs
 
 [UninstallDelete]
 Name: {app}\*; Type: filesandordirs
