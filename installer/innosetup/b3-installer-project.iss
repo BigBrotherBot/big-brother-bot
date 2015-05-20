@@ -118,6 +118,9 @@ Source: {#B3_BUILD_PATH}\docs\*; DestDir: {app}\docs; Flags: recursesubdirs
 Source: {#B3_BUILD_PATH}\sql\*; DestDir: {app}\sql; Flags: recursesubdirs
 Source: {#B3_BUILD_PATH}\extplugins\*; DestDir: {app}\extplugins; Flags: recursesubdirs
 Source: {#B3_BUILD_PATH}\conf\*; DestDir: {app}\conf; Flags: recursesubdirs
+Source: {#B3_BUILD_PATH}\gui\*; DestDir: {app}\gui; Flags: recursesubdirs
+Source: {#B3_BUILD_PATH}\imageformats\*; DestDir: {app}\imageformats; Flags: recursesubdirs
+Source: {#B3_BUILD_PATH}\platforms\*; DestDir: {app}\platforms; Flags: recursesubdirs
 
 [UninstallDelete]
 Name: {app}\*; Type: filesandordirs
