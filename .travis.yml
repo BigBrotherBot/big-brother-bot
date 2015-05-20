@@ -59,6 +59,7 @@ script:
   - nosetests --where=tests.plugins.poweradminurt --verbosity=3 --with-cov --cov b3.plugins.poweradminurt --cov-report term-missing --cov-config .coveragerc
   - nosetests --where=tests.plugins.urtserversidedemo --verbosity=3 --with-cov --cov b3.plugins.urtserversidedemo --cov-report term-missing --cov-config .coveragerc
   - nosetests --where=tests.plugins.test_callvote --verbosity=3 --with-cov --cov b3.plugins.callvote --cov-report term-missing --cov-config .coveragerc
+  - nosetests --where=tests.plugins.test_firstkill --verbosity=3 --with-cov --cov b3.plugins.firstkill --cov-report term-missing --cov-config .coveragerc
   - nosetests --where=tests.plugins.test_jumper --verbosity=3 --with-cov --cov b3.plugins.jumper --cov-report term-missing --cov-config .coveragerc
   - nosetests --where=tests.plugins.test_spawnkill --verbosity=3 --with-cov --cov b3.plugins.spawnkill --cov-report term-missing --cov-config .coveragerc
   - py.test tests/plugins/makeroom
