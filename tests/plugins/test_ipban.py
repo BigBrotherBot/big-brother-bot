@@ -129,7 +129,7 @@ class IpbanTestCase(unittest2.TestCase):
         # THEN
         self.assertLessEqual(self.paul.maxLevel, self.p._maxLevel)
         self.assertIn(self.paul.ip, self.p.getBanIps())
-        self.paul.kick.assert_called_once_with('Netblocker: client refused: 2.2.2.2 (Paul) has an active Ban')
+        self.paul.kick.assert_called_once_with('IPBan: client refused: 2.2.2.2 (Paul) has an active Ban')
 
     def test_ip_temp_banned_client_connect(self):
         # GIVEN
@@ -140,7 +140,7 @@ class IpbanTestCase(unittest2.TestCase):
         # THEN
         self.assertLessEqual(self.paul.maxLevel, self.p._maxLevel)
         self.assertIn(self.john.ip, self.p.getTempBanIps())
-        self.john.kick.assert_called_once_with('Netblocker: client refused: 3.3.3.3 (John) has an active TempBan')
+        self.john.kick.assert_called_once_with('IPBan: client refused: 3.3.3.3 (John) has an active TempBan')
 
     def test_clean_client_connect(self):
         # GIVEN
