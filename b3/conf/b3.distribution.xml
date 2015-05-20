@@ -134,10 +134,12 @@
         <!-- <plugin name="chatlogger" config="@conf/plugin_chatlogger.ini" /> -->
         <!-- <plugin name="countryfilter" config="@conf/plugin_countryfilter.ini" /> -->
         <!-- <plugin name="customcommands" config="@conf/plugin_customcommands.ini" /> -->
+        <!-- <plugin name="firstkill" config="@conf/plugin_firstkill.ini" /> -->
         <!-- <plugin name="geowelcome" config="@conf/plugin_geowelcome.ini" /> -->
         <!-- <plugin name="ipban" config="@conf/plugin_ipban.ini" /> -->
         <!-- <plugin name="location" config="@conf/plugin_location.ini" /> -->
         <!-- <plugin name="makeroom" config="@conf/plugin_makeroom.ini" /> -->
+        <!-- <plugin name="netblocker" config="@conf/plugin_netblocker.ini" /> -->
         <!-- <plugin name="translator" config="@conf/plugin_translator.ini" /> -->
         <!-- <plugin name="xlrstats" config="@conf/plugin_xlrstats.ini" /> -->
 
