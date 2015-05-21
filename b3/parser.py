@@ -216,6 +216,7 @@ import b3.timezones
 
 from ConfigParser import NoOptionError
 from collections import OrderedDict
+from b3 import __version__ as b3_version
 from b3.clients import Clients
 from b3.clients import Group
 from b3.decorators import Memoize
@@ -227,6 +228,7 @@ from b3.functions import splitDSN
 from b3.functions import right_cut
 from b3.functions import topological_sort
 from b3.plugin import PluginData
+from b3.update import B3version
 from textwrap import TextWrapper
 from traceback import extract_tb
 
@@ -877,11 +879,16 @@ class Parser(object):
             """
             if p_data.clazz:
 
+                # check if the plugin can run with the current B3 version
+                if B3version(p_data.clazz.requiresVersion) > B3version(b3_version):
+                    raise MissingRequirement('plugin %s is not compatible with B3 %s : minimum required B3 core '
+                                             'version is : %s' % (p_data.name, b3_version, p_data.clazz.requiresVersion))
+
                 # check if the current game support this plugin (this may actually exclude more than one plugin
                 # in case a plugin is built on top of an incompatible one, due to plugin dependencies)
                 if p_data.clazz.requiresParsers and self.gameName not in p_data.clazz.requiresParsers:
-                    raise MissingRequirement('plugin %s is not compatible with %s parser : supported games are : %s' % (
-                                             p_data.name, self.gameName, ', '.join(p_data.clazz.requiresParsers)))
+                    raise MissingRequirement('plugin %s is not compatible with %s parser : supported games are : '
+                                             '%s' % (p_data.name, self.gameName, ', '.join(p_data.clazz.requiresParsers)))
 
                 # check for plugin dependency
                 if p_data.clazz.requiresPlugins:
