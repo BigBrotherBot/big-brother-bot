@@ -52,6 +52,7 @@
 # 19/03/2015 - 1.7.6 - Fenix     - raise NotImplementedError instead of NotImplemented
 # 22/04/2015 - 1.7.7 - Fenix     - raise ConfigFileNotValid in ConfigParser.readfp for consistency with XmlConfigParser
 #                                - added 'analyze()' method in MainConfig
+# 21/05/2015 - 1.7.8 - Fenix     - added shortcut to ConfigParser.NoOptionError: b3.config.NoOptionError
 # 26/05/2015 - 1.7.8 - Fenix     - changed analyze() to validate also storage protocol
 
 __author__  = 'ThorN, Courgette, Fenix'
@@ -74,6 +75,7 @@ except ImportError:
 
 ConfigFileNotFound = b3.exceptions.ConfigFileNotFound
 ConfigFileNotValid = b3.exceptions.ConfigFileNotValid
+NoOptionError = ConfigParser.NoOptionError
 
 # list of plugins that cannot be loaded as disabled from configuration file
 MUST_HAVE_PLUGINS = ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail')
