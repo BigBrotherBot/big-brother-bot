@@ -162,6 +162,7 @@ class ExamplePlugin(b3.plugin.Plugin):
 
         # This will be set later in onStartup and it's used by the b3.cron.Cron object to schedule function execution.
         self.crontab = None
+        """:type: b3.cron.PluginCronTab"""
 
     def onLoadConfig(self):
         """
