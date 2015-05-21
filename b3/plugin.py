@@ -21,17 +21,17 @@
 # 11/29/2005 - 1.3.0 - ThorN     - added warning, info, exception, and critical log handlers
 # 14/11/2009 - 1.3.1 - Courgette - display a user friendly error message when a plugin config file as broken XML
 # 29/11/2009 - 1.4.0 - Courgette - constructor now also accepts an instance of Config in place of a config file name
-# 29/11/2009 - 1.4.1 - Courgette - the on_load_config callback is now always called after load_config() is called.
+# 29/11/2009 - 1.4.1 - Courgette - the onLoadConfig callback is now always called after loadConfig() is called.
 #                                  this aims to make sure on_load_config is called after the user use the !reconfig
 #                                  command
 # 16/02/2013 - 1.5   - Courgette - add plugin property _default_messages to store default plugin messages
 #                                - add user friendly warning and error to the log when a messaged cannot be formatted
 # 2013/10/23 - 1.6   - Courgette - on_load_config hook is now called by the parser instead of at plugin instantiation
-# 2013/11/30 - 1.7   - Courgette - add two plugin hooks: on_enable and on_disable
+# 2013/11/30 - 1.7   - Courgette - add two plugin hooks: onEnable and onDisable
 # 12/08/2013 - 1.8   - Fenix     - adjust syntax to match PEP8 + fixed some typos
 #                                - optionally map a specific event onto a specific plugin method: needs to
 #                                  be specified during event registration
-# 15/04/2014 - 1.8.1 - Fenix     - use self.console.get_event_id to retrieve event ids: remove some warnings
+# 15/04/2014 - 1.8.1 - Fenix     - use self.console.getEventID to retrieve event ids: remove some warnings
 # 21/05/2014 - 1.8.2 - Fenix     - minor syntax cleanup
 #                                - moved event mapping function into Parser class
 # 02/06/2014 - 1.8.3 - Fenix     - moved back event mapping logic into Plugin class: Parser should be aware only of
@@ -52,42 +52,79 @@
 # 25/03/2015 - 1.9.5 - Fenix     - added loadAfterPlugins attribute: specify a list of plugins which needs to be loaded
 #                                  before the current one
 # 06/04/2015 - 1.9.6 - Fenix     - inherit from object class (new-style-class format to support super() in methods call)
+# 21/05/2015 - 1.9.7 - Fenix     - added requiresVersion attribute in plugin class: declares the minimum required
+#                                  B3 version needed to run the current plugin (if nothing is specified then the plugin
+#                                  will be loaded no matter the version of B3 currently running)
+#                                - added Plugin class documentation
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.9.6'
+__version__ = '1.9.7'
 
 import b3.config
 import b3.events
 import b3.functions
 
+from b3 import __version__ as b3_version
 from ConfigParser import NoOptionError
 
 
 class Plugin(object):
+    """
+    This class implements a B3 plugin.
+    All the B3 plugins MUST inherit from this one and properly overriding methods and attributes.
+    The plugin startup sequence is the following:
 
+        1) call to Plugin.__init__()
+        2) call to Plugin.onLoadConfig()
+        3) call to Plugin.onStartup()
+
+    If in your plugin you need to initialize some attributes, you can do so by declaring them as class attributes (and
+    so all the object instantiated from the plugin class will have them), or (correct way) you can initialize them in
+    the plugin constructor, making sure to call the original Plugin constructor before doing anything else (needed
+    in case you want to access self.console and self.config from withing the constructor), i.e:
+
+    >>> class MyPlugin(Plugin):
+    >>>
+    >>>     def __init__(self, console, config=None):
+    >>>         Plugin.__init__(self, console, config)
+    >>>         # you can get the admin plugin object instance here too
+    >>>         self._admin_plugin = self.console.getPlugin('admin')
+    >>>         self._my_attribute_1 = 'something'
+    >>>         self._my_attribute_2 = 1337
+    """
     ################################## PLUGIN DEVELOPERS: CUSTOMIZE THE FOLLOWING ######################################
 
     # Whether this plugin requires a configuration file to run. When this is set to False,
     # a configuration file can still be loaded if specified in B3 main configuration file.
     requiresConfigFile = True
+    """:type: bool"""
+
+    # The minimum B3 version which is needed to run this plugin. By default this is
+    # set to the version matching the currently running B3.
+    requiresVersion = b3_version
+    """:type: str"""
 
     # List of parsers the current plugin supports: if no parser is specified the plugin will
     # be loaded, if listed in B3 main configuraion file, no matter the parser being used.
     requiresParsers = []
+    """:type: list"""
 
     # List of plugins the current one needs to run: if no plugin is specified then the plugin
     # is dependency free. If one of the listed plugins is not installed in B3, then the current
     # plugin, and eventually all the other dependencies needed by this one, won't be loaded.
     requiresPlugins = []
+    """:type: list"""
 
     # List of plugins which will be loaded before the current one: you can use this when a plugin
     # is not strictly needed by the current one, but this plugin makes use of some data produced by
     # the other one (mostly optional events) and thus needs to be loaded after.
     loadAfterPlugins = []
+    """:type: list"""
 
     # Default messages which can be retrieved using the getMessage method: this dict will be
-    # used in place of a missing 'messages' configuration file section
+    # used in place of a missing 'messages' configuration file section.
     _default_messages = {}
+    """:type: dict"""
 
     ################################## PLUGIN DEVELOPERS: END PLUGIN CUSTOMIZATION #####################################
 
@@ -120,9 +157,10 @@ class Plugin(object):
                 try:
                     self.loadConfig(config)
                 except b3.config.ConfigFileNotValid, e:
-                    self.critical("The config file XML syntax is broken: %s" % e)
-                    self.critical("Use a XML editor to modify your config files: it makes easy to spot errors")
-                    raise
+                    self.critical("The configuration file syntax is broken: %s" % e)
+                    self.critical("TIP: make use of a text editor with syntax highlighting to modify your config "
+                                  "files: it makes easy to spot errors")
+                    raise e
 
         self.registerEvent('EVT_STOP', self.onStop)
         self.registerEvent('EVT_EXIT', self.onExit)
