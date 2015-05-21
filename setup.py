@@ -217,7 +217,7 @@ else:
             zip_file = os.path.join(self.dist_dir, '%s.zip' % release_name)
             log.info(">>> create zip %s from content of %s" % (zip_file, self.build_exe))
             log.info('creating zip distribution: %s' % zip_file)
-            zipf = zipfile.ZipFile(zip_file, 'w')
+            zipf = zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED)
             for root, dirs, files in os.walk(self.build_exe):
                 for filename in files:
                     path = os.path.abspath(os.path.join(root, filename))
