@@ -880,7 +880,7 @@ class Parser(object):
             if p_data.clazz:
 
                 # check if the plugin can run with the current B3 version
-                if B3version(p_data.clazz.requiresVersion) > B3version(b3_version):
+                if p_data.clazz.requiresVersion and B3version(p_data.clazz.requiresVersion) > B3version(b3_version):
                     raise MissingRequirement('plugin %s is not compatible with B3 %s : minimum required B3 core '
                                              'version is : %s' % (p_data.name, b3_version, p_data.clazz.requiresVersion))
 
