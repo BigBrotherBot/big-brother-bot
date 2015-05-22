@@ -44,7 +44,7 @@ from b3.functions import main_is_frozen, unzip
 from b3.update import getDefaultChannel, B3version, URL_B3_LATEST_VERSION
 from functools import partial
 from time import time, sleep
-from PyQt5.QtCore import Qt, QSize, QProcess, pyqtSlot, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QSize, QProcess, pyqtSlot, QThread, QEvent, pyqtSignal
 from PyQt5.QtGui import QCursor, QTextCursor
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QPushButton, QApplication, QMainWindow, QAction, QDesktopWidget, QFileDialog, \
@@ -1694,6 +1694,8 @@ class SystemTrayIcon(QSystemTrayIcon):
         Handle the System Tray icon activation
         """
         if reason == QSystemTrayIcon.DoubleClick:
+            self.parent().setWindowState((self.parent().windowState() & ~Qt.WindowMinimized) | Qt.WindowActive)
+            self.parent().activateWindow()
             self.parent().show()
 
 
@@ -1702,6 +1704,7 @@ class MainWindow(QMainWindow):
     This class implements the main application window.
     """
     system_tray = None
+    system_tray_minimized = False # this will be set to True after the first minimization
 
     def __init__(self):
         """
@@ -1743,7 +1746,30 @@ class MainWindow(QMainWindow):
                 B3App.Instance().shutdown()
             else:
                 event.ignore()
-                self.hide()
+                self.minimize_in_system_tray()
+
+    def changeEvent(self, event):
+        """
+        Executed when the main window is modified.
+        """
+        QMainWindow.changeEvent(self, event)
+        if b3.getPlatform() == 'win32':
+            if event.type() == QEvent.WindowStateChange:
+                if event.oldState() != Qt.WindowMinimized and self.isMinimized():
+                    # make sure we do this only for minimize events
+                    self.minimize_in_system_tray()
+
+    def minimize_in_system_tray(self):
+        """
+        Minimize B3 in system tray icon
+        """
+        self.hide()
+        if not self.system_tray_minimized:
+            self.system_tray_minimized = True
+            self.system_tray.showMessage("B3 is still running!",
+                                         "B3 will continue to run so that all your B3 processes will stay alive. "
+                                         "If you really want to quit right click this icon and select 'Quit'.",
+                                         QSystemTrayIcon.Information, 20000)
 
     ############################################# ACTION HANDLERS  #####################################################
 
