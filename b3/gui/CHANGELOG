@@ -27,3 +27,4 @@
                  - rework plugin installation algorithm: make use of tempfile.mkdtemp and check if the plugin is already
                    installed before copying the plugin directory inside the B3 extplugins folder (will also make sure that
                    the user didn't delete the extplugins folder manually)
+22/05/2015 - 0.9 - allow the user to terminate B3 application by closing the main window (only windows system)

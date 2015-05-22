@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'Fenix'
-__version__ = '0.8'
+__version__ = '0.9'
 
 import b3
 import bisect
@@ -1735,11 +1735,15 @@ class MainWindow(QMainWindow):
         """
         Executed when the main window is closed.
         """
-        if B3App.Instance().shutdown_requested:
+        if b3.getPlatform() == 'win32':
+            # always shutdown on windows
             B3App.Instance().shutdown()
         else:
-            event.ignore()
-            self.hide()
+            if B3App.Instance().shutdown_requested:
+                B3App.Instance().shutdown()
+            else:
+                event.ignore()
+                self.hide()
 
     ############################################# ACTION HANDLERS  #####################################################
 
