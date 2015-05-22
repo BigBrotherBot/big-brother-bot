@@ -30,6 +30,7 @@
 # 2015/05/04 - 1.4      - Fenix     - added getPlatform() function: return the current platform name
 #                                   - better update data printing in stdout
 #                                   - added getWritableFilePath function: return a valid writable filepath
+# 2015/05/22 - 1.5      - Fenix     - allow system filepaths to be decoded using default filesystem encoding
 
 import os
 import re
@@ -72,7 +73,7 @@ STATE_ALIVE = 2
 STATE_UNKNOWN = 3
 
 # APP HOME DIRECTORY
-HOMEDIR = os.path.normpath(os.path.expanduser('~/BigBrotherBot'))
+HOMEDIR = os.path.normpath(os.path.expanduser('~/BigBrotherBot')).decode(sys.getfilesystemencoding())
 if not os.path.isdir(HOMEDIR):
     os.mkdir(HOMEDIR)
 
@@ -118,49 +119,62 @@ def getB3versionString():
     return sversion
 
 
-def getB3Path():
+def getB3Path(decode=False):
     """
     Return the path to the main B3 directory.
+    :param decode: if True will decode the path string using the default file system encoding before returning it
     """
     if main_is_frozen():
-        return os.path.dirname(sys.executable)
-    return modulePath
+        path = os.path.dirname(sys.executable)
+    else:
+        path = modulePath
+    if not decode:
+        return os.path.normpath(os.path.expanduser(path))
+    return os.path.normpath(os.path.expanduser(path)).decode(sys.getfilesystemencoding())
 
 
-def getConfPath():
+def getConfPath(decode=False):
     """
     Return the path to the B3 main configuration directory.
+    :param decode: if True will decode the path string using the default file system encoding before returning it
     """
-    if confdir is not None:
-        return confdir
-    return os.path.dirname(console.config.fileName)
+    path = confdir or os.path.dirname(console.config.fileName)
+    if not decode:
+        return path
+    return path.decode(sys.getfilesystemencoding())
 
 
-def getAbsolutePath(path):
+def getAbsolutePath(path, decode=False):
     """
     Return an absolute path name and expand the user prefix (~).
     :param path: the relative path we want to expand
+    :param decode: if True will decode the path string using the default file system encoding before returning it
     """
     if path[0:4] == '@b3\\' or path[0:4] == '@b3/':
-        path = os.path.join(getB3Path(), path[4:])
+        path = os.path.join(getB3Path(decode=False), path[4:])
     elif path[0:6] == '@conf\\' or path[0:6] == '@conf/':
-        path = os.path.join(getConfPath(), path[6:])
-    return os.path.normpath(os.path.expanduser(path))
+        path = os.path.join(getConfPath(decode=False), path[6:])
+    if not decode:
+        return os.path.normpath(os.path.expanduser(path))
+    return os.path.normpath(os.path.expanduser(path)).decode(sys.getfilesystemencoding())
 
 
-def getWritableFilePath(filepath):
+def getWritableFilePath(filepath, decode=False):
     """
     Return an absolute filepath making sure the current user can write it.
-    If the given path is not writable by the current user, the path will be converted into an
-    absolute path pointing inside the B3 home directory (defined in the `HOMEDIR` global variable)
-    which is assumed to be writable.
+    If the given path is not writable by the current user, the path will be converted
+    into an absolute path pointing inside the B3 home directory (defined in the `HOMEDIR` global
+    variable) which is assumed to be writable.
     :param filepath: the relative path we want to expand
+    :param decode: if True will decode the path string using the default file system encoding before returning it
     """
-    filepath = getAbsolutePath(filepath)
+    filepath = getAbsolutePath(filepath, decode)
     if not filepath.startswith(HOMEDIR):
         try:
             tmp = TemporaryFile(dir=os.path.dirname(filepath))
         except (OSError, IOError):
+            # no need to decode again since HOMEDIR is already decoded
+            # and os.path.join will handle everything itself
             filepath = os.path.join(HOMEDIR, os.path.basename(filepath))
         else:
             tmp.close()

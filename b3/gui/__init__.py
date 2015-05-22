@@ -1,4 +1,4 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
@@ -66,21 +66,21 @@ B3_DONATE = 'http://www.bigbrotherbot.net/donate'
 B3_PLUGIN_REPOSITORY = 'http://forum.bigbrotherbot.net/downloads/?cat=4'
 
 ## USER PATHS
-B3_STORAGE = b3.getWritableFilePath(os.path.join(HOMEDIR, 'app.db'))
-B3_LOG = b3.getWritableFilePath(os.path.join(HOMEDIR, 'app.log'))
+B3_STORAGE = b3.getWritableFilePath(os.path.join(HOMEDIR, 'app.db'), True)
+B3_LOG = b3.getWritableFilePath(os.path.join(HOMEDIR, 'app.log'), True)
 
 ## RESOURCE PATHS
-B3_BANNER = b3.getAbsolutePath('@b3/gui/assets/main.png')
-B3_ICON = b3.getAbsolutePath('@b3/gui/assets/icon.png')
-B3_ICON_SMALL = b3.getAbsolutePath('@b3/gui/assets/icon-small.png')
-B3_SPLASH = b3.getAbsolutePath('@b3/gui/assets/splash.png')
-B3_SQL = b3.getAbsolutePath('@b3/sql/sqlite/b3-gui.sql')
-ICON_DEL = b3.getAbsolutePath('@b3/gui/assets/del.png')
-ICON_CONSOLE = b3.getAbsolutePath('@b3/gui/assets/console.png')
-ICON_LOG = b3.getAbsolutePath('@b3/gui/assets/log.png')
-ICON_REFRESH = b3.getAbsolutePath('@b3/gui/assets/refresh.png')
-ICON_START = b3.getAbsolutePath('@b3/gui/assets/start.png')
-ICON_STOP = b3.getAbsolutePath('@b3/gui/assets/stop.png')
+B3_BANNER = b3.getAbsolutePath('@b3/gui/assets/main.png', True)
+B3_ICON = b3.getAbsolutePath('@b3/gui/assets/icon.png', True)
+B3_ICON_SMALL = b3.getAbsolutePath('@b3/gui/assets/icon-small.png', True)
+B3_SPLASH = b3.getAbsolutePath('@b3/gui/assets/splash.png', True)
+B3_SQL = b3.getAbsolutePath('@b3/sql/sqlite/b3-gui.sql', True)
+ICON_DEL = b3.getAbsolutePath('@b3/gui/assets/del.png', True)
+ICON_CONSOLE = b3.getAbsolutePath('@b3/gui/assets/console.png', True)
+ICON_LOG = b3.getAbsolutePath('@b3/gui/assets/log.png', True)
+ICON_REFRESH = b3.getAbsolutePath('@b3/gui/assets/refresh.png', True)
+ICON_START = b3.getAbsolutePath('@b3/gui/assets/start.png', True)
+ICON_STOP = b3.getAbsolutePath('@b3/gui/assets/stop.png', True)
 
 ## OS DEPENDENT GEOMETRY
 GEOMETRY = {
