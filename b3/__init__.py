@@ -31,6 +31,7 @@
 #                                   - better update data printing in stdout
 #                                   - added getWritableFilePath function: return a valid writable filepath
 # 2015/05/22 - 1.5      - Fenix     - allow system filepaths to be decoded using default filesystem encoding
+# 2015/05/23 - 1.5.1    - Fenix     - moved decoding feature into b3.functions
 
 import os
 import re
@@ -41,6 +42,7 @@ import time
 import signal
 import config
 
+from b3.functions import decode as decode_
 from b3.functions import main_is_frozen
 from b3.update import checkUpdate
 from b3.setup import Setup
@@ -130,7 +132,7 @@ def getB3Path(decode=False):
         path = modulePath
     if not decode:
         return os.path.normpath(os.path.expanduser(path))
-    return os.path.normpath(os.path.expanduser(path)).decode(sys.getfilesystemencoding())
+    return decode_(os.path.normpath(os.path.expanduser(path)))
 
 
 def getConfPath(decode=False):
@@ -141,7 +143,7 @@ def getConfPath(decode=False):
     path = confdir or os.path.dirname(console.config.fileName)
     if not decode:
         return path
-    return path.decode(sys.getfilesystemencoding())
+    return decode_(path)
 
 
 def getAbsolutePath(path, decode=False):
@@ -156,7 +158,7 @@ def getAbsolutePath(path, decode=False):
         path = os.path.join(getConfPath(decode=False), path[6:])
     if not decode:
         return os.path.normpath(os.path.expanduser(path))
-    return os.path.normpath(os.path.expanduser(path)).decode(sys.getfilesystemencoding())
+    return decode_(os.path.normpath(os.path.expanduser(path)))
 
 
 def getWritableFilePath(filepath, decode=False):
