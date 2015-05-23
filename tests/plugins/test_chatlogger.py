@@ -29,7 +29,7 @@ import sys
 import codecs
 
 from mockito import when, unstub
-from mock import Mock
+from mock import Mock, ANY
 from b3 import TEAM_RED, TEAM_BLUE
 from b3.config import XmlConfigParser
 from b3.config import CfgConfigParser
@@ -120,7 +120,7 @@ class Test_chatlogfile(ChatloggerTestCase):
             min: 0
         """))
         self.temp_conf_folder = mkdtemp(suffix="b3_conf")
-        when(b3).getConfPath().thenReturn(self.temp_conf_folder)
+        when(b3).getConfPath(decode=ANY).thenReturn(self.temp_conf_folder)
         with logging_disabled():
             self.p.onLoadConfig()
             self.p.onStartup()
@@ -216,8 +216,8 @@ class Test_Config(ChatloggerTestCase):
 
     def test_default_config(self):
         # GIVEN
-        when(b3).getB3Path().thenReturn("c:\\b3_folder")
-        when(b3).getConfPath().thenReturn("c:\\b3_conf_folder")
+        when(b3).getB3Path(decode=ANY).thenReturn("c:\\b3_folder")
+        when(b3).getConfPath(decode=ANY).thenReturn("c:\\b3_conf_folder")
         # WHEN
         self.init()
         # THEN
