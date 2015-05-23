@@ -367,7 +367,7 @@ class Parser(object):
             self.config.getboolean('devmode', 'log2console')
 
         # make sure the logfile is writable
-        logfile = b3.getWritableFilePath(logfile)
+        logfile = b3.getWritableFilePath(logfile, True)
 
         try:
             logsize = b3.functions.getBytes(self.config.get('b3', 'logsize'))
@@ -379,7 +379,7 @@ class Parser(object):
 
         # save screen output to self.screen
         self.screen = sys.stdout
-        self.screen.write('Activating log   : %s\n' % os.path.abspath(b3.getAbsolutePath(logfile)))
+        self.screen.write('Activating log   : %s\n' % b3.getShortPath(os.path.abspath(b3.getAbsolutePath(logfile, True))))
         self.screen.flush()
 
         sys.stdout = b3.output.STDOutLogger(self.log)
@@ -494,13 +494,13 @@ class Parser(object):
 
                 if self.config.has_option('server', 'log_append'):
                     if not (self.config.getboolean('server', 'log_append') and os.path.isfile(f)):
-                        self.screen.write('Creating gamelog : %s\n' % f)
+                        self.screen.write('Creating gamelog : %s\n' % b3.getShortPath(os.path.abspath(f)))
                         ftptempfile = open(f, "w")
                         ftptempfile.close()
                     else:
-                        self.screen.write('Append to gamelog: %s\n' % f)
+                        self.screen.write('Append to gamelog: %s\n' % b3.getShortPath(os.path.abspath(f)))
                 else:
-                    self.screen.write('Creating gamelog : %s\n' % f)
+                    self.screen.write('Creating gamelog : %s\n' % b3.getShortPath(os.path.abspath(f)))
                     ftptempfile = open(f, "w")
                     ftptempfile.close()
                     
@@ -508,8 +508,8 @@ class Parser(object):
                 self.bot('Game log %s', game_log)
                 f = self.config.getpath('server', 'game_log')
 
-            self.bot('Starting bot reading file: %s', f)
-            self.screen.write('Using gamelog    : %s\n' % f)
+            self.bot('Starting bot reading file: %s', os.path.abspath(f))
+            self.screen.write('Using gamelog    : %s\n' % b3.getShortPath(os.path.abspath(f)))
 
             if os.path.isfile(f):
                 self.input = file(f, 'r')

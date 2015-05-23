@@ -32,6 +32,8 @@
 #                                   - added getWritableFilePath function: return a valid writable filepath
 # 2015/05/22 - 1.5      - Fenix     - allow system filepaths to be decoded using default filesystem encoding
 # 2015/05/23 - 1.5.1    - Fenix     - moved decoding feature into b3.functions
+#                                   - added getShortPath function: convert back an absolute path in its short form by
+#                                     adding back replaced tokens such as @b3, @conf, ~ (mainly used for clean logging)
 
 import os
 import re
@@ -183,6 +185,30 @@ def getWritableFilePath(filepath, decode=False):
     return filepath
 
 
+def getShortPath(filepath, decode=False, first_time=True):
+    """
+    Convert the given absolute path into a short path.
+    Will replace path string with proper tokens (such as @b3, @conf, ~, ...)
+    :param filepath: the path to convert
+    :param decode: if True will decode the path string using the default file system encoding before returning it
+    :param first_time: whether this is the first function call attempt or not
+    :return: string
+    """
+    # NOTE: make sure to have os.path.sep at the end otherwise also files starting with 'b3' will be matched
+    confpath = getAbsolutePath('@conf/', decode) + os.path.sep
+    if filepath.startswith(confpath):
+        return filepath.replace(confpath, '@conf' + os.path.sep)
+    b3path = getAbsolutePath('@b3/', decode) + os.path.sep
+    if filepath.startswith(b3path):
+        return filepath.replace(b3path, '@b3' + os.path.sep)
+    userpath = getAbsolutePath('~', decode) + os.path.sep
+    if filepath.startswith(userpath):
+        return filepath.replace(userpath, '~' + os.path.sep)
+    if first_time:
+        return getShortPath(filepath, not decode, False)
+    return filepath
+
+
 def start(configFile, nosetup=False, autorestart=False):
     """
     Main B3 startup.
@@ -190,16 +216,16 @@ def start(configFile, nosetup=False, autorestart=False):
     :param nosetup: Whether or not to run the B3 setup
     :param autorestart: If the bot is running in auto-restart mode
     """
-    configFile = getAbsolutePath(configFile)
+    configFile = getAbsolutePath(configFile, True)
     clearScreen()
 
     print 'Starting %s\n' % getB3versionString()
 
     conf = None
     if os.path.exists(configFile):
-        print 'Using config file: %s' % configFile
         global confdir
         confdir = os.path.dirname(configFile)
+        print 'Using config file: %s' % getShortPath(configFile, True)
         conf = config.MainConfig(config.load(configFile))
     else:
         # this happens when a config was entered on
