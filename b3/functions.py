@@ -48,6 +48,8 @@
 # 08/02/2015 - 1.18  - Fenix          - added escape function
 # 14/02/2015 - 1.19  - Fenix          - changed main_is_frozen() to work with cx_Freeze instead of py2exe
 # 09/03/2015 - 1.20  - Fenix          - added topological_sort() function: topological sort implementation
+# 23/05/2015 - 1.21  - Fenix          - added decode() function: decode a string using the system default encoding
+
 
 __author__    = 'ThorN, xlr8or, courgette'
 __version__   = '1.20'
@@ -63,6 +65,7 @@ import zipfile
 
 from hashlib import md5
 from b3.exceptions import ProgrammingError
+
 
 def getModule(name):
     """
@@ -259,6 +262,15 @@ def escape(text, esc):
     :return: string
     """
     return string.replace(text, esc, '\\%s' % esc)
+
+
+def decode(text):
+    """
+    Return a copy of text decoded using the default system encoding.
+    :param text: the text to decode
+    :return: string
+    """
+    return text.decode(sys.getfilesystemencoding())
 
 
 def levenshteinDistance(a, b):
