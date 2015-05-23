@@ -1663,7 +1663,7 @@ class SystemTrayIcon(QSystemTrayIcon):
         self.setIcon(QIcon(B3_ICON_SMALL))
         #### SHOW ACTION
         show = QAction('Show', self.parent())
-        show.triggered.connect(self.showMainWindow)
+        show.triggered.connect(self.parent().make_visible)
         show.setVisible(True)
         #### START ALL ACTION
         start = QAction('Start all', self.parent())
@@ -1694,16 +1694,7 @@ class SystemTrayIcon(QSystemTrayIcon):
         Handle the System Tray icon activation
         """
         if reason == QSystemTrayIcon.DoubleClick:
-            self.showMainWindow()
-
-    def showMainWindow(self):
-        """
-        Show the main Window making sure it's visible.
-        """
-        self.parent().setWindowState((self.parent().windowState() & ~Qt.WindowMinimized) | Qt.WindowActive)
-        self.parent().activateWindow()
-        self.parent().raise_()
-        self.parent().show()
+            self.parent().make_visible()
 
 
 class MainWindow(QMainWindow):
@@ -1765,6 +1756,15 @@ class MainWindow(QMainWindow):
                 if event.oldState() != Qt.WindowMinimized and self.isMinimized():
                     # make sure we do this only for minimize events
                     self.minimize_in_system_tray()
+
+    def make_visible(self):
+        """
+        Make sure that the main window is visible
+        """
+        self.setWindowState((self.windowState() & ~Qt.WindowMinimized) | Qt.WindowActive)
+        self.activateWindow()
+        self.raise_()
+        self.show()
 
     def minimize_in_system_tray(self):
         """
@@ -1871,6 +1871,7 @@ class B3App(QApplication):
         self.__init_home()
         self.__init_log()
         self.__init_storage()
+        self.__init_os_specific()
         self.__init_processes()
         self.__init_main_window()
         return self.main_window
@@ -1957,6 +1958,13 @@ class B3App(QApplication):
                     raise LOG.critical('could initialize SQLite database: %s (%s): make sure B3 has permissions to '
                                        'operate on this file, or remove it manually', B3_STORAGE, err)
 
+    def __init_os_specific(self):
+        """
+        Initialize OS specific features.
+        """
+        if b3.getPlatform() == 'darwin':
+            self.setQuitOnLastWindowClosed(False)
+
     def __init_processes(self):
         """
         Load available B3 processes from the database.
@@ -1984,6 +1992,24 @@ class B3App(QApplication):
         with open(B3_SQL, 'r') as schema:
             LOG.debug('initializing database schema')
             self.storage.executescript(schema.read())
+
+    ############################################## EVENT HANDLERS ######################################################
+
+    def event(self, event):
+        """
+        Handle global application events.
+        """
+        if b3.getPlatform() == 'darwin':
+            # when the dock icon is clicked make sure that the main window is visible
+            if event.type() == QEvent.ApplicationActivate and self.main_window:
+                self.main_window.make_visible()
+            elif event.type() == QEvent.Close:
+                event.ignore()
+                self.shutdown()
+
+        if event.isAccepted():
+            return QApplication.event(self, event)
+        return 0
 
     ############################################# ACTION HANDLERS ######################################################
 

@@ -30,3 +30,4 @@
 22/05/2015 - 0.9  - allow the user to terminate B3 application by closing the main window (only windows system)
                   - simulate application minimize into tray icon (windows only)
 23/05/2015 - 0.10 - make sure that the MainWindow is displayed and focused when restoring it from system tray
+                  - make sure to properly shutdown B3 when closing the application from OSX dock icon
