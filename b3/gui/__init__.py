@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'Fenix'
-__version__ = '0.9'
+__version__ = '0.10'
 
 import b3
 import bisect
@@ -1663,7 +1663,7 @@ class SystemTrayIcon(QSystemTrayIcon):
         self.setIcon(QIcon(B3_ICON_SMALL))
         #### SHOW ACTION
         show = QAction('Show', self.parent())
-        show.triggered.connect(self.parent().show)
+        show.triggered.connect(self.showMainWindow)
         show.setVisible(True)
         #### START ALL ACTION
         start = QAction('Start all', self.parent())
@@ -1694,9 +1694,16 @@ class SystemTrayIcon(QSystemTrayIcon):
         Handle the System Tray icon activation
         """
         if reason == QSystemTrayIcon.DoubleClick:
-            self.parent().setWindowState((self.parent().windowState() & ~Qt.WindowMinimized) | Qt.WindowActive)
-            self.parent().activateWindow()
-            self.parent().show()
+            self.showMainWindow()
+
+    def showMainWindow(self):
+        """
+        Show the main Window making sure it's visible.
+        """
+        self.parent().setWindowState((self.parent().windowState() & ~Qt.WindowMinimized) | Qt.WindowActive)
+        self.parent().activateWindow()
+        self.parent().raise_()
+        self.parent().show()
 
 
 class MainWindow(QMainWindow):
