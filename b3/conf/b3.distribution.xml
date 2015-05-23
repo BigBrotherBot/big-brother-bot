@@ -140,6 +140,7 @@
         <!-- <plugin name="location" config="@conf/plugin_location.ini" /> -->
         <!-- <plugin name="makeroom" config="@conf/plugin_makeroom.ini" /> -->
         <!-- <plugin name="netblocker" config="@conf/plugin_netblocker.ini" /> -->
+        <!-- <plugin name="nickreg" config="@conf/plugin_nickreg.ini" /> -->
         <!-- <plugin name="translator" config="@conf/plugin_translator.ini" /> -->
         <!-- <plugin name="xlrstats" config="@conf/plugin_xlrstats.ini" /> -->
 
