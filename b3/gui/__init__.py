@@ -842,6 +842,7 @@ class UpdateDialog(QDialog):
         class UpdateCheck(QThread):
 
             messagesignal = pyqtSignal(str)
+            windowtitlesignal = pyqtSignal(str)
 
             def run(self):
                 """
@@ -885,13 +886,16 @@ class UpdateDialog(QDialog):
                                     url = B3_WEBSITE
 
                                 self.messagesignal.emit('update available: <a href="%s">%s</a>' % (url, latestversion))
+                                self.windowtitlesignal.emit('B3 update available (%s)' % latestversion)
                                 LOG.info('update available: %s - %s', url, latestversion)
                             else:
                                 self.messagesignal.emit('no update available')
+                                self.windowtitlesignal.emit('B3 is up to date')
                                 LOG.info('no update available')
 
         self.updatecheckthread = UpdateCheck(self)
         self.updatecheckthread.messagesignal.connect(self.update_message)
+        self.updatecheckthread.windowtitlesignal.connect(self.update_window_title)
         self.updatecheckthread.finished.connect(self.finished)
         self.updatecheckthread.start()
 
@@ -901,6 +905,13 @@ class UpdateDialog(QDialog):
         Update the status message
         """
         self.message.setText(message)
+
+    @pyqtSlot(str)
+    def update_window_title(self, title):
+        """
+        Update the status message
+        """
+        self.setWindowTitle(title)
 
     def finished(self):
         """
@@ -1428,7 +1439,7 @@ class MainTable(QTableWidget):
             if not process.config.has_option('b3', 'logfile'):
                 raise Exception('missing b3::logfile option in %s configuration file' % process.name)
 
-            path = process.config.getpath('b3', 'logfile')
+            path = os.path.abspath(process.config.getpath('b3', 'logfile'))
             if not os.path.isfile(path):
                 message = '- missing: %s' % path
                 path = os.path.join(HOMEDIR, os.path.basename(path))
