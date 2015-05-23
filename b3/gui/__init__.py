@@ -1703,6 +1703,14 @@ class MainWindow(QMainWindow):
     """
     system_tray = None
     system_tray_minimized = False # this will be set to True after the first minimization
+    system_tray_balloon = {
+        'win32': "B3 will continue to run so that all your B3 processes will stay alive. "
+                 "If you really want to quit B3, right click this icon and select 'Quit'.",
+        'darwin': "B3 will continue to run so that all your B3 processes will stay alive. "
+                  "If you really want to quit B3, close the application using the Dock launcher.",
+        'linux': "B3 will continue to run so that all your B3 processes will stay alive. "
+                 "If you really want to quit B3, click the 'Quit' in the main window.",
+    }
 
     def __init__(self):
         """
@@ -1773,9 +1781,7 @@ class MainWindow(QMainWindow):
         self.hide()
         if not self.system_tray_minimized:
             self.system_tray_minimized = True
-            self.system_tray.showMessage("B3 is still running!",
-                                         "B3 will continue to run so that all your B3 processes will stay alive. "
-                                         "If you really want to quit right click this icon and select 'Quit'.",
+            self.system_tray.showMessage("B3 is still running!", self.system_tray_balloon[b3.getPlatform()],
                                          QSystemTrayIcon.Information, 20000)
 
     ############################################# ACTION HANDLERS  #####################################################
