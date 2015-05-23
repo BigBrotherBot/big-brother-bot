@@ -550,6 +550,7 @@ setup(
         '../b3_debug.py',
         '../b3_run.py',
         '../scripts/*.*',
+        '../examples/*.*',
     ]
     },
     entry_points={
@@ -613,13 +614,14 @@ setup(
                 ('b3/conf', 'conf'),
                 ('b3/conf/templates', 'conf/templates'),
                 ('b3/conf/templates/autodoc', 'conf/templates/autodoc'),
-                ('b3/extplugins/', 'extplugins/'),
+                ('b3/extplugins/', 'extplugins'),
                 ('b3/gui/assets', 'gui/assets'),
                 ('b3/plugins/', 'plugins/'),
                 ('b3/sql', 'sql'),
                 ('b3/sql/mysql', 'sql/mysql'),
                 ('b3/sql/postgresql', 'sql/postgresql'),
                 ('b3/sql/sqlite', 'sql/sqlite'),
+                ('examples', 'examples'),
             ],
         }
     },
