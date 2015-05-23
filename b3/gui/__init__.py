@@ -342,14 +342,14 @@ class B3(QProcess):
         otherwise the Frozen executable) handing over necessary startup parameters.
         """
         if not main_is_frozen():
-            program = 'python %s --config %s --console' % (os.path.join(b3.getB3Path(), '..', 'b3_run.py'), self.config_path)
+            program = 'python %s --config %s --console' % (os.path.join(b3.getB3Path(True), '..', 'b3_run.py'), self.config_path)
         else:
             if b3.getPlatform() == 'darwin':
                 # treat osx separately since the command line terms need some extra quotes
-                program = '"%s" --config "%s" --console' % (os.path.join(b3.getB3Path(), 'b3_run'), self.config_path)
+                program = '"%s" --config "%s" --console' % (os.path.join(b3.getB3Path(True), 'b3_run'), self.config_path)
             else:
                 executable = 'b3_run.exe' if b3.getPlatform() == 'win32' else 'b3_run.x86'
-                program = '%s --config %s --console' % (os.path.join(b3.getB3Path(), executable), self.config_path)
+                program = '%s --config %s --console' % (os.path.join(b3.getB3Path(True), executable), self.config_path)
 
         LOG.info('starting %s process: %s', self.name, program)
 
