@@ -65,9 +65,15 @@ class NickregPlugin(b3.plugin.Plugin):
         except (b3.config.NoOptionError, ValueError):
             self.warning('no or bad value for settings::max_nicks : using default (%s)' % self.max_nicks)
 
+        try:
+            self.interval = self.config.getint('settings', 'interval')
+        except (b3.config.NoOptionError, ValueError):
+            self.warning('no or bad value for settings::interval : using default (%s)' % self.interval)
+
         self.debug('settings::min_level = %s' % self.min_level)
         self.debug('settings::min_level_global_manage = %s' % self.min_level_global_manage)
         self.debug('settings::maxnicks = %s' % self.max_nicks)
+        self.debug('settings::interval = %ss' % self.interval)
 
     def onStartup(self):
         """
