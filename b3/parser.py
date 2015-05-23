@@ -1360,7 +1360,7 @@ class Parser(object):
 
     def queueEvent(self, event, expire=10):
         """
-        Queue an event for processing.
+        QueEvents.gevent for processing.
         """
         if not hasattr(event, 'type'):
             return False
