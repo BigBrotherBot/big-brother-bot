@@ -21,6 +21,7 @@
 # 26/12/2014 - Fenix - moved into separate module
 # 05/01/2015 - Fenix - added truncateTable() method: empty a database table (or multiple tables) and reset identity
 # 18/05/2015 - Fenix - make use of b3.getWritableFilePath when computing sqlite database file path
+# 23/05/2015 - Fenix - print in console SQLite connection initialization status
 
 import b3
 import os
@@ -51,16 +52,30 @@ class SqliteStorage(DatabaseStorage):
         Will store the connection object also in the 'db' attribute so in the future we can reuse it.
         :return The connection instance if established successfully, otherwise None.
         """
-        import sqlite3
-        path = b3.getWritableFilePath(self.dsn[9:])
-        self.console.bot("Using database file: %s" % path)
-        is_new_database = not os.path.isfile(path)
-        self.db = sqlite3.connect(path, check_same_thread=False)
-        self.db.isolation_level = None  # set autocommit mode
-        if path == ':memory:' or is_new_database:
-            self.console.info("Importing SQL file: %s..." % b3.getAbsolutePath("@b3/sql/sqlite/b3.sql"))
-            self.queryFromFile("@b3/sql/sqlite/b3.sql")
-        return self.db
+        try:
+            import sqlite3
+            path = b3.getWritableFilePath(self.dsn[9:])
+            self.console.bot("Using database file: %s" % path)
+            is_new_database = not os.path.isfile(path)
+            self.db = sqlite3.connect(path, check_same_thread=False)
+            self.db.isolation_level = None  # set autocommit mode
+        except Exception, e:
+            self.db = None
+            self.console.error('Database connection failed: %s', e)
+            if self._consoleNotice:
+                self.console.screen.write('Connecting to DB : FAILED\n')
+                self._consoleNotice = False
+        else:
+            # import SQL script if necessary
+            if path == ':memory:' or is_new_database:
+                self.console.info("Importing SQL file: %s..." % b3.getAbsolutePath("@b3/sql/sqlite/b3.sql"))
+                self.queryFromFile("@b3/sql/sqlite/b3.sql")
+
+            if self._consoleNotice:
+                self.console.screen.write('Connecting to DB : OK\n')
+                self._consoleNotice = False
+        finally:
+            return self.db
 
     def getConnection(self):
         """
