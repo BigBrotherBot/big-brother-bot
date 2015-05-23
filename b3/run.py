@@ -140,13 +140,13 @@ def run(config=None, nosetup=False, autorestart=False):
     :param autorestart: Whether to run B3 in autorestart mode or not
     """
     if config:
-        config = b3.getAbsolutePath(config)
+        config = b3.getAbsolutePath(config, True)
     else:
         for p in ('b3.%s', 'conf/b3.%s', 'b3/conf/b3.%s',
                   os.path.join(HOMEDIR, 'b3.%s'), os.path.join(HOMEDIR, 'conf', 'b3.%s'),
                   os.path.join(HOMEDIR, 'b3', 'conf', 'b3.%s'), '@b3/conf/b3.%s'):
             for e in ('ini', 'cfg', 'xml'):
-                path = b3.getAbsolutePath(p % e)
+                path = b3.getAbsolutePath(p % e, True)
                 print 'Searching for config file: %s' % path
                 if os.path.isfile(path):
                     config = path

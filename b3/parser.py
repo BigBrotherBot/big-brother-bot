@@ -480,7 +480,7 @@ class Parser(object):
             game_log = self.config.get('server', 'game_log')
             if game_log[0:6] == 'ftp://' or game_log[0:7] == 'sftp://' or game_log[0:7] == 'http://':
                 self.remoteLog = True
-                self.bot('Working in remote-log mode : %s' % game_log)
+                self.bot('Working in remote-log mode: %s' % game_log)
                 
                 if self.config.has_option('server', 'local_game_log'):
                     f = self.config.getpath('server', 'local_game_log')
@@ -505,7 +505,7 @@ class Parser(object):
                     ftptempfile.close()
                     
             else:
-                self.bot('Game log %s', game_log)
+                self.bot('Game log is: %s', game_log)
                 f = self.config.getpath('server', 'game_log')
 
             self.bot('Starting bot reading file: %s', os.path.abspath(f))
@@ -520,14 +520,15 @@ class Parser(object):
                 else:
                     self.input.seek(0, os.SEEK_END)
             else:
-                self.error('Error reading file: %s', f)
-                raise SystemExit('ERROR reading file %s\n' % f)
+                self.screen.write(">>> Cannot read file: %s" % os.path.abspath(f))
+                self.screen.flush()
+                self.critical("Cannot read file: %s", os.path.abspath(f))
 
         try:
             # setup rcon
             self.output = self.OutputClass(self, (self._rconIp, self._rconPort), self._rconPassword)
         except Exception, err:
-            self.screen.write(">>> Cannot setup RCON. %s" % err)
+            self.screen.write(">>> Cannot setup RCON: %s" % err)
             self.screen.flush()
             self.critical("Cannot setup RCON: %s" % err, exc_info=err)
         
@@ -748,7 +749,7 @@ class Parser(object):
         # reload main config
         self.config.load(self.config.fileName)
         for k in self._plugins:
-            self.bot('Reload plugin config for %s', k)
+            self.bot('Reload configuration file for plugin %s', k)
             self._plugins[k].loadConfig()
         self.updateDocumentation()
 
@@ -945,7 +946,7 @@ class Parser(object):
             plugin_conf_path = '--' if plugin_data.conf is None else plugin_data.conf.fileName
 
             try:
-                self.bot('Loading plugin #%s %s [%s]', plugin_num, plugin_data.name, plugin_conf_path)
+                self.bot('Loading plugin #%s : %s [%s]', plugin_num, plugin_data.name, plugin_conf_path)
                 self._plugins[plugin_data.name] = plugin_data.clazz(self, plugin_data.conf)
             except Exception, err:
                 self.error('Could not load plugin %s' % plugin_data.name, exc_info=err)
@@ -984,7 +985,7 @@ class Parser(object):
             :param plugin_name: The name of the plugin to load
             """
             try:
-                console.bot('Loading plugin %s', plugin_name)
+                console.bot('Loading plugin : %s', plugin_name)
                 plugin_module = console.pluginImport(plugin_name)
                 console._plugins[plugin_name] = getattr(plugin_module, '%sPlugin' % plugin_name.title())(console)
                 version = getattr(plugin_module, '__version__', 'Unknown Version')
@@ -1082,7 +1083,7 @@ class Parser(object):
         for plugin_name in self._plugins:
 
             try:
-                self.bot('Starting plugin #%s %s' % (plugin_num, plugin_name))
+                self.bot('Starting plugin #%s : %s' % (plugin_num, plugin_name))
                 start_plugin(self, plugin_name)
             except Exception, err:
                 self.error("Could not start plugin %s" % plugin_name, exc_info=err)
@@ -1333,7 +1334,7 @@ class Parser(object):
         """
         Register an event handler.
         """
-        self.debug('%s: register event <%s>', event_handler.__class__.__name__, self.Events.getName(event_name))
+        self.debug('%s: register event <%s>', event_handler.__class__.__name__, self.getEventName(event_name))
         if not event_name in self._handlers:
             self._handlers[event_name] = []
         if event_handler not in self._handlers[event_name]:
@@ -1345,7 +1346,7 @@ class Parser(object):
         """
         for event_name in self._handlers:
             if event_handler in self._handlers[event_name]:
-                self.debug('%s: unregister event <%s>', event_handler.__class__.__name__, self.Events.getName(event_name))
+                self.debug('%s: unregister event <%s>', event_handler.__class__.__name__, self.getEventName(event_name))
                 self._handlers[event_name].remove(event_handler)
 
     def queueEvent(self, event, expire=10):
@@ -1355,7 +1356,7 @@ class Parser(object):
         if not hasattr(event, 'type'):
             return False
         elif event.type in self._handlers:  # queue only if there are handlers to listen for this event
-            self.verbose('Queueing event %s : %s', self.Events.getName(event.type), event.data)
+            self.verbose('Queueing event %s : %s', self.getEventName(event.type), event.data)
             try:
                 time.sleep(0.001)  # wait a bit so event doesnt get jumbled
                 self.queue.put((self.time(), self.time() + expire, event), True, 2)
@@ -1375,7 +1376,7 @@ class Parser(object):
             if event.type == self.getEventID('EVT_EXIT') or event.type == self.getEventID('EVT_STOP'):
                 self.working = False
 
-            event_name = self.Events.getName(event.type)
+            event_name = self.getEventName(event.type)
             self._eventsStats.add_event_wait((self.time() - added)*1000)
             if self.time() >= expire:  # events can only sit in the queue until expire time
                 self.error('**** Event sat in queue too long: %s %s', event_name, self.time() - expire)
@@ -1403,7 +1404,7 @@ class Parser(object):
                                    event_name, msg.__class__.__name__, msg, extract_tb(sys.exc_info()[2]))
                     finally:
                         elapsed = time.clock() - timer_plugin_begin
-                        self._eventsStats.add_event_handled(hfunc.__class__.__name__, event_name, elapsed*1000)
+                        self._eventsStats.add_event_handled(hfunc.__class__.__name__, event_name, elapsed * 1000)
                     
         self.bot('Shutting down event handler')
 
@@ -1450,8 +1451,7 @@ class Parser(object):
         """
         if not hasattr(self, 'input'):
             self.critical("Cannot read game log file: check that you have a correct "
-                          "value for the 'game_log' setting in your main config file.")
-            raise SystemExit(220)
+                          "value for the 'game_log' setting in your main config file")
 
         # Getting the stats of the game log (we are looking for the size)
         filestats = os.fstat(self.input.fileno())
@@ -1479,7 +1479,7 @@ class Parser(object):
                 if self._cron:
                     self._cron.stop()
 
-                self.bot('Shutting down database connections...')
+                self.bot('Shutting down database connection')
                 self.storage.shutdown()
         except Exception, e:
             self.error(e)
@@ -1497,7 +1497,7 @@ class Parser(object):
 
             pidpath = os.path.join(b3.getAbsolutePath('@b3/'), '..', 'scripts', 'pid', '%s.pid' % b3_name)
             if os.path.isfile(pidpath):
-                self.bot('Found PID file : %s : attempt to remove it...' % pidpath)
+                self.bot('Found PID file : %s : attempt to remove it' % pidpath)
                 try:
                     os.unlink(pidpath)
                 except Exception, e:
@@ -1642,8 +1642,8 @@ class Parser(object):
 
     ####################################################################################################################
     #                                                                                                                  #
-    #      INHERITING CLASSES MUST IMPLEMENTS THE FOLLOWING METHODS                                                    #
-    #      PLUGINS THAT ARE GAME INDEPENDANT ASSUME THOSE METHODS EXIST                                                #
+    #   INHERITING CLASSES MUST IMPLEMENTS THE FOLLOWING METHODS                                                       #
+    #   PLUGINS THAT ARE GAME INDEPENDANT ASSUME THOSE METHODS EXIST                                                   #
     #                                                                                                                  #
     ####################################################################################################################
 

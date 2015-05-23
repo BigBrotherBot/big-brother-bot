@@ -196,18 +196,18 @@ class Plugin:
         self.bot('saving config %s', self.config.fileName)
         return self.config.save()
 
-    def registerEventHook(self, name, hook):
+    def registerEventHook(self, event_id, hook):
         """
         Register an event hook which will be used to
         dispatch a specific event once it reaches our plugin.
         NOTE: This should be only called internally by registerEvent().
-        :param name: The event name
-        :param hook: The event hook
+        :param event_id: The event id
+        :param hook: The reference to the method that will handle the event
         """
-        readable_name = self.eventmanager.getName(name)
-        if name not in self.events:
+        event_name = self.console.getEventName(event_id)
+        if event_id not in self.events:
              # make sure the event we are going to map has been registered already
-             raise AssertionError('%s is not an event registered for plugin %s' % (readable_name, self.__class__.__name__))
+             raise AssertionError('%s is not an event registered for plugin %s' % (event_name, self.__class__.__name__))
 
         hook = getattr(self, hook.__name__, None)
         if not callable(hook):
@@ -215,36 +215,37 @@ class Plugin:
             raise AttributeError('%s is not a valid method of class %s' % (hook.__name__, self.__class__.__name__))
 
         # if it's the first time we are mapping
-        if not name in self.eventmap.keys():
-            self.eventmap[name] = []
+        if not event_id in self.eventmap:
+            self.eventmap[event_id] = []
 
         # create the mapping
-        if hook not in self.eventmap[name]:
-            self.eventmap[name].append(hook)
-        self.debug('created event mapping: <%s:%s>' % (readable_name, hook.__name__))
+        if hook not in self.eventmap[event_id]:
+            self.eventmap[event_id].append(hook)
+        self.debug('created event mapping: <%s:%s>' % (event_name, hook.__name__))
 
     def registerEvent(self, name, *args):
         """
         Register an event for later processing.
-        :param name: The event name
+        :param name: The event key or id
         :param args: An optional list of event handlers
         """
-        # if we are given the event key, get the event id instead: this will return
-        # the event id even if we supplied it as input parameter
-        name = self.console.getEventID(name)
-        self.events.append(name)
-        self.console.registerHandler(name, self)
+        # if we are given the event key, get the event id instead: this will
+        # return the event id even if we supplied it as input parameter
+        event_id = self.console.getEventID(name)
+        event_name = self.console.getEventName(event_id)
+        self.events.append(event_id)
+        self.console.registerHandler(event_id, self)
         if len(args) > 0:
             for hook in args:
                 try:
-                    self.registerEventHook(name, hook)
+                    self.registerEventHook(event_id, hook)
                 except (AssertionError, AttributeError), e:
-                    self.error('could not register event hook: %s' % e)
+                    self.error('could not create mapping for event %s: %s' % (event_name, e))
         else:
             try:
-                self.registerEventHook(name, self.onEvent)
+                self.registerEventHook(event_id, self.onEvent)
             except (AssertionError, AttributeError), e:
-                self.error('could not register event hook: %s' % e)
+                self.error('could not create mapping for event %s: %s' % (event_name, e))
 
     def createEvent(self, key, name):
         """
@@ -270,7 +271,7 @@ class Plugin:
             try:
                 func(event)
             except TypeError, e:
-                self.error('could not parse event %s: %s' % (event.type, e))
+                self.error('could not parse event %s: %s' % (self.console.getEventName(event.type), e))
 
         if event.type == self.console.getEventID('EVT_EXIT') or \
             event.type == self.console.getEventID('EVT_STOP'):

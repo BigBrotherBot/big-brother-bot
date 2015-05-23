@@ -202,4 +202,4 @@ class Singleton(object):
             return self._instance
 
     def __call__(self):
-        raise ProgrammingError('Singletons must be accessed through `instance()`.')
+        raise ProgrammingError('Singletons must be accessed through `Instance()`.')
