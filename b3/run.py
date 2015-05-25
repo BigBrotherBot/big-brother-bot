@@ -186,7 +186,7 @@ def run_gui(options):
     :param options: command line options
     """
     from b3.gui import B3App
-    from b3.gui import SplashScreen
+    from b3.gui.misc import SplashScreen
     from PyQt5.QtWidgets import QMessageBox
 
     if options.console:
