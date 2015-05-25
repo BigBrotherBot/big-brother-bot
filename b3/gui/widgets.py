@@ -68,15 +68,15 @@ class MainTable(QTableWidget):
         """
         self.setFixedSize(500, 280)
         self.setStyleSheet("""
+        QWidget {
+            background: #FFFFFF;
+            border: 0;
+        }
         QTableWidget {
             background: #FFFFFF;
             border: 1px solid #B7B7B7;
             color: #484848;
         }
-        QWidget {
-            background: #FFFFFF;
-            border: 0;
-          }
         """)
         self.setShowGrid(False)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
