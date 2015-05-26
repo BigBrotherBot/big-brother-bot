@@ -110,18 +110,7 @@ class BusyProgressBar(QProgressBar):
         :param parent: the parent widget
         """
         QProgressBar.__init__(self, parent)
-        self.setFixedSize(240, 20)
-        self.setStyleSheet("""
-        QProgressBar {
-            border: 1px solid #484848;
-            border-radius: 0;
-            background: #484848;
-        }
-        QProgressBar::chunk {
-            background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, stop: 0 #484848, stop: 1 #F2F2F2);
-            width: 100px;
-        }
-        """)
+        self.setFixedSize(300, 20)
 
     def start(self):
         """
@@ -137,17 +126,20 @@ class BusyProgressBar(QProgressBar):
         self.setRange(0, 100)
         self.setValue(100)
         self.setTextVisible(False)
-        self.setStyleSheet("""
-        QProgressBar {
-            border: 1px solid #484848;
-            border-radius: 0;
-            background: #484848;
-        }
-        QProgressBar::chunk {
-            background: #484848;
-            width: 100px;
-        }
-        """)
+
+
+class ProgressBar(QProgressBar):
+    """
+    This class implements a progress bar.
+    """
+    def __init__(self, parent=None):
+        """
+        Initialize the progress bar.
+        :param parent: the parent widget
+        """
+        QProgressBar.__init__(self, parent)
+        self.setFixedSize(300, 20)
+        self.setTextVisible(False)
 
 
 class STDOutText(QTextEdit):

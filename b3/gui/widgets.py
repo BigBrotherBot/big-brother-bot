@@ -536,9 +536,16 @@ class MainWindow(QMainWindow):
         update = UpdateCheckDialog(self.centralWidget())
         update.show()
 
+    def update_database(self):
+        """
+        Display the 'database update' dialog
+        """
+        self.show()
+        update = UpdateDatabaseDialog(self.centralWidget())
+        update.show()
 
 from b3.gui import B3App, RE_COLOR, CONFIG_READY, CONFIG_FOUND, ICON_DEL, ICON_REFRESH, ICON_CONSOLE, ICON_LOG
 from b3.gui import ICON_STOP, ICON_START, CONFIG_VALID, B3_BANNER, B3_TITLE, B3
-from b3.gui.dialogs import PluginInstallDialog, UpdateCheckDialog, AboutDialog
+from b3.gui.dialogs import AboutDialog, PluginInstallDialog, UpdateCheckDialog, UpdateDatabaseDialog
 from b3.gui.misc import Button, IconButton, StatusBar
 from b3.gui.system import MainMenuBar, SystemTrayIcon

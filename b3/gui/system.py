@@ -84,10 +84,15 @@ class MainMenuBar(QMenuBar):
         plugin_repository = QAction('Plugins Repository', self.parent())
         plugin_repository.setStatusTip('Browse all the available B3 plugins')
         plugin_repository.triggered.connect(lambda: webbrowser.open(B3_PLUGIN_REPOSITORY))
+        #### UPDATE B3 DATABASE ENTRY
+        update_database = QAction('Update B3 Database', self.parent())
+        update_database.setStatusTip('Update all your B3 databases to the latest version')
+        update_database.triggered.connect(self.parent().update_database)
         ## TOOLS MENU ENTRY
         tools_menu = self.addMenu('&Tools')
         tools_menu.addAction(update_check)
         tools_menu.addAction(plugin_repository)
+        tools_menu.addAction(update_database)
 
     def __init_menu_help(self):
         """

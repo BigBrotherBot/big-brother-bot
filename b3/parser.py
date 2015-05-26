@@ -1783,34 +1783,35 @@ class StubParser(object):
 
     screen = sys.stdout
 
-    @staticmethod
+    def __init__(self):
+
+        class StubSTDOut(object):
+            def write(self, *args, **kwargs):
+                pass
+
+        if not main_is_frozen():
+            self.screen = StubSTDOut()
+
     def bot(self, msg, *args, **kwargs):
         pass
 
-    @staticmethod
     def info(self, msg, *args, **kwargs):
         pass
 
-    @staticmethod
     def debug(self, msg, *args, **kwargs):
         pass
 
-    @staticmethod
     def error(self, msg, *args, **kwargs):
         pass
 
-    @staticmethod
     def warning(self, msg, *args, **kwargs):
         pass
 
-    @staticmethod
     def verbose(self, msg, *args, **kwargs):
         pass
 
-    @staticmethod
     def verbose2(self, msg, *args, **kwargs):
         pass
 
-    @staticmethod
-    def critical(msg, *args, **kwargs):
-        raise SystemExit(msg)
+    def critical(self, msg, *args, **kwargs):
+        pass
