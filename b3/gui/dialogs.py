@@ -341,7 +341,7 @@ class UpdateDatabaseDialog(QDialog):
         """
         self.setWindowTitle('B3 database update')
         self.setWindowFlags(Qt.WindowTitleHint | Qt.Dialog | Qt.WindowMaximizeButtonHint | Qt.CustomizeWindowHint)
-        self.setFixedSize(420, 140)
+        self.setFixedSize(420, 160)
         self.setStyleSheet("""
         QDialog {
             background: #F2F2F2;
@@ -363,8 +363,8 @@ class UpdateDatabaseDialog(QDialog):
         self.progress.setValue(-1)
         ## INIT DISPLAY MESSAGE
         self.message = QLabel("This tool will updated all your B3 databases to version %s.\n"
-                              "The update process should take less than 2 minutes and cannot\n"
-                              "be interrupted." % b3.__version__, self)
+                              "The update process should take less than 2 minutes and\n"
+                              "cannot be interrupted." % b3.__version__, self)
 
         def __get_top_layout(parent):
             parent.layout1 = QVBoxLayout()

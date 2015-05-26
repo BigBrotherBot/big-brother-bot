@@ -542,8 +542,22 @@ class MainWindow(QMainWindow):
         Display the 'database update' dialog
         """
         self.show()
-        update = UpdateDatabaseDialog(self.centralWidget())
-        update.show()
+
+        is_something_running = False
+        for x in B3App.Instance().processes:
+            if x.state() == QProcess.Running:
+                is_something_running = True
+                break
+
+        if is_something_running:
+            msgbox = QMessageBox()
+            msgbox.setIcon(QMessageBox.Information)
+            msgbox.setText('Some B3 processes are still running: you need to terminate them to update B3 database.')
+            msgbox.setStandardButtons(QMessageBox.Ok)
+            msgbox.exec_()
+        else:
+            update = UpdateDatabaseDialog(self.centralWidget())
+            update.show()
 
 from b3.gui import B3App, RE_COLOR, CONFIG_READY, CONFIG_FOUND, ICON_DEL, ICON_REFRESH, ICON_CONSOLE, ICON_LOG
 from b3.gui import ICON_STOP, ICON_START, CONFIG_VALID, B3_BANNER, B3
