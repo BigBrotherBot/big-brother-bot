@@ -24,6 +24,7 @@ PROTOCOLS = ('mysql', 'sqlite', 'postgresql')
 class Storage(object):
 
     console = None
+    protocol = None
 
     def connect(self):
         raise NotImplementedError
