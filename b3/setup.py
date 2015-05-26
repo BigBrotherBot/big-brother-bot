@@ -79,6 +79,7 @@ import platform
 import sys
 import time
 
+from b3.fake import StubConsole
 from b3.storage import PROTOCOLS as DB_PROTOCOLS
 from config import CfgConfigParser
 from distutils import version
@@ -1067,42 +1068,3 @@ class Update(Setup):
             raise SystemExit()
         else:
             raise SystemExit('Update finished: restart B3 to continue')
-
-
-class StubConsole(object):
-    """
-    This class is needed to we can make use of the storage module which usually accepts a console in input.
-    Since the console object is being used just for logging facilities, we'll create a stub one which fakes log methods
-    """
-    @staticmethod
-    def bot(self, msg, *args, **kwargs):
-        pass
-
-    @staticmethod
-    def info(self, msg, *args, **kwargs):
-        pass
-
-    @staticmethod
-    def debug(self, msg, *args, **kwargs):
-        pass
-
-    @staticmethod
-    def error(self, msg, *args, **kwargs):
-        pass
-
-    @staticmethod
-    def warning(self, msg, *args, **kwargs):
-        pass
-
-    @staticmethod
-    def verbose(self, msg, *args, **kwargs):
-        pass
-
-    @staticmethod
-    def verbose2(self, msg, *args, **kwargs):
-        pass
-
-    @staticmethod
-    def critical(msg, *args, **kwargs):
-        raise SystemExit(msg)
-
