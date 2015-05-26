@@ -34,6 +34,7 @@
 # 2015/05/23 - 1.5.1    - Fenix     - moved decoding feature into b3.functions
 #                                   - added getShortPath function: convert back an absolute path in its short form by
 #                                     adding back replaced tokens such as @b3, @conf, ~ (mainly used for clean logging)
+# 2015/05/26 - 1.6      - Fenix     - rearrange constants and functions declarations to solve some import issues
 
 import os
 import re
@@ -42,12 +43,7 @@ import pkg_handler
 import traceback
 import time
 import signal
-import config
 
-from b3.functions import decode as decode_
-from b3.functions import main_is_frozen
-from b3.update import checkUpdate
-from b3.setup import Setup
 from tempfile import TemporaryFile
 from ConfigParser import NoOptionError
 from ConfigParser import NoSectionError
@@ -80,47 +76,6 @@ STATE_UNKNOWN = 3
 HOMEDIR = os.path.normpath(os.path.expanduser('~/BigBrotherBot')).decode(sys.getfilesystemencoding())
 if not os.path.isdir(HOMEDIR):
     os.mkdir(HOMEDIR)
-
-
-def loadParser(pname, configFile, nosetup=False):
-    """
-    Load the parser module given it's name.
-    :param pname: The parser name
-    :param configFile: The parser configuration file
-    :param nosetup: Whether or not to run the B3 setup
-    :return The parser module
-    """
-    if pname == 'changeme':
-        if nosetup:
-            raise SystemExit('ERROR: configuration file not setup properly: please run B3 with option: --setup or -s')
-        Setup(configFile)
-    name = 'b3.parsers.%s' % pname
-    mod = __import__(name)
-    components = name.split('.')
-    components.append('%sParser' % pname.title())
-    for comp in components[1:]:
-        mod = getattr(mod, comp)
-    return mod
-
-
-def getPlatform():
-    """
-    Return the current platform name.
-    :return: win32, darwin, linux
-    """
-    if sys.platform not in ('win32', 'darwin'):
-        return 'linux'
-    return sys.platform
-
-
-def getB3versionString():
-    """
-    Return the B3 version as a string.
-    """
-    sversion = re.sub(r'\^[0-9a-z]', '', version)
-    if main_is_frozen():
-        sversion = "%s [%s standalone]" % (sversion, getPlatform())
-    return sversion
 
 
 def getB3Path(decode=False):
@@ -161,6 +116,16 @@ def getAbsolutePath(path, decode=False):
     if not decode:
         return os.path.normpath(os.path.expanduser(path))
     return decode_(os.path.normpath(os.path.expanduser(path)))
+
+
+def getB3versionString():
+    """
+    Return the B3 version as a string.
+    """
+    sversion = re.sub(r'\^[0-9a-z]', '', version)
+    if main_is_frozen():
+        sversion = "%s [%s standalone]" % (sversion, getPlatform())
+    return sversion
 
 
 def getWritableFilePath(filepath, decode=False):
@@ -209,6 +174,37 @@ def getShortPath(filepath, decode=False, first_time=True):
     return filepath
 
 
+def loadParser(pname, configFile, nosetup=False):
+    """
+    Load the parser module given it's name.
+    :param pname: The parser name
+    :param configFile: The parser configuration file
+    :param nosetup: Whether or not to run the B3 setup
+    :return The parser module
+    """
+    if pname == 'changeme':
+        if nosetup:
+            raise SystemExit('ERROR: configuration file not setup properly: please run B3 with option: --setup or -s')
+        Setup(configFile)
+    name = 'b3.parsers.%s' % pname
+    mod = __import__(name)
+    components = name.split('.')
+    components.append('%sParser' % pname.title())
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    return mod
+
+
+def getPlatform():
+    """
+    Return the current platform name.
+    :return: win32, darwin, linux
+    """
+    if sys.platform not in ('win32', 'darwin'):
+        return 'linux'
+    return sys.platform
+
+
 def start(configFile, nosetup=False, autorestart=False):
     """
     Main B3 startup.
@@ -223,6 +219,7 @@ def start(configFile, nosetup=False, autorestart=False):
 
     conf = None
     if os.path.exists(configFile):
+        import config
         global confdir
         confdir = os.path.dirname(configFile)
         print 'Using config file: %s' % getShortPath(configFile, True)
@@ -313,3 +310,9 @@ def clearScreen():
         os.system('cls')
     else:
         os.system('clear')
+
+
+from b3.functions import decode as decode_
+from b3.functions import main_is_frozen
+from b3.update import checkUpdate
+from b3.setup import Setup
