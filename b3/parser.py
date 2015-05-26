@@ -18,6 +18,8 @@
 #
 # CHANGELOG
 #
+# 2015/05/26 - 1.43.1 - Fenix           - added StubParser class: can be used when the storage module needs to be
+#                                         initilized without a running B3 console (fakes logging and sys.stdout)
 # 2015/05/15 - 1.43   - Fenix           - fixed formatTime not converting timestamp according to timezone offset
 # 2015/05/04 - 1.42.9 - Fenix           - removed reply mode: it's messing up GUI and it's needed only to debug cod4
 #                                       - make sure that the logfile path is actually writable by B3, else it crashes
@@ -1772,3 +1774,43 @@ class Parser(object):
         /!\ This method must return True if the penalty was inflicted.
         """
         pass
+
+
+class StubParser(object):
+    """
+    Parser implementation used when dealing with the Storage module while updating B3 database.
+    """
+
+    screen = sys.stdout
+
+    @staticmethod
+    def bot(self, msg, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def info(self, msg, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def debug(self, msg, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def error(self, msg, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def warning(self, msg, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def verbose(self, msg, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def verbose2(self, msg, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def critical(msg, *args, **kwargs):
+        raise SystemExit(msg)

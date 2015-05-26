@@ -40,7 +40,6 @@
 # 1.16 - 2015/01/29 - make use of the new b3.config.MainConfig class
 # 1.17 - 2015/02/07 - update write method to accept a socketTimeout=None parameter
 # 1.18 - 2015/03/19 - removed deprecated usage of dict.has_key (us 'in dict' instead)
-# 1.19 - 2015/05/26 - moved StubConsole from b3.setup
 
 """
 This module make plugin testing simple. It provides you
@@ -48,7 +47,7 @@ with fakeConsole and joe which can be used to say commands
 as if it where a player.
 """
 
-__version__ = '1.19'
+__version__ = '1.18'
 
 import b3.events
 import b3.output
@@ -398,47 +397,8 @@ class FakeClient(b3.clients.Client):
         print "\n%s trigger event %s" % (self.name, type)
         self.console.queueEvent(b3.events.Event(type, data, self, target))
 
+
 #####################################################################################
-
-
-class StubConsole(object):
-    """
-    Console implementation used when dealing with the Storage module while updating B3 database.
-    """
-
-    screen = sys.stdout
-
-    @staticmethod
-    def bot(self, msg, *args, **kwargs):
-        pass
-
-    @staticmethod
-    def info(self, msg, *args, **kwargs):
-        pass
-
-    @staticmethod
-    def debug(self, msg, *args, **kwargs):
-        pass
-
-    @staticmethod
-    def error(self, msg, *args, **kwargs):
-        pass
-
-    @staticmethod
-    def warning(self, msg, *args, **kwargs):
-        pass
-
-    @staticmethod
-    def verbose(self, msg, *args, **kwargs):
-        pass
-
-    @staticmethod
-    def verbose2(self, msg, *args, **kwargs):
-        pass
-
-    @staticmethod
-    def critical(msg, *args, **kwargs):
-        raise SystemExit(msg)
 
 
 print "creating fakeConsole with @b3/conf/b3.distribution.ini"

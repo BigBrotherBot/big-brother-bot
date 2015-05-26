@@ -67,10 +67,7 @@
 # This section is DoxuGen information. More information on how to comment your code
 # is available at http://wiki.bigbrotherbot.net/doku.php/customize:doxygen_rules
 
-# FIXME: UGLY HACK WHICH LET US USE THE STORAGE MODULE SHIPPED WITH B3 INSTEAD OF ADDING DUPLICATED CODE
 import b3
-b3.TEAM_UNKNOWN = -1
-
 import storage
 import functions
 import os
@@ -79,7 +76,7 @@ import platform
 import sys
 import time
 
-from b3.fake import StubConsole
+from b3.parser import StubParser
 from b3.storage import PROTOCOLS as DB_PROTOCOLS
 from config import CfgConfigParser
 from distutils import version
@@ -988,7 +985,7 @@ class Update(Setup):
 
         dsn = cfg.get('b3', 'database')
         dsndict = splitDSN(dsn)
-        database = storage.getStorage(dsn, dsndict, StubConsole())
+        database = storage.getStorage(dsn, dsndict, StubParser())
 
         _currentversion = version.LooseVersion(__version__)
         print 'Current B3 version: %s\n' % _currentversion
