@@ -522,7 +522,7 @@ class Parser(object):
                 else:
                     self.input.seek(0, os.SEEK_END)
             else:
-                self.screen.write(">>> Cannot read file: %s" % os.path.abspath(f))
+                self.screen.write(">>> Cannot read file: %s\n" % os.path.abspath(f))
                 self.screen.flush()
                 self.critical("Cannot read file: %s", os.path.abspath(f))
 
@@ -530,7 +530,7 @@ class Parser(object):
             # setup rcon
             self.output = self.OutputClass(self, (self._rconIp, self._rconPort), self._rconPassword)
         except Exception, err:
-            self.screen.write(">>> Cannot setup RCON: %s" % err)
+            self.screen.write(">>> Cannot setup RCON: %s\n" % err)
             self.screen.flush()
             self.critical("Cannot setup RCON: %s" % err, exc_info=err)
         

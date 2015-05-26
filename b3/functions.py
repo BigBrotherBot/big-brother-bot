@@ -49,10 +49,10 @@
 # 14/02/2015 - 1.19  - Fenix          - changed main_is_frozen() to work with cx_Freeze instead of py2exe
 # 09/03/2015 - 1.20  - Fenix          - added topological_sort() function: topological sort implementation
 # 23/05/2015 - 1.21  - Fenix          - added decode() function: decode a string using the system default encoding
-
+# 26/05/2015 - 1.22  - Fenix          - added console_exit function: terminate the current console application
 
 __author__    = 'ThorN, xlr8or, courgette'
-__version__   = '1.20'
+__version__   = '1.22'
 
 import collections
 import os
@@ -271,6 +271,23 @@ def decode(text):
     :return: string
     """
     return text.decode(sys.getfilesystemencoding())
+
+
+def console_exit(message):
+    """
+    Terminate the current console application displaying the given message.
+    Will make sure that the user is able to see the exit message.
+    :param message: the message to prompt to the user
+    """
+    if main_is_frozen():
+        if sys.stdout != sys.__stdout__:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+        print message
+        raw_input("press any key to continue...")
+        raise SystemExit()
+    else:
+        raise SystemExit(message)
 
 
 def levenshteinDistance(a, b):

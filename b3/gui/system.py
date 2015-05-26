@@ -22,6 +22,7 @@ import webbrowser
 
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMenuBar, QAction, QSystemTrayIcon, QMenu
+from b3 import B3_PLUGIN_REPOSITORY, B3_DONATE, B3_WIKI, B3_CONFIG_GENERATOR, B3_DOCUMENTATION, B3_FORUM, B3_WEBSITE
 
 
 class MainMenuBar(QMenuBar):
@@ -193,5 +194,4 @@ class SystemTrayIcon(QSystemTrayIcon):
 
 
 from b3.gui import B3App
-from b3.gui import B3_PLUGIN_REPOSITORY
-from b3.gui import B3_DONATE, B3_WIKI, B3_CONFIG_GENERATOR, B3_DOCUMENTATION, B3_FORUM, B3_WEBSITE, B3_ICON_SMALL
+from b3.gui import B3_ICON_SMALL

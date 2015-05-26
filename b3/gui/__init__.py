@@ -66,19 +66,6 @@ import re
 import logging
 import sqlite3
 
-## STRINGS
-B3_TITLE = 'BigBrotherBot (B3) %s' % b3.__version__
-B3_TITLE_SHORT = 'B3 %s' % b3.__version__
-B3_COPYRIGHT = 'Copyright © 2005 Michael "ThorN" Thornton'
-B3_LICENSE = 'GNU General Public License v2'
-B3_FORUM = 'http://forum.bigbrotherbot.net/'
-B3_WEBSITE = 'http://www.bigbrotherbot.net'
-B3_WIKI = 'http://wiki.bigbrotherbot.net/'
-B3_CONFIG_GENERATOR = 'http://config.bigbrotherbot.net/'
-B3_DOCUMENTATION = 'http://doc.bigbrotherbot.net/'
-B3_DONATE = 'http://www.bigbrotherbot.net/donate'
-B3_PLUGIN_REPOSITORY = 'http://forum.bigbrotherbot.net/downloads/?cat=4'
-
 ## USER PATHS
 B3_STORAGE = b3.getWritableFilePath(os.path.join(b3.HOMEDIR, 'app.db'), True)
 B3_LOG = b3.getWritableFilePath(os.path.join(b3.HOMEDIR, 'app.log'), True)

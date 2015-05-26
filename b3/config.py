@@ -438,7 +438,7 @@ def load(filename):
         # allow the use of empty keys to support the new b3.ini configuration file
         config = CfgConfigParser(allow_no_value=True)
 
-    filename = b3.getAbsolutePath(filename)
+    filename = b3.getAbsolutePath(filename, True)
 
     # return the config if it can be loaded
     return config if config.load(filename) else None

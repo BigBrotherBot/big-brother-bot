@@ -60,6 +60,19 @@ version = '^8www.bigbrotherbot.net ^0(^8b3^0) ^9%s ^9[^3PoisonIvy^9]^3' % versio
 confdir = None
 console = None
 
+# STRINGS
+B3_TITLE = 'BigBrotherBot (B3) %s' % __version__
+B3_TITLE_SHORT = 'B3 %s' % __version__
+B3_COPYRIGHT = 'Copyright © 2005 Michael "ThorN" Thornton'
+B3_LICENSE = 'GNU General Public License v2'
+B3_FORUM = 'http://forum.bigbrotherbot.net/'
+B3_WEBSITE = 'http://www.bigbrotherbot.net'
+B3_WIKI = 'http://wiki.bigbrotherbot.net/'
+B3_CONFIG_GENERATOR = 'http://config.bigbrotherbot.net/'
+B3_DOCUMENTATION = 'http://doc.bigbrotherbot.net/'
+B3_DONATE = 'http://www.bigbrotherbot.net/donate'
+B3_PLUGIN_REPOSITORY = 'http://forum.bigbrotherbot.net/downloads/?cat=4'
+
 # TEAMS
 TEAM_UNKNOWN = -1
 TEAM_FREE = 0
@@ -174,18 +187,12 @@ def getShortPath(filepath, decode=False, first_time=True):
     return filepath
 
 
-def loadParser(pname, configFile, nosetup=False):
+def loadParser(pname):
     """
     Load the parser module given it's name.
     :param pname: The parser name
-    :param configFile: The parser configuration file
-    :param nosetup: Whether or not to run the B3 setup
     :return The parser module
     """
-    if pname == 'changeme':
-        if nosetup:
-            raise SystemExit('ERROR: configuration file not setup properly: please run B3 with option: --setup or -s')
-        Setup(configFile)
     name = 'b3.parsers.%s' % pname
     mod = __import__(name)
     components = name.split('.')
@@ -205,34 +212,22 @@ def getPlatform():
     return sys.platform
 
 
-def start(configFile, nosetup=False, autorestart=False):
+def start(mainconfig, autorestart=False):
     """
     Main B3 startup.
-    :param configFile: The B3 configuration file
-    :param nosetup: Whether or not to run the B3 setup
+    :param mainconfig: The B3 configuration file instance :type: b3.config.MainConfig
     :param autorestart: If the bot is running in auto-restart mode
     """
-    configFile = getAbsolutePath(configFile, True)
-    clearScreen()
+    clearscreen()
+    global confdir
+    confdir = os.path.dirname(mainconfig.fileName)
 
-    print 'Starting %s\n' % getB3versionString()
-
-    conf = None
-    if os.path.exists(configFile):
-        import config
-        global confdir
-        confdir = os.path.dirname(configFile)
-        print 'Using config file: %s' % getShortPath(configFile, True)
-        conf = config.MainConfig(config.load(configFile))
-    else:
-        # this happens when a config was entered on
-        # the commandline, but it does not exist
-        if nosetup:
-            raise SystemExit('ERROR: could not find config file %s' % configFile)
-        Setup(configFile)
+    sys.stdout.write('Starting B3      : %s\n' % getB3versionString())
+    sys.stdout.write('Loading config   : %s\n' % getShortPath(mainconfig.fileName, True))
+    sys.stdout.flush()
 
     try:
-        update_channel = conf.get('update', 'channel')
+        update_channel = mainconfig.get('update', 'channel')
     except (NoSectionError, NoOptionError):
         pass
     else:
@@ -252,25 +247,12 @@ def start(configFile, nosetup=False, autorestart=False):
                 sys.stdout.flush()
                 time.sleep(1)
 
-    try:
-
-        parserType = conf.get('b3', 'parser')
-        if not parserType:
-            raise SystemExit('ERROR: you must supply a parser')
-
-        try:
-            parser = loadParser(parserType, configFile, nosetup)
-        except ImportError, err:
-            raise SystemExit("CRITICAL: could not find parser '%s': check you main config file\n"
-                             "B3 failed to start.\n%r" % (parserType, err))
-        
-        global console
-        console = parser(conf, autorestart)
-
-    except NoOptionError, err:
-        raise SystemExit("CRITICAL: option %r not found in section %r: "
-                         "correct your config file %s" % (err.option, err.section, configFile))
-
+    parsertype = mainconfig.get('b3', 'parser')
+    sys.stdout.write('Loading parser   : %s\n' % parsertype)
+    sys.stdout.flush()
+    parser = loadParser(parsertype)
+    global console
+    console = parser(mainconfig, autorestart)
 
     def termSignalHandler(signum, frame):
         """
@@ -294,15 +276,15 @@ def start(configFile, nosetup=False, autorestart=False):
         print 'Goodbye'
         return
     except SystemExit, msg:
-        print 'Exiting: %s' % msg
+        print 'EXITING: %s' % msg
         raise
     except Exception, msg:
-        print 'Error: %s' % msg
+        print 'ERROR: %s' % msg
         traceback.print_exc()
         sys.exit(223)
 
 
-def clearScreen():
+def clearscreen():
     """
     Clear the current shell screen according to the OS being used.
     """
@@ -315,4 +297,3 @@ def clearScreen():
 from b3.functions import decode as decode_
 from b3.functions import main_is_frozen
 from b3.update import checkUpdate
-from b3.setup import Setup

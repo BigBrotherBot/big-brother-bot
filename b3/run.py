@@ -31,23 +31,25 @@
 # 2015/02/02 - 1.5.2 - Fenix     - keep looking for xml configuration files if ini/cfg are not found
 # 2015/02/14 - 1.5.3 - Fenix     - removed _check_arg_configfile in favor of configuration file lookup
 # 2015/05/07 - 1.6   - Fenix     - add GUI startup
+# 2015/05/26 - 1.7   - Fenix     - reworked B3 startup routine
+#                                - removed B3 setup procedure: display B3 configuration generator webtool url instead
 
 __author__  = 'ThorN'
-__version__ = '1.6'
+__version__ = '1.7'
 
 import b3
+import b3.config
 import os
 import sys
+import argparse
 import pkg_handler
 import time
 import traceback
 
-from b3 import HOMEDIR
-from b3.functions import main_is_frozen
-from b3.setup import Setup
-from b3.setup import Update
-
-import argparse
+from b3 import HOMEDIR, B3_CONFIG_GENERATOR
+from b3.functions import main_is_frozen, console_exit
+from b3.update import DBUpdate
+from time import sleep
 
 modulePath = pkg_handler.resource_directory(__name__)
 
@@ -56,14 +58,14 @@ def run_autorestart(args=None):
     """
     Run B3 in auto-restart mode.
     """
-    _restarts = 0
+    restart_num = 0
 
     if main_is_frozen():
         script = ''
     else:
         script = os.path.join(modulePath[:-3], 'b3_run.py')
         if not os.path.isfile(script):
-            # must be running from the egg
+            # must be running from the wheel
             script = os.path.join(modulePath[:-3], 'b3', 'run.py')
         if os.path.isfile(script + 'c'):
             script += 'c'
@@ -76,8 +78,8 @@ def run_autorestart(args=None):
     while True:
         try:
             print 'Running in auto-restart mode...'
-            if _restarts > 0:
-                print 'Bot restarted %s times.' %_restarts
+            if restart_num > 0:
+                print 'Bot restarted %s times.' %restart_num
             time.sleep(1)
 
             try:
@@ -92,83 +94,36 @@ def run_autorestart(args=None):
             print 'Exited with status %s' % status
 
             if status == 221:
-                # restart
                 print 'Restart requested...'
             elif status == 222:
-                # stop
                 print 'Shutdown requested.'
                 break
             elif status == 220:
-                # stop
                 print 'B3 Error, check log file.'
                 break
             elif status == 223:
-                # stop
                 print 'B3 Error Restart, check log file.'
                 break
             elif status == 224:
-                # stop
                 print 'B3 Error, check console.'
                 break
             elif status == 256:
-                # stop
                 print 'Python error, stopping, check log file.'
                 break
             elif status == 0:
-                # stop
                 print 'Normal shutdown, stopping.'
                 break
             elif status == 1:
-                # stop
                 print 'Error, stopping, check console.'
                 break
             else:
                 print 'Unknown shutdown status (%s), restarting...' % status
         
-            _restarts += 1
+            restart_num += 1
             time.sleep(4)
         except KeyboardInterrupt:
             print 'Quit'
             break
-
-
-def run(config=None, nosetup=False, autorestart=False):
-    """
-    Run B3.
-    :param config: The B3 configuration file instance
-    :param nosetup: Whether to execute the B3 setup or not
-    :param autorestart: Whether to run B3 in autorestart mode or not
-    """
-    if config:
-        config = b3.getAbsolutePath(config, True)
-    else:
-        for p in ('b3.%s', 'conf/b3.%s', 'b3/conf/b3.%s',
-                  os.path.join(HOMEDIR, 'b3.%s'), os.path.join(HOMEDIR, 'conf', 'b3.%s'),
-                  os.path.join(HOMEDIR, 'b3', 'conf', 'b3.%s'), '@b3/conf/b3.%s'):
-            for e in ('ini', 'cfg', 'xml'):
-                path = b3.getAbsolutePath(p % e, True)
-                print 'Searching for config file: %s' % path
-                if os.path.isfile(path):
-                    config = path
-                    break
-
-    if not config:
-        # This happens when no config was specified on the
-        # commandline and the default configs are missing!
-        if nosetup:
-            raise SystemExit('ERROR: could not find config file: please run B3 with option: --setup or -s')
-        else:
-            Setup(config)
-
-    b3.start(config, nosetup, autorestart)
-
-
-def run_setup(config=None):
-    """
-    Run the B3 setup.
-    :param config: The B3 configuration file instance
-    """
-    Setup(config)
 
 
 def run_update(config=None):
@@ -176,7 +131,8 @@ def run_update(config=None):
     Run the B3 update.
     :param config: The B3 configuration file instance
     """
-    Update(config)
+    update = DBUpdate(config)
+    update.run()
 
 
 def run_gui(options):
@@ -192,7 +148,7 @@ def run_gui(options):
     if options.console:
         raise EnvironmentError
 
-    # initialize outside try/except so if PyQT5 is not avaiable or there is
+    # initialize outside try/except so if PyQt5 is not avaiable or there is
     # no display adapter available, this will raise an exception and we can
     # fallback into console mode
     app = B3App.Instance(sys.argv)
@@ -219,8 +175,50 @@ def run_console(options):
     Run B3 in console mode.
     :param options: command line options
     """
+    ## MAIN CONFIG ANALYSUS RESULT
+    analysis = None
+
     try:
-        run(config=options.config, nosetup=options.nosetup, autorestart=options.autorestart)
+
+        if options.config:
+            config = b3.getAbsolutePath(options.config, True)
+            if not os.path.isfile(config):
+                console_exit('ERROR: configuration file not found (%s).\n'
+                             'Please visit %s to create one.' % (config, B3_CONFIG_GENERATOR))
+        else:
+            config = None
+            for p in ('b3.%s', 'conf/b3.%s', 'b3/conf/b3.%s',
+                      os.path.join(HOMEDIR, 'b3.%s'), os.path.join(HOMEDIR, 'conf', 'b3.%s'),
+                      os.path.join(HOMEDIR, 'b3', 'conf', 'b3.%s'), '@b3/conf/b3.%s'):
+                for e in ('ini', 'cfg', 'xml'):
+                    path = b3.getAbsolutePath(p % e, True)
+                    if os.path.isfile(path):
+                        print "Using configuration file: %s" % path
+                        config = path
+                        sleep(3)
+                        break
+
+            if not config:
+                console_exit('ERROR: could not find any valid configuration file.\n'
+                             'Please visit %s to create one.' % B3_CONFIG_GENERATOR)
+
+        # LOADING MAIN CONFIGURATION
+        main_config = b3.config.MainConfig(b3.config.load(config))
+        analysis = main_config.analyze()
+        if analysis:
+            raise b3.config.ConfigFileNotValid('invalid configuration file specified')
+
+        # START B3
+        b3.start(main_config, options.autorestart)
+
+    except b3.config.ConfigFileNotValid, err:
+        if analysis:
+            print 'CRITICAL: invalid configuration file specified:'
+            for problem in analysis:
+                print"  >>> %s\n" % problem
+        else:
+            print 'CRITICAL: invalid configuration file specified!'
+            raise err
     except SystemExit, msg:
         if main_is_frozen():
             if sys.stdout != sys.__stdout__:
@@ -250,7 +248,6 @@ def main():
     p.add_argument('-x', '--console', action='store_true', dest='console', default=False, help='Force B3 execution in console mode')
     p.add_argument('-r', '--restart', action='store_true', dest='restart', default=False, help='Auto-restart B3 on crash')
     p.add_argument('-s', '--setup',  action='store_true', dest='setup', default=False, help='Setup main b3.ini config file')
-    p.add_argument('-n', '--nosetup', action="store_true", dest='nosetup', default=False, help='Do not enter setup mode when config is missing')
     p.add_argument('-u', '--update', action='store_true', dest='update', default=False, help='Update B3 database to latest version')
     p.add_argument('-v', '--version', action='version', default=False, version=b3.getB3versionString(), help='Show B3 version and exit')
     p.add_argument('-a', '--autorestart', action='store_true', dest='autorestart', default=False, help=argparse.SUPPRESS)
@@ -261,12 +258,17 @@ def main():
         options.config = args[0]
 
     if options.setup:
-        run_setup(config=options.config)
+        # setup procedure is deprecated: show configuration file generator web tool url instead
+        sys.stdout.write('\n')
+        console_exit("  *** NOTICE: the console setup procedure is deprecated!\n" \
+                     "  *** Please visit %s to generate a new B3 configuration file.\n" % B3_CONFIG_GENERATOR)
 
     if options.update:
+        ## UPDATE => CONSOLE
         run_update(config=options.config)
 
     if options.restart:
+        ## AUTORESTART => CONSOLE
         if options.config:
             run_autorestart(['--config', options.config] + args)
         else:

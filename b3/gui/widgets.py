@@ -26,6 +26,7 @@ from PyQt5.QtCore import QProcess, Qt, QEvent
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QLabel, QVBoxLayout, QTableWidget, QAbstractItemView, QHeaderView, QTableWidgetItem
 from PyQt5.QtWidgets import QHBoxLayout, QWidget, QMessageBox, QMainWindow, QDesktopWidget, QSystemTrayIcon, QFileDialog
+from b3 import B3_TITLE
 from b3.config import MainConfig, load as load_config
 from b3.exceptions import ConfigFileNotFound
 from b3.exceptions import ConfigFileNotValid
@@ -545,7 +546,7 @@ class MainWindow(QMainWindow):
         update.show()
 
 from b3.gui import B3App, RE_COLOR, CONFIG_READY, CONFIG_FOUND, ICON_DEL, ICON_REFRESH, ICON_CONSOLE, ICON_LOG
-from b3.gui import ICON_STOP, ICON_START, CONFIG_VALID, B3_BANNER, B3_TITLE, B3
+from b3.gui import ICON_STOP, ICON_START, CONFIG_VALID, B3_BANNER, B3
 from b3.gui.dialogs import AboutDialog, PluginInstallDialog, UpdateCheckDialog, UpdateDatabaseDialog
 from b3.gui.misc import Button, IconButton, StatusBar
 from b3.gui.system import MainMenuBar, SystemTrayIcon

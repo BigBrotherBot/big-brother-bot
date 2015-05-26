@@ -32,6 +32,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLabel, QVBoxLayout
 
+from b3 import B3_COPYRIGHT, B3_LICENSE, B3_TITLE, B3_TITLE_SHORT, B3_WEBSITE
 from b3.parser import StubParser
 from b3.functions import unzip, splitDSN
 from b3.storage import getStorage
@@ -785,7 +786,6 @@ class STDOutDialog(QDialog):
         self.stdout.insertPlainText(str(self.process.readAllStandardOutput()))
 
 
-from b3.gui import B3App, CONFIG_VALID
-from b3.gui import B3_COPYRIGHT, B3_ICON, B3_LICENSE, B3_TITLE, B3_TITLE_SHORT, B3_WEBSITE
+from b3.gui import B3App, B3_ICON, CONFIG_VALID
 from b3.gui.misc import Button, BusyProgressBar, ProgressBar, STDOutText
 from b3.gui.widgets import ImageWidget
