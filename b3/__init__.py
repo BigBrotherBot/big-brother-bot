@@ -212,11 +212,11 @@ def getPlatform():
     return sys.platform
 
 
-def start(mainconfig, autorestart=False):
+def start(mainconfig, options):
     """
     Main B3 startup.
     :param mainconfig: The B3 configuration file instance :type: b3.config.MainConfig
-    :param autorestart: If the bot is running in auto-restart mode
+    :param options: command line options
     """
     clearscreen()
     global confdir
@@ -252,7 +252,7 @@ def start(mainconfig, autorestart=False):
     sys.stdout.flush()
     parser = loadParser(parsertype)
     global console
-    console = parser(mainconfig, autorestart)
+    console = parser(mainconfig, options)
 
     def termSignalHandler(signum, frame):
         """

@@ -343,17 +343,17 @@ class Parser(object):
             cls.__read = cls.___read_input_darwin
         return object.__new__(cls)
 
-    def __init__(self, conf, autorestart=False):
+    def __init__(self, conf, options):
         """
         Object contructor.
         :param conf: The B3 configuration file
-        :param autorestart: Whether B3 is running in autorestart mode or not
+        :param options: command line options
         """
         self._timeStart = self.time()
 
         # store in the parser whether we are running B3 in autorestart mode so
         # plugins can react on this and perform different operations
-        self.autorestart = autorestart
+        self.autorestart = options.autorestart
 
         if not self.loadConfig(conf):
             print('CRITICAL ERROR : COULD NOT LOAD CONFIG')

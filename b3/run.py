@@ -209,11 +209,11 @@ def run_console(options):
             raise b3.config.ConfigFileNotValid('invalid configuration file specified')
 
         # START B3
-        b3.start(main_config, options.autorestart)
+        b3.start(main_config, options)
 
     except b3.config.ConfigFileNotValid, err:
         if analysis:
-            print 'CRITICAL: invalid configuration file specified:'
+            print 'CRITICAL: invalid configuration file specified:\n'
             for problem in analysis:
                 print"  >>> %s\n" % problem
         else:
