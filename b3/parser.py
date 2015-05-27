@@ -20,6 +20,7 @@
 #
 # 2015/05/26 - 1.43.1 - Fenix           - added StubParser class: can be used when the storage module needs to be
 #                                         initilized without a running B3 console (fakes logging and sys.stdout)
+#                                       - fixed pluginImport not working correctly when starting B3 using OSX app bundle
 # 2015/05/15 - 1.43   - Fenix           - fixed formatTime not converting timestamp according to timezone offset
 # 2015/05/04 - 1.42.9 - Fenix           - removed reply mode: it's messing up GUI and it's needed only to debug cod4
 #                                       - make sure that the logfile path is actually writable by B3, else it crashes
@@ -996,6 +997,8 @@ class Parser(object):
                 console.screen.write('x')
                 if plugin_name in _mandatory_plugins:
                     # critical will stop B3 from running
+                    console.screen.write('\n')
+                    console.screen.write('>>> CRITICAL: missing mandatory plugin: %s\n' % plugin_name)
                     console.critical('Could not start B3 without %s plugin' % plugin_name, exc_info=e)
                 else:
                     console.error('Could not load plugin %s' % plugin_name, exc_info=e)
@@ -1045,23 +1048,20 @@ class Parser(object):
             finally:
                 if fp:
                     fp.close()
+
+        fp = None
+
         try:
-            module = 'b3.plugins.%s' % name
-            mod = __import__(module)
-            components = module.split('.')
-            for comp in components[1:]:
-                mod = getattr(mod, comp)
-            return mod
+            fp, pathname, description = imp.find_module(name, [os.path.join(b3.getB3Path(True), 'plugins')])
+            return imp.load_module(name, fp, pathname, description)
         except ImportError, m:
-            # print as verbose since such information are rather useless
             self.verbose('%s is not a built-in plugin (%s)' % (name.title(), m))
             self.verbose('Trying external plugin directory : %s', self.config.get_external_plugins_dir())
             fp, pathname, description = imp.find_module(name, [self.config.get_external_plugins_dir()])
-            try:
-                return imp.load_module(name, fp, pathname, description)
-            finally:
-                if fp:
-                    fp.close()
+            return imp.load_module(name, fp, pathname, description)
+        finally:
+            if fp:
+                fp.close()
 
     def startPlugins(self):
         """
