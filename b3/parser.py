@@ -1011,13 +1011,6 @@ class Parser(object):
         if 'publist' not in self._plugins:
             _load_plugin(self, 'publist')
 
-        if not main_is_frozen():
-            if 'updater' not in self._plugins:
-                if self.config.has_option('update', 'channel') and self.config.get('update', 'channel') != 'skip':
-                    _load_plugin(self, 'updater')
-                else:
-                    self.debug('Not loading plugin updater: update channel not specified in B3 configuration file')
-
         if self.config.has_option('server', 'game_log'):
             game_log = self.config.get('server', 'game_log')
             remote_log_plugin = None
