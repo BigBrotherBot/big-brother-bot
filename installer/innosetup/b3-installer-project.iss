@@ -19,7 +19,7 @@ AppPublisher=BigBrotherBot
 AppPublisherURL=http://www.bigbrotherbot.net/
 AppSupportURL=http://www.bigbrotherbot.net/
 AppUpdatesURL=http://www.bigbrotherbot.net/
-AppCopyright=Copyright (C) 2005-2011 BigBrotherBot.net
+AppCopyright=Copyright (C) 2005-2015 BigBrotherBot.net
 DefaultDirName={sd}\BigBrotherBot
 DefaultGroupName=BigBrotherBot
 LicenseFile=../assets_common\gpl-2.0.txt
@@ -35,7 +35,7 @@ VersionInfoCopyright=www.bigbrotherbot.net
 VersionInfoTextVersion=1.0
 VersionInfoProductName=BigBrotherBot
 VersionInfoProductVersion={#B3_VERSION_NUMBER}
-ExtraDiskSpaceRequired=11790316
+ExtraDiskSpaceRequired=111087522         
 RestartIfNeededByRun=false
 PrivilegesRequired=none
 WizardImageBackColor=clBlack
@@ -81,24 +81,25 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 
 [Icons]
-Name: {commondesktop}\{cm:executable,b3_run}; Filename: {app}\b3_run.exe; WorkingDir: {app}; Flags: dontcloseonexit; IconFilename: {app}\b3.ico; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}";
-Name: {group}\{cm:executable,b3_run}; Filename: {app}\b3_run.exe; WorkingDir: {app}; Flags: dontcloseonexit; IconFilename: {app}\b3.ico; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}";
-Name: {group}\{cm:B3ConfDir,config}; Filename: {app}\conf\
-Name: {group}\{cm:extplugins,extplugins}; Filename: {app}\extplugins\; IconFilename: {app}\b3-plugins-icon.ico;
-Name: {group}\Extra\{cm:docs,docs}; Filename: {app}\docs\
-Name: {group}\Extra\{cm:sql,sql}; Filename: {app}\sql\
-Name: {group}\{cm:UninstallProgram,BigBrotherBot}; Filename: {uninstallexe}
-Name: {group}\Web\{cm:Website,BigBrotherBot}; Filename: http://www.bigbrotherbot.net/
-Name: {group}\Web\{cm:Manual,Manual}; Filename: http://wiki.github.com/BigBrotherBot/big-brother-bot/manual
-Name: {group}\Web\{cm:Forums,B3 Forums}; Filename: http://forum.bigbrotherbot.net/
-Name: {group}\Web\{cm:DownloadPlugins,Download plugins}; Filename: http://forum.bigbrotherbot.net/downloads/?cat=4
-Name: {group}\Web\{cm:B3configGenerator,B3 config generator}; Filename: http://config.bigbrotherbot.net/;
-Name: {group}\Web\Artwork; Filename: http://www.bigbrotherbot.net/logos
-Name: {group}\Web\Other tools\{cm:Echelon,Echelon}; Filename: http://echelon.bigbrotherbot.net/
+Name: "{commondesktop}\{cm:executable,b3_run}"; Filename: "{app}\b3_run.exe"; WorkingDir: "{app}"; Flags: dontcloseonexit; IconFilename: "{app}\b3.ico"; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}"
+Name: "{group}\{cm:executable,b3_run}"; Filename: "{app}\b3_run.exe"; WorkingDir: "{app}"; Flags: dontcloseonexit; IconFilename: "{app}\b3.ico"; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}"
+Name: "{group}\{cm:configWizard,Config wizard}"; Filename: "http://config.bigbrotherbot.net/"; Comment: "Run the B3 setup wizard"
+Name: "{group}\{cm:B3ConfDir,config}"; \
+    Filename: "{app}\extplugins\"; \
+    IconFilename: "{app}\b3-plugins-icon.ico"
+Name: "{group}\Extra\{cm:docs,docs}"; \
+    Filename: "{uninstallexe}"
+Name: "{group}\Web\{cm:Website,BigBrotherBot}"; Filename: "http://www.bigbrotherbot.net/"
+Name: "{group}\Web\{cm:Manual,Manual}"; Filename: "http://wiki.github.com/BigBrotherBot/big-brother-bot/manual"
+Name: "{group}\Web\{cm:Forums,B3 Forums}"; Filename: "http://forum.bigbrotherbot.net/"
+Name: "{group}\Web\{cm:DownloadPlugins,Download plugins}"; Filename: "http://forum.bigbrotherbot.net/downloads/?cat=4"
+Name: "{group}\Web\{cm:B3configGenerator,B3 config generator}"; Filename: "http://config.bigbrotherbot.net/"
+Name: "{group}\Web\Artwork"; Filename: "http://www.bigbrotherbot.net/logos"
+Name: "{group}\Web\Other tools\{cm:Echelon,Echelon}"; Filename: "http://echelon.bigbrotherbot.net/"
 
 ;[Dirs]
 ;Name: {commonappdata}\BigBrotherBot; Permissions: users-full
-Name: {group}\Web\other tools\{cm:Xlrstats,XLRstats}; Filename: http://www.xlrstats.com/
+Name: "{group}\Web\other tools\{cm:Xlrstats,XLRstats}"; Filename: "http://www.xlrstats.com/"
 
 [Files]
 Source: {app}\conf\*; DestDir: {app}\conf\backup; Flags: external skipifsourcedoesntexist uninsneveruninstall
@@ -141,6 +142,4 @@ sql=SQL folder
 docs=Docs folder
 
 [Run]
-Filename: {app}\readme.txt; Flags: ShellExec SkipIfDoesntExist;
-Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.ini"" --setup"; WorkingDir: {app}; Flags: ShellExec PostInstall; Description: "Run Setup?";
-Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.ini"" --update"; WorkingDir: {app}; Flags: ShellExec PostInstall Unchecked; Description: "Update database?";
+Filename: "{app}\readme.txt"; Flags: ShellExec SkipIfDoesntExist
