@@ -69,7 +69,9 @@ from b3.storage.sqlite import SqliteStorage
 from sys import stdout
 
 class FakeConsole(b3.parser.Parser):
-
+    """
+    Console implementation to be used with automated tests.
+    """
     Events = b3.events.eventManager = b3.events.Events()
     screen = stdout
     noVerbose = False
@@ -127,8 +129,7 @@ class FakeConsole(b3.parser.Parser):
         """
         NO QUEUE, NO THREAD for faking speed up
         """
-        if event.type == self.getEventID('EVT_EXIT') or \
-                event.type == self.getEventID('EVT_STOP'):
+        if event.type == self.getEventID('EVT_EXIT') or event.type == self.getEventID('EVT_STOP'):
             self.working = False
 
         nomore = False
@@ -275,7 +276,9 @@ class FakeConsole(b3.parser.Parser):
 
 
 class FakeClient(b3.clients.Client):
-
+    """
+    Client object implementation to be used in automated tests.
+    """
     console = None
 
     def __init__(self, console, **kwargs):
@@ -394,7 +397,9 @@ class FakeClient(b3.clients.Client):
         print "\n%s trigger event %s" % (self.name, type)
         self.console.queueEvent(b3.events.Event(type, data, self, target))
 
+
 #####################################################################################
+
 
 print "creating fakeConsole with @b3/conf/b3.distribution.ini"
 fakeConsole = FakeConsole('@b3/conf/b3.distribution.ini')

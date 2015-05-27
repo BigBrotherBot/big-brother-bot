@@ -18,6 +18,9 @@
 #
 # CHANGELOG
 #
+# 2015/05/26 - 1.43.1 - Fenix           - added StubParser class: can be used when the storage module needs to be
+#                                         initilized without a running B3 console (fakes logging and sys.stdout)
+#                                       - fixed pluginImport not working correctly when starting B3 using OSX app bundle
 # 2015/05/15 - 1.43   - Fenix           - fixed formatTime not converting timestamp according to timezone offset
 # 2015/05/04 - 1.42.9 - Fenix           - removed reply mode: it's messing up GUI and it's needed only to debug cod4
 #                                       - make sure that the logfile path is actually writable by B3, else it crashes
@@ -183,7 +186,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.43'
+__version__ = '1.43.1'
 
 
 import os
@@ -341,17 +344,17 @@ class Parser(object):
             cls.__read = cls.___read_input_darwin
         return object.__new__(cls)
 
-    def __init__(self, conf, autorestart=False):
+    def __init__(self, conf, options):
         """
         Object contructor.
         :param conf: The B3 configuration file
-        :param autorestart: Whether B3 is running in autorestart mode or not
+        :param options: command line options
         """
         self._timeStart = self.time()
 
         # store in the parser whether we are running B3 in autorestart mode so
         # plugins can react on this and perform different operations
-        self.autorestart = autorestart
+        self.autorestart = options.autorestart
 
         if not self.loadConfig(conf):
             print('CRITICAL ERROR : COULD NOT LOAD CONFIG')
@@ -426,11 +429,11 @@ class Parser(object):
             pass
 
         self.bot('%s', b3.getB3versionString())
-        self.bot('Python: %s', sys.version)
+        self.bot('Python: %s', sys.version.replace('\n', ''))
         self.bot('Default encoding: %s', sys.getdefaultencoding())
-        self.bot('Starting %s v%s for server %s:%s', self.__class__.__name__,
+        self.bot('Starting %s v%s for server %s:%s (autorestart = %s)', self.__class__.__name__,
                                                      getattr(getModule(self.__module__), '__version__', ' Unknown'),
-                                                     self._rconIp, self._port)
+                                                     self._rconIp, self._port, 'ON' if self.autorestart else 'OFF')
 
         # get events
         self.Events = b3.events.eventManager
@@ -520,7 +523,7 @@ class Parser(object):
                 else:
                     self.input.seek(0, os.SEEK_END)
             else:
-                self.screen.write(">>> Cannot read file: %s" % os.path.abspath(f))
+                self.screen.write(">>> Cannot read file: %s\n" % os.path.abspath(f))
                 self.screen.flush()
                 self.critical("Cannot read file: %s", os.path.abspath(f))
 
@@ -528,7 +531,7 @@ class Parser(object):
             # setup rcon
             self.output = self.OutputClass(self, (self._rconIp, self._rconPort), self._rconPassword)
         except Exception, err:
-            self.screen.write(">>> Cannot setup RCON: %s" % err)
+            self.screen.write(">>> Cannot setup RCON: %s\n" % err)
             self.screen.flush()
             self.critical("Cannot setup RCON: %s" % err, exc_info=err)
         
@@ -994,6 +997,8 @@ class Parser(object):
                 console.screen.write('x')
                 if plugin_name in _mandatory_plugins:
                     # critical will stop B3 from running
+                    console.screen.write('\n')
+                    console.screen.write('>>> CRITICAL: missing mandatory plugin: %s\n' % plugin_name)
                     console.critical('Could not start B3 without %s plugin' % plugin_name, exc_info=e)
                 else:
                     console.error('Could not load plugin %s' % plugin_name, exc_info=e)
@@ -1005,13 +1010,6 @@ class Parser(object):
 
         if 'publist' not in self._plugins:
             _load_plugin(self, 'publist')
-
-        if not main_is_frozen():
-            if 'updater' not in self._plugins:
-                if self.config.has_option('update', 'channel') and self.config.get('update', 'channel') != 'skip':
-                    _load_plugin(self, 'updater')
-                else:
-                    self.debug('Not loading plugin updater: update channel not specified in B3 configuration file')
 
         if self.config.has_option('server', 'game_log'):
             game_log = self.config.get('server', 'game_log')
@@ -1043,23 +1041,20 @@ class Parser(object):
             finally:
                 if fp:
                     fp.close()
+
+        fp = None
+
         try:
-            module = 'b3.plugins.%s' % name
-            mod = __import__(module)
-            components = module.split('.')
-            for comp in components[1:]:
-                mod = getattr(mod, comp)
-            return mod
+            fp, pathname, description = imp.find_module(name, [os.path.join(b3.getB3Path(True), 'plugins')])
+            return imp.load_module(name, fp, pathname, description)
         except ImportError, m:
-            # print as verbose since such information are rather useless
             self.verbose('%s is not a built-in plugin (%s)' % (name.title(), m))
             self.verbose('Trying external plugin directory : %s', self.config.get_external_plugins_dir())
             fp, pathname, description = imp.find_module(name, [self.config.get_external_plugins_dir()])
-            try:
-                return imp.load_module(name, fp, pathname, description)
-            finally:
-                if fp:
-                    fp.close()
+            return imp.load_module(name, fp, pathname, description)
+        finally:
+            if fp:
+                fp.close()
 
     def startPlugins(self):
         """
@@ -1771,4 +1766,45 @@ class Parser(object):
         'mute', 'kill' or anything you want.
         /!\ This method must return True if the penalty was inflicted.
         """
+        pass
+
+
+class StubParser(object):
+    """
+    Parser implementation used when dealing with the Storage module while updating B3 database.
+    """
+
+    screen = sys.stdout
+
+    def __init__(self):
+
+        class StubSTDOut(object):
+            def write(self, *args, **kwargs):
+                pass
+
+        if not main_is_frozen():
+            self.screen = StubSTDOut()
+
+    def bot(self, msg, *args, **kwargs):
+        pass
+
+    def info(self, msg, *args, **kwargs):
+        pass
+
+    def debug(self, msg, *args, **kwargs):
+        pass
+
+    def error(self, msg, *args, **kwargs):
+        pass
+
+    def warning(self, msg, *args, **kwargs):
+        pass
+
+    def verbose(self, msg, *args, **kwargs):
+        pass
+
+    def verbose2(self, msg, *args, **kwargs):
+        pass
+
+    def critical(self, msg, *args, **kwargs):
         pass

@@ -37,6 +37,8 @@ class PostgresqlStorage(DatabaseStorage):
     _reconnectDelay = 60
     _reInsert = re.compile(r'''^INSERT''', re.IGNORECASE)
 
+    protocol = 'postgresql'
+
     def __new__(cls, *args, **kwargs):
         """
         Will make sure that the system has the necessary libraries.

@@ -22,6 +22,7 @@ import webbrowser
 
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMenuBar, QAction, QSystemTrayIcon, QMenu
+from b3 import B3_PLUGIN_REPOSITORY, B3_DONATE, B3_WIKI, B3_CONFIG_GENERATOR, B3_DOCUMENTATION, B3_FORUM, B3_WEBSITE
 
 
 class MainMenuBar(QMenuBar):
@@ -52,7 +53,7 @@ class MainMenuBar(QMenuBar):
         new_process = QAction('Add B3', self.parent())
         new_process.setShortcut('Ctrl+N')
         new_process.setStatusTip('Add a new B3')
-        new_process.triggered.connect(self.parent().new_process)
+        new_process.triggered.connect(self.parent().new_process_dialog)
         new_process.setVisible(True)
         ### INSTALL PLUGIN SUBMENU ENTRY
         install_plugin = QAction('Add Plugin', self.parent())
@@ -84,10 +85,15 @@ class MainMenuBar(QMenuBar):
         plugin_repository = QAction('Plugins Repository', self.parent())
         plugin_repository.setStatusTip('Browse all the available B3 plugins')
         plugin_repository.triggered.connect(lambda: webbrowser.open(B3_PLUGIN_REPOSITORY))
+        #### UPDATE B3 DATABASE ENTRY
+        update_database = QAction('Update B3 Database', self.parent())
+        update_database.setStatusTip('Update all your B3 databases to the latest version')
+        update_database.triggered.connect(self.parent().update_database)
         ## TOOLS MENU ENTRY
         tools_menu = self.addMenu('&Tools')
         tools_menu.addAction(update_check)
         tools_menu.addAction(plugin_repository)
+        tools_menu.addAction(update_database)
 
     def __init_menu_help(self):
         """
@@ -188,5 +194,4 @@ class SystemTrayIcon(QSystemTrayIcon):
 
 
 from b3.gui import B3App
-from b3.gui import B3_PLUGIN_REPOSITORY
-from b3.gui import B3_DONATE, B3_WIKI, B3_CONFIG_GENERATOR, B3_DOCUMENTATION, B3_FORUM, B3_WEBSITE, B3_ICON_SMALL
+from b3.gui import B3_ICON_SMALL

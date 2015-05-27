@@ -31,6 +31,8 @@ from b3.storage.common import DatabaseStorage
 
 class SqliteStorage(DatabaseStorage):
 
+    protocol = 'sqlite'
+
     def __init__(self, dsn, dsnDict, console):
         """
         Object constructor.

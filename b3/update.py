@@ -24,20 +24,27 @@
 # 20/02/2015 - Fenix - updated regular expression in B3version to match Travis CI build names
 # 04/05/2015 - Fenix - changed update single line message to fit into console screen
 
+import b3
+import b3.config
 import json
+import os
 import re
 import string
 import sys
 import urllib2
 
+from b3 import B3_CONFIG_GENERATOR, HOMEDIR
+from b3.functions import console_exit, splitDSN, clearscreen
+from b3.parser import StubParser
+from b3.storage import getStorage
 from distutils import version
+from time import sleep
 from types import StringType
-
 
 ## url from where we can get the latest B3 version number
 URL_B3_LATEST_VERSION = 'http://master.bigbrotherbot.net/version.json'
 
-# supported update channels
+## supported update channels
 UPDATE_CHANNEL_STABLE = 'stable'
 UPDATE_CHANNEL_BETA = 'beta'
 UPDATE_CHANNEL_DEV = 'dev'
@@ -260,3 +267,91 @@ def checkUpdate(currentVersion, channel=None, singleLine=True, showErrormsg=Fals
         return message
     else:
         return None
+
+
+class DBUpdate(object):
+    """
+    Console database update procedure.
+    """
+    def __init__(self, config=None):
+        """
+        Object constructor.
+        :param config: The B3 configuration file path
+        """
+        if config:
+            # use the specified configuration file
+            config = b3.getAbsolutePath(config, True)
+            if not os.path.isfile(config):
+                console_exit('ERROR: configuration file not found (%s).\n'
+                             'Please visit %s to create one.' % (config, B3_CONFIG_GENERATOR))
+        else:
+            # search a configuration file
+            for p in ('b3.%s', 'conf/b3.%s', 'b3/conf/b3.%s',
+                      os.path.join(HOMEDIR, 'b3.%s'), os.path.join(HOMEDIR, 'conf', 'b3.%s'),
+                      os.path.join(HOMEDIR, 'b3', 'conf', 'b3.%s'), '@b3/conf/b3.%s'):
+                for e in ('ini', 'cfg', 'xml'):
+                    path = b3.getAbsolutePath(p % e, True)
+                    if os.path.isfile(path):
+                        print "Using configuration file: %s" % path
+                        config = path
+                        sleep(3)
+                        break
+
+            if not config:
+                console_exit('ERROR: could not find any valid configuration file.\n'
+                             'Please visit %s to create one.' % B3_CONFIG_GENERATOR)
+        try:
+            self.config = b3.config.MainConfig(b3.config.load(config))
+            if self.config.analyze():
+                raise b3.config.ConfigFileNotValid
+        except b3.config.ConfigFileNotValid:
+            console_exit('ERROR: configuration file not valid (%s).\n'
+                         'Please visit %s to generate a new one.' % (config, B3_CONFIG_GENERATOR))
+
+    def run(self):
+        """
+        Run the DB update
+        """
+        clearscreen()
+        print """
+                        _\|/_
+                        (o o)    {:>32}
+                +----oOO---OOo----------------------------------+
+                |                                               |
+                |             UPDATING B3 DATABASE              |
+                |                                               |
+                +-----------------------------------------------+
+
+        """.format('B3 : %s' % b3.__version__)
+
+        raw_input("press any key to start the update...")
+
+        def _update_database(storage, update_version):
+            """
+            Update a B3 database.
+            :param storage: the initialized storage module
+            :param update_version: the update version
+            """
+            if B3version(b3.__version__) >= update_version:
+                sql = b3.getAbsolutePath('@b3/sql/%s/b3-update-%s.sql' % (storage.protocol, update_version))
+                if os.path.isfile(sql):
+                    try:
+                        print '>>> updating database to version %s' % update_version
+                        sleep(.5)
+                        storage.queryFromFile(sql)
+                    except Exception, err:
+                        print 'WARNING: could not update database properly: %s' % err
+                        sleep(3)
+
+        dsn = self.config.get('b3', 'database')
+        dsndict = splitDSN(dsn)
+        database = getStorage(dsn, dsndict, StubParser())
+
+        _update_database(database, '1.3.0')
+        _update_database(database, '1.6.0')
+        _update_database(database, '1.7.0')
+        _update_database(database, '1.8.1')
+        _update_database(database, '1.9.0')
+        _update_database(database, '1.10.0')
+
+        console_exit('B3 database update completed!')

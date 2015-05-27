@@ -18,6 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 import b3
+import b3.config
 import glob
 import imp
 import json
@@ -31,7 +32,10 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLabel, QVBoxLayout
 
-from b3.functions import unzip
+from b3 import B3_COPYRIGHT, B3_LICENSE, B3_TITLE, B3_TITLE_SHORT, B3_WEBSITE
+from b3.parser import StubParser
+from b3.functions import unzip, splitDSN
+from b3.storage import getStorage
 from b3.update import getDefaultChannel, B3version, URL_B3_LATEST_VERSION
 from time import sleep
 
@@ -97,7 +101,7 @@ class AboutDialog(QDialog):
 
         def __get_bottom_layout(parent):
             btn_license = Button(parent=parent, text='License')
-            btn_license.clicked.connect(self.show_license)
+            btn_license.clicked.connect(parent.show_license)
             btn_license.setVisible(True)
             btn_close = Button(parent=parent, text='Close')
             btn_close.clicked.connect(parent.close)
@@ -242,7 +246,6 @@ class UpdateCheckDialog(QDialog):
         class UpdateCheck(QThread):
 
             msignal = pyqtSignal(str) # update message
-            wsignal = pyqtSignal(str) # update window title
 
             def run(self):
                 """
@@ -287,16 +290,13 @@ class UpdateCheckDialog(QDialog):
                                     url = B3_WEBSITE
 
                                 self.msignal.emit('update available: <a href="%s">%s</a>' % (url, latestversion))
-                                self.wsignal.emit('B3 update available (%s)' % latestversion)
                                 LOG.info('update available: %s - %s', url, latestversion)
                             else:
                                 self.msignal.emit('no update available')
-                                self.wsignal.emit('B3 is up to date')
                                 LOG.info('no update available')
 
         self.qthread = UpdateCheck(self)
         self.qthread.msignal.connect(self.update_message)
-        self.qthread.wsignal.connect(self.update_window_title)
         self.qthread.finished.connect(self.finished)
         self.qthread.start()
 
@@ -307,18 +307,198 @@ class UpdateCheckDialog(QDialog):
         """
         self.message.setText(message)
 
-    @pyqtSlot(str)
-    def update_window_title(self, title):
-        """
-        Update the status message.
-        """
-        self.setWindowTitle(title)
-
     def finished(self):
         """
         Execute when the QThread emits the finished signal.
         """
         self.progress.stop()
+
+
+class UpdateDatabaseDialog(QDialog):
+    """
+    This class is used to display the 'update check' dialog.
+    """
+    btn_close = None
+    btn_update = None
+    layout1 = None
+    layout2 = None
+    main_layout = None
+    message = None
+    progress = None
+    qthread = None
+
+    def __init__(self, parent=None):
+        """
+        Initialize the 'update check' dialog window
+        :param parent: the parent widget
+        """
+        QDialog.__init__(self, parent)
+        self.initUI()
+
+    def initUI(self):
+        """
+        Initialize the Dialog layout.
+        """
+        self.setWindowTitle('B3 database update')
+        self.setWindowFlags(Qt.WindowTitleHint | Qt.Dialog | Qt.WindowMaximizeButtonHint | Qt.CustomizeWindowHint)
+        self.setFixedSize(420, 160)
+        self.setStyleSheet("""
+        QDialog {
+            background: #F2F2F2;
+        }
+        """)
+
+        ## INIT CLOSE BUTTON
+        self.btn_close = Button(parent=self, text='Close')
+        self.btn_close.clicked.connect(self.close)
+        self.btn_close.show()
+        ## INIT UPDATE BUTTON
+        self.btn_update = Button(parent=self, text='Update')
+        self.btn_update.clicked.connect(self.do_update)
+        self.btn_update.show()
+        ## CREATE THE PROGRESS BAR
+        self.progress = ProgressBar(self)
+        self.progress.hide()
+        self.progress.setRange(0, 0)
+        self.progress.setValue(-1)
+        ## INIT DISPLAY MESSAGE
+        self.message = QLabel("This tool will updated all your B3 databases to version %s.\n"
+                              "The update process should take less than 2 minutes and\n"
+                              "cannot be interrupted." % b3.__version__, self)
+
+        def __get_top_layout(parent):
+            parent.layout1 = QVBoxLayout()
+            parent.layout1.addWidget(parent.progress)
+            parent.layout1.addWidget(parent.message)
+            parent.layout1.setAlignment(Qt.AlignTop|Qt.AlignHCenter)
+            parent.layout1.setContentsMargins(0, 0, 0, 0)
+            return parent.layout1
+
+        def __get_bottom_layout(parent):
+            parent.layout2 = QHBoxLayout()
+            parent.layout2.addWidget(parent.btn_close)
+            parent.layout2.addWidget(parent.btn_update)
+            parent.layout2.setAlignment(Qt.AlignHCenter)
+            parent.layout2.setSpacing(20)
+            return parent.layout2
+
+        self.setModal(True)
+        self.main_layout = QVBoxLayout()
+        self.main_layout.addLayout(__get_top_layout(self))
+        self.main_layout.addLayout(__get_bottom_layout(self))
+        self.main_layout.setAlignment(Qt.AlignCenter)
+        self.setLayout(self.main_layout)
+
+    def keyPressEvent(self, event):
+        """
+        Prevent the user from closing the dialog using the ESC key.
+        """
+        if event.key() == Qt.Key_Escape:
+            event.ignore()
+        else:
+            QDialog.keyPressEvent(self, event)
+
+    def do_update(self):
+        """
+        Update B3 databases.
+        """
+        ## CREATE THE PROGRESS BAR
+        self.progress.show()
+        self.progress.setAlignment(Qt.AlignHCenter)
+        ## CHANGE CURRENT MESSAGE WITH A PLACEHOLDER
+        self.message.setText('starting update')
+        self.message.setAlignment(Qt.AlignHCenter)
+        ## HIDE CONTROL BUTTONS
+        self.btn_close.hide()
+        self.btn_update.hide()
+
+        class DatabaseUpdate(QThread):
+
+            msignal = pyqtSignal(str)
+            psignal = pyqtSignal(int, int, int)
+
+            def run(self):
+                """
+                Threaded code.
+                """
+                sleep(1.5)
+                LOG.debug('requested B3 database update')
+
+                def _update_database(process, storage, version):
+                    """
+                    Update a B3 database.
+                    :param process: the B3 process we are updating
+                    :param storage: the initialized storage module
+                    :param version: the update version
+                    """
+                    if B3version(b3.__version__) >= version:
+                        sql = b3.getAbsolutePath('@b3/sql/%s/b3-update-%s.sql' % (storage.protocol, version))
+                        if os.path.isfile(sql):
+
+                            try:
+                                LOG.debug('updating %s database to version %s', process.name, version)
+                                storage.queryFromFile(sql)
+                            except Exception, err:
+                                LOG.warning('could not update %s database properly: %s', process.name, err)
+
+                collection = [x for x in B3App.Instance().processes if x.isFlag(CONFIG_VALID)]
+                collection_len = len(collection)
+                self.psignal.emit(0, collection_len, 0)
+                sleep(.5)
+
+                # LOOP AND UPDATE
+                for proc in collection:
+
+                    index = collection.index(proc) + 1
+                    self.msignal.emit('[%s/%s] updating database: %s' % (index, collection_len, proc.name))
+                    self.psignal.emit(0, collection_len, index)
+
+                    sleep(1)
+
+                    try:
+                        dsn = proc.config.get('b3', 'database')
+                        dsndict = splitDSN(dsn)
+                        database = getStorage(dsn, dsndict, StubParser())
+                        # START UPDATING THE PROCESS DATABASE
+                        _update_database(proc, database, '1.3.0')
+                        _update_database(proc, database, '1.6.0')
+                        _update_database(proc, database, '1.7.0')
+                        _update_database(proc, database, '1.8.1')
+                        _update_database(proc, database, '1.9.0')
+                        _update_database(proc, database, '1.10.0')
+                    except Exception, e:
+                        LOG.error('unhandled exception raised while updating %s database: %s', proc.name, e)
+                        self.msignal.emit('ERROR: could not update %s database' % proc.name)
+                        sleep(2)
+
+        self.qthread = DatabaseUpdate(self)
+        self.qthread.msignal.connect(self.update_message)
+        self.qthread.psignal.connect(self.update_progress)
+        self.qthread.finished.connect(self.finished)
+        self.qthread.start()
+
+    @pyqtSlot(str)
+    def update_message(self, message):
+        """
+        Update the status message
+        """
+        self.message.setText(message)
+
+    @pyqtSlot(int, int, int)
+    def update_progress(self, range_1, range_2, value):
+        """
+        Update the progress bar.
+        """
+        self.progress.setRange(range_1, range_2)
+        self.progress.setValue(value)
+
+    def finished(self):
+        """
+        Execute when the QThread emits the finished signal.
+        """
+        self.progress.setValue(self.progress.maximum())
+        self.message.setText('database update completed')
+        self.btn_close.show()
 
 
 class PluginInstallDialog(QDialog):
@@ -606,6 +786,6 @@ class STDOutDialog(QDialog):
         self.stdout.insertPlainText(str(self.process.readAllStandardOutput()))
 
 
-from b3.gui import B3_COPYRIGHT, B3_ICON, B3_LICENSE, B3_TITLE, B3_TITLE_SHORT, B3_WEBSITE
-from b3.gui.misc import Button, BusyProgressBar, STDOutText
+from b3.gui import B3App, B3_ICON, CONFIG_VALID
+from b3.gui.misc import Button, BusyProgressBar, ProgressBar, STDOutText
 from b3.gui.widgets import ImageWidget

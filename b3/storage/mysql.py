@@ -197,6 +197,7 @@ class MySQLdbStorage(DatabaseStorage):
 class MysqlStorage(DatabaseStorage):
 
     _reconnectDelay = 60
+    protocol = 'mysql'
 
     def __new__(cls, *args, **kwargs):
         """

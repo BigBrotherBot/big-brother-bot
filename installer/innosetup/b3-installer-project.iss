@@ -81,10 +81,8 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 
 [Icons]
-Name: {group}\{cm:executable,b3_run}; Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.ini"""; WorkingDir: {app}; Flags: dontcloseonexit; IconFilename: {app}\b3.ico; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}";
-Name: {commondesktop}\{cm:executable,b3_run}; Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.ini"""; WorkingDir: {app}; Flags: dontcloseonexit; IconFilename: {app}\b3.ico; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}";
-Name: {group}\{cm:configWizard,Config wizard}; Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.ini"" --setup"; WorkingDir: {app}; Comment: "Run the B3 setup wizard"; Flags: dontcloseonexit;
-Name: {group}\{cm:updateWizard,Database update}; Filename: {app}\b3_run.exe; Parameters: "--config ""{app}\conf\b3.ini"" --update"; WorkingDir: {app}; Comment: "Run the B3 update wizard"; Flags: dontcloseonexit;
+Name: {commondesktop}\{cm:executable,b3_run}; Filename: {app}\b3_run.exe; WorkingDir: {app}; Flags: dontcloseonexit; IconFilename: {app}\b3.ico; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}";
+Name: {group}\{cm:executable,b3_run}; Filename: {app}\b3_run.exe; WorkingDir: {app}; Flags: dontcloseonexit; IconFilename: {app}\b3.ico; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}";
 Name: {group}\{cm:B3ConfDir,config}; Filename: {app}\conf\
 Name: {group}\{cm:extplugins,extplugins}; Filename: {app}\extplugins\; IconFilename: {app}\b3-plugins-icon.ico;
 Name: {group}\Extra\{cm:docs,docs}; Filename: {app}\docs\

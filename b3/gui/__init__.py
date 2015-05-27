@@ -53,6 +53,8 @@
 # 23/05/2015 - 0.10 - make sure that the MainWindow is displayed and focused when restoring it from system tray
 #                   - make sure to properly shutdown B3 when closing the application from OSX dock icon
 # 26/05/2015 - 0.11 - split module into separate submodules
+#                   - implement B3 database update dialog (available from Menu::Tools)
+#                   - implement drag&drop in MainTable: add new B3 by simply dropping the configuration file on it
 
 __author__ = 'Fenix'
 __version__ = '0.11'
@@ -62,21 +64,9 @@ import b3
 import bisect
 import os
 import re
+import sys
 import logging
 import sqlite3
-
-## STRINGS
-B3_TITLE = 'BigBrotherBot (B3) %s' % b3.__version__
-B3_TITLE_SHORT = 'B3 %s' % b3.__version__
-B3_COPYRIGHT = 'Copyright © 2005 Michael "ThorN" Thornton'
-B3_LICENSE = 'GNU General Public License v2'
-B3_FORUM = 'http://forum.bigbrotherbot.net/'
-B3_WEBSITE = 'http://www.bigbrotherbot.net'
-B3_WIKI = 'http://wiki.bigbrotherbot.net/'
-B3_CONFIG_GENERATOR = 'http://config.bigbrotherbot.net/'
-B3_DOCUMENTATION = 'http://doc.bigbrotherbot.net/'
-B3_DONATE = 'http://www.bigbrotherbot.net/donate'
-B3_PLUGIN_REPOSITORY = 'http://forum.bigbrotherbot.net/downloads/?cat=4'
 
 ## USER PATHS
 B3_STORAGE = b3.getWritableFilePath(os.path.join(b3.HOMEDIR, 'app.db'), True)
@@ -454,13 +444,20 @@ class B3(QProcess):
         otherwise the Frozen executable) handing over necessary startup parameters.
         """
         if not main_is_frozen():
-            program = 'python %s --config %s --console' % (os.path.join(b3.getB3Path(True), '..', 'b3_run.py'), self.config_path)
+            # if we are running b3 from sources identify the entry point
+            entry_point = os.path.join(b3.getB3Path(True), '..', 'b3_run.py')
+            if not os.path.isfile(entry_point):
+                # must be running from wheel distribution
+                entry_point = os.path.join(b3.getB3Path(True), 'run.py')
+            # prefer compiled python instance
+            if os.path.isfile(entry_point + 'c'):
+                entry_point += 'c'
+            program = '%s %s --config %s --console' % (sys.executable, entry_point, self.config_path)
         else:
             if b3.getPlatform() == 'darwin':
-                program = '"%s" --config "%s" --console' % (os.path.join(b3.getB3Path(True), 'b3_run'), self.config_path)
+                program = '"%s" --config "%s" --console' % (sys.executable, self.config_path)
             else:
-                executable = 'b3_run.exe' if b3.getPlatform() == 'win32' else 'b3_run.x86'
-                program = '%s --config %s --console' % (os.path.join(b3.getB3Path(True), executable), self.config_path)
+                program = '%s --config %s --console' % (sys.executable, self.config_path)
 
         LOG.info('starting %s process: %s', self.name, program)
 

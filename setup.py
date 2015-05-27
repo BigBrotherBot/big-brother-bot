@@ -599,6 +599,8 @@ setup(
                 ### storage modules
                 'pymysql',
                 'psycopg2',
+                ### core replacements
+                'subprocess32',
                 ### additional modules for popular/useful 3rd party plugins ###
                 'smtplib', 'email', 'calendar',  # contact plugin
                 'telnetlib',  # teamspeak* plugins

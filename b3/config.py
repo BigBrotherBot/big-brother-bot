@@ -52,9 +52,10 @@
 # 19/03/2015 - 1.7.6 - Fenix     - raise NotImplementedError instead of NotImplemented
 # 22/04/2015 - 1.7.7 - Fenix     - raise ConfigFileNotValid in ConfigParser.readfp for consistency with XmlConfigParser
 #                                - added 'analyze()' method in MainConfig
+# 26/05/2015 - 1.7.8 - Fenix     - changed analyze() to validate also storage protocol
 
 __author__  = 'ThorN, Courgette, Fenix'
-__version__ = '1.7.7'
+__version__ = '1.7.8'
 
 import os
 import re
@@ -62,6 +63,7 @@ import time
 import b3
 import b3.functions
 import b3.exceptions
+import b3.storage
 import ConfigParser
 
 try:
@@ -436,7 +438,7 @@ def load(filename):
         # allow the use of empty keys to support the new b3.ini configuration file
         config = CfgConfigParser(allow_no_value=True)
 
-    filename = b3.getAbsolutePath(filename)
+    filename = b3.getAbsolutePath(filename, True)
 
     # return the config if it can be loaded
     return config if config.load(filename) else None
@@ -549,8 +551,12 @@ class MainConfig(B3ConfigParserMixin):
 
         ## DSN DICT
         if self.has_option('b3', 'database'):
-            if not b3.functions.splitDSN(self.get('b3', 'database')):
+            dsndict = b3.functions.splitDSN(self.get('b3', 'database'))
+            if not dsndict:
                 analysis.append('invalid database source name specified in b3::database (%s)' % self.get('b3', 'database'))
+            elif dsndict['protocol'] not in b3.storage.PROTOCOLS:
+                analysis.append('invalid storage protocol specified in b3::database (%s) : '
+                                'valid protocols are : %s' % (dsndict['protocol'], ', '.join(b3.storage.PROTOCOLS)))
 
         ## ADMIN PLUGIN CHECK
         has_admin = False
