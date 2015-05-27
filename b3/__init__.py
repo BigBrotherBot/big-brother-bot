@@ -284,16 +284,7 @@ def start(mainconfig, options):
         sys.exit(223)
 
 
-def clearscreen():
-    """
-    Clear the current shell screen according to the OS being used.
-    """
-    if getPlatform() == 'win32':
-        os.system('cls')
-    else:
-        os.system('clear')
-
-
+from b3.functions import clearscreen
 from b3.functions import decode as decode_
 from b3.functions import main_is_frozen
 from b3.update import checkUpdate

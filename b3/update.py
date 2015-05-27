@@ -34,7 +34,7 @@ import sys
 import urllib2
 
 from b3 import B3_CONFIG_GENERATOR, HOMEDIR
-from b3.functions import console_exit, splitDSN
+from b3.functions import console_exit, splitDSN, clearscreen
 from b3.parser import StubParser
 from b3.storage import getStorage
 from distutils import version
@@ -312,7 +312,7 @@ class DBUpdate(object):
         """
         Run the DB update
         """
-        b3.clearscreen()
+        clearscreen()
         print """
                         _\|/_
                         (o o)    {:>32}

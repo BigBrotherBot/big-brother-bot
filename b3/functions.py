@@ -50,6 +50,7 @@
 # 09/03/2015 - 1.20  - Fenix          - added topological_sort() function: topological sort implementation
 # 23/05/2015 - 1.21  - Fenix          - added decode() function: decode a string using the system default encoding
 # 26/05/2015 - 1.22  - Fenix          - added console_exit function: terminate the current console application
+#                                     - moved clearscreen() function from b3.__init__
 
 __author__    = 'ThorN, xlr8or, courgette'
 __version__   = '1.22'
@@ -288,6 +289,16 @@ def console_exit(message):
         raise SystemExit()
     else:
         raise SystemExit(message)
+
+
+def clearscreen():
+    """
+    Clear the current shell screen according to the OS being used.
+    """
+    if sys.platform == 'win32':
+        os.system('cls')
+    else:
+        os.system('clear')
 
 
 def levenshteinDistance(a, b):
