@@ -529,6 +529,7 @@ setup(
         'pymysql>=0.6.6,<2',
         'python-dateutil>=2.4.1,<3',
         'feedparser>=4.1,<6',
+        'requests>=2.6.0'
     ],
     packages=setuptools.find_packages(),
     package_data={'': [
@@ -538,10 +539,7 @@ setup(
         'conf/templates/autodoc/*.html',
         'docs/*.txt',
         'docs/*.pdf',
-        'extplugins/xlrstats/*.py',
-        'extplugins/xlrstats/doc/*',
-        'extplugins/conf/*.xml',
-        'extplugins/conf/*.ini',
+        'extplugins/*.*',
         'plugins/*.*',
         'sql/*.*',
         'sql/sqlite/*',
@@ -552,6 +550,7 @@ setup(
         '../b3_debug.py',
         '../b3_run.py',
         '../scripts/*.*',
+        '../examples/*.*',
     ]
     },
     entry_points={
@@ -616,14 +615,13 @@ setup(
                 ('b3/conf/templates', 'conf/templates'),
                 ('b3/conf/templates/autodoc', 'conf/templates/autodoc'),
                 ('b3/extplugins/', 'extplugins'),
-                ('b3/extplugins/xlrstats', 'extplugins/xlrstats'),
-                ('b3/extplugins/xlrstats/conf', 'extplugins/xlrstats/conf'),
                 ('b3/gui/assets', 'gui/assets'),
-                ('b3/plugins/', 'plugins'),
+                ('b3/plugins/', 'plugins/'),
                 ('b3/sql', 'sql'),
                 ('b3/sql/mysql', 'sql/mysql'),
                 ('b3/sql/postgresql', 'sql/postgresql'),
                 ('b3/sql/sqlite', 'sql/sqlite'),
+                ('examples', 'examples'),
             ],
         }
     },

@@ -1,4 +1,3 @@
-#
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
 #
@@ -15,23 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2014/08/31 - 3.3   - Fenix     - syntax cleanup
-#                                - improved plugin configuration file loading
-# 2014/04/06 - 3.2   - Fenix     - PEP8 coding standards
-# 2012/07/03 - 3.1   - Courgette - fixes a bug wich prevented regular expression "\sd[i!1*]ck\s" to match for word "d!ck"
-# 2012/07/03 - 3.0.1 - Courgette - gives meaningful log messages when loading the config file
-# 2011/12/26 - 3.0   - Courgette - refactor and make the checks on raw text before checks on cleaned text. Add tests
-# 2011/12/02 - 2.2.2 - Bravo17   - fix for reason keyword not working
-# 2010/01/16 - 2.2.1 - xlr8or    - plugin can now be disabled with !disable censor
-# 2010/01/16 - 2.2.0 - xlr8or    - added ignore_length as an optional configurable option
-#                                - started debugging the badname checker
-# 2005/08/13 - 2.0.0 - ThorN     - converted to use XML config
-#                                - allow custom penalties for words and names
-# 2005/07/23 - 1.1.0 - ThorN     - added data column to penalties table
-#                                - put censored message/name in the warning data
 
 __author__ = 'ThorN, xlr8or, Bravo17, Courgette'
 __version__ = '3.3'
@@ -94,6 +76,8 @@ class CensorPlugin(b3.plugin.Plugin):
     _badWords = None
     _badNames = None
 
+    loadAfterPlugins = ['chatlogger']
+
     ####################################################################################################################
     #                                                                                                                  #
     #    STARTUP                                                                                                       #
@@ -105,9 +89,6 @@ class CensorPlugin(b3.plugin.Plugin):
         Initialize plugin
         """
         self._adminPlugin = self.console.getPlugin('admin')
-        if not self._adminPlugin:
-            self.critical('could not start without admin plugin')
-            return False
 
         self.registerEvent('EVT_CLIENT_SAY')
         self.registerEvent('EVT_CLIENT_TEAM_SAY')

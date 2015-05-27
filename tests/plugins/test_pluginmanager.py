@@ -83,7 +83,7 @@ class Test_commands(Pluginmanager_TestCase):
         superadmin.clearMessageHistory()
         superadmin.says("!plugin")
         # THEN
-        self.assertListEqual(['Invalid data, try !help plugin'], superadmin.message_history)
+        self.assertListEqual(['invalid data, try !help plugin'], superadmin.message_history)
 
     def test_cmd_plugin_with_invalid_command_name(self):
         # GIVEN
@@ -93,7 +93,7 @@ class Test_commands(Pluginmanager_TestCase):
         superadmin.clearMessageHistory()
         superadmin.says("!plugin fake")
         # THEN
-        self.assertListEqual(['Usage: !plugin <disable|enable|info|list|load|unload> [<data>]'], superadmin.message_history)
+        self.assertListEqual(['usage: !plugin <disable|enable|info|list|load|unload> [<data>]'], superadmin.message_history)
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -125,7 +125,7 @@ class Test_commands(Pluginmanager_TestCase):
         superadmin.clearMessageHistory()
         superadmin.says("!plugin enable")
         # THEN
-        self.assertListEqual(['Usage: !plugin enable <name/s>'], superadmin.message_history)
+        self.assertListEqual(['usage: !plugin enable <name/s>'], superadmin.message_history)
 
     def test_cmd_plugin_enable_protected(self):
         # GIVEN
@@ -216,7 +216,7 @@ class Test_commands(Pluginmanager_TestCase):
         superadmin.clearMessageHistory()
         superadmin.says("!plugin disable")
         # THEN
-        self.assertListEqual(['Usage: !plugin disable <name/s>'], superadmin.message_history)
+        self.assertListEqual(['usage: !plugin disable <name/s>'], superadmin.message_history)
 
     def test_cmd_plugin_disable_protected(self):
         # GIVEN
@@ -307,7 +307,7 @@ class Test_commands(Pluginmanager_TestCase):
         superadmin.clearMessageHistory()
         superadmin.says("!plugin load")
         # THEN
-        self.assertListEqual(['Usage: !plugin load <name/s>'], superadmin.message_history)
+        self.assertListEqual(['usage: !plugin load <name/s>'], superadmin.message_history)
 
     def test_cmd_plugin_load_protected(self):
         # GIVEN
@@ -357,7 +357,7 @@ class Test_commands(Pluginmanager_TestCase):
         superadmin.clearMessageHistory()
         superadmin.says("!plugin unload")
         # THEN
-        self.assertListEqual(['Usage: !plugin unload <name/s>'], superadmin.message_history)
+        self.assertListEqual(['usage: !plugin unload <name/s>'], superadmin.message_history)
 
     def test_cmd_plugin_unload_protected(self):
         # GIVEN
@@ -440,7 +440,7 @@ class Test_commands(Pluginmanager_TestCase):
         superadmin.clearMessageHistory()
         superadmin.says("!plugin info")
         # THEN
-        self.assertListEqual(['Usage: !plugin info <name/s>'], superadmin.message_history)
+        self.assertListEqual(['usage: !plugin info <name/s>'], superadmin.message_history)
 
     def test_cmd_plugin_info_with_valid_plugin_name(self):
         # GIVEN

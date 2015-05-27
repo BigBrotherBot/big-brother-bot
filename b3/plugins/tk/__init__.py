@@ -1,4 +1,3 @@
-#
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2005 Michael "ThorN" Thornton
 #
@@ -15,36 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 08/30/2014 - 1.3.4   - Fenix          - syntax cleanup
-#                                       - highly improved plugin configuration file loading
-# 04/15/2014 - 1.3.3   - Fenix          - PEP8 coding standards
-# 01/15/2014 - 1.3.2   - Fenix          - add 'lms' to ffa gametype: skip teamkill detection for Last Man Standing on
-#                                         Urban Terror 4.2
-# 10/23/2013 - 1.3.1   - Courgette      - the plugin falls back on default values even with an empty config file
-#                                       - fix bug with _round_end_games
-# 10/22/2013 - 1.3.0   - ozon           - allow configurable warning reason
-# 04/04/2012 - 1.2.8   - 82ndab-Bravo17 - remove logfile errors
-# 01/29/2012 - 1.2.7   - 82ndab-Bravo17 - check for ROUND_END event to halve TK points for BF3
-#                                       - add configurable TK point 'half-life' to halve TK points at intervals in long rounds
-#                                       - add configurable duration for auto TK warning
-# 01/06/2012 - 1.2.6   - 82ndab-Bravo17 - add configurable values for sending damage messages
-# 03/30/2011 - 1.2.5   - SGT            - introduction of grudge level
-# 11/22/2009 - 1.2.4   - Courgette      - also send a msg to victim with instructions on how to forgive
-#                                       - add tests
-# 10/30/2009 - 1.2.3   - xlr8or         - added a few ffa gametypes for bypassing tk handling
-# 08/22/2009 - 1.2.2   - Courgette      - fix bug in cmd_forgiveall
-# 08/22/2009 - 1.2.1   - Courgette      - fix bug in cmd_forgiveall
-# 08/22/2009 - 1.2.0b  - Courgette      - setting to choose if the bot should broadcast or send private messages
-#                                         (default send private)
-# 10/20/2008 - 1.1.6b1 - mindriot       - indentation fix
-# 10/20/2008 - 1.1.6b0 - mindriot       - in clientDamage, kill and damage mutlipliers were reversed - changed if
-#                                         killed: to [0] and else: to [1]
-#                                       - added grudge_enable to control grudge command registration
-# 08/29/2005 - 1.1.0   - ThorN          - converted to use new event handlers
-# 07/23/2005 - 1.0.2   - ThorN          - changed temp ban duration to be based on ban_length times the number of victims
 
 import b3
 import b3.events
@@ -419,18 +388,18 @@ class TkPlugin(b3.plugin.Plugin):
         self.registerEvent('EVT_GAME_ROUND_START')
 
         self._adminPlugin = self.console.getPlugin('admin')
-        if self._adminPlugin:
-            self._adminPlugin.registerCommand(self, 'forgive', 0, self.cmd_forgive, 'f')
-            # this command will forgive the person about to be kicked
-            # self._adminPlugin.registerCommand('forgivenow', 0, self.cmd_forgivenow)
-            self._adminPlugin.registerCommand(self, 'forgivelist', 0, self.cmd_forgivelist, 'fl')
-            self._adminPlugin.registerCommand(self, 'forgiveall', 0, self.cmd_forgiveall, 'fa')
-            self._adminPlugin.registerCommand(self, 'forgiveinfo', 20, self.cmd_forgiveinfo, 'fi')
-            self._adminPlugin.registerCommand(self, 'forgiveclear', 60, self.cmd_forgiveclear, 'fc')
-            self._adminPlugin.registerCommand(self, 'forgiveprev', 0, self.cmd_forgivelast, 'fp')
 
-            if self._grudge_enable:
-                self._adminPlugin.registerCommand(self, 'grudge', self._grudge_level, self.cmd_grudge, 'grudge')
+        self._adminPlugin.registerCommand(self, 'forgive', 0, self.cmd_forgive, 'f')
+        # this command will forgive the person about to be kicked
+        # self._adminPlugin.registerCommand('forgivenow', 0, self.cmd_forgivenow)
+        self._adminPlugin.registerCommand(self, 'forgivelist', 0, self.cmd_forgivelist, 'fl')
+        self._adminPlugin.registerCommand(self, 'forgiveall', 0, self.cmd_forgiveall, 'fa')
+        self._adminPlugin.registerCommand(self, 'forgiveinfo', 20, self.cmd_forgiveinfo, 'fi')
+        self._adminPlugin.registerCommand(self, 'forgiveclear', 60, self.cmd_forgiveclear, 'fc')
+        self._adminPlugin.registerCommand(self, 'forgiveprev', 0, self.cmd_forgivelast, 'fp')
+
+        if self._grudge_enable:
+            self._adminPlugin.registerCommand(self, 'grudge', self._grudge_level, self.cmd_grudge, 'grudge')
 
         if self._tkpointsHalflife > 0:
             minute, sec = self.crontab_time()

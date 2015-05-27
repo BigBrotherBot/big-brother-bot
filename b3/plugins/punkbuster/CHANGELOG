@@ -1,0 +1,7 @@
+30/08/2014 - 1.3   - Fenix      - syntax cleanup
+02/05/2014 - 1.2.1 - Fenix      - make use of the new getCmd function from functions module
+06/04/2014 - 1.2   - Fenix      - PEP8 coding standards
+                                - improved plugin startup and configuration file loading
+19/07/2011 - 1.1.0 - Freelander - support for ftp access to pbbans.dat
+27/08/2009 - 1.0.9 - Bakes      - use command levels set in punkbuster plugin config not admin plugin
+11/30/2005 - 1.0.8 - ThorN      - use PluginCronTab instead of CronTab
