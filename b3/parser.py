@@ -185,7 +185,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.43'
+__version__ = '1.43.1'
 
 
 import os
@@ -428,11 +428,11 @@ class Parser(object):
             pass
 
         self.bot('%s', b3.getB3versionString())
-        self.bot('Python: %s', sys.version)
+        self.bot('Python: %s', sys.version.replace('\n', ''))
         self.bot('Default encoding: %s', sys.getdefaultencoding())
-        self.bot('Starting %s v%s for server %s:%s', self.__class__.__name__,
+        self.bot('Starting %s v%s for server %s:%s (autorestart = %s)', self.__class__.__name__,
                                                      getattr(getModule(self.__module__), '__version__', ' Unknown'),
-                                                     self._rconIp, self._port)
+                                                     self._rconIp, self._port, 'ON' if self.autorestart else 'OFF')
 
         # get events
         self.Events = b3.events.eventManager

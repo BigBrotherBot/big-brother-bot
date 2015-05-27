@@ -14,3 +14,6 @@ psycopg2==2.6
 
 # If you need a secure connection (SFTP plugin)
 paramiko==1.15.2
+
+# Post of the subprocess module from python 3
+subprocess32==3.2.6

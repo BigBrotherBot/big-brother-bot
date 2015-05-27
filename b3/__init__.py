@@ -223,7 +223,8 @@ def start(mainconfig, options):
     confdir = os.path.dirname(mainconfig.fileName)
 
     sys.stdout.write('Starting B3      : %s\n' % getB3versionString())
-    sys.stdout.write('Loading config   : %s\n' % getShortPath(mainconfig.fileName, True))
+    sys.stdout.write('Autorestart mode : %s\n' % ('ON' if options.autorestart else 'OFF'))
+
     sys.stdout.flush()
 
     try:
@@ -247,9 +248,14 @@ def start(mainconfig, options):
                 sys.stdout.flush()
                 time.sleep(1)
 
+    # not real loading but the user will get what's configuration he is using
+    sys.stdout.write('Loading config   : %s\n' % getShortPath(mainconfig.fileName, True))
+    sys.stdout.flush()
+
     parsertype = mainconfig.get('b3', 'parser')
     sys.stdout.write('Loading parser   : %s\n' % parsertype)
     sys.stdout.flush()
+
     parser = loadParser(parsertype)
     global console
     console = parser(mainconfig, options)

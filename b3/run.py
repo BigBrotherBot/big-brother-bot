@@ -43,7 +43,6 @@ import os
 import sys
 import argparse
 import pkg_handler
-import time
 import traceback
 
 from b3 import HOMEDIR, B3_CONFIG_GENERATOR
@@ -61,11 +60,14 @@ def run_autorestart(args=None):
     restart_num = 0
 
     if main_is_frozen():
+        # if we are running the frozen application we do not
+        # need to run any script, just the executable itself
         script = ''
     else:
+        # if we are running from sources, then sys.executable is set to `python`
         script = os.path.join(modulePath[:-3], 'b3_run.py')
         if not os.path.isfile(script):
-            # must be running from the wheel
+            # must be running from the wheel, so there is no b3_run
             script = os.path.join(modulePath[:-3], 'b3', 'run.py')
         if os.path.isfile(script + 'c'):
             script += 'c'
@@ -76,51 +78,55 @@ def run_autorestart(args=None):
         script = '%s %s --console --autorestart' % (sys.executable, script)
 
     while True:
+
         try:
-            print 'Running in auto-restart mode...'
-            if restart_num > 0:
-                print 'Bot restarted %s times.' %restart_num
-            time.sleep(1)
 
             try:
-                import subprocess
-                status = subprocess.call(script, shell=True)
+                import subprocess32 as subprocess
             except ImportError:
-                subprocess = None  # just to remove warnings
-                print 'Restart mode not fully supported!\n' \
-                      'Use B3 without the -r (--restart) option or update your python installation!'
-                break
+                import subprocess
 
-            print 'Exited with status %s' % status
+            status = subprocess.call(script, shell=True)
+
+            sys.stdout.write('Exited with status: %s ... ' % status)
+            sys.stdout.flush()
+            sleep(2)
 
             if status == 221:
-                print 'Restart requested...'
+                restart_num += 1
+                sys.stdout.write('restart requested (%s)\n' % restart_num)
+                sys.stdout.flush()
             elif status == 222:
-                print 'Shutdown requested.'
+                sys.stdout.write('shutdown requested!\n')
+                sys.stdout.flush()
                 break
-            elif status == 220:
-                print 'B3 Error, check log file.'
-                break
-            elif status == 223:
-                print 'B3 Error Restart, check log file.'
+            elif status == 220 or status == 223:
+                sys.stdout.write('B3 error (check log file)\n')
+                sys.stdout.flush()
                 break
             elif status == 224:
-                print 'B3 Error, check console.'
+                sys.stdout.write('B3 error (check console)\n')
+                sys.stdout.flush()
                 break
             elif status == 256:
-                print 'Python error, stopping, check log file.'
+                sys.stdout.write('python error, (check log file)\n')
+                sys.stdout.flush()
                 break
             elif status == 0:
-                print 'Normal shutdown, stopping.'
+                sys.stdout.write('normal shutdown\n')
+                sys.stdout.flush()
                 break
             elif status == 1:
-                print 'Error, stopping, check console.'
+                sys.stdout.write('general error (check console)\n')
+                sys.stdout.flush()
                 break
             else:
-                print 'Unknown shutdown status (%s), restarting...' % status
-        
-            restart_num += 1
-            time.sleep(4)
+                restart_num += 1
+                sys.stdout.write('unknown exit code (%s), restarting (%s)...\n' % (status, restart_num))
+                sys.stdout.flush()
+
+            sleep(4)
+
         except KeyboardInterrupt:
             print 'Quit'
             break
