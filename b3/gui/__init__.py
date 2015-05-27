@@ -53,7 +53,8 @@
 # 23/05/2015 - 0.10 - make sure that the MainWindow is displayed and focused when restoring it from system tray
 #                   - make sure to properly shutdown B3 when closing the application from OSX dock icon
 # 26/05/2015 - 0.11 - split module into separate submodules
-#                   - implement B3 database update dialog (available from Menu::Tools
+#                   - implement B3 database update dialog (available from Menu::Tools)
+#                   - implement drag&drop in MainTable: add new B3 by simply dropping the configuration file on it
 
 __author__ = 'Fenix'
 __version__ = '0.11'

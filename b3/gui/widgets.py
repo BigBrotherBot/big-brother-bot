@@ -23,7 +23,7 @@ import os
 import re
 
 from PyQt5.QtCore import QProcess, Qt, QEvent
-from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtGui import QPixmap, QIcon, QCursor
 from PyQt5.QtWidgets import QLabel, QVBoxLayout, QTableWidget, QAbstractItemView, QHeaderView, QTableWidgetItem
 from PyQt5.QtWidgets import QHBoxLayout, QWidget, QMessageBox, QMainWindow, QDesktopWidget, QSystemTrayIcon, QFileDialog
 from b3 import B3_TITLE
@@ -80,6 +80,8 @@ class MainTable(QTableWidget):
         }
         """)
         self.setShowGrid(False)
+        self.setAcceptDrops(True)
+        self.setDragEnabled(True)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.setSelectionMode(QAbstractItemView.NoSelection)
         self.horizontalHeader().setVisible(False)
@@ -199,6 +201,48 @@ class MainTable(QTableWidget):
         __paint_column_name(self, row, process)
         __paint_column_status(self, row, process)
         __paint_column_toolbar(self, row, process)
+
+    ############################################# EVENT HANDLERS  ######################################################
+
+    def dragEnterEvent(self, event):
+        """
+        Handle 'Drag Enter' event.
+        """
+        if event.mimeData().hasUrls():
+            B3App.Instance().setOverrideCursor(QCursor(Qt.DragCopyCursor))
+            event.setDropAction(Qt.CopyAction)
+            event.accept()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        """
+        Handle 'Drag Move' event.
+        """
+        if event.mimeData().hasUrls():
+            B3App.Instance().setOverrideCursor(QCursor(Qt.DragCopyCursor))
+            event.setDropAction(Qt.CopyAction)
+            event.accept()
+        else:
+            event.ignore()
+
+    def dragLeaveEvent(self, event):
+        """
+        Handle 'Drag Leave' event.
+        """
+        B3App.Instance().setOverrideCursor(QCursor(Qt.ArrowCursor))
+
+    def dropEvent(self, event):
+        """
+        Handle 'Drop' event.
+        """
+        if event.mimeData().hasUrls():
+            B3App.Instance().setOverrideCursor(QCursor(Qt.ArrowCursor))
+            event.setDropAction(Qt.CopyAction)
+            event.accept()
+            self.parent().parent().make_new_process(event.mimeData().urls()[0].path())
+        else:
+            event.ignore()
 
     ############################################ TOOLBAR HANDLERS  #####################################################
 
@@ -354,7 +398,7 @@ class CentralWidget(QWidget):
 
         def __get_bottom_layout(parent):
             btn_new = Button(parent=parent, text='Add', shortcut='Ctrl+N')
-            btn_new.clicked.connect(self.parent().new_process)
+            btn_new.clicked.connect(self.parent().new_process_dialog)
             btn_new.setStatusTip('Add a new B3')
             btn_new.setVisible(True)
             btn_quit = Button(parent=parent, text='Quit', shortcut='Ctrl+Q')
@@ -472,17 +516,13 @@ class MainWindow(QMainWindow):
 
     ############################################# ACTION HANDLERS  #####################################################
 
-    def new_process(self):
+    def make_new_process(self, path):
         """
-        Create a new B3 entry in the database.
+        Create a new B3 process using the provided configuration file path.
         NOTE: this actually handle also the repainting of the main table but
         since it's not a toolbar button handler it has been implemented here instead.
+        :param path: the configuration file path
         """
-        self.show()
-        init = b3.getAbsolutePath('@b3/conf')
-        extensions = ['INI (*.ini)', 'XML (*.xml)', 'All Files (*.*)']
-        path, _ = QFileDialog.getOpenFileName(self.centralWidget(), 'Select configuration file', init, ';;'.join(extensions))
-
         if path:
 
             try:
@@ -510,9 +550,19 @@ class MainWindow(QMainWindow):
                         main_table = self.centralWidget().main_table
                         main_table.repaint()
 
+    def new_process_dialog(self):
+        """
+        Open the File dialog used to select a B3 configuration file.
+        """
+        self.show()
+        init = b3.getAbsolutePath('@b3/conf')
+        extensions = ['INI (*.ini)', 'XML (*.xml)', 'All Files (*.*)']
+        path, _ = QFileDialog.getOpenFileName(self.centralWidget(), 'Select configuration file', init, ';;'.join(extensions))
+        self.make_new_process(path)
+
     def install_plugin(self):
         """
-        Handle the install of a new B3 plugin
+        Handle the install of a new B3 plugin.
         """
         self.show()
         init = b3.getAbsolutePath('~')
@@ -531,7 +581,7 @@ class MainWindow(QMainWindow):
 
     def check_update(self):
         """
-        Display the 'update check' dialog
+        Display the 'update check' dialog.
         """
         self.show()
         update = UpdateCheckDialog(self.centralWidget())
@@ -539,7 +589,7 @@ class MainWindow(QMainWindow):
 
     def update_database(self):
         """
-        Display the 'database update' dialog
+        Display the 'database update' dialog.
         """
         self.show()
 

@@ -53,7 +53,7 @@ class MainMenuBar(QMenuBar):
         new_process = QAction('Add B3', self.parent())
         new_process.setShortcut('Ctrl+N')
         new_process.setStatusTip('Add a new B3')
-        new_process.triggered.connect(self.parent().new_process)
+        new_process.triggered.connect(self.parent().new_process_dialog)
         new_process.setVisible(True)
         ### INSTALL PLUGIN SUBMENU ENTRY
         install_plugin = QAction('Add Plugin', self.parent())
