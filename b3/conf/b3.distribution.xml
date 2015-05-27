@@ -126,17 +126,41 @@
         <plugin name="tk" config="@conf/plugin_tk.ini" />
         <plugin name="welcome" config="@conf/plugin_welcome.ini" />
 
-        <!-- The next plugins are external, 3rd party plugins and should reside in the external_dir. Example: -->
-        <!-- <plugin name="newplugin" config="@b3/extplugins/newplugin/conf/plugin_newplugin.ini" /> -->
+        <!-- The following plugins have been included recently in B3 as official plugins. They are disabled by
+             default. You can enable them by removing the surrounding comment symbols. -->
 
-        <!-- You can add new/custom plugins to this list using the same form as above. -->
-        
-        <!-- This is a non-standard plugin, and quite resource heavy. Please take
-             a look in the B3 forums (look for XLR Extensions) for more information before enabling this.
-             <plugin name="xlrstats" config="@b3/extplugins/xlrstats/conf/plugin_xlrstats.ini"/>
-        -->
-        
-        <!-- You can find many others plugin for B3 which can extend functionalities a lot !
-             Please take a look at the official website for more informations. -->
+        <!-- NON GAME SPECIFIC -->
+        <!-- <plugin name="banlist" config="@conf/plugin_banlist.xml" /> -->
+        <!-- <plugin name="chatlogger" config="@conf/plugin_chatlogger.ini" /> -->
+        <!-- <plugin name="countryfilter" config="@conf/plugin_countryfilter.ini" /> -->
+        <!-- <plugin name="customcommands" config="@conf/plugin_customcommands.ini" /> -->
+        <!-- <plugin name="firstkill" config="@conf/plugin_firstkill.ini" /> -->
+        <!-- <plugin name="geowelcome" config="@conf/plugin_geowelcome.ini" /> -->
+        <!-- <plugin name="ipban" config="@conf/plugin_ipban.ini" /> -->
+        <!-- <plugin name="location" config="@conf/plugin_location.ini" /> -->
+        <!-- <plugin name="makeroom" config="@conf/plugin_makeroom.ini" /> -->
+        <!-- <plugin name="netblocker" config="@conf/plugin_netblocker.ini" /> -->
+        <!-- <plugin name="nickreg" config="@conf/plugin_nickreg.ini" /> -->
+        <!-- <plugin name="translator" config="@conf/plugin_translator.ini" /> -->
+        <!-- <plugin name="xlrstats" config="@conf/plugin_xlrstats.ini" /> -->
+
+        <!-- BF3 -->
+        <!-- <plugin name="poweradminbf3" config="@conf/plugin_poweradminbf3.ini" /> -->
+
+        <!-- COD7 -->
+        <!-- <plugin name="poweradmincod7" config="@conf/plugin_poweradmincod7.xml" /> -->
+
+        <!-- MOH -->
+        <!-- <plugin name="poweradminmoh" config="@conf/plugin_poweradminmoh.xml" /> -->
+
+        <!-- UrT 4.2 -->
+        <!-- <plugin name="callvote" config="@conf/plugin_callvote.ini" /> -->
+        <!-- <plugin name="jumper" config="@conf/plugin_jumper.ini" /> -->
+        <!-- <plugin name="spawnkill" config="@conf/plugin_spawnkill.ini" /> -->
+
+        <!-- UrT 4.1 / 4.2 -->
+        <!-- <plugin name="poweradminurt" config="@conf/plugin_poweradminurt.ini" /> -->
+        <!-- <plugin name="urtserversidedemo" config="@conf/plugin_urtserversidedemo.ini" /> -->
+
     </plugins>
 </configuration>

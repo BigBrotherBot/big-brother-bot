@@ -1,0 +1,19 @@
+== What it is:
+
+netblock.py implements sets of IP address ranges, supporting various
+notation including CIDR. It does not require contiguous IP address
+ranges.
+
+ranges.py implements (integer) ranges, hopefully efficiently. It is used
+by netblock.py.
+
+nbcalc.py is a netblock calculator. See the comments at its start for
+usage information, for now.
+
+=== Bugs:
+
+- nbcalc.py needs a manpage
+
+=== Copyright:
+
+GPL v3 for now.

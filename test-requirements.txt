@@ -6,3 +6,4 @@ nose-cov
 nose-exclude
 mock>=0.8
 pylint
+pytest

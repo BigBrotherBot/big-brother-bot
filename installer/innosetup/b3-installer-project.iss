@@ -35,7 +35,7 @@ VersionInfoCopyright=www.bigbrotherbot.net
 VersionInfoTextVersion=1.0
 VersionInfoProductName=BigBrotherBot
 VersionInfoProductVersion={#B3_VERSION_NUMBER}
-ExtraDiskSpaceRequired=111087522         
+ExtraDiskSpaceRequired=111087522
 RestartIfNeededByRun=false
 PrivilegesRequired=none
 WizardImageBackColor=clBlack
@@ -121,6 +121,7 @@ Source: {#B3_BUILD_PATH}\gui\*; DestDir: {app}\gui; Flags: recursesubdirs
 Source: {#B3_BUILD_PATH}\imageformats\*; DestDir: {app}\imageformats; Flags: recursesubdirs
 Source: {#B3_BUILD_PATH}\platforms\*; DestDir: {app}\platforms; Flags: recursesubdirs
 Source: {#B3_BUILD_PATH}\plugins\*; DestDir: {app}\plugins; Flags: recursesubdirs
+Source: ../../examples\*; DestDir: "{app}\examples"; Flags: recursesubdirs
 
 [UninstallDelete]
 Name: {app}\*; Type: filesandordirs

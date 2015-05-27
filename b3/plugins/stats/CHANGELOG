@@ -1,0 +1,22 @@
+2014/02/14 - 1.5.1 - 82ndab.Bravo17   - fix crash when there is no "commands" section in the config file
+2014/08/30 - 1.5   - Fenix            - syntax cleanup
+                                      - make use of the new event handler system
+2014/05/02 - 1.4.1 - Fenix            - make use of the new getCmd function from functions module
+2013/10/30 - 1.4   - Courgette        - fix bug when using the !testscore command against a team mate
+                                      - display topstat and topxp awards on EVT_GAME_MAP_CHANGE event additionally to
+                                      - the EVT_GAME_EXIT event
+2001/04/14 - 1.3.7 - Courgette        - fix bug with !topstats and  !topxp
+2011/04/13 - 1.3.6 - Courgette        - import missing string module
+2010/10/30 - 1.3.5 - GrosBedo         - added show_awards and show_awards_xp
+2010/10/20 - 1.3.4 - GrosBedo         - clientKill and clientDamage separated from clientKillTeam and clientDamageTeam
+2010/10/20 - 1.3.3 - GrosBedo         - no more teamKills if team is unknown (eg: parser can't detect the team)
+2010/08/15 - 1.3.2 - GrosBedo         - fixed disabling reset xp option
+2010/08/14 - 1.3.1 - Courgette        - move commands in the commands section of config
+                                      - allow to define aliases in config
+                                      - add automated tests
+2010/08/14 - 1.3.0 - GrosBedo         - stats are now cleared at the beginning of next round
+                                      - moved the parameters to the xml config file (and added more)
+                                      - added XP score and !topxp
+                                      - setting to enable/disable score reset at round start
+2005/09/05 - 1.2.0 - ThorN            - added !topstats command
+2005/08/29 - 1.1.0 - ThorN            - converted to use new event handlers
