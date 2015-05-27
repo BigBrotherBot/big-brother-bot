@@ -64,6 +64,7 @@ import b3
 import bisect
 import os
 import re
+import sys
 import logging
 import sqlite3
 
@@ -443,13 +444,20 @@ class B3(QProcess):
         otherwise the Frozen executable) handing over necessary startup parameters.
         """
         if not main_is_frozen():
-            program = 'python %s --config %s --console' % (os.path.join(b3.getB3Path(True), '..', 'b3_run.py'), self.config_path)
+            # if we are running b3 from sources identify the entry point
+            entry_point = os.path.join(b3.getB3Path(True), '..', 'b3_run.py')
+            if not os.path.isfile(entry_point):
+                # must be running from wheel distribution
+                entry_point = os.path.join(b3.getB3Path(True), 'run.py')
+            # prefer compiled python instance
+            if os.path.isfile(entry_point + 'c'):
+                entry_point += 'c'
+            program = '%s %s --config %s --console' % (sys.executable, entry_point, self.config_path)
         else:
             if b3.getPlatform() == 'darwin':
-                program = '"%s" --config "%s" --console' % (os.path.join(b3.getB3Path(True), 'b3_run'), self.config_path)
+                program = '"%s" --config "%s" --console' % (sys.executable, self.config_path)
             else:
-                executable = 'b3_run.exe' if b3.getPlatform() == 'win32' else 'b3_run.x86'
-                program = '%s --config %s --console' % (os.path.join(b3.getB3Path(True), executable), self.config_path)
+                program = '%s --config %s --console' % (sys.executable, self.config_path)
 
         LOG.info('starting %s process: %s', self.name, program)
 
