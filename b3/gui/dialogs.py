@@ -792,7 +792,10 @@ class STDOutDialog(QDialog):
         Read STDout and append it to the QTextEdit.
         """
         self.stdout.moveCursor(QTextCursor.End)
-        self.stdout.insertPlainText(str(self.process.readAllStandardOutput()))
+        output = str(self.process.readAllStandardOutput())
+        if output.startswith('\x0c'):
+            output = output.lstrip('\x0c')
+        self.stdout.insertPlainText(output)
 
 
 from b3.gui import B3App, B3_ICON, CONFIG_VALID
