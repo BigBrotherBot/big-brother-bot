@@ -251,7 +251,11 @@ class MainTable(QTableWidget):
             event.setDropAction(Qt.CopyAction)
             # multi-drag support
             for url in event.mimeData().urls():
-                path = url.path().lstrip('/').lstrip('\\')
+                path = url.path()
+                if b3.getPlatform() == 'win32':
+                    # on win32 the absolute path returned for each url has a leading slash: this obviously
+                    # is not correct on win32 platform when absolute url have the form C:\\Programs\\... (Qt bug?)
+                    path = path.lstrip('/').lstrip('\\')
                 if os.path.isfile(path):
                     self.parent().parent().make_new_process(path)
             event.accept()
