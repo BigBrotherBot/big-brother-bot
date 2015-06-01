@@ -41,7 +41,7 @@ GEOMETRY = {
     },
     'darwin': {
         'MAIN_TABLE_HEIGHT': 280,
-        'CENTRAL_WIDGET_BOTTOM_LAYOUT_MARGIN_BOTTOM': 40,
+        'CENTRAL_WIDGET_BOTTOM_LAYOUT_MARGIN_BOTTOM': 32,
     },
     'linux': {
         'MAIN_TABLE_HEIGHT': 280,
