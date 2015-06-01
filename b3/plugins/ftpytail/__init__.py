@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  
-__version__ = '1.9'
+__version__ = '1.10'
 __author__ = 'Bakes, Courgette'
 
 import b3
@@ -209,16 +209,25 @@ class FtpytailPlugin(b3.plugin.Plugin):
         self.file.write('\r\n')
         self.file.write('B3 has been restarted\r\n')
         self.file.write('\r\n')
+
         while self.console.working:
 
             try:
+
                 if not ftp:
-                    ftp = self.ftpconnect()
-                    self._nbConsecutiveConnFailure = 0
-                    remotesize = ftp.size(os.path.basename(self.url_path))
-                    self.verbose("connection successful: remote file size is %s" % remotesize)
-                    if self._remoteFileOffset is None:
-                        self._remoteFileOffset = remotesize
+
+                    try:
+                        ftp = self.ftpconnect()
+                    except Exception, e:
+                        self.error('could not connect with FTP server: %s' % e)
+                        self.console.working = False
+                        break
+                    else:
+                        self._nbConsecutiveConnFailure = 0
+                        remotesize = ftp.size(os.path.basename(self.url_path))
+                        self.verbose("connection successful: remote file size is %s" % remotesize)
+                        if self._remoteFileOffset is None:
+                            self._remoteFileOffset = remotesize
                         
                 if self._use_windows_cache_fix:
                     time.sleep(self._cache_refresh_delay)
@@ -249,7 +258,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
 
                     if self.console._paused:
                         self.console.unpause()
-                        self.debug('Unpausing')
+                        self.debug('unpausing')
 
             except ftplib.all_errors, e:
                 self.debug(str(e))
@@ -291,11 +300,11 @@ class FtpytailPlugin(b3.plugin.Plugin):
 
         try:
             ftp.close()
-        except IOError:
+        except Exception:
             pass
         try:
             self.file.close()
-        except IOError:
+        except Exception:
             pass
     
     def ftpconnect(self):

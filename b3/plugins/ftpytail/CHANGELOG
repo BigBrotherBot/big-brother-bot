@@ -1,3 +1,4 @@
+01/06/2015 - 1.10  - Fenix          - stop B3 if no FTP connection can be established
 06/03/2015 - 1.8   - Thomas LEVEIL  - check Python version to be minimum 2.7
 18/01/2015 - 1.7.4 - 82ndab.Bravo17 - move windows 2008 fix config settings back to B3 xml file
 30/08/2014 - 1.7.3 - Fenix          - syntax cleanup
