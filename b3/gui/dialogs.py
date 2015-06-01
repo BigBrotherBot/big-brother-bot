@@ -620,7 +620,7 @@ class PluginInstallDialog(QDialog):
                     return module_name, module_path, module, clazz
 
                 LOG.debug('plugin installation started')
-                extplugins_dir = b3.getAbsolutePath('@b3/extplugins')
+                extplugins_dir = b3.getAbsolutePath('@b3/extplugins', True)
                 tmp_dir = tempfile.mkdtemp()
 
                 if not os.path.isdir(extplugins_dir):
@@ -628,6 +628,8 @@ class PluginInstallDialog(QDialog):
                     try:
                         LOG.warning('missing %s directory: attempt to create it' % extplugins_dir)
                         os.mkdir(extplugins_dir)
+                        with open(os.path.join(extplugins_dir, '__init.__py'), 'w') as f:
+                            f.write('#')
                     except Exception, err:
                         LOG.error('could create default extplugins directory: %s', err)
                         self.msignal.emit('ERROR: could not create extplugins directory!')

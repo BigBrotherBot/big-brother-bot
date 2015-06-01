@@ -81,6 +81,10 @@ class MainMenuBar(QMenuBar):
         update_check = QAction('Check Update', self.parent())
         update_check.setStatusTip('Check if a newer version of B3 is available')
         update_check.triggered.connect(self.parent().check_update)
+        #### B3 PLUGIN DIRECTORY SUBMENU ENTRY
+        plugin_directory = QAction('Plugins Directory', self.parent())
+        plugin_directory.setStatusTip('Open the 3rd party plugins directory')
+        plugin_directory.triggered.connect(self.parent().open_extplugins_directory)
         #### B3 PLUGIN ARCHIVE SUBMENU ENTRY
         plugin_repository = QAction('Plugins Repository', self.parent())
         plugin_repository.setStatusTip('Browse all the available B3 plugins')
@@ -92,8 +96,10 @@ class MainMenuBar(QMenuBar):
         ## TOOLS MENU ENTRY
         tools_menu = self.addMenu('&Tools')
         tools_menu.addAction(update_check)
-        tools_menu.addAction(plugin_repository)
         tools_menu.addAction(update_database)
+        tools_menu.addSeparator()
+        tools_menu.addAction(plugin_directory)
+        tools_menu.addAction(plugin_repository)
 
     def __init_menu_help(self):
         """

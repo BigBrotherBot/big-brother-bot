@@ -330,6 +330,18 @@ class B3App(QApplication):
         ## QUIT THE APPLICATION
         self.quit()
 
+    ############################################## OTHER METHODS #######################################################
+
+    @staticmethod
+    def openpath(path):
+        """
+        Open the given path using the OS default application.
+        :param path: the path to be opened
+        """
+        if os.path.isfile(path) or os.path.isdir(path):
+            os_open = {'win32': 'start %s', 'darwin': 'open "%s"', 'linux': 'xdg-open "%s"'}
+            os.system(os_open[b3.getPlatform()] % path)
+
 
 class B3(QProcess):
 

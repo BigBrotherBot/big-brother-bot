@@ -367,12 +367,7 @@ class MainTable(QTableWidget):
             msgbox.setStandardButtons(QMessageBox.Ok)
             msgbox.exec_()
         else:
-            if b3.getPlatform() == 'win32':
-                os.system('start %s' % path)
-            elif b3.getPlatform() == 'darwin':
-                os.system('open "%s"' % path)
-            else:
-                os.system('xdg-open "%s"' % path)
+            B3App.Instance().openpath(path)
 
 
 class CentralWidget(QWidget):
@@ -600,6 +595,35 @@ class MainWindow(QMainWindow):
         self.show()
         update = UpdateCheckDialog(self.centralWidget())
         update.show()
+
+    def open_extplugins_directory(self):
+        """
+        Open the default extplugins directory.
+        """
+        extplugins_dir = b3.getAbsolutePath('@b3/extplugins', True)
+        if not os.path.isdir(extplugins_dir):
+
+            try:
+                LOG.warning('missing %s directory: attempt to create it' % extplugins_dir)
+                os.mkdir(extplugins_dir)
+                with open(os.path.join(extplugins_dir, '__init.__py'), 'w') as f:
+                    f.write('#')
+            except Exception, err:
+                LOG.error('could create default extplugins directory: %s', err)
+                msgbox = QMessageBox()
+                msgbox.setIcon(QMessageBox.Warning)
+                msgbox.setText('Missing 3rd party plugins directory!')
+                msgbox.setDetailedText('B3 could not create missing 3rd party plugins directory (%s). '
+                                       'Please make sure B3 has writing permissions on "%s"' % (extplugins_dir,
+                                                                                                b3.getAbsolutePath('@b3//', True)))
+                msgbox.setStandardButtons(QMessageBox.Ok)
+                msgbox.exec_()
+                return
+            else:
+                LOG.debug('created directory %s: resuming directory prompt' % extplugins_dir)
+
+        B3App.Instance().openpath(extplugins_dir)
+
 
     def update_database(self):
         """
