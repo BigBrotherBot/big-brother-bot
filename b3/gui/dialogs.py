@@ -340,7 +340,6 @@ class UpdateDatabaseDialog(QDialog):
         Initialize the Dialog layout.
         """
         self.setWindowTitle('B3 database update')
-        self.setWindowFlags(Qt.WindowTitleHint | Qt.Dialog | Qt.WindowMaximizeButtonHint | Qt.CustomizeWindowHint)
         self.setFixedSize(420, 160)
         self.setStyleSheet("""
         QDialog {
@@ -351,7 +350,7 @@ class UpdateDatabaseDialog(QDialog):
         ## INIT CLOSE BUTTON
         self.btn_close = Button(parent=self, text='Close')
         self.btn_close.clicked.connect(self.close)
-        self.btn_close.show()
+        self.btn_close.hide()
         ## INIT UPDATE BUTTON
         self.btn_update = Button(parent=self, text='Update')
         self.btn_update.clicked.connect(self.do_update)
@@ -379,7 +378,8 @@ class UpdateDatabaseDialog(QDialog):
             parent.layout2.addWidget(parent.btn_close)
             parent.layout2.addWidget(parent.btn_update)
             parent.layout2.setAlignment(Qt.AlignHCenter)
-            parent.layout2.setSpacing(20)
+            parent.layout2.setSpacing(20 if b3.getPlatform() != 'win32' else 10)
+            parent.layout2.setContentsMargins(0, 10, 0, 0)
             return parent.layout2
 
         self.setModal(True)
@@ -496,7 +496,14 @@ class UpdateDatabaseDialog(QDialog):
         """
         Execute when the QThread emits the finished signal.
         """
-        self.progress.setValue(self.progress.maximum())
+        if self.progress.maximum() > 0:
+            # normally set the maximum value
+            self.progress.setValue(self.progress.maximum())
+        else:
+            # probably no update needed to be performed hence no max value is set (fake it)
+            self.progress.setRange(0, 100)
+            self.progress.setValue(100)
+
         self.message.setText('database update completed')
         self.btn_close.show()
 

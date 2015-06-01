@@ -34,6 +34,21 @@ from functools import partial
 
 LOG = logging.getLogger('B3')
 
+GEOMETRY = {
+    'win32': {
+        'MAIN_TABLE_HEIGHT': 260,
+        'CENTRAL_WIDGET_BOTTOM_LAYOUT_MARGIN_BOTTOM': 52,
+    },
+    'darwin': {
+        'MAIN_TABLE_HEIGHT': 280,
+        'CENTRAL_WIDGET_BOTTOM_LAYOUT_MARGIN_BOTTOM': 40,
+    },
+    'linux': {
+        'MAIN_TABLE_HEIGHT': 280,
+        'CENTRAL_WIDGET_BOTTOM_LAYOUT_MARGIN_BOTTOM': 32,
+    }
+}
+
 
 class ImageWidget(QLabel):
     """
@@ -67,7 +82,7 @@ class MainTable(QTableWidget):
         """
         Initialize the MainTable layout.
         """
-        self.setFixedSize(500, 280)
+        self.setFixedSize(500, GEOMETRY[b3.getPlatform()]['MAIN_TABLE_HEIGHT'])
         self.setStyleSheet("""
         QWidget {
             background: #FFFFFF;
@@ -410,7 +425,7 @@ class CentralWidget(QWidget):
             layout.addWidget(btn_quit)
             layout.setAlignment(Qt.AlignBottom | Qt.AlignRight)
             layout.setSpacing(10)
-            layout.setContentsMargins(0, 0, 11, 32)
+            layout.setContentsMargins(0, 0, 11, GEOMETRY[b3.getPlatform()]['CENTRAL_WIDGET_BOTTOM_LAYOUT_MARGIN_BOTTOM'])
             return layout
 
         main_layout = QVBoxLayout()
