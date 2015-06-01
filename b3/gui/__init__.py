@@ -275,7 +275,7 @@ class B3App(QApplication):
         """
         Start all the available B3 processes.
         """
-        self.main_window.show()
+        self.main_window.make_visible()
         main_table = self.main_window.centralWidget().main_table
         for process in self.processes:
             main_table.process_start(row=self.processes.index(process), process=process, warn=False)
@@ -284,7 +284,7 @@ class B3App(QApplication):
         """
         Stop all the available B3 processes.
         """
-        self.main_window.show()
+        self.main_window.make_visible()
         main_table = self.main_window.centralWidget().main_table
         for process in self.processes:
             main_table.process_shutdown(process)
