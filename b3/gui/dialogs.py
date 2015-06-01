@@ -109,7 +109,8 @@ class AboutDialog(QDialog):
             layout = QHBoxLayout()
             layout.addWidget(btn_license)
             layout.addWidget(btn_close)
-            layout.setAlignment(Qt.AlignHCenter)
+            layout.setAlignment(Qt.AlignHCenter|Qt.AlignTop)
+            layout.setContentsMargins(0, 30, 0, 0)
             layout.setSpacing(20 if b3.getPlatform() == 'darwin' else 10)
             return layout
 
@@ -145,7 +146,7 @@ class LicenseDialog(QDialog):
         Initialize the Dialog layout.
         """
         self.setWindowTitle(B3_LICENSE)
-        self.setFixedSize(400, 320)
+        self.setFixedSize(400, 300)
         self.setStyleSheet("""
         QDialog {
             background: #F2F2F2;
@@ -186,7 +187,8 @@ class LicenseDialog(QDialog):
             btn_close.setVisible(True)
             layout = QHBoxLayout()
             layout.addWidget(btn_close)
-            layout.setAlignment(Qt.AlignHCenter)
+            layout.setAlignment(Qt.AlignHCenter|Qt.AlignTop)
+            layout.setContentsMargins(0, 20, 0, 0)
             return layout
 
         main_layout = QVBoxLayout()

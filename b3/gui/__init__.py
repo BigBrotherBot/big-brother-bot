@@ -57,6 +57,8 @@
 #                   - implement drag&drop in MainTable: add new B3 by simply dropping the configuration file on it
 # 01/06/2015 - 0.12 - minor adjustments for win32 platform
 #                   - support multi-drag/drop in main table (create multiple B3 processes)
+#                   - fixed 'start/stop all' not bringing up main window
+#                   - fixed some weird characters being printed into STDOut console
 
 __author__ = 'Fenix'
 __version__ = '0.12'
