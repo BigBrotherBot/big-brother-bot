@@ -772,7 +772,7 @@ class STDOutDialog(QDialog):
         Initialize the STDOutDialog layout.
         """
         self.setWindowTitle('%s console' % self.process.name)
-        self.setFixedSize(800, 300)
+        self.setMinimumSize(800, 300)
         self.setStyleSheet("""
         QDialog {
             background: #F2F2F2;
