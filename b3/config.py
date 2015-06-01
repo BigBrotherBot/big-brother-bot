@@ -74,6 +74,7 @@ except ImportError:
 
 ConfigFileNotFound = b3.exceptions.ConfigFileNotFound
 ConfigFileNotValid = b3.exceptions.ConfigFileNotValid
+NoOptionError = b3.exceptions.NoOptionError
 
 # list of plugins that cannot be loaded as disabled from configuration file
 MUST_HAVE_PLUGINS = ('admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail')

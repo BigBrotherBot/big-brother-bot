@@ -22,6 +22,10 @@
 # 2015-03-09 - 1.1 - Fenix - added ProgrammingError exception class
 # 2015-04-06 - 1.2 - Fenix - added UpdateError exception class
 # 2015-04-20 - 1.3 - Fenix - added DatabaseError exception class
+# 2015-06-02 - 1.4 - Fenix - alias ConfigParser.NoOptionError in b3.exceptions and b3.config
+
+
+import ConfigParser
 
 
 class ConfigFileNotFound(Exception):
@@ -94,3 +98,6 @@ class UpdateError(Exception):
         if self.throwable:
             return '%s - %r' % (self.message, repr(self.throwable))
         return repr(self.message)
+
+
+NoOptionError = ConfigParser.NoOptionError
