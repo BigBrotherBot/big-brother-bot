@@ -234,12 +234,7 @@ class MainTable(QTableWidget):
         """
         Handle 'Drag Move' event.
         """
-        if event.mimeData().hasUrls():
-            B3App.Instance().setOverrideCursor(QCursor(Qt.DragCopyCursor))
-            event.setDropAction(Qt.CopyAction)
-            event.accept()
-        else:
-            event.ignore()
+        event.accept()
 
     def dragLeaveEvent(self, event):
         """
@@ -254,8 +249,12 @@ class MainTable(QTableWidget):
         if event.mimeData().hasUrls():
             B3App.Instance().setOverrideCursor(QCursor(Qt.ArrowCursor))
             event.setDropAction(Qt.CopyAction)
+            # multi-drag support
+            for url in event.mimeData().urls():
+                path = url.path().lstrip('/').lstrip('\\')
+                if os.path.isfile(path):
+                    self.parent().parent().make_new_process(path)
             event.accept()
-            self.parent().parent().make_new_process(event.mimeData().urls()[0].path())
         else:
             event.ignore()
 
