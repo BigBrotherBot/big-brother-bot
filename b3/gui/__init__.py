@@ -59,9 +59,12 @@
 #                   - support multi-drag/drop in main table (create multiple B3 processes)
 #                   - fixed 'start/stop all' not bringing up main window
 #                   - fixed some weird characters being printed into STDOut console
+# 02/06/2015 - 0.13 - added preferences dialog
+#                   - added menu icons
+#                   - added game icons in Main Table
 
 __author__ = 'Fenix'
-__version__ = '0.12'
+__version__ = '0.13'
 
 
 import b3
