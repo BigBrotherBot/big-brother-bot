@@ -94,6 +94,7 @@ ICON_UPDATE = b3.getAbsolutePath('@b3/gui/assets/icons/update.png', True)
 ICON_SETTINGS = b3.getAbsolutePath('@b3/gui/assets/icons/settings.png', True)
 ICON_PLUGINS = b3.getAbsolutePath('@b3/gui/assets/icons/plugins.png', True)
 ICON_QUIT = b3.getAbsolutePath('@b3/gui/assets/icons/quit.png', True)
+ICON_GAME = b3.getAbsolutePath('@b3/gui/assets/icons/games/%s.png', True)
 
 ## STATUS FLAGS
 CONFIG_FOUND = 0b0001   # configuration file has been found
@@ -375,6 +376,7 @@ class B3(QProcess):
     _config = None
     _config_path = None
     _name = 'N/A'
+    _game = 'default'
     _status = 0
 
     stdout = None
@@ -462,6 +464,17 @@ class B3(QProcess):
 
     name = property(__get_name)
 
+    def __get_game(self):
+        """
+        Return the B3 process name.
+        """
+        if self._game == 'default' and self._config:
+            if self.config.has_option('b3', 'parser') and self.config.get('b3', 'parser') != 'changeme':
+                self._game = self.config.get('b3', 'parser').strip()
+        return self._game
+
+    game = property(__get_game)
+
     ########################################### STATUS FLAG METHODS ####################################################
 
     def setFlag(self, flag):
@@ -501,7 +514,7 @@ class B3(QProcess):
                 program = '%s --config %s --console' % (sys.executable, self.config_path)
 
         # append restart flag if specified in app configuration file
-        if B3App.Instance().config.value('auto_restart_on_crash').toBool():
+        if B3App.Instance().settings.value('auto_restart_on_crash', type=bool):
             program += ' --restart'
 
         LOG.info('starting %s process: %s', self.name, program)

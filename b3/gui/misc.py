@@ -78,8 +78,8 @@ class IconButton(QPushButton):
         """
         QPushButton.__init__(self, parent)
         self.setContentsMargins(0, 0, 0, 0)
-        self.setFixedSize(20, 20)
-        self.setIconSize(QSize(20, 20))
+        self.setFixedSize(32, 32)
+        self.setIconSize(QSize(32, 32))
         self.setIcon(icon)
         self.setStyleSheet("""
         QPushButton {

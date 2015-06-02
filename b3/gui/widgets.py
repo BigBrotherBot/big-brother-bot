@@ -65,6 +65,21 @@ class ImageWidget(QLabel):
         self.setGeometry(0, 0, self.pixmap().width(), self.pixmap().height())
 
 
+class IconWidget(QLabel):
+    """
+    This class can be used to render game icons.
+    """
+    def __init__(self, parent=None, image=None):
+        """
+        :param parent: the parent widget
+        :param image: the image to display
+        """
+        QLabel.__init__(self, parent)
+        pixmap = QPixmap(image)
+        self.setPixmap(pixmap.scaled(32, 32))
+        self.setGeometry(0, 0, 32, 32)
+
+
 class MainTable(QTableWidget):
     """
     This class implements the main table widget where B3 processes are being displayed.
@@ -103,17 +118,29 @@ class MainTable(QTableWidget):
         self.horizontalHeader().setVisible(False)
         self.verticalHeader().setVisible(False)
         self.verticalHeader().sectionResizeMode(QHeaderView.Fixed)
-        self.verticalHeader().setDefaultSectionSize(24)
+        self.verticalHeader().setDefaultSectionSize(32)
+        self.verticalScrollBar().setStyleSheet(
+            """QScrollBar:vertical {
+                background: #B7B7B7;
+                border: 0;
+        }""")
 
     def paint(self):
         """
         Paint table contents.
         """
         self.setRowCount(len(B3App.Instance().processes))
-        self.setColumnCount(3)
-        self.setColumnWidth(0, 200)
-        self.setColumnWidth(1, 180)
-        self.setColumnWidth(2, 118)
+        self.setColumnCount(4)
+        self.setColumnWidth(0, 32)
+        if len(B3App.Instance().processes) > 8:
+            ## MAKE SPACE FOR SCROLLBAR
+            self.setColumnWidth(1, 140)
+            self.setColumnWidth(2, 140)
+        else:
+            ## NO SCROLLBAR
+            self.setColumnWidth(1, 150)
+            self.setColumnWidth(2, 150)
+        self.setColumnWidth(3, 166)
         for i in range(len(B3App.Instance().processes)):
             self.paint_row(i)
 
@@ -131,19 +158,28 @@ class MainTable(QTableWidget):
         """
         process = B3App.Instance().processes[row]
 
+        def __paint_column_icon(parent, numrow, proc):
+            """
+            Paint the B3 instance icon in the 1st column.
+            """
+            path = ICON_GAME % proc.game
+            if not os.path.isfile(path):
+                path = ICON_GAME % 'default'
+            parent.setCellWidget(numrow, 0, IconWidget(self, path))
+
         def __paint_column_name(parent, numrow, proc):
             """
-            Paint the B3 instance name in the 1st column.
+            Paint the B3 instance name in the 2nd column.
             """
             name = re.sub(RE_COLOR, '', proc.name).strip()
-            parent.setItem(numrow, 0, QTableWidgetItem(name))
+            parent.setItem(numrow, 1, QTableWidgetItem(name))
 
         def __paint_column_status(parent, numrow, proc):
             """
-            Paint the B3 instance status in the 2nd column.
+            Paint the B3 instance status in the 3rd column.
             """
             if proc.state() == QProcess.Running:
-                value, background, foregound = 'RUNNING', Qt.green, Qt.white
+                value, background, foregound = 'RUNNING', Qt.green, Qt.black
             else:
                 if proc.isFlag(CONFIG_READY):
                     value, background, foregound = 'IDLE', Qt.yellow, Qt.black
@@ -153,13 +189,13 @@ class MainTable(QTableWidget):
 
             value = QTableWidgetItem(value)
             value.setTextAlignment(Qt.AlignCenter)
-            parent.setItem(numrow, 1, value)
-            parent.item(numrow, 1).setBackground(background)
-            parent.item(numrow, 1).setForeground(foregound)
+            parent.setItem(numrow, 2, value)
+            parent.item(numrow, 2).setBackground(background)
+            parent.item(numrow, 2).setForeground(foregound)
 
         def __paint_column_toolbar(parent, numrow, proc):
             """
-            Paint the B3 instance toolbar in the 3rd column.
+            Paint the B3 instance toolbar in the 4th column.
             """
             ## DELETE BUTTON
             btn_del = IconButton(parent=parent, icon=QIcon(ICON_DEL))
@@ -202,7 +238,7 @@ class MainTable(QTableWidget):
             layout.addWidget(btn_ctrl)
             layout.setAlignment(Qt.AlignCenter)
             layout.setContentsMargins(0, 0, 0, 0)
-            layout.setSpacing(2)
+            layout.setSpacing(1)
             widget = QWidget(parent)
             widget.setLayout(layout)
             widget.setStyleSheet("""
@@ -212,8 +248,9 @@ class MainTable(QTableWidget):
             }
             """)
 
-            parent.setCellWidget(numrow, 2, widget)
+            parent.setCellWidget(numrow, 3, widget)
 
+        __paint_column_icon(self, row, process)
         __paint_column_name(self, row, process)
         __paint_column_status(self, row, process)
         __paint_column_toolbar(self, row, process)
@@ -661,7 +698,7 @@ class MainWindow(QMainWindow):
             update = UpdateDatabaseDialog(self.centralWidget())
             update.show()
 
-from b3.gui import B3App, RE_COLOR, CONFIG_READY, CONFIG_FOUND, ICON_DEL, ICON_REFRESH, ICON_CONSOLE, ICON_LOG
+from b3.gui import B3App, RE_COLOR, CONFIG_READY, CONFIG_FOUND, ICON_DEL, ICON_REFRESH, ICON_CONSOLE, ICON_LOG, ICON_GAME
 from b3.gui import ICON_STOP, ICON_START, CONFIG_VALID, B3_BANNER, B3
 from b3.gui.dialogs import AboutDialog, PluginInstallDialog, UpdateCheckDialog, UpdateDatabaseDialog, PreferencesDialog
 from b3.gui.misc import Button, IconButton, StatusBar
