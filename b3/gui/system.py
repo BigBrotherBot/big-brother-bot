@@ -53,18 +53,21 @@ class MainMenuBar(QMenuBar):
         new_process = QAction('Add B3', self.parent())
         new_process.setShortcut('Ctrl+N')
         new_process.setStatusTip('Add a new B3')
+        new_process.setIcon(QIcon(B3_ICON_SMALL))
         new_process.triggered.connect(self.parent().new_process_dialog)
         new_process.setVisible(True)
         ### INSTALL PLUGIN SUBMENU ENTRY
         install_plugin = QAction('Add Plugin', self.parent())
         install_plugin.setShortcut('Ctrl+P')
         install_plugin.setStatusTip('Install a new B3 plugin')
+        install_plugin.setIcon(QIcon(ICON_PLUGINS))
         install_plugin.triggered.connect(self.parent().install_plugin)
         install_plugin.setVisible(True)
         ####  QUIT SUBMENU ENTRY
         quit_btn = QAction('Quit', self.parent())
         quit_btn.setShortcut('Ctrl+Q')
         quit_btn.setStatusTip('Shutdown B3')
+        quit_btn.setIcon(QIcon(ICON_QUIT))
         quit_btn.triggered.connect(B3App.Instance().shutdown)
         quit_btn.setVisible(True)
         ## FILE MENU ENTRY
@@ -80,21 +83,32 @@ class MainMenuBar(QMenuBar):
         #### UPDATE CHECK SUBMENU ENTRY
         update_check = QAction('Check Update', self.parent())
         update_check.setStatusTip('Check if a newer version of B3 is available')
+        update_check.setIcon(QIcon(ICON_UPDATE))
         update_check.triggered.connect(self.parent().check_update)
         #### B3 PLUGIN DIRECTORY SUBMENU ENTRY
         plugin_directory = QAction('Plugins Directory', self.parent())
         plugin_directory.setStatusTip('Open the 3rd party plugins directory')
+        plugin_directory.setIcon(QIcon(ICON_PLUGINS))
         plugin_directory.triggered.connect(self.parent().open_extplugins_directory)
         #### B3 PLUGIN ARCHIVE SUBMENU ENTRY
         plugin_repository = QAction('Plugins Repository', self.parent())
         plugin_repository.setStatusTip('Browse all the available B3 plugins')
+        plugin_repository.setIcon(QIcon(ICON_PLUGINS))
         plugin_repository.triggered.connect(lambda: webbrowser.open(B3_PLUGIN_REPOSITORY))
         #### UPDATE B3 DATABASE ENTRY
         update_database = QAction('Update B3 Database', self.parent())
         update_database.setStatusTip('Update all your B3 databases to the latest version')
+        update_database.setIcon(QIcon(ICON_DATABASE))
         update_database.triggered.connect(self.parent().update_database)
+        #### PREFERENCES
+        preferences = QAction('Preferences...', self.parent())
+        preferences.setStatusTip('Open the B3 preferences panel')
+        preferences.setIcon(QIcon(ICON_SETTINGS))
+        preferences.triggered.connect(self.parent().open_preferences)
         ## TOOLS MENU ENTRY
         tools_menu = self.addMenu('&Tools')
+        tools_menu.addAction(preferences)
+        tools_menu.addSeparator()
         tools_menu.addAction(update_check)
         tools_menu.addAction(update_database)
         tools_menu.addSeparator()
@@ -200,4 +214,4 @@ class SystemTrayIcon(QSystemTrayIcon):
 
 
 from b3.gui import B3App
-from b3.gui import B3_ICON_SMALL
+from b3.gui import B3_ICON_SMALL, ICON_DATABASE, ICON_SETTINGS, ICON_UPDATE, ICON_PLUGINS, ICON_QUIT

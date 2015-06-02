@@ -75,19 +75,25 @@ import sqlite3
 ## USER PATHS
 B3_STORAGE = b3.getWritableFilePath(os.path.join(b3.HOMEDIR, 'app.db'), True)
 B3_LOG = b3.getWritableFilePath(os.path.join(b3.HOMEDIR, 'app.log'), True)
+B3_SETTINGS = b3.getWritableFilePath(os.path.join(b3.HOMEDIR, 'app.ini'), True)
 
 ## RESOURCE PATHS
 B3_BANNER = b3.getAbsolutePath('@b3/gui/assets/main.png', True)
-B3_ICON = b3.getAbsolutePath('@b3/gui/assets/icon.png', True)
-B3_ICON_SMALL = b3.getAbsolutePath('@b3/gui/assets/icon-small.png', True)
+B3_ICON = b3.getAbsolutePath('@b3/gui/assets/icons/b3.png', True)
+B3_ICON_SMALL = b3.getAbsolutePath('@b3/gui/assets/icons/b3-small.png', True)
 B3_SPLASH = b3.getAbsolutePath('@b3/gui/assets/splash.png', True)
 B3_SQL = b3.getAbsolutePath('@b3/sql/sqlite/b3-gui.sql', True)
-ICON_DEL = b3.getAbsolutePath('@b3/gui/assets/del.png', True)
-ICON_CONSOLE = b3.getAbsolutePath('@b3/gui/assets/console.png', True)
-ICON_LOG = b3.getAbsolutePath('@b3/gui/assets/log.png', True)
-ICON_REFRESH = b3.getAbsolutePath('@b3/gui/assets/refresh.png', True)
-ICON_START = b3.getAbsolutePath('@b3/gui/assets/start.png', True)
-ICON_STOP = b3.getAbsolutePath('@b3/gui/assets/stop.png', True)
+ICON_DEL = b3.getAbsolutePath('@b3/gui/assets/icons/del.png', True)
+ICON_CONSOLE = b3.getAbsolutePath('@b3/gui/assets/icons/console.png', True)
+ICON_LOG = b3.getAbsolutePath('@b3/gui/assets/icons/log.png', True)
+ICON_REFRESH = b3.getAbsolutePath('@b3/gui/assets/icons/refresh.png', True)
+ICON_START = b3.getAbsolutePath('@b3/gui/assets/icons/start.png', True)
+ICON_STOP = b3.getAbsolutePath('@b3/gui/assets/icons/stop.png', True)
+ICON_DATABASE = b3.getAbsolutePath('@b3/gui/assets/icons/database.png', True)
+ICON_UPDATE = b3.getAbsolutePath('@b3/gui/assets/icons/update.png', True)
+ICON_SETTINGS = b3.getAbsolutePath('@b3/gui/assets/icons/settings.png', True)
+ICON_PLUGINS = b3.getAbsolutePath('@b3/gui/assets/icons/plugins.png', True)
+ICON_QUIT = b3.getAbsolutePath('@b3/gui/assets/icons/quit.png', True)
 
 ## STATUS FLAGS
 CONFIG_FOUND = 0b0001   # configuration file has been found
@@ -98,13 +104,16 @@ CONFIG_READY = 0b0100   # configuration file is ready for deploy
 LOG = None
 RE_COLOR = re.compile(r'(\^\d)')
 
+
 from b3.config import MainConfig, load as load_config
 from b3.decorators import Singleton
 from b3.exceptions import ConfigFileNotValid
 from b3.functions import main_is_frozen
-from PyQt5.QtCore import QProcess, QEvent
+from b3.update import UPDATE_CHANNEL_STABLE
+from PyQt5.QtCore import QProcess, QEvent, QSettings
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication,  QMessageBox
+
 
 @Singleton
 class B3App(QApplication):
@@ -116,6 +125,12 @@ class B3App(QApplication):
     main_window = None  # main application window
     shutdown_requested = False  # set it to true when a shutdown is requested
     storage = None  # connection with the SQLite database
+
+    settings = None  # B3 app configuration file
+    settings_default = {  # B3 app default settings
+        'auto_restart_on_crash': False,
+        'update_channel': UPDATE_CHANNEL_STABLE,
+    }
 
     def __init__(self, *args, **kwargs):
         """
@@ -130,6 +145,7 @@ class B3App(QApplication):
         """
         self.__init_home()
         self.__init_log()
+        self.__init_settings()
         self.__init_storage()
         self.__init_os_specific()
         self.__init_processes()
@@ -175,6 +191,15 @@ class B3App(QApplication):
         handler.setFormatter(logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)r', '%y%m%d %H:%M:%S'))
         LOG.addHandler(handler)
         LOG.setLevel(logging.DEBUG)
+
+    def __init_settings(self):
+        """
+        Initialize the application configuration file.
+        """
+        self.settings = QSettings('BigBrotherBot', 'B3')
+        for key in self.settings_default:
+            if not self.settings.contains(key):
+                self.settings.setValue(key, self.settings_default[key])
 
     def __init_storage(self):
         """
@@ -474,6 +499,10 @@ class B3(QProcess):
                 program = '"%s" --config "%s" --console' % (sys.executable, self.config_path)
             else:
                 program = '%s --config %s --console' % (sys.executable, self.config_path)
+
+        # append restart flag if specified in app configuration file
+        if B3App.Instance().config.value('auto_restart_on_crash').toBool():
+            program += ' --restart'
 
         LOG.info('starting %s process: %s', self.name, program)
 
