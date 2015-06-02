@@ -568,7 +568,7 @@ class MainWindow(QMainWindow):
         """
         Open the File dialog used to select a B3 configuration file.
         """
-        self.show()
+        self.make_visible()
         init = b3.getAbsolutePath('@b3/conf')
         extensions = ['INI (*.ini)', 'XML (*.xml)', 'All Files (*.*)']
         path, _ = QFileDialog.getOpenFileName(self.centralWidget(), 'Select configuration file', init, ';;'.join(extensions))
@@ -578,7 +578,7 @@ class MainWindow(QMainWindow):
         """
         Handle the install of a new B3 plugin.
         """
-        self.show()
+        self.make_visible()
         init = b3.getAbsolutePath('~')
         path, _ = QFileDialog.getOpenFileName(self.centralWidget(), 'Select plugin package', init, 'ZIP (*.zip)')
         if path:
@@ -589,7 +589,7 @@ class MainWindow(QMainWindow):
         """
         Display the 'about' dialog.
         """
-        self.show()
+        self.make_visible()
         about = AboutDialog(self.centralWidget())
         about.show()
 
@@ -597,14 +597,23 @@ class MainWindow(QMainWindow):
         """
         Display the 'update check' dialog.
         """
-        self.show()
+        self.make_visible()
         update = UpdateCheckDialog(self.centralWidget())
         update.show()
+
+    def open_preferences(self):
+        """
+        Open the 'Preferences' dialog.
+        """
+        self.make_visible()
+        preferences = PreferencesDialog(self.centralWidget())
+        preferences.show()
 
     def open_extplugins_directory(self):
         """
         Open the default extplugins directory.
         """
+        self.make_visible()
         extplugins_dir = b3.getAbsolutePath('@b3/extplugins', True)
         if not os.path.isdir(extplugins_dir):
 
@@ -654,6 +663,6 @@ class MainWindow(QMainWindow):
 
 from b3.gui import B3App, RE_COLOR, CONFIG_READY, CONFIG_FOUND, ICON_DEL, ICON_REFRESH, ICON_CONSOLE, ICON_LOG
 from b3.gui import ICON_STOP, ICON_START, CONFIG_VALID, B3_BANNER, B3
-from b3.gui.dialogs import AboutDialog, PluginInstallDialog, UpdateCheckDialog, UpdateDatabaseDialog
+from b3.gui.dialogs import AboutDialog, PluginInstallDialog, UpdateCheckDialog, UpdateDatabaseDialog, PreferencesDialog
 from b3.gui.misc import Button, IconButton, StatusBar
 from b3.gui.system import MainMenuBar, SystemTrayIcon

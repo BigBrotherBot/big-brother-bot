@@ -30,13 +30,14 @@ import urllib2
 
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QTextCursor
-from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLabel, QVBoxLayout
+from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLabel, QVBoxLayout, QGroupBox, QCheckBox, QRadioButton
 
 from b3 import B3_COPYRIGHT, B3_LICENSE, B3_TITLE, B3_TITLE_SHORT, B3_WEBSITE
 from b3.parser import StubParser
 from b3.functions import unzip, splitDSN
 from b3.storage import getStorage
-from b3.update import getDefaultChannel, B3version, URL_B3_LATEST_VERSION
+from b3.update import getDefaultChannel, B3version
+from b3.update import URL_B3_LATEST_VERSION, UPDATE_CHANNEL_DEV, UPDATE_CHANNEL_BETA, UPDATE_CHANNEL_STABLE
 from time import sleep
 
 LOG = logging.getLogger('B3')
@@ -202,6 +203,7 @@ class UpdateCheckDialog(QDialog):
     """
     This class is used to display the 'update check' dialog.
     """
+    channel = None
     layout = None
     message = None
     progress = None
@@ -227,9 +229,16 @@ class UpdateCheckDialog(QDialog):
             background: #F2F2F2;
         }
         """)
+        ## INIT PROGRESS BAR
         self.progress = BusyProgressBar(self)
+        self.progress.setAlignment(Qt.AlignHCenter)
         self.progress.start()
-        self.message = QLabel('retrieving data', self)
+        ## INITIALIZE UPDATE CHANNEL
+        self.channel = B3App.Instance().settings.value('update_channel')
+        if self.channel not in (UPDATE_CHANNEL_STABLE, UPDATE_CHANNEL_BETA, UPDATE_CHANNEL_DEV):
+            self.channel = getDefaultChannel(b3.__version__)
+        ## INITIALIZE DEFAULT MESSAGE
+        self.message = QLabel('connecting to update channel: %s' % self.channel, self)
         self.message.setAlignment(Qt.AlignHCenter)
         self.message.setWordWrap(True)
         self.message.setOpenExternalLinks(True)
@@ -253,11 +262,10 @@ class UpdateCheckDialog(QDialog):
                 """
                 Threaded code.
                 """
-                sleep(.5)
+                sleep(2)
                 LOG.info('retrieving update data from remote server: %s', URL_B3_LATEST_VERSION)
 
                 try:
-                    channel = getDefaultChannel(b3.__version__)
                     jsondata = urllib2.urlopen(URL_B3_LATEST_VERSION, timeout=4).read()
                     versioninfo = json.loads(jsondata)
                 except urllib2.URLError, err:
@@ -271,23 +279,23 @@ class UpdateCheckDialog(QDialog):
                     LOG.error('ERROR: unknown error: %s', err)
                 else:
                     self.msignal.emit('parsing data')
-                    sleep(1)
+                    sleep(1.5)
 
                     channels = versioninfo['B3']['channels']
-                    if channel not in channels:
-                        self.msignal.emit('ERROR: unknown channel \'%s\': expecting (%s)' % (channel, ', '.join(channels.keys())))
-                        LOG.error('unknown channel \'%s\': expecting (%s)', channel, ', '.join(channels.keys()))
+                    if self.parent().channel not in channels:
+                        self.msignal.emit('ERROR: unknown channel \'%s\': expecting (%s)' % (self.parent().channel, ', '.join(channels.keys())))
+                        LOG.error('unknown channel \'%s\': expecting (%s)', self.parent().channel, ', '.join(channels.keys()))
                     else:
                         try:
-                            latestversion = channels[channel]['latest-version']
+                            latestversion = channels[self.parent().channel]['latest-version']
                         except KeyError:
-                            self.msignal.emit('ERROR: could not get latest B3 version for channel: %s' % channel)
-                            LOG.error('could not get latest B3 version for channel: %s', channel)
+                            self.msignal.emit('ERROR: could not get latest B3 version for channel: %s' % self.parent().channel)
+                            LOG.error('could not get latest B3 version for channel: %s', self.parent().channel)
                         else:
                             if B3version(b3.__version__) < B3version(latestversion):
 
                                 try:
-                                    url = versioninfo['B3']['channels'][channel]['url']
+                                    url = versioninfo['B3']['channels'][self.parent().channel]['url']
                                 except KeyError:
                                     url = B3_WEBSITE
 
@@ -359,6 +367,7 @@ class UpdateDatabaseDialog(QDialog):
         self.btn_update.show()
         ## CREATE THE PROGRESS BAR
         self.progress = ProgressBar(self)
+        self.progress.setAlignment(Qt.AlignHCenter)
         self.progress.hide()
         self.progress.setRange(0, 0)
         self.progress.setValue(-1)
@@ -798,6 +807,101 @@ class STDOutDialog(QDialog):
         if output.startswith('\x0c'):
             output = output.lstrip('\x0c')
         self.stdout.insertPlainText(output)
+
+
+class PreferencesDialog(QDialog):
+    """
+    This class is used to display the 'Preferences' dialog.
+    """
+    autoRestartCheckBox = None
+    updateChannel = {UPDATE_CHANNEL_STABLE: None, UPDATE_CHANNEL_BETA: None, UPDATE_CHANNEL_DEV: None}
+
+    def __init__(self, parent=None):
+        """
+        Initialize the 'License' dialog window.
+        :param parent: the parent widget
+        """
+        QDialog.__init__(self, parent)
+        self.initUI()
+
+    def initUI(self):
+        """
+        Initialize the Dialog layout.
+        """
+        self.setWindowTitle('Preferences')
+        self.setFixedSize(400, 260)
+        self.setStyleSheet("""QDialog { background: #F2F2F2; }""")
+
+        def __get_top_layout(parent):
+            ## AUTORESTART
+            parent.autoRestartCheckBox = QCheckBox('Automatically restart B3 on crash')
+            parent.autoRestartCheckBox.setWhatsThis('If enabled, every B3 process will be automatically restarted upon crash.')
+            parent.autoRestartCheckBox.setChecked(B3App.Instance().settings.value('auto_restart_on_crash', type=bool))
+            ## UPDATE CHANNEL OPTIONS
+            parent.updateChannel[UPDATE_CHANNEL_STABLE] = QRadioButton('Stable')
+            parent.updateChannel[UPDATE_CHANNEL_BETA] = QRadioButton('Beta')
+            parent.updateChannel[UPDATE_CHANNEL_DEV] = QRadioButton('Dev')
+
+            try:
+                # select the value matching the configuration file
+                parent.updateChannel[B3App.Instance().settings.value('update_channel', type=str)].setChecked(True)
+            except KeyError:
+                # invalid option in configuration file, set back to stable channel
+                parent.updateChannel[UPDATE_CHANNEL_STABLE].setChecked(True)
+
+            ## GENERAL LAYOUT
+            generalLayout = QVBoxLayout()
+            generalLayout.addWidget(parent.autoRestartCheckBox)
+            ## GENERAL FIELDSET
+            generalGroup = QGroupBox("General", parent)
+            generalGroup.setLayout(generalLayout)
+            ## UPDATE LAYOUT
+            updateLayout = QVBoxLayout()
+            updateLayout.addWidget(parent.updateChannel['stable'])
+            updateLayout.addWidget(parent.updateChannel['beta'])
+            updateLayout.addWidget(parent.updateChannel['dev'])
+            ## UPDATE FIELDSET
+            updateGroup = QGroupBox("Update channel", parent)
+            updateGroup.setLayout(updateLayout)
+            ## TOP MAIN LAYOUT
+            layout = QVBoxLayout()
+            layout.addWidget(generalGroup)
+            layout.addWidget(updateGroup)
+            return layout
+
+        def __get_bottom_layout(parent):
+            btn_close = Button(parent=parent, text='Close')
+            btn_close.clicked.connect(parent.close)
+            btn_close.setVisible(True)
+            btn_save = Button(parent=parent, text='Save')
+            btn_save.clicked.connect(parent.save)
+            btn_save.setVisible(True)
+            layout = QHBoxLayout()
+            layout.addWidget(btn_close)
+            layout.addWidget(btn_save)
+            layout.setAlignment(Qt.AlignRight|Qt.AlignBottom)
+            layout.setContentsMargins(0, 30, 0, 0)
+            layout.setSpacing(20 if b3.getPlatform() == 'darwin' else 10)
+            return layout
+
+        mainLayout = QVBoxLayout()
+        mainLayout.addLayout(__get_top_layout(self))
+        mainLayout.addLayout(__get_bottom_layout(self))
+        self.setLayout(mainLayout)
+        self.setModal(True)
+
+    def save(self):
+        """
+        Save the configuration file.
+        """
+        B3App.Instance().settings.setValue('auto_restart_on_crash', self.autoRestartCheckBox.isChecked())
+        for key in self.updateChannel.keys():
+            if self.updateChannel[key].isChecked():
+                B3App.Instance().settings.setValue('update_channel', key)
+                break
+        ## FORCE WRITE
+        B3App.Instance().settings.sync()
+        self.close()
 
 
 from b3.gui import B3App, B3_ICON, CONFIG_VALID

@@ -162,17 +162,16 @@ def run_gui(options):
     try:
         with SplashScreen(min_splash_time=2):
             mainwindow = app.init()
-    except Exception, e:
+    except Exception:
         box = QMessageBox()
         box.setIcon(QMessageBox.Critical)
         box.setWindowTitle('CRITICAL')
-        box.setText('CRITICAL: %s' % e.message)
+        box.setText('CRITICAL: %s' % traceback.format_exc())
         box.setStandardButtons(QMessageBox.Ok)
         box.exec_()
-        #print traceback.extract_tb(sys.exc_info()[2])
         sys.exit(127)
     else:
-        mainwindow.show()
+        mainwindow.make_visible()
         sys.exit(app.exec_())
 
 
@@ -283,8 +282,9 @@ def main():
         try:
             run_gui(options)
         except Exception:
+            # UNCOMMENT TO DEBUG
+            #traceback.print_exc()
             run_console(options)
 
-    
 if __name__ == '__main__':
     main()
