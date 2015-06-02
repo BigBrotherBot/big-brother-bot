@@ -99,6 +99,7 @@ class MainTable(QTableWidget):
         self.setDragEnabled(True)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.setSelectionMode(QAbstractItemView.NoSelection)
+        self.setFocusPolicy(Qt.NoFocus)
         self.horizontalHeader().setVisible(False)
         self.verticalHeader().setVisible(False)
         self.verticalHeader().sectionResizeMode(QHeaderView.Fixed)
