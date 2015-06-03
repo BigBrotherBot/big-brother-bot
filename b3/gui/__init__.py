@@ -62,9 +62,12 @@
 # 02/06/2015 - 0.13 - added preferences dialog
 #                   - added menu icons
 #                   - added game icons in Main Table
+# 03/06/2015 - 0.14 - display B3 process last run in main table
+#                   - customized QRadioButton and QCheckBox layout
+#                   - minor fixes for OSX
 
 __author__ = 'Fenix'
-__version__ = '0.13'
+__version__ = '0.14'
 
 
 import b3
