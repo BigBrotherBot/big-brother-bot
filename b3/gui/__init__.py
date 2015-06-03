@@ -114,6 +114,7 @@ from b3.decorators import Singleton
 from b3.exceptions import ConfigFileNotValid
 from b3.functions import main_is_frozen
 from b3.update import UPDATE_CHANNEL_STABLE
+from time import time
 from PyQt5.QtCore import QProcess, QEvent, QSettings
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication,  QMessageBox
@@ -381,18 +382,21 @@ class B3(QProcess):
     _name = 'N/A'
     _game = 'default'
     _status = 0
+    _lastrun = -1
 
     stdout = None
 
-    def __init__(self, id=None, config=None):
+    def __init__(self, id=None, config=None, lastrun=-1):
         """
         Initialize a new B3 instance.
         :param id: the B3 instance id :type int:
         :param config: the B3 configuration file path :type MainConfig: || :type str:
+        :param lastrun: the B3 last run timestamp :type int:
         """
         QProcess.__init__(self)
         self.id = id
         self.config = config
+        self.lastrun = lastrun
 
     ############################################### PROPERTIES #########################################################
 
@@ -478,6 +482,23 @@ class B3(QProcess):
 
     game = property(__get_game)
 
+    def __get_lastrun(self):
+        """
+        Return the timestamp when the process was last executed.
+        """
+        if self._lastrun == -1:
+            return None
+        return self._lastrun
+
+    def __set_lastrun(self, value):
+        """
+        Set the lastrun value.
+        """
+        if value:
+            self._lastrun = int(value)
+
+    lastrun = property(__get_lastrun, __set_lastrun)
+
     ########################################### STATUS FLAG METHODS ####################################################
 
     def setFlag(self, flag):
@@ -529,6 +550,8 @@ class B3(QProcess):
 
         # configure signal handlers
         self.finished.connect(self.process_finished)
+        self.lastrun = time()
+        self.update()
 
         # start the program
         QProcess.start(self, program)
@@ -555,7 +578,7 @@ class B3(QProcess):
         Update the current B3 instance in the database.
         """
         cursor = B3App.Instance().storage.cursor()
-        cursor.execute("UPDATE b3 SET config=? WHERE id=?", (self.config_path, self.id))
+        cursor.execute("UPDATE b3 SET config=?, lastrun=? WHERE id=?", (self.config_path, self.lastrun, self.id))
         LOG.debug('updated process in the database: @%s:%s', self.id, self.config_path)
         cursor.close()
 
@@ -646,7 +669,7 @@ class B3(QProcess):
         :param row: the database row as dict.
         :return: :type B3.
         """
-        return B3(row['id'], row['config'])
+        return B3(row['id'], row['config'], row['lastrun'])
 
     ############################################# SIGNAL HANDLERS ######################################################
 

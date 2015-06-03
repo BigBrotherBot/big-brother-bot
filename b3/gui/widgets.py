@@ -18,6 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 import b3
+import datetime
 import logging
 import os
 import re
@@ -31,6 +32,7 @@ from b3.config import MainConfig, load as load_config
 from b3.exceptions import ConfigFileNotFound
 from b3.exceptions import ConfigFileNotValid
 from functools import partial
+from time import time
 
 LOG = logging.getLogger('B3')
 
@@ -97,7 +99,7 @@ class MainTable(QTableWidget):
         """
         Initialize the MainTable layout.
         """
-        self.setFixedSize(500, GEOMETRY[b3.getPlatform()]['MAIN_TABLE_HEIGHT'])
+        self.setFixedSize(560, GEOMETRY[b3.getPlatform()]['MAIN_TABLE_HEIGHT'])
         self.setStyleSheet("""
         QWidget {
             background: #FFFFFF;
@@ -107,6 +109,27 @@ class MainTable(QTableWidget):
             background: #FFFFFF;
             border: 1px solid #B7B7B7;
             color: #484848;
+        }
+        QTableWidget QLabel.name {
+            margin-left: 2px;
+        }
+        QTableWidget QLabel.idle {
+            font-style: italic;
+            background: yellow;
+            color: #484848;
+            margin: 1px;
+        }
+        QTableWidget QLabel.running {
+            font-style: italic;
+            background: green;
+            color: white;
+            margin: 1px;
+        }
+        QTableWidget QLabel.errored {
+            font-style: italic;
+            background: red;
+            color: white;
+            margin: 1px;
         }
         """)
         self.setShowGrid(False)
@@ -118,7 +141,7 @@ class MainTable(QTableWidget):
         self.horizontalHeader().setVisible(False)
         self.verticalHeader().setVisible(False)
         self.verticalHeader().sectionResizeMode(QHeaderView.Fixed)
-        self.verticalHeader().setDefaultSectionSize(32)
+        self.verticalHeader().setDefaultSectionSize(34)
         self.verticalScrollBar().setStyleSheet(
             """QScrollBar:vertical {
                 background: #B7B7B7;
@@ -134,12 +157,12 @@ class MainTable(QTableWidget):
         self.setColumnWidth(0, 32)
         if len(B3App.Instance().processes) > 8:
             ## MAKE SPACE FOR SCROLLBAR
-            self.setColumnWidth(1, 140)
-            self.setColumnWidth(2, 140)
+            self.setColumnWidth(1, 190)
+            self.setColumnWidth(2, 150)
         else:
             ## NO SCROLLBAR
-            self.setColumnWidth(1, 150)
-            self.setColumnWidth(2, 150)
+            self.setColumnWidth(1, 200)
+            self.setColumnWidth(2, 160)
         self.setColumnWidth(3, 166)
         for i in range(len(B3App.Instance().processes)):
             self.paint_row(i)
@@ -171,27 +194,53 @@ class MainTable(QTableWidget):
             """
             Paint the B3 instance name in the 2nd column.
             """
-            name = re.sub(RE_COLOR, '', proc.name).strip()
-            parent.setItem(numrow, 1, QTableWidgetItem(name))
+            def __get_formatted_lastrun(lastrun_time):
+                """
+                Return a formatted string representing the process last run.
+                """
+                if not lastrun_time:
+                    return 'never'
+
+                current_time = int(time())
+                delta = current_time - lastrun_time
+                if delta < 84600:
+                    return 'today @ %s' % datetime.datetime.fromtimestamp(lastrun_time).strftime('%H:%M')
+                elif delta < 172800:
+                    return 'yesterday @ %s' % datetime.datetime.fromtimestamp(lastrun_time).strftime('%H:%M')
+                else:
+                    return datetime.datetime.fromtimestamp(lastrun_time).strftime('%Y/%m/%d %H:%M')
+
+            text = """
+            <b>%(NAME)s</b><br/>
+            <i style="font-size: 11px; color: #777777;">Last run: %(LASTRUN)s</i>
+            """ % dict(NAME=re.sub(RE_COLOR, '', proc.name).strip(), LASTRUN=__get_formatted_lastrun(proc.lastrun))
+
+            label = QLabel(text, parent)
+            label.setProperty('class', 'name')
+            label.setWordWrap(True)
+            label.setAlignment(Qt.AlignLeft)
+            parent.setCellWidget(numrow, 1, label)
 
         def __paint_column_status(parent, numrow, proc):
             """
             Paint the B3 instance status in the 3rd column.
             """
             if proc.state() == QProcess.Running:
-                value, background, foregound = 'RUNNING', Qt.green, Qt.black
+                clazz = 'running'
+                text = 'RUNNING'
             else:
                 if proc.isFlag(CONFIG_READY):
-                    value, background, foregound = 'IDLE', Qt.yellow, Qt.black
+                    clazz = 'idle'
+                    text = 'IDLE'
                 else:
-                    background, foregound = Qt.red, Qt.white
-                    value = 'INVALID CONFIG' if proc.isFlag(CONFIG_FOUND) else 'MISSING CONFIG'
+                    clazz = 'errored'
+                    text = 'INVALID CONFIG' if proc.isFlag(CONFIG_FOUND) else 'MISSING CONFIG'
 
-            value = QTableWidgetItem(value)
-            value.setTextAlignment(Qt.AlignCenter)
-            parent.setItem(numrow, 2, value)
-            parent.item(numrow, 2).setBackground(background)
-            parent.item(numrow, 2).setForeground(foregound)
+            label = QLabel(text, parent)
+            label.setProperty('class', clazz)
+            label.setWordWrap(True)
+            label.setAlignment(Qt.AlignCenter)
+            parent.setCellWidget(numrow, 2, label)
 
         def __paint_column_toolbar(parent, numrow, proc):
             """
@@ -470,7 +519,7 @@ class CentralWidget(QWidget):
         main_layout.addLayout(__get_bottom_layout(self))
         main_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(main_layout)
-        self.setFixedSize(520, 512)
+        self.setFixedSize(580, 512)
         self.setStyleSheet("""
         QWidget, QDialog, QMessageBox {
             background: #F2F2F2;
@@ -506,7 +555,7 @@ class MainWindow(QMainWindow):
         Initialize the MainWindow layout.
         """
         self.setWindowTitle(B3_TITLE)
-        self.setFixedSize(520, 512)
+        self.setFixedSize(580, 512)
         ## INIT SUBCOMPONENTS
         self.setStatusBar(StatusBar(self))
         self.setMenuBar(MainMenuBar(self))
