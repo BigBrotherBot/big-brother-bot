@@ -80,6 +80,7 @@ class IconWidget(QLabel):
         pixmap = QPixmap(image)
         self.setPixmap(pixmap.scaled(32, 32))
         self.setGeometry(0, 0, 32, 32)
+        self.setProperty('class', 'icon')
 
 
 class MainTable(QTableWidget):
@@ -111,7 +112,10 @@ class MainTable(QTableWidget):
             color: #484848;
         }
         QTableWidget QLabel.name {
-            margin-left: 2px;
+            margin-left: 1px;
+        }
+        QTableWidget QLabel.icon {
+            margin-left: 1px;
         }
         QTableWidget QLabel.idle {
             font-style: italic;
@@ -154,15 +158,15 @@ class MainTable(QTableWidget):
         """
         self.setRowCount(len(B3App.Instance().processes))
         self.setColumnCount(4)
-        self.setColumnWidth(0, 32)
+        self.setColumnWidth(0, 34)
         if len(B3App.Instance().processes) > 8:
             ## MAKE SPACE FOR SCROLLBAR
-            self.setColumnWidth(1, 190)
-            self.setColumnWidth(2, 150)
+            self.setColumnWidth(1, 188)
+            self.setColumnWidth(2, 148)
         else:
             ## NO SCROLLBAR
-            self.setColumnWidth(1, 200)
-            self.setColumnWidth(2, 160)
+            self.setColumnWidth(1, 198)
+            self.setColumnWidth(2, 158)
         self.setColumnWidth(3, 166)
         for i in range(len(B3App.Instance().processes)):
             self.paint_row(i)
