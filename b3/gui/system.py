@@ -108,7 +108,8 @@ class MainMenuBar(QMenuBar):
         ## TOOLS MENU ENTRY
         tools_menu = self.addMenu('&Tools')
         tools_menu.addAction(preferences)
-        tools_menu.addSeparator()
+        if b3.getPlatform() != 'darwin':
+            tools_menu.addSeparator()
         tools_menu.addAction(update_check)
         tools_menu.addAction(update_database)
         tools_menu.addSeparator()

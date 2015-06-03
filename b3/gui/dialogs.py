@@ -830,7 +830,40 @@ class PreferencesDialog(QDialog):
         """
         self.setWindowTitle('Preferences')
         self.setFixedSize(400, 260)
-        self.setStyleSheet("""QDialog { background: #F2F2F2; }""")
+        self.setStyleSheet("""
+            QDialog {
+                background: #F2F2F2;
+            }
+            QGroupBox, QCheckBox, QRadioButton {
+                background: transparent;
+            }
+            QGroupBox::title {
+                background-color: transparent;
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 2 4px;
+            }
+            QGroupBox {
+                margin-top: 20px;
+                spacing: 26px;
+            }
+            QCheckBox::indicator::unchecked, QRadioButton::indicator::unchecked {
+                border: 1px solid darkgray;
+                border-radius: 0px;
+                background-color: #F2F2F2;
+                width: 10px;
+                height: 10px;
+                margin-right: 2px;
+            }
+            QCheckBox::indicator::checked, QRadioButton::indicator::checked {
+                border: 1px solid #777777;
+                border-radius: 0px;
+                background-color: #777777;
+                width: 10px;
+                height: 10px;
+                margin-right: 2px;
+            }
+        """)
 
         def __get_top_layout(parent):
             ## AUTORESTART
