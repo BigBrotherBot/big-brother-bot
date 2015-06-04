@@ -146,6 +146,7 @@
         <!-- <plugin name="poweradminbf3" config="@conf/plugin_poweradminbf3.ini" /> -->
         <!-- <plugin name="poweradminbfbc2" config="@conf/plugin_poweradminbfbc2.ini" /> -->
         <!-- <plugin name="poweradmincod7" config="@conf/plugin_poweradmincod7.xml" /> -->
+        <!-- <plugin name="poweradminhf" config="@conf/plugin_poweradminhf.ini" /> -->
         <!-- <plugin name="poweradminmoh" config="@conf/plugin_poweradminmoh.xml" /> -->
         <!-- <plugin name="poweradminurt" config="@conf/plugin_poweradminurt.ini" /> -->
         <!-- <plugin name="spawnkill" config="@conf/plugin_spawnkill.ini" /> -->
