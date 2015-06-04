@@ -533,16 +533,18 @@ class B3(QProcess):
             # prefer compiled python instance
             if os.path.isfile(entry_point + 'c'):
                 entry_point += 'c'
+
             program = '%s %s --config %s --console' % (sys.executable, entry_point, self.config_path)
+
+            # append restart flag if specified in app configuration file
+            if B3App.Instance().settings.value('auto_restart_on_crash', type=bool):
+                program += ' --restart'
+
         else:
             if b3.getPlatform() == 'darwin':
                 program = '"%s" --config "%s" --console' % (sys.executable, self.config_path)
             else:
                 program = '%s --config %s --console' % (sys.executable, self.config_path)
-
-        # append restart flag if specified in app configuration file
-        if B3App.Instance().settings.value('auto_restart_on_crash', type=bool):
-            program += ' --restart'
 
         LOG.info('starting %s process: %s', self.name, program)
 

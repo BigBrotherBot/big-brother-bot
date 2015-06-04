@@ -34,7 +34,7 @@ from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLabel, QVBoxLayout, QGroupBox
 
 from b3 import B3_COPYRIGHT, B3_LICENSE, B3_TITLE, B3_TITLE_SHORT, B3_WEBSITE
 from b3.parser import StubParser
-from b3.functions import unzip, splitDSN
+from b3.functions import unzip, splitDSN, main_is_frozen
 from b3.storage import getStorage
 from b3.update import getDefaultChannel, B3version
 from b3.update import URL_B3_LATEST_VERSION, UPDATE_CHANNEL_DEV, UPDATE_CHANNEL_BETA, UPDATE_CHANNEL_STABLE
@@ -868,8 +868,13 @@ class PreferencesDialog(QDialog):
         def __get_top_layout(parent):
             ## AUTORESTART
             parent.autoRestartCheckBox = QCheckBox('Automatically restart B3 on crash')
-            parent.autoRestartCheckBox.setWhatsThis('If enabled, every B3 process will be automatically restarted upon crash.')
-            parent.autoRestartCheckBox.setChecked(B3App.Instance().settings.value('auto_restart_on_crash', type=bool))
+            if not main_is_frozen():
+                parent.autoRestartCheckBox.setWhatsThis('If enabled, every B3 process will be automatically restarted upon crash.')
+                parent.autoRestartCheckBox.setChecked(B3App.Instance().settings.value('auto_restart_on_crash', type=bool))
+            else:
+                parent.autoRestartCheckBox.setWhatsThis('You need to run B3 from sources if you want this feature enabled.')
+                parent.autoRestartCheckBox.setChecked(False)
+                parent.autoRestartCheckBox.setEnabled(False)
             ## UPDATE CHANNEL OPTIONS
             parent.updateChannel[UPDATE_CHANNEL_STABLE] = QRadioButton('Stable')
             parent.updateChannel[UPDATE_CHANNEL_BETA] = QRadioButton('Beta')
