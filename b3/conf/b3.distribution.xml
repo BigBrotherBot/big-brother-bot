@@ -129,6 +129,7 @@
         <!-- The following plugins have been included recently in B3 as official plugins. They are disabled by
              default. You can enable them by removing the surrounding comment symbols. -->
 
+        <!-- <plugin name="afk" config="@conf/plugin_afk.ini" /> -->
         <!-- <plugin name="banlist" config="@conf/plugin_banlist.xml" /> -->
         <!-- <plugin name="callvote" config="@conf/plugin_callvote.ini" /> -->
         <!-- <plugin name="chatlogger" config="@conf/plugin_chatlogger.ini" /> -->
