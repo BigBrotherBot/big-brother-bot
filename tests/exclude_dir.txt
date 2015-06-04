@@ -1,3 +1,4 @@
+plugins/afk
 plugins/makeroom
 plugins/poweradminbf3
 plugins/poweradminurt

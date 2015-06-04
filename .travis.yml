@@ -63,6 +63,7 @@ script:
   - nosetests --where=tests.plugins.test_jumper --verbosity=3 --with-cov --cov b3.plugins.jumper --cov-report term-missing --cov-config .coveragerc
   - nosetests --where=tests.plugins.test_spawnkill --verbosity=3 --with-cov --cov b3.plugins.spawnkill --cov-report term-missing --cov-config .coveragerc
   - py.test tests/plugins/makeroom
+  - py.test tests/plugins/afk
   - python setup.py egg_info --tag-build .dev${TRAVIS_COMMIT:0:7} --tag-date sdist bdist_wheel
   - python setup.py build_exe
 
