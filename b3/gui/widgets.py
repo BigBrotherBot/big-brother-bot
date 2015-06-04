@@ -222,7 +222,7 @@ class MainTable(QTableWidget):
             label = QLabel(text, parent)
             label.setProperty('class', 'name')
             label.setWordWrap(True)
-            label.setAlignment(Qt.AlignLeft)
+            label.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
             parent.setCellWidget(numrow, 1, label)
 
         def __paint_column_status(parent, numrow, proc):
