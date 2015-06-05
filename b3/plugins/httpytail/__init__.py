@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'GrosBedo, 82ndab-Bravo17, Courgette'
-__version__ = '1.4'
+__version__ = '1.5'
 
 import b3
 import threading
@@ -24,8 +24,6 @@ import b3.events
 import b3.plugin
 import os.path
 import time
-import re
-import sys
 import urllib2
 
 from b3 import functions
@@ -73,13 +71,6 @@ class HttpytailPlugin(b3.plugin.Plugin):
         """
         Plugin startup.
         """
-        versionsearch = re.search("^((?P<mainversion>[0-9]).(?P<lowerversion>[0-9]+)?)", sys.version)
-        version = int(versionsearch.group(3))
-        if version < 7:
-            self.error('python version %s is not supported and may lead to hangs: '
-                       'please update python to 2.7' % versionsearch.group(1))
-            self.console.die()
-
         if self.console.config.has_option('server', 'delay'):
             self._httpdelay = self.console.config.getfloat('server', 'delay')
 
@@ -149,7 +140,7 @@ class HttpytailPlugin(b3.plugin.Plugin):
         """
         self.onShutdown(event)
 
-    def onShutdown(self, event):
+    def onShutdown(self, _):
         """
         Handle intercepted events
         """
@@ -341,31 +332,9 @@ class HttpytailPlugin(b3.plugin.Plugin):
 
         try:
             webFile.close()
-        except:
+        except Exception:
             pass
         try:
             self.file.close()
-        except:
+        except Exception:
             pass
-
-
-if __name__ == '__main__':
-    from b3.fake import fakeConsole
-
-    print "------------------------------------"
-    conf = b3.config.XmlConfigParser()
-    conf.setXml("""
-    <configuration plugin="httpytail">
-        <settings name="settings">
-            <set name="timeout">15</set>
-            <set name="maxGapBytes">1024</set>
-        </settings>
-    </configuration>
-    """)
-    p = HttpytailPlugin(fakeConsole, conf)
-    p.onStartup()
-    p._httpdelay = 5
-    p.initThread('http://www.somewhere.tld/somepath/somefile.log')
-    time.sleep(300)
-    fakeConsole.shutdown()
-    time.sleep(8)
