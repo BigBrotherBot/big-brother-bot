@@ -28,7 +28,7 @@ from PyQt5.QtGui import QPixmap, QIcon, QCursor
 from PyQt5.QtWidgets import QLabel, QVBoxLayout, QTableWidget, QAbstractItemView, QHeaderView
 from PyQt5.QtWidgets import QHBoxLayout, QWidget, QMessageBox, QMainWindow, QDesktopWidget, QSystemTrayIcon, QFileDialog
 from b3 import B3_TITLE
-from b3.config import MainConfig, load as load_config
+from b3.config import MainConfig, XmlConfigParser, load as load_config
 from b3.exceptions import ConfigFileNotFound
 from b3.exceptions import ConfigFileNotValid
 from functools import partial
@@ -112,7 +112,7 @@ class MainTable(QTableWidget):
         """
         Initialize the MainTable layout.
         """
-        self.setFixedSize(560, GEOMETRY[b3.getPlatform()]['MAIN_TABLE_HEIGHT'])
+        self.setFixedSize(594, GEOMETRY[b3.getPlatform()]['MAIN_TABLE_HEIGHT'])
         self.setStyleSheet("""
         QWidget {
             background: #FFFFFF;
@@ -180,7 +180,7 @@ class MainTable(QTableWidget):
             self.setColumnWidth(1, GEOMETRY[b3.getPlatform()]['MAIN_TABLE_COLUMN_NAME_WIDTH'])
             self.setColumnWidth(2, GEOMETRY[b3.getPlatform()]['MAIN_TABLE_COLUMN_STATUS_WIDTH'])
 
-        self.setColumnWidth(3, 166)
+        self.setColumnWidth(3, 200)
         for i in range(len(B3App.Instance().processes)):
             self.paint_row(i)
 
@@ -273,16 +273,27 @@ class MainTable(QTableWidget):
             btn_refresh.setStatusTip('Refresh %s configuration' % proc.name)
             btn_refresh.setVisible(True)
             btn_refresh.clicked.connect(partial(parent.process_refresh, process=proc))
-            ## CONSOLE BUTTON
-            btn_console = IconButton(parent=parent, icon=QIcon(ICON_CONSOLE))
-            btn_console.setStatusTip('Show %s console output' % proc.name)
-            btn_console.setVisible(True)
-            btn_console.clicked.connect(partial(parent.process_console, process=proc))
             ## LOGFILE BUTTON
             btn_log = IconButton(parent=parent, icon=QIcon(ICON_LOG))
             btn_log.setStatusTip('Show %s log' % proc.name)
             btn_log.setVisible(True)
             btn_log.clicked.connect(partial(parent.process_log, process=proc))
+            ## CONSOLE BUTTON
+            btn_console = IconButton(parent=parent, icon=QIcon(ICON_CONSOLE))
+            btn_console.setStatusTip('Show %s console output' % proc.name)
+            btn_console.setVisible(True)
+            btn_console.clicked.connect(partial(parent.process_console, process=proc))
+
+            ## CONFIG BUTTON
+            ICON_CONFIG = ICON_INI
+            if proc.isFlag(CONFIG_FOUND) and isinstance(proc.config._config_parser, XmlConfigParser):
+                ICON_CONFIG = ICON_XML
+
+            btn_config = IconButton(parent=parent, icon=QIcon(ICON_CONFIG))
+            btn_config.setStatusTip('Show %s configuration file' % proc.name)
+            btn_config.setVisible(True)
+            btn_config.clicked.connect(partial(parent.process_config, process=proc))
+
             if proc.state() == QProcess.Running:
                 ## SHUTDOWN BUTTON
                 btn_ctrl = IconButton(parent=parent, icon=QIcon(ICON_STOP))
@@ -301,6 +312,7 @@ class MainTable(QTableWidget):
             layout.addWidget(btn_refresh)
             layout.addWidget(btn_log)
             layout.addWidget(btn_console)
+            layout.addWidget(btn_config)
             layout.addWidget(btn_ctrl)
             layout.setAlignment(Qt.AlignCenter)
             layout.setContentsMargins(0, 0, 0, 0)
@@ -446,6 +458,19 @@ class MainTable(QTableWidget):
             else:
                 process.stdout.show()
 
+    def process_config(self, process):
+        """
+        Open the B3 instance configuration file.
+        """
+        if not process.isFlag(CONFIG_FOUND):
+            msgbox = QMessageBox()
+            msgbox.setIcon(QMessageBox.Warning)
+            msgbox.setText('Missing %s configuration file' % process.name)
+            msgbox.setStandardButtons(QMessageBox.Ok)
+            msgbox.exec_()
+        else:
+            B3App.Instance().openpath(process.config.fileName)
+
     def process_log(self, process):
         """
         Open the B3 instance log file.
@@ -536,7 +561,7 @@ class CentralWidget(QWidget):
         main_layout.addLayout(__get_bottom_layout(self))
         main_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(main_layout)
-        self.setFixedSize(580, 512)
+        self.setFixedSize(614, 512)
         self.setStyleSheet("""
         QWidget, QDialog, QMessageBox {
             background: #F2F2F2;
@@ -572,7 +597,7 @@ class MainWindow(QMainWindow):
         Initialize the MainWindow layout.
         """
         self.setWindowTitle(B3_TITLE)
-        self.setFixedSize(580, 512)
+        self.setFixedSize(614, 512)
         ## INIT SUBCOMPONENTS
         self.setStatusBar(StatusBar(self))
         self.setMenuBar(MainMenuBar(self))
@@ -765,7 +790,7 @@ class MainWindow(QMainWindow):
             update.show()
 
 from b3.gui import B3App, RE_COLOR, CONFIG_READY, CONFIG_FOUND, ICON_DEL, ICON_REFRESH, ICON_CONSOLE, ICON_LOG, ICON_GAME
-from b3.gui import ICON_STOP, ICON_START, CONFIG_VALID, B3_BANNER, B3
+from b3.gui import ICON_STOP, ICON_START, ICON_INI, ICON_XML, CONFIG_VALID, B3_BANNER, B3
 from b3.gui.dialogs import AboutDialog, PluginInstallDialog, UpdateCheckDialog, UpdateDatabaseDialog, PreferencesDialog
 from b3.gui.misc import Button, IconButton, StatusBar
 from b3.gui.system import MainMenuBar, SystemTrayIcon

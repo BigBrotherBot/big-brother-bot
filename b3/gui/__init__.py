@@ -65,9 +65,11 @@
 # 03/06/2015 - 0.14 - display B3 process last run in main table
 #                   - customized QRadioButton and QCheckBox layout
 #                   - minor fixes for OSX
+# 05/06/2015 - 0.15 - added configuration file toolbar button
+#                   - adjust main table toolbar margins according to the running OS
 
 __author__ = 'Fenix'
-__version__ = '0.14'
+__version__ = '0.15'
 
 
 import b3
@@ -95,6 +97,8 @@ ICON_LOG = b3.getAbsolutePath('@b3/gui/assets/icons/log.png', True)
 ICON_REFRESH = b3.getAbsolutePath('@b3/gui/assets/icons/refresh.png', True)
 ICON_START = b3.getAbsolutePath('@b3/gui/assets/icons/start.png', True)
 ICON_STOP = b3.getAbsolutePath('@b3/gui/assets/icons/stop.png', True)
+ICON_INI = b3.getAbsolutePath('@b3/gui/assets/icons/ini.png', True)
+ICON_XML = b3.getAbsolutePath('@b3/gui/assets/icons/xml.png', True)
 ICON_DATABASE = b3.getAbsolutePath('@b3/gui/assets/icons/database.png', True)
 ICON_UPDATE = b3.getAbsolutePath('@b3/gui/assets/icons/update.png', True)
 ICON_SETTINGS = b3.getAbsolutePath('@b3/gui/assets/icons/settings.png', True)
