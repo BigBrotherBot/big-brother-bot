@@ -25,7 +25,7 @@ import re
 
 from PyQt5.QtCore import QProcess, Qt, QEvent
 from PyQt5.QtGui import QPixmap, QIcon, QCursor
-from PyQt5.QtWidgets import QLabel, QVBoxLayout, QTableWidget, QAbstractItemView, QHeaderView, QTableWidgetItem
+from PyQt5.QtWidgets import QLabel, QVBoxLayout, QTableWidget, QAbstractItemView, QHeaderView
 from PyQt5.QtWidgets import QHBoxLayout, QWidget, QMessageBox, QMainWindow, QDesktopWidget, QSystemTrayIcon, QFileDialog
 from b3 import B3_TITLE
 from b3.config import MainConfig, load as load_config
@@ -39,14 +39,26 @@ LOG = logging.getLogger('B3')
 GEOMETRY = {
     'win32': {
         'MAIN_TABLE_HEIGHT': 260,
+        'MAIN_TABLE_COLUMN_NAME_WIDTH': 198,
+        'MAIN_TABLE_COLUMN_NAME_WIDTH_SCROLLBAR': 188,
+        'MAIN_TABLE_COLUMN_STATUS_WIDTH': 158,
+        'MAIN_TABLE_COLUMN_STATUS_WIDTH_SCROLLBAR': 148,
         'CENTRAL_WIDGET_BOTTOM_LAYOUT_MARGIN_BOTTOM': 52,
     },
     'darwin': {
         'MAIN_TABLE_HEIGHT': 280,
+        'MAIN_TABLE_COLUMN_NAME_WIDTH': 198,
+        'MAIN_TABLE_COLUMN_NAME_WIDTH_SCROLLBAR': 188,
+        'MAIN_TABLE_COLUMN_STATUS_WIDTH': 160,
+        'MAIN_TABLE_COLUMN_STATUS_WIDTH_SCROLLBAR': 154,
         'CENTRAL_WIDGET_BOTTOM_LAYOUT_MARGIN_BOTTOM': 32,
     },
     'linux': {
         'MAIN_TABLE_HEIGHT': 280,
+        'MAIN_TABLE_COLUMN_NAME_WIDTH': 198,
+        'MAIN_TABLE_COLUMN_NAME_WIDTH_SCROLLBAR': 188,
+        'MAIN_TABLE_COLUMN_STATUS_WIDTH': 158,
+        'MAIN_TABLE_COLUMN_STATUS_WIDTH_SCROLLBAR': 148,
         'CENTRAL_WIDGET_BOTTOM_LAYOUT_MARGIN_BOTTOM': 32,
     }
 }
@@ -159,14 +171,15 @@ class MainTable(QTableWidget):
         self.setRowCount(len(B3App.Instance().processes))
         self.setColumnCount(4)
         self.setColumnWidth(0, 34)
+
+        ## MAKE SPACE FOR SCROLLBAR
         if len(B3App.Instance().processes) > 8:
-            ## MAKE SPACE FOR SCROLLBAR
-            self.setColumnWidth(1, 188)
-            self.setColumnWidth(2, 148)
+            self.setColumnWidth(1, GEOMETRY[b3.getPlatform()]['MAIN_TABLE_COLUMN_NAME_WIDTH_SCROLLBAR'])
+            self.setColumnWidth(2, GEOMETRY[b3.getPlatform()]['MAIN_TABLE_COLUMN_STATUS_WIDTH_SCROLLBAR'])
         else:
-            ## NO SCROLLBAR
-            self.setColumnWidth(1, 198)
-            self.setColumnWidth(2, 158)
+            self.setColumnWidth(1, GEOMETRY[b3.getPlatform()]['MAIN_TABLE_COLUMN_NAME_WIDTH'])
+            self.setColumnWidth(2, GEOMETRY[b3.getPlatform()]['MAIN_TABLE_COLUMN_STATUS_WIDTH'])
+
         self.setColumnWidth(3, 166)
         for i in range(len(B3App.Instance().processes)):
             self.paint_row(i)
