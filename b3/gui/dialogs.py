@@ -768,6 +768,7 @@ class STDOutDialog(QDialog):
     This class is used to display the 'B3 console output' dialog.
     """
     stdout = None
+    lstrip = ['\x0c', 'TERM environment variable not set.\n']
 
     def __init__(self, parent=None, process=None):
         """
@@ -804,8 +805,9 @@ class STDOutDialog(QDialog):
         """
         self.stdout.moveCursor(QTextCursor.End)
         output = str(self.process.readAllStandardOutput())
-        if output.startswith('\x0c'):
-            output = output.lstrip('\x0c')
+        for v in self.lstrip:
+            if output.startswith(v):
+                output = output.lstrip(v)
         self.stdout.insertPlainText(output)
 
 
