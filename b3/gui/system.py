@@ -22,7 +22,8 @@ import webbrowser
 
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMenuBar, QAction, QSystemTrayIcon, QMenu
-from b3 import B3_PLUGIN_REPOSITORY, B3_DONATE, B3_WIKI, B3_CONFIG_GENERATOR, B3_DOCUMENTATION, B3_FORUM, B3_WEBSITE
+from b3 import B3_PLUGIN_REPOSITORY, B3_DONATE, B3_XLRSTATS,  B3_WIKI, B3_CONFIG_GENERATOR, \
+               B3_DOCUMENTATION, B3_FORUM, B3_WEBSITE
 
 
 class MainMenuBar(QMenuBar):
@@ -127,7 +128,13 @@ class MainMenuBar(QMenuBar):
         #### B3 DONATION SUBMENU ENTRY
         donate = QAction('Donate to B3', self.parent())
         donate.setStatusTip('Donate to the BigBrotherBot project')
+        donate.setIcon(QIcon(ICON_PAYPAL))
         donate.triggered.connect(lambda: webbrowser.open(B3_DONATE))
+        #### XLRSTATS WEBTOOL
+        xlrstats = QAction('XLRstats webtool', self.parent())
+        xlrstats.setStatusTip('Visit the XLRstats webtool homepage')
+        xlrstats.setIcon(QIcon(ICON_XLRSTATS))
+        xlrstats.triggered.connect(lambda: webbrowser.open(B3_XLRSTATS))
         #### B3 WIKI SUBMENU ENTRY
         wiki = QAction('B3 Wiki', self.parent())
         wiki.setStatusTip('Visit the B3 documentation wiki')
@@ -154,6 +161,7 @@ class MainMenuBar(QMenuBar):
         if b3.getPlatform() != 'darwin':
             help_menu.addSeparator()
         help_menu.addAction(donate)
+        help_menu.addAction(xlrstats)
         help_menu.addSeparator()
         help_menu.addAction(code)
         help_menu.addAction(config)
@@ -215,4 +223,5 @@ class SystemTrayIcon(QSystemTrayIcon):
 
 
 from b3.gui import B3App
-from b3.gui import B3_ICON_SMALL, ICON_DATABASE, ICON_SETTINGS, ICON_UPDATE, ICON_PLUGINS, ICON_QUIT
+from b3.gui import B3_ICON_SMALL, ICON_DATABASE, ICON_SETTINGS, ICON_UPDATE, ICON_PLUGINS, \
+                   ICON_QUIT, ICON_XLRSTATS, ICON_PAYPAL

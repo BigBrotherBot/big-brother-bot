@@ -101,6 +101,8 @@ ICON_SETTINGS = b3.getAbsolutePath('@b3/gui/assets/icons/settings.png', True)
 ICON_PLUGINS = b3.getAbsolutePath('@b3/gui/assets/icons/plugins.png', True)
 ICON_QUIT = b3.getAbsolutePath('@b3/gui/assets/icons/quit.png', True)
 ICON_GAME = b3.getAbsolutePath('@b3/gui/assets/icons/games/%s.png', True)
+ICON_XLRSTATS = b3.getAbsolutePath('@b3/gui/assets/icons/xlrstats.png', True)
+ICON_PAYPAL = b3.getAbsolutePath('@b3/gui/assets/icons/paypal.png', True)
 
 ## STATUS FLAGS
 CONFIG_FOUND = 0b0001   # configuration file has been found

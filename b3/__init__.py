@@ -71,6 +71,7 @@ B3_WIKI = 'http://wiki.bigbrotherbot.net/'
 B3_CONFIG_GENERATOR = 'http://config.bigbrotherbot.net/'
 B3_DOCUMENTATION = 'http://doc.bigbrotherbot.net/'
 B3_DONATE = 'http://www.bigbrotherbot.net/donate'
+B3_XLRSTATS = 'http://www.xlrstats.com/'
 B3_PLUGIN_REPOSITORY = 'http://forum.bigbrotherbot.net/downloads/?cat=4'
 
 # TEAMS
