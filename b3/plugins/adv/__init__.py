@@ -26,10 +26,11 @@ import feedparser
 import b3.plugin
 import b3.cron
 
+from b3 import B3_RSS
 from ConfigParser import NoOptionError
 
 
-class MessageLoop:
+class MessageLoop(object):
 
     items = None
 
@@ -99,7 +100,7 @@ class AdvPlugin(b3.plugin.Plugin):
     _msg = None
     _fileName = None
     _rate = '2'
-    _feed = 'http://forum.bigbrotherbot.net/news-2/?type=rss;action=.xml'
+    _feed = B3_RSS
     _feedpre = u'News: '
     _feedmaxitems = 5
     _feeditemnr = 0
