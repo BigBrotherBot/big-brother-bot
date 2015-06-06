@@ -84,7 +84,6 @@ import sqlite3
 ## USER PATHS
 B3_STORAGE = b3.getWritableFilePath(os.path.join(b3.HOMEDIR, 'app.db'), True)
 B3_LOG = b3.getWritableFilePath(os.path.join(b3.HOMEDIR, 'app.log'), True)
-B3_SETTINGS = b3.getWritableFilePath(os.path.join(b3.HOMEDIR, 'app.ini'), True)
 
 ## RESOURCE PATHS
 B3_BANNER = b3.getAbsolutePath('@b3/gui/assets/main.png', True)
