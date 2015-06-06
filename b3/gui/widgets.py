@@ -32,7 +32,6 @@ from b3.exceptions import ConfigFileNotFound
 from b3.exceptions import ConfigFileNotValid
 from datetime import datetime, date, timedelta
 from functools import partial
-from time import time
 
 LOG = logging.getLogger('B3')
 
@@ -441,21 +440,14 @@ class MainTable(QTableWidget):
         """
         Display the STDOut console of a process.
         """
-        if process.state() == QProcess.NotRunning:
+        if not process.stdout:
             msgbox = QMessageBox()
-            msgbox.setIcon(QMessageBox.Information)
-            msgbox.setText('%s is not running' % process.name)
+            msgbox.setIcon(QMessageBox.Warning)
+            msgbox.setText('%s console initialization failed!' % process.name)
             msgbox.setStandardButtons(QMessageBox.Ok)
             msgbox.exec_()
         else:
-            if not process.stdout:
-                msgbox = QMessageBox()
-                msgbox.setIcon(QMessageBox.Warning)
-                msgbox.setText('%s console initialization failed' % process.name)
-                msgbox.setStandardButtons(QMessageBox.Ok)
-                msgbox.exec_()
-            else:
-                process.stdout.show()
+            process.stdout.show()
 
     def process_config(self, process):
         """

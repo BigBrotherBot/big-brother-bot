@@ -795,7 +795,7 @@ class STDOutDialog(QDialog):
         layout.addWidget(self.stdout)
         layout.setAlignment(Qt.AlignCenter)
         self.setLayout(layout)
-        self.setModal(True)
+        self.setModal(False)
         self.hide()
 
     @pyqtSlot()

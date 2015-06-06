@@ -67,9 +67,10 @@
 #                   - minor fixes for OSX
 # 05/06/2015 - 0.15 - added configuration file toolbar button
 #                   - adjust main table toolbar margins according to the running OS
+# 06/06/2015 - 0.16 - allow to inspect STDOut console also when the B3 process is not running
 
 __author__ = 'Fenix'
-__version__ = '0.15'
+__version__ = '0.16'
 
 
 import b3
@@ -125,7 +126,7 @@ from b3.functions import main_is_frozen
 from b3.update import UPDATE_CHANNEL_STABLE
 from time import time
 from PyQt5.QtCore import QProcess, QEvent, QSettings
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QTextCursor
 from PyQt5.QtWidgets import QApplication,  QMessageBox
 
 
@@ -407,6 +408,13 @@ class B3(QProcess):
         self.config = config
         self.lastrun = lastrun
 
+        # create the console window (hidden by default)
+        self.stdout = STDOutDialog(process=self)
+        self.setProcessChannelMode(QProcess.MergedChannels)
+        self.readyReadStandardOutput.connect(self.stdout.read_stdout)
+        # configure signal handlers
+        self.finished.connect(self.process_finished)
+
     ############################################### PROPERTIES #########################################################
 
     def __get_config(self):
@@ -554,13 +562,7 @@ class B3(QProcess):
 
         LOG.info('starting %s process: %s', self.name, program)
 
-        # create the console window (hidden by default)
-        self.stdout = STDOutDialog(process=self)
-        self.setProcessChannelMode(QProcess.MergedChannels)
-        self.readyReadStandardOutput.connect(self.stdout.read_stdout)
-
-        # configure signal handlers
-        self.finished.connect(self.process_finished)
+        self.stdout.stdout.clear()
         self.lastrun = time()
         self.update()
 
@@ -691,8 +693,8 @@ class B3(QProcess):
         :param exit_status: the process exit status
         """
         if self.stdout:
-            self.stdout.hide()
-            self.stdout = None
+            self.stdout.stdout.moveCursor(QTextCursor.End)
+            self.stdout.stdout.insertPlainText('>>> PROCESS TERMINATED (%s)\n' % exit_code)
 
     ############################################## MAGIC METHODS  ######################################################
 

@@ -33,6 +33,7 @@
 # 2015/05/07 - 1.6   - Fenix     - add GUI startup
 # 2015/05/26 - 1.7   - Fenix     - reworked B3 startup routine
 #                                - removed B3 setup procedure: display B3 configuration generator webtool url instead
+from PyQt5.QtWidgets import QSpacerItem, QSizePolicy
 
 __author__  = 'ThorN'
 __version__ = '1.7'
@@ -162,12 +163,18 @@ def run_gui(options):
     try:
         with SplashScreen(min_splash_time=2):
             mainwindow = app.init()
-    except Exception:
+    except Exception, e:
         box = QMessageBox()
         box.setIcon(QMessageBox.Critical)
         box.setWindowTitle('CRITICAL')
-        box.setText('CRITICAL: %s' % traceback.format_exc())
+        box.setText('CRITICAL: B3 FAILED TO START!')
+        box.setInformativeText('ERROR: %s' % e)
+        box.setDetailedText(traceback.format_exc())
         box.setStandardButtons(QMessageBox.Ok)
+
+        # this will trick Qt and resize a bit the QMessageBox to the exception stack trace is printed nice
+        box.layout().addItem(QSpacerItem(400, 0, QSizePolicy.Minimum, QSizePolicy.Expanding),
+                             box.layout().rowCount(), 0, 1, box.layout().columnCount())
         box.exec_()
         sys.exit(127)
     else:
