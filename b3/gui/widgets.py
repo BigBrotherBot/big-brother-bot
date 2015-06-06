@@ -18,7 +18,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 import b3
-import datetime
 import logging
 import os
 import re
@@ -31,6 +30,7 @@ from b3 import B3_TITLE
 from b3.config import MainConfig, XmlConfigParser, load as load_config
 from b3.exceptions import ConfigFileNotFound
 from b3.exceptions import ConfigFileNotValid
+from datetime import datetime, date, timedelta
 from functools import partial
 from time import time
 
@@ -215,17 +215,16 @@ class MainTable(QTableWidget):
                 """
                 Return a formatted string representing the process last run.
                 """
-                if not lastrun_time:
-                    return 'never'
-
-                current_time = int(time())
-                delta = current_time - lastrun_time
-                if delta < 84600:
-                    return 'today @ %s' % datetime.datetime.fromtimestamp(lastrun_time).strftime('%H:%M')
-                elif delta < 172800:
-                    return 'yesterday @ %s' % datetime.datetime.fromtimestamp(lastrun_time).strftime('%H:%M')
-                else:
-                    return datetime.datetime.fromtimestamp(lastrun_time).strftime('%Y/%m/%d %H:%M')
+                formatted_time = 'never'
+                if lastrun_time:
+                    lastrun_date = date.fromtimestamp(lastrun_time)
+                    if lastrun_date == date.today():
+                        formatted_time = 'today @ %s' % datetime.fromtimestamp(lastrun_time).strftime('%H:%M')
+                    elif lastrun_date == date.today() - timedelta(days=1):
+                        formatted_time = 'yesterday @ %s' % datetime.fromtimestamp(lastrun_time).strftime('%H:%M')
+                    else:
+                        formatted_time = datetime.fromtimestamp(lastrun_time).strftime('%Y/%m/%d %H:%M')
+                return formatted_time
 
             text = """
             <b>%(NAME)s</b><br/>
@@ -577,11 +576,11 @@ class MainWindow(QMainWindow):
     system_tray = None
     system_tray_minimized = False # this will be set to True after the first minimization
     system_tray_balloon = {
-        'win32': "B3 will continue to run so that all your B3 processes will stay alive. "
+        'win32': "B3 is still running! "
                  "If you want to quit B3, right click this icon and select 'Quit'.",
-        'darwin': "B3 will continue to run so that all your B3 processes will stay alive. "
+        'darwin': "B3 is still running! "
                   "If you want to quit B3, close the application using the Dock launcher.",
-        'linux': "B3 will continue to run so that all your B3 processes will stay alive. "
+        'linux': "B3 is still running! "
                  "If you want to quit B3, click the 'Quit' button in the main window.",
     }
 
