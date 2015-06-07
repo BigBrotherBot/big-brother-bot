@@ -68,6 +68,8 @@
 # 05/06/2015 - 0.15 - added configuration file toolbar button
 #                   - adjust main table toolbar margins according to the running OS
 # 06/06/2015 - 0.16 - allow to inspect STDOut console also when the B3 process is not running
+#                   - added news scrolling widget in main window
+#                   - make datetime conversion more accurate
 
 __author__ = 'Fenix'
 __version__ = '0.16'
