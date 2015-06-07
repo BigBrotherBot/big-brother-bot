@@ -70,6 +70,8 @@
 # 06/06/2015 - 0.16 - allow to inspect STDOut console also when the B3 process is not running
 #                   - added news scrolling widget in main window
 #                   - make datetime conversion more accurate
+#                   - allow resolving of @conf in b3.getAbsolutePath by passing as optional parameter the process
+#                     configuration file instance
 
 __author__ = 'Fenix'
 __version__ = '0.16'

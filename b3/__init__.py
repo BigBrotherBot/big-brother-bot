@@ -35,6 +35,9 @@
 #                                   - added getShortPath function: convert back an absolute path in its short form by
 #                                     adding back replaced tokens such as @b3, @conf, ~ (mainly used for clean logging)
 # 2015/05/26 - 1.6      - Fenix     - rearrange constants and functions declarations to solve some import issues
+# 2015/06/07 - 1.7      - Fenix     - added optional 'conf' parameter to getAbsolutePath and getConfPath: allow the retrieval
+#                                     of @conf by passing a specific configuration file (path or instance) to the function
+#                                     instead of using the globally definied confdir variable (fix @conf retrieval from GUI)
 
 import os
 import re
@@ -107,27 +110,38 @@ def getB3Path(decode=False):
     return decode_(os.path.normpath(os.path.expanduser(path)))
 
 
-def getConfPath(decode=False):
+def getConfPath(decode=False, conf=None):
     """
     Return the path to the B3 main configuration directory.
-    :param decode: if True will decode the path string using the default file system encoding before returning it
+    :param decode: if True will decode the path string using the default file system encoding before returning it.
+    :param conf: the current configuration being used :type XmlConfigParser|CfgConfigParser|MainConfig|str:
     """
-    path = confdir or os.path.dirname(console.config.fileName)
+    if conf:
+        if isinstance(conf, str):
+            path = os.path.dirname(conf)
+        elif isinstance(conf, XmlConfigParser) or isinstance(conf, CfgConfigParser) or isinstance(conf, MainConfig):
+            path = conf.fileName
+        else:
+            raise TypeError('invalid configuration type specified: expected str|XmlConfigParser|CfgConfigParser|MainConfig, got %s instead' % type(conf))
+    else:
+        path = confdir or os.path.dirname(console.config.fileName)
+
     if not decode:
         return path
     return decode_(path)
 
 
-def getAbsolutePath(path, decode=False):
+def getAbsolutePath(path, decode=False, conf=None):
     """
     Return an absolute path name and expand the user prefix (~).
     :param path: the relative path we want to expand
     :param decode: if True will decode the path string using the default file system encoding before returning it
+    :param conf: the current configuration being used :type XmlConfigParser|CfgConfigParser|MainConfig|str:
     """
     if path[0:4] == '@b3\\' or path[0:4] == '@b3/':
         path = os.path.join(getB3Path(decode=False), path[4:])
     elif path[0:6] == '@conf\\' or path[0:6] == '@conf/':
-        path = os.path.join(getConfPath(decode=False), path[6:])
+        path = os.path.join(getConfPath(decode=False, conf=conf), path[6:])
     if not decode:
         return os.path.normpath(os.path.expanduser(path))
     return decode_(os.path.normpath(os.path.expanduser(path)))
@@ -292,6 +306,7 @@ def start(mainconfig, options):
         sys.exit(223)
 
 
+from b3.config import XmlConfigParser, CfgConfigParser, MainConfig
 from b3.functions import clearscreen
 from b3.functions import decode as decode_
 from b3.functions import main_is_frozen

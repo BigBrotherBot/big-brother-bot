@@ -617,7 +617,7 @@ class MainTable(QTableWidget):
             if not process.config.has_option('b3', 'logfile'):
                 raise Exception('missing b3::logfile option in %s configuration file' % process.name)
 
-            path = os.path.abspath(process.config.getpath('b3', 'logfile'))
+            path = b3.getAbsolutePath(process.config.get('b3', 'logfile'), decode=True, conf=process.config)
             if not os.path.isfile(path):
                 message = '- missing: %s' % path
                 path = os.path.join(b3.HOMEDIR, os.path.basename(path))
@@ -628,9 +628,11 @@ class MainTable(QTableWidget):
             msgbox = QMessageBox()
             msgbox.setIcon(QMessageBox.Warning)
             msgbox.setWindowTitle('WARNING')
-            msgbox.setText('Could not find %s log file' % process.name)
+            msgbox.setText('%s log file no found' % process.name)
             msgbox.setDetailedText(err.message)
             msgbox.setStandardButtons(QMessageBox.Ok)
+            msgbox.layout().addItem(QSpacerItem(400, 0, QSizePolicy.Minimum, QSizePolicy.Expanding),
+                                    msgbox.layout().rowCount(), 0, 1, msgbox.layout().columnCount())
             msgbox.exec_()
         else:
             B3App.Instance().openpath(path)
