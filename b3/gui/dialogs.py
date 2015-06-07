@@ -885,16 +885,10 @@ class PreferencesDialog(QDialog):
             parent.showNewsCheckBox.setChecked(B3App.Instance().settings.value('show_rss_news', type=bool))
 
             ## UPDATE CHANNEL OPTIONS
-            parent.updateChannel[UPDATE_CHANNEL_STABLE] = QRadioButton('Stable')
-            parent.updateChannel[UPDATE_CHANNEL_BETA] = QRadioButton('Beta')
-            parent.updateChannel[UPDATE_CHANNEL_DEV] = QRadioButton('Dev')
-
-            try:
-                # select the value matching the configuration file
-                parent.updateChannel[B3App.Instance().settings.value('update_channel', type=str)].setChecked(True)
-            except KeyError:
-                # invalid option in configuration file, set back to stable channel
-                parent.updateChannel[UPDATE_CHANNEL_STABLE].setChecked(True)
+            for key in (UPDATE_CHANNEL_STABLE, UPDATE_CHANNEL_BETA, UPDATE_CHANNEL_DEV):
+                parent.updateChannel[key] = QRadioButton(key.title())
+                parent.updateChannel[key].setWhatsThis('Set the update channel to: %s' % key)
+                parent.updateChannel[key].setChecked(B3App.Instance().settings.value('update_channel', type=str) == key)
 
             ## GENERAL LAYOUT
             generalLayout = QVBoxLayout()
