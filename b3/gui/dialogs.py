@@ -816,6 +816,7 @@ class PreferencesDialog(QDialog):
     This class is used to display the 'Preferences' dialog.
     """
     autoRestartCheckBox = None
+    showNewsCheckBox = None
     updateChannel = {UPDATE_CHANNEL_STABLE: None, UPDATE_CHANNEL_BETA: None, UPDATE_CHANNEL_DEV: None}
 
     def __init__(self, parent=None):
@@ -831,7 +832,7 @@ class PreferencesDialog(QDialog):
         Initialize the Dialog layout.
         """
         self.setWindowTitle('Preferences')
-        self.setFixedSize(400, 260)
+        self.setFixedSize(400, 300)
         self.setStyleSheet("""
             QDialog {
                 background: #F2F2F2;
@@ -877,6 +878,12 @@ class PreferencesDialog(QDialog):
                 parent.autoRestartCheckBox.setWhatsThis('You need to run B3 from sources if you want this feature enabled.')
                 parent.autoRestartCheckBox.setChecked(False)
                 parent.autoRestartCheckBox.setEnabled(False)
+
+            ## SHOW NEWS
+            parent.showNewsCheckBox = QCheckBox('Show latest news')
+            parent.showNewsCheckBox.setWhatsThis('If enabled, will display B3 RSS feed news in the main window.')
+            parent.showNewsCheckBox.setChecked(B3App.Instance().settings.value('show_rss_news', type=bool))
+
             ## UPDATE CHANNEL OPTIONS
             parent.updateChannel[UPDATE_CHANNEL_STABLE] = QRadioButton('Stable')
             parent.updateChannel[UPDATE_CHANNEL_BETA] = QRadioButton('Beta')
@@ -892,6 +899,7 @@ class PreferencesDialog(QDialog):
             ## GENERAL LAYOUT
             generalLayout = QVBoxLayout()
             generalLayout.addWidget(parent.autoRestartCheckBox)
+            generalLayout.addWidget(parent.showNewsCheckBox)
             ## GENERAL FIELDSET
             generalGroup = QGroupBox("General", parent)
             generalGroup.setLayout(generalLayout)
@@ -935,12 +943,18 @@ class PreferencesDialog(QDialog):
         Save the configuration file.
         """
         B3App.Instance().settings.setValue('auto_restart_on_crash', self.autoRestartCheckBox.isChecked())
+        B3App.Instance().settings.setValue('show_rss_news', self.showNewsCheckBox.isChecked())
         for key in self.updateChannel.keys():
             if self.updateChannel[key].isChecked():
                 B3App.Instance().settings.setValue('update_channel', key)
                 break
+
         ## FORCE WRITE
         B3App.Instance().settings.sync()
+
+        ## SHOW/HIDE NEWS WIDGET
+        self.parent().news.setVisible(B3App.Instance().settings.value('show_rss_news', type=bool))
+
         self.close()
 
 

@@ -73,6 +73,7 @@ B3_DOCUMENTATION = 'http://doc.bigbrotherbot.net/'
 B3_DONATE = 'http://www.bigbrotherbot.net/donate'
 B3_XLRSTATS = 'http://www.xlrstats.com/'
 B3_PLUGIN_REPOSITORY = 'http://forum.bigbrotherbot.net/downloads/?cat=4'
+B3_RSS = 'http://forum.bigbrotherbot.net/news-2/?type=rss;action=.xml'
 
 # TEAMS
 TEAM_UNKNOWN = -1

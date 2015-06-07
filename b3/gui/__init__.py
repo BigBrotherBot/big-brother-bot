@@ -143,6 +143,7 @@ class B3App(QApplication):
     settings = None  # B3 app configuration file
     settings_default = {  # B3 app default settings
         'auto_restart_on_crash': False,
+        'show_rss_news': True,
         'update_channel': UPDATE_CHANNEL_STABLE,
     }
 

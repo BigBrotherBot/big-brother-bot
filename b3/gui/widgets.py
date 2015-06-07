@@ -18,15 +18,16 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 import b3
+import feedparser
 import logging
 import os
 import re
 
-from PyQt5.QtCore import QProcess, Qt, QEvent
-from PyQt5.QtGui import QPixmap, QIcon, QCursor
+from PyQt5.QtCore import QProcess, Qt, QEvent, QTimer, QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QPixmap, QIcon, QCursor, QPainter, QFont
 from PyQt5.QtWidgets import QLabel, QVBoxLayout, QTableWidget, QAbstractItemView, QHeaderView
 from PyQt5.QtWidgets import QHBoxLayout, QWidget, QMessageBox, QMainWindow, QDesktopWidget, QSystemTrayIcon, QFileDialog
-from b3 import B3_TITLE
+from b3 import B3_TITLE, B3_RSS
 from b3.config import MainConfig, XmlConfigParser, load as load_config
 from b3.exceptions import ConfigFileNotFound
 from b3.exceptions import ConfigFileNotValid
@@ -92,6 +93,126 @@ class IconWidget(QLabel):
         self.setPixmap(pixmap.scaled(32, 32))
         self.setGeometry(0, 0, 32, 32)
         self.setProperty('class', 'icon')
+
+
+class MarqueeLabel(QLabel):
+    """
+    This class can be used to display news in the Main Window.
+    """
+    px = 0
+    py = 0
+    font = None
+    paused = False
+    qthread = None
+    refresh_msec = 30
+    textWidth = 0
+    timer = None
+
+    def __init__(self, parent=None):
+        """
+        :param parent: the parent widget
+        """
+        QLabel.__init__(self, parent)
+        self.initUI()
+
+    def initUI(self):
+        """
+        Initialize the MarqueeLabel layout.
+        """
+        self.setFixedSize(433, 40)
+        self.font = QFont("Arial", 12)
+        self.font.setItalic(True)
+        self.setFont(self.font)
+        self.setStyleSheet("""
+        QLabel {
+            background: transparent;
+            color: #484848;
+        }
+        """)
+
+    def parseFeed(self):
+        """
+        Parse the news feed and start the news scrolling.
+        """
+        class FeedParser(QThread):
+
+            msignal = pyqtSignal(str)
+
+            def run(self):
+                """
+                Threaded code.
+                """
+                try:
+                    LOG.debug('parsing RSS feeds from: %s', B3_RSS)
+                    feed = feedparser.parse(B3_RSS)
+                except Exception, e:
+                    LOG.warning('could not parse RSS feed from %s: %s', B3_RSS, e)
+                else:
+                    feedlist = []
+                    for item in feed['entries']:
+                        feeddate = ' '.join(item['published'].split(' ')[1:4])
+                        feedlist.append('[%(DATE)s] %(TEXT)s' % dict(DATE=feeddate, TEXT=item['title']))
+
+                    self.msignal.emit(' - '.join(feedlist))
+
+        self.qthread = FeedParser(self)
+        self.qthread.msignal.connect(self.setMarqueeText)
+        self.qthread.finished.connect(self.start)
+        self.qthread.start()
+
+    @pyqtSlot(str)
+    def setMarqueeText(self, text):
+        """
+        Set the scrolling text.
+        """
+        self.setText(text)
+        self.textWidth = self.fontMetrics().boundingRect(self.text()).width()
+        self.px = self.width()
+        self.py = self.height() - self.fontMetrics().boundingRect(self.text()).height() + 10
+
+    def start(self):
+        """
+        Start the news scroller.
+        """
+        if self.text():
+            self.timer = QTimer(self)
+            self.timer.timeout.connect(self.scrollText)
+            self.timer.start(self.refresh_msec)
+
+    ################################################## EVENTS ##########################################################
+
+    def event(self, event):
+        """
+        Handle intercepted events.
+        """
+        if event.type() == QEvent.Enter:
+            self.paused = True
+        elif event.type() == QEvent.Leave:
+            self.paused = False
+        return QLabel.event(self, event)
+
+    def paintEvent(self, QPaintEvent):
+        """
+        Executed whenever the QLabel is painted.
+        """
+        if self.text():
+            p = QPainter(self)
+            p.setFont(self.font)
+            p.drawText(self.px, self.py, self.text())
+            p.translate(self.px, self.py)
+
+    ############################################## EVENT HANDLERS ######################################################
+
+    def scrollText(self):
+        """
+        Scroll the QLabel text from right to left.
+        """
+        if not self.paused:
+            if -self.px > self.textWidth:
+                self.px = self.width()
+            else:
+                self.px -= 1
+        self.repaint()
 
 
 class MainTable(QTableWidget):
@@ -398,6 +519,7 @@ class MainTable(QTableWidget):
                     reason = 'configuration file %s: %s' % (suffix, process.config_path)
                     msgbox = QMessageBox()
                     msgbox.setIcon(QMessageBox.Warning)
+                    msgbox.setWindowTitle('WARNING')
                     msgbox.setText('%s startup failure: %s' % (process.name, reason))
                     msgbox.setStandardButtons(QMessageBox.Ok)
                     msgbox.exec_()
@@ -429,6 +551,7 @@ class MainTable(QTableWidget):
         if process.state() == QProcess.Running:
             msgbox = QMessageBox()
             msgbox.setIcon(QMessageBox.Information)
+            msgbox.setWindowTitle('NOTICE')
             msgbox.setText('%s is currently running: you need to stop it to refresh the configuration file.' % process.name)
             msgbox.setStandardButtons(QMessageBox.Ok)
             msgbox.exec_()
@@ -443,6 +566,7 @@ class MainTable(QTableWidget):
         if not process.stdout:
             msgbox = QMessageBox()
             msgbox.setIcon(QMessageBox.Warning)
+            msgbox.setWindowTitle('WARNING')
             msgbox.setText('%s console initialization failed!' % process.name)
             msgbox.setStandardButtons(QMessageBox.Ok)
             msgbox.exec_()
@@ -456,6 +580,7 @@ class MainTable(QTableWidget):
         if not process.isFlag(CONFIG_FOUND):
             msgbox = QMessageBox()
             msgbox.setIcon(QMessageBox.Warning)
+            msgbox.setWindowTitle('WARNING')
             msgbox.setText('Missing %s configuration file' % process.name)
             msgbox.setStandardButtons(QMessageBox.Ok)
             msgbox.exec_()
@@ -486,6 +611,7 @@ class MainTable(QTableWidget):
         except Exception, err:
             msgbox = QMessageBox()
             msgbox.setIcon(QMessageBox.Warning)
+            msgbox.setWindowTitle('WARNING')
             msgbox.setText('Could not find %s log file' % process.name)
             msgbox.setDetailedText(err.message)
             msgbox.setStandardButtons(QMessageBox.Ok)
@@ -498,8 +624,8 @@ class CentralWidget(QWidget):
     """
     This class implements the central widget.
     """
-    # keep main table reference for repainting
     main_table = None
+    news = None
 
     def __init__(self, parent=None):
         """
@@ -530,6 +656,8 @@ class CentralWidget(QWidget):
             return layout
 
         def __get_bottom_layout(parent):
+            parent.news = MarqueeLabel(parent)
+            parent.news.parseFeed()
             btn_new = Button(parent=parent, text='Add', shortcut='Ctrl+N')
             btn_new.clicked.connect(self.parent().new_process_dialog)
             btn_new.setStatusTip('Add a new B3')
@@ -539,6 +667,7 @@ class CentralWidget(QWidget):
             btn_quit.setStatusTip('Shutdown B3')
             btn_quit.setVisible(True)
             layout = QHBoxLayout()
+            layout.addWidget(parent.news)
             layout.addWidget(btn_new)
             layout.addWidget(btn_quit)
             layout.setAlignment(Qt.AlignBottom | Qt.AlignRight)
@@ -664,6 +793,7 @@ class MainWindow(QMainWindow):
             except ConfigFileNotValid:
                 msgbox = QMessageBox()
                 msgbox.setIcon(QMessageBox.Critical)
+                msgbox.setWindowTitle('WARNING')
                 msgbox.setText('You selected an invalid configuration file')
                 msgbox.setStandardButtons(QMessageBox.Ok)
                 msgbox.exec_()
@@ -672,6 +802,7 @@ class MainWindow(QMainWindow):
                 if analysis:
                     msgbox = QMessageBox()
                     msgbox.setIcon(QMessageBox.Critical)
+                    msgbox.setWindowTitle('ERROR')
                     msgbox.setText('One or more problems have been detected in your configuration file')
                     msgbox.setDetailedText('\n'.join(analysis))
                     msgbox.setStandardButtons(QMessageBox.Ok)
@@ -745,6 +876,7 @@ class MainWindow(QMainWindow):
                 LOG.error('could create default extplugins directory: %s', err)
                 msgbox = QMessageBox()
                 msgbox.setIcon(QMessageBox.Warning)
+                msgbox.setWindowTitle('WARNING')
                 msgbox.setText('Missing 3rd party plugins directory!')
                 msgbox.setDetailedText('B3 could not create missing 3rd party plugins directory (%s). '
                                        'Please make sure B3 has writing permissions on "%s"' % (extplugins_dir,
@@ -756,7 +888,6 @@ class MainWindow(QMainWindow):
                 LOG.debug('created directory %s: resuming directory prompt' % extplugins_dir)
 
         B3App.Instance().openpath(extplugins_dir)
-
 
     def update_database(self):
         """
@@ -773,6 +904,7 @@ class MainWindow(QMainWindow):
         if is_something_running:
             msgbox = QMessageBox()
             msgbox.setIcon(QMessageBox.Information)
+            msgbox.setWindowTitle('NOTICE')
             msgbox.setText('Some B3 processes are still running: you need to terminate them to update B3 database.')
             msgbox.setStandardButtons(QMessageBox.Ok)
             msgbox.exec_()
