@@ -599,6 +599,7 @@ setup(
                 'pymysql',
                 'psycopg2',
                 ### additional modules for popular/useful 3rd party plugins ###
+                'feedparser', # adv plugin
                 'smtplib', 'email', 'calendar',  # contact plugin
                 'telnetlib',  # teamspeak* plugins
                 'dbhash',  # to make anydbm imports work with py2exe
