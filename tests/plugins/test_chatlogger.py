@@ -120,7 +120,7 @@ class Test_chatlogfile(ChatloggerTestCase):
             min: 0
         """))
         self.temp_conf_folder = mkdtemp(suffix="b3_conf")
-        when(b3).getConfPath(decode=ANY).thenReturn(self.temp_conf_folder)
+        when(b3).getConfPath(decode=ANY, conf=None).thenReturn(self.temp_conf_folder)
         with logging_disabled():
             self.p.onLoadConfig()
             self.p.onStartup()
