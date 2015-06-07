@@ -120,7 +120,7 @@ def getConfPath(decode=False, conf=None):
         if isinstance(conf, str):
             path = os.path.dirname(conf)
         elif isinstance(conf, XmlConfigParser) or isinstance(conf, CfgConfigParser) or isinstance(conf, MainConfig):
-            path = conf.fileName
+            path = os.path.dirname(conf.fileName)
         else:
             raise TypeError('invalid configuration type specified: expected str|XmlConfigParser|CfgConfigParser|MainConfig, got %s instead' % type(conf))
     else:
