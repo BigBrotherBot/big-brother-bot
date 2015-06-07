@@ -28,8 +28,8 @@ import random
 import string
 import ConfigParser
 
-from b3.plugins.poweradminurt import __version__
-from b3.plugins.poweradminurt import __author__
+from . import __version__
+from . import __author__
 
 
 class Poweradminurt41Plugin(b3.plugin.Plugin):
