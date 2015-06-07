@@ -25,7 +25,7 @@ import re
 
 from PyQt5.QtCore import QProcess, Qt, QEvent, QTimer, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QPixmap, QIcon, QCursor, QPainter, QFont
-from PyQt5.QtWidgets import QLabel, QVBoxLayout, QTableWidget, QAbstractItemView, QHeaderView
+from PyQt5.QtWidgets import QLabel, QVBoxLayout, QTableWidget, QAbstractItemView, QHeaderView, QSpacerItem, QSizePolicy
 from PyQt5.QtWidgets import QHBoxLayout, QWidget, QMessageBox, QMainWindow, QDesktopWidget, QSystemTrayIcon, QFileDialog
 from b3 import B3_TITLE, B3_RSS
 from b3.config import MainConfig, XmlConfigParser, load as load_config
@@ -538,11 +538,22 @@ class MainTable(QTableWidget):
         """
         Handle the removal of a B3 process.
         """
-        if process.state() != QProcess.NotRunning:
-            # make sure to stop the running process before removing the B3 entry
-            self.process_shutdown(process)
-        process.delete()
-        self.repaint()
+        msgbox = QMessageBox()
+        msgbox.setIcon(QMessageBox.Question)
+        msgbox.setWindowTitle('CONFIRM')
+        msgbox.setText('Are you sure?')
+        msgbox.setInformativeText('Do you want to remove %s?' % process.name)
+        msgbox.setStandardButtons(QMessageBox.No|QMessageBox.Yes)
+        msgbox.setDefaultButton(QMessageBox.No)
+        msgbox.layout().addItem(QSpacerItem(300, 0, QSizePolicy.Minimum, QSizePolicy.Expanding),
+                                msgbox.layout().rowCount(), 0, 1, msgbox.layout().columnCount())
+        msgbox.exec_()
+
+        if msgbox.result() == QMessageBox.Yes:
+            if process.state() != QProcess.NotRunning:
+                self.process_shutdown(process)
+            process.delete()
+            self.repaint()
 
     def process_refresh(self, process):
         """
