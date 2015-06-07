@@ -19,7 +19,7 @@ import re
 import b3.plugin
 import ConfigParser
 
-from b3.plugins.poweradminurt.iourt41 import Poweradminurt41Plugin
+from .iourt41 import Poweradminurt41Plugin
 
 
 class Poweradminurt42Plugin(Poweradminurt41Plugin):
