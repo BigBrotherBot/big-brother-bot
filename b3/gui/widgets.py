@@ -44,6 +44,7 @@ GEOMETRY = {
         'MAIN_TABLE_COLUMN_STATUS_WIDTH': 158,
         'MAIN_TABLE_COLUMN_STATUS_WIDTH_SCROLLBAR': 148,
         'CENTRAL_WIDGET_BOTTOM_LAYOUT_MARGIN_BOTTOM': 52,
+        'MARQUEE_LABEL_FONT_SIZE': 9,
     },
     'darwin': {
         'MAIN_TABLE_HEIGHT': 280,
@@ -52,6 +53,7 @@ GEOMETRY = {
         'MAIN_TABLE_COLUMN_STATUS_WIDTH': 160,
         'MAIN_TABLE_COLUMN_STATUS_WIDTH_SCROLLBAR': 154,
         'CENTRAL_WIDGET_BOTTOM_LAYOUT_MARGIN_BOTTOM': 32,
+        'MARQUEE_LABEL_FONT_SIZE': 12,
     },
     'linux': {
         'MAIN_TABLE_HEIGHT': 280,
@@ -60,6 +62,7 @@ GEOMETRY = {
         'MAIN_TABLE_COLUMN_STATUS_WIDTH': 158,
         'MAIN_TABLE_COLUMN_STATUS_WIDTH_SCROLLBAR': 148,
         'CENTRAL_WIDGET_BOTTOM_LAYOUT_MARGIN_BOTTOM': 32,
+        'MARQUEE_LABEL_FONT_SIZE': 12,
     }
 }
 
@@ -120,7 +123,7 @@ class MarqueeLabel(QLabel):
         Initialize the MarqueeLabel layout.
         """
         self.setFixedSize(433, 40)
-        self.font = QFont("Arial", 12)
+        self.font = QFont("Arial", GEOMETRY[b3.getPlatform()]['MARQUEE_LABEL_FONT_SIZE'])
         self.font.setItalic(True)
         self.setFont(self.font)
         self.setStyleSheet("""
