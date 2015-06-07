@@ -130,6 +130,8 @@ class MarqueeLabel(QLabel):
         }
         """)
 
+        self.setVisible(B3App.Instance().settings.value('show_rss_news', type=bool))
+
     def parseFeed(self):
         """
         Parse the news feed and start the news scrolling.
