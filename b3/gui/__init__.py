@@ -469,6 +469,10 @@ class B3(QProcess):
             if self.config.has_option('b3', 'bot_name'):
                 self._name = re.sub(RE_COLOR, '', self.config.get('b3', 'bot_name')).strip()
 
+            # PARSE PARSER NAME FOR QUICK ACCESS
+            if self.config.has_option('b3', 'parser') and self.config.get('b3', 'parser') != 'changeme':
+                self._game = self.config.get('b3', 'parser').strip()
+
     config = property(__get_config, __set_config)
 
     def __get_config_path(self):

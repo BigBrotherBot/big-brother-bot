@@ -396,7 +396,7 @@ class MainTable(QTableWidget):
             btn_refresh = IconButton(parent=parent, icon=QIcon(ICON_REFRESH))
             btn_refresh.setStatusTip('Refresh %s configuration' % proc.name)
             btn_refresh.setVisible(True)
-            btn_refresh.clicked.connect(partial(parent.process_refresh, process=proc))
+            btn_refresh.clicked.connect(partial(parent.process_refresh, row=numrow, process=proc))
             ## LOGFILE BUTTON
             btn_log = IconButton(parent=parent, icon=QIcon(ICON_LOG))
             btn_log.setStatusTip('Show %s log' % proc.name)
@@ -514,7 +514,7 @@ class MainTable(QTableWidget):
         if process.state() != QProcess.Running:
             # refresh the config before running
             process.config = process.config_path
-            self.repaint()
+            self.paint_row(row)
             if process.isFlag(CONFIG_READY):
                 process.stateChanged.connect(partial(self.paint_row, row=row))
                 process.start()
@@ -560,7 +560,7 @@ class MainTable(QTableWidget):
             process.delete()
             self.repaint()
 
-    def process_refresh(self, process):
+    def process_refresh(self, row, process):
         """
         Refresh a process configuration file
         """
@@ -573,7 +573,7 @@ class MainTable(QTableWidget):
             msgbox.exec_()
         else:
             process.config = process.config_path
-            self.repaint()
+            self.paint_row(row)
 
     def process_console(self, process):
         """
