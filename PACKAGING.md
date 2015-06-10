@@ -134,3 +134,28 @@ Open a terminal window and type the following commands (tested on OS X Yosemite 
     - `cd ~/Downloads/big-brother-bot`
     - `python setup.py egg_info`
     - `python setup.py bdist_dmg`
+
+
+# Troubleshooting
+
+If you upgraded your python version to 2.7.10 you may encounter the following error while building the SIP module:
+
+```
+g++ -mthreads -Wl,-enable-stdcall-fixup -Wl,-enable-auto-import -Wl,-enable-runtime-pseudo-reloc -shared -Wl,-subsystem,console
+-Wl,-s -o sip.pyd siplib.o apiversions.o descriptors.o qtlib.o threads.o objmap.o voidptr.o array.o bool.o -LC:\Python27\libs -l
+python27
+C:\Python27\libs/libpython27.a(dmmes01026.o):(.idata$7+0x0): undefined reference to '_head_C__build27_cpython_PCBuild_libpython27_a'
+C:\Python27\libs/libpython27.a(dmmes00712.o):(.idata$7+0x0): undefined reference to '_head_C__build27_cpython_PCBuild_libpython27_a'
+C:\Python27\libs/libpython27.a(dmmes00245.o):(.idata$7+0x0): undefined reference to '_head_C__build27_cpython_PCBuild_libpython27_a'
+C:\Python27\libs/libpython27.a(dmmes00253.o):(.idata$7+0x0): undefined reference to '_head_C__build27_cpython_PCBuild_libpython27_a'
+C:\Python27\libs/libpython27.a(dmmes01027.o):(.idata$7+0x0): undefined reference to '_head_C__build27_cpython_PCBuild_libpython27_a'
+C:\Python27\libs/libpython27.a(dmmes00212.o):(.idata$7+0x0): more undefined references to '_head_C__build27_cpython_PCBuild_libpython27_a' follow
+```
+
+If that is the case it means that you have to rebuild your `libpython27.a` interface. To do so, move to `C:\Windows\System32` using 
+a command prompt window with Administrator privileges, and type the following:
+
+ - `gendef.exe python27.dll`
+ - `dlltool.exe --dllname python27.dll --def python27.def --output-lib libpython27.a`
+ 
+Move the newly generated `libpython27.a` file into `C:\Python27\libs`.
