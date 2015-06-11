@@ -3,8 +3,8 @@ BigBrotherBot (B3) management script
 
 ### What is this?
 
-In this directory you can find a bash script file, `b3.sh`, which can be used to manage B3 instances on Linux systems. 
-The script provides a set of tools that will allow you to:
+In this directory you can find a bash script file, `b3.sh` (together with others scripts), which can be used to manage 
+B3 instances on Linux systems. The script provides a set of tools that will allow you to:
 
 * Launch multiple B3 instances (as background processes) using a single B3 installation
 * Shutdown gracefully alive B3 instances
