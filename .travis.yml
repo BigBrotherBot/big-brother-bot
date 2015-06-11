@@ -23,6 +23,10 @@ addons:
   # select postgresql version
   postgresql: "9.3"
 
+cache:
+  - apt
+  - pip
+
 before_install:
   # install build requirements according to the running os
   - ./scripts/install-build-deps-linux.sh
