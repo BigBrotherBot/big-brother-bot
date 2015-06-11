@@ -7,6 +7,7 @@ python:
 # environment variables
 env: MYSQL_TEST_HOST=127.0.0.1 MYSQL_TEST_USER=travis MYSQL_TEST_PASSWORD='' MYSQL_TEST_DB=b3_test POSTGRESQL_TEST_HOST=127.0.0.1 POSTGRESQL_TEST_USER=postgres POSTGRESQL_TEST_PASSWORD='' POSTGRESQL_TEST_DB=b3_test
 
+
 addons:
   # select postgresql version
   postgresql: "9.3"
@@ -17,7 +18,7 @@ before_install:
   # downloads
   - sudo mkdir -p /downloads
   - sudo chmod a+rw /downloads
-  - if [ ! -f /downloads/sip.tar.gz ];   then curl -L -o /downloads/sip.tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-4.16/sip-4.16.tar.gz; fi
+  - if [ ! -f /downloads/sip.tar.gz ];   then curl -L -o /downloads/sip.tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-4.16.7/sip-4.16.7.tar.gz; fi
   - if [ ! -f /downloads/pyqt5.tar.gz ]; then curl -L -o /downloads/pyqt5.tar.gz http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.3/PyQt-gpl-5.3.tar.gz; fi
   # Qt5
   - sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa
@@ -30,7 +31,7 @@ before_install:
   - pushd /builds
   # SIP
   - tar xzf /downloads/sip.tar.gz --keep-newer-files
-  - pushd sip-4.16
+  - pushd sip-4.16.7
   - python configure.py
   - make -j5 && sudo make install
   - popd
@@ -51,9 +52,11 @@ install:
   - pip install -r build-requirements.txt
 
 before_script:
+  # create postgresql database
   - psql -c "CREATE DATABASE b3_test WITH OWNER = postgres ENCODING = 'UTF8';" -U postgres
 
-script: 
+script:
+  # execute tests
   - nosetests --where=tests --verbosity=3 --with-cov --cov b3 --cov-report term-missing --cov-config .coveragerc --exclude-dir-file=tests/exclude_dir.txt --exclude-test-file=tests/exclude_test.txt
   - nosetests --where=tests.plugins.poweradminbf3 --verbosity=3 --with-cov --cov b3.plugins.poweradminbf3 --cov-report term-missing --cov-config .coveragerc
   - nosetests --where=tests.plugins.poweradminurt --verbosity=3 --with-cov --cov b3.plugins.poweradminurt --cov-report term-missing --cov-config .coveragerc
@@ -64,6 +67,7 @@ script:
   - nosetests --where=tests.plugins.test_spawnkill --verbosity=3 --with-cov --cov b3.plugins.spawnkill --cov-report term-missing --cov-config .coveragerc
   - py.test tests/plugins/makeroom
   - py.test tests/plugins/afk
+  # execute build
   - python setup.py egg_info --tag-build .dev${TRAVIS_COMMIT:0:7} --tag-date sdist bdist_wheel
   - python setup.py build_exe
 
@@ -77,4 +81,5 @@ notifications:
       - https://webhooks.gitter.im/e/489374443a557d989111
     on_success: always  # options: [always|never|change] default: always
     on_failure: always  # options: [always|never|change] default: always
-    on_start: false     # default: false
+    on_start: never     # default: never
+
