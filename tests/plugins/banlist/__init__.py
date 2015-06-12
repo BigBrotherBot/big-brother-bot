@@ -38,9 +38,9 @@ class BanlistTestCase(TestCase):
         manager = self.mock_open.return_value.__enter__.return_value
         manager.read.side_effect = lambda: self.file_content
 
-        self.patcher_getModifiedTime = patch("banlist.Banlist.getModifiedTime", return_value=946684800)
+        self.patcher_getModifiedTime = patch("b3.plugins.banlist.Banlist.getModifiedTime", return_value=946684800)
         self.patcher_getModifiedTime.start()
-        self.patcher_getHumanModifiedTime = patch("banlist.Banlist.getHumanModifiedTime", return_value="2000-01-01 00:00:00")
+        self.patcher_getHumanModifiedTime = patch("b3.plugins.banlist.Banlist.getHumanModifiedTime", return_value="2000-01-01 00:00:00")
         self.patcher_getHumanModifiedTime.start()
 
 
