@@ -47,6 +47,7 @@ class Button(QPushButton):
             color: #484848;
             min-width: 70px;
             min-height: 40px;
+            outline: none;
         }
         QPushButton:hover {
             background: #C2C2C2;

@@ -60,7 +60,7 @@ class AboutDialog(QDialog):
         Initialize the About Dialog layout.
         """
         self.setWindowTitle(B3_TITLE_SHORT)
-        self.setFixedSize(400, 520)
+        self.setFixedSize(400, 540)
         self.setStyleSheet("""
         QDialog {
             background: #F2F2F2;
@@ -147,7 +147,7 @@ class LicenseDialog(QDialog):
         Initialize the Dialog layout.
         """
         self.setWindowTitle(B3_LICENSE)
-        self.setFixedSize(400, 300)
+        self.setFixedSize(420, 380)
         self.setStyleSheet("""
         QDialog {
             background: #F2F2F2;
@@ -839,12 +839,14 @@ class PreferencesDialog(QDialog):
             }
             QGroupBox, QCheckBox, QRadioButton {
                 background: transparent;
+                outline: none;
             }
             QGroupBox::title {
                 background-color: transparent;
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
                 padding: 2 4px;
+                outline: none;
             }
             QGroupBox {
                 margin-top: 20px;

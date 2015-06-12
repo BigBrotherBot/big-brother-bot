@@ -72,9 +72,10 @@
 #                   - make datetime conversion more accurate
 #                   - allow resolving of @conf in b3.getAbsolutePath by passing as optional parameter the process
 #                     configuration file instance
+# 12/06/2015 - 0.17 - linux adjustments
 
 __author__ = 'Fenix'
-__version__ = '0.16'
+__version__ = '0.17'
 
 
 import b3
@@ -367,12 +368,17 @@ class B3App(QApplication):
 
         self.shutdown_requested = True
         self.stop_all()
+        
         ## REMOVE LOG HANDLERS
         for handler in LOG.handlers:
             handler.close()
             LOG.removeHandler(handler)
+        
         ## HIDE SYSTEM TRAY (ON WINDOWS IT STAYS VISIBLE SOMETIME)
-        self.main_window.system_tray.hide()
+        if b3.getPlatform() != 'linux':
+            # linux has no system tray
+            self.main_window.system_tray.hide()
+
         ## QUIT THE APPLICATION
         self.quit()
 

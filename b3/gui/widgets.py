@@ -713,14 +713,12 @@ class MainWindow(QMainWindow):
     This class implements the main application window.
     """
     system_tray = None
-    system_tray_minimized = False # this will be set to True after the first minimization
+    system_tray_minimized = False
     system_tray_balloon = {
         'win32': "B3 is still running! "
                  "If you want to quit B3, right click this icon and select 'Quit'.",
         'darwin': "B3 is still running! "
                   "If you want to quit B3, close the application using the Dock launcher.",
-        'linux': "B3 is still running! "
-                 "If you want to quit B3, click the 'Quit' button in the main window.",
     }
 
     def __init__(self):
@@ -740,22 +738,26 @@ class MainWindow(QMainWindow):
         self.setStatusBar(StatusBar(self))
         self.setMenuBar(MainMenuBar(self))
         self.setCentralWidget(CentralWidget(self))
+
         ## INIT SYSTEM TRAY ICON
-        self.system_tray = SystemTrayIcon(self)
-        self.system_tray.show()
+        if b3.getPlatform() != 'linux':
+            self.system_tray = SystemTrayIcon(self)
+            self.system_tray.show()
+
         ## MOVE TO CENTER SCREEN
         screen = QDesktopWidget().screenGeometry()
         position_x = (screen.width() - self.geometry().width()) / 2
         position_y = (screen.height() - self.geometry().height()) / 2
         self.move(position_x, position_y)
 
-    ############################################# EVENTS HANDLERS  #####################################################
+    ############################################# EVENTS HANDLERS ######################################################
 
     def closeEvent(self, event):
         """
         Executed when the main window is closed.
         """
-        if b3.getPlatform() == 'win32':
+        if b3.getPlatform() != 'darwin':
+            # close the application on win32 and linux
             B3App.Instance().shutdown()
         else:
             if B3App.Instance().shutdown_requested:
@@ -787,12 +789,15 @@ class MainWindow(QMainWindow):
         """
         Minimize B3 in system tray icon
         """
-        self.hide()
-        if not self.system_tray_minimized:
-            self.system_tray_minimized = True
-            self.system_tray.showMessage("B3 is still running!",
-                                         self.system_tray_balloon[b3.getPlatform()],
-                                         QSystemTrayIcon.Information, 20000)
+        if b3.getPlatform() != 'linux':
+            # do not use system tray on linux since it looks bad on Ubuntu
+            # which is the mainly used Linux client distribution (they can live without it)
+            self.hide()
+            if not self.system_tray_minimized:
+                self.system_tray_minimized = True
+                self.system_tray.showMessage("B3 is still running!",
+                                             self.system_tray_balloon[b3.getPlatform()],
+                                             QSystemTrayIcon.Information, 20000)
 
     ############################################# ACTION HANDLERS  #####################################################
 
