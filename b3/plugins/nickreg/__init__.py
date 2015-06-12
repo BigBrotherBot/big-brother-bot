@@ -214,8 +214,7 @@ class NickregPlugin(b3.plugin.Plugin):
 
         cursor = self.console.storage.query("""SELECT * FROM nicks WHERE client_id = %s""" % sclient.id)
         if cursor.EOF:
-            cmd.sayLoudOrPM('^7%s ^7has no registered nickname' % sclient.name, client)
-            client.message()
+            cmd.sayLoudOrPM(client, '^7%s ^7has no registered nickname' % sclient.name)
             cursor.close()
         else:
             registered = []
@@ -223,7 +222,7 @@ class NickregPlugin(b3.plugin.Plugin):
                 row = cursor.getRow()
                 registered.append('^7[^1%s^7] ^3%s' % (row['id'], row['name']))
                 cursor.moveNext()
-            cmd.sayLoudOrPM('^7%s ^7has registered nickname(s): %s' % (sclient.name, ', '.join(registered)), client)
+            cmd.sayLoudOrPM(client, '^7%s ^7has registered nickname(s): %s' % (sclient.name, ', '.join(registered)))
             cursor.close()
         
     def cmd_regnick(self, data, client, cmd=None):
@@ -237,14 +236,15 @@ class NickregPlugin(b3.plugin.Plugin):
             return
 
         cursor.close()
-        cursor = self.console.storage.query("""SELECT * FROM nicks WHERE client_id = %s""" % client.id)
-        if cursor.rowcount >= self.max_nicks:
+        cursor = self.console.storage.query("""SELECT COUNT(*) AS num_registered FROM nicks WHERE client_id = %s""" % client.id)
+        num_registered = cursor.getValue('num_registered', 0)
+        if num_registered >= self.max_nicks:
             client.message('^7You already have ^1%s ^7registered nicknames' % self.max_nicks)
             cursor.close()
             return
 
         cursor.close()
-        self.console.storage.query("""INSERT INTO nicks (client_id, name) VALUES ('%s', '%s')""" % (client.id, b3.functions.escape(client.name, "'")))
+        self.console.storage.query("""INSERT INTO nicks (client_id, name) VALUES ('%s', '%s')""" % (client.id, self._process_name(client.name)))
         client.message('^7Your nick is now registered')
 
     def cmd_delnick(self,  data,  client,  cmd=None):
