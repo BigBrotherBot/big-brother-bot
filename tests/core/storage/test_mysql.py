@@ -17,14 +17,14 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 import os
+
 import nose
 import unittest2 as unittest
 
 from b3.functions import splitDSN
 from b3.storage.mysql import MysqlStorage
 from tests import B3TestCase
-from tests.storage.common import StorageAPITest
-
+from tests.core.storage.common import StorageAPITest
 
 """
     NOTE: you can customize the MySQL host, database and credential using the following

@@ -18,13 +18,14 @@
 #
 
 import os
+
 import nose
 import unittest2 as unittest
 
 from b3.functions import splitDSN
 from b3.storage.postgresql import PostgresqlStorage
 from tests import B3TestCase
-from tests.storage.common import StorageAPITest
+from tests.core.storage.common import StorageAPITest
 
 """
     NOTE: you can customize the PostgreSQL host, database and credential using the following

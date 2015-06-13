@@ -1,8 +1,0 @@
-plugins/afk
-plugins/makeroom
-plugins/poweradminbf3
-plugins/poweradminurt
-plugins/poweradminurt/common
-plugins/poweradminurt/iourt41
-plugins/poweradminurt/iourt42
-plugins/urtserversidedemo

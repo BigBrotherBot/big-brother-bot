@@ -22,7 +22,7 @@ import nose
 from b3.functions import splitDSN
 from b3.storage.sqlite import SqliteStorage
 from tests import B3TestCase
-from tests.storage.common import StorageAPITest
+from tests.core.storage.common import StorageAPITest
 
 SQLITE_DB = ":memory:"
 #SQLITE_DB = "c:/Users/Thomas/b3.db"

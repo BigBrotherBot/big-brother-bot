@@ -16,10 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
+
+import b3
 import ConfigParser
 import logging
-import os
 import unittest2 as unittest
 from b3 import getAbsolutePath
 from b3.config import CfgConfigParser
@@ -27,11 +27,6 @@ from b3.config import MainConfig
 from b3.config import load
 from b3.config import XmlConfigParser
 from textwrap import dedent
-
-
-DEFAULT_MAIN_CONFIG_FILE_XML = os.path.normpath(os.path.join(os.path.dirname(__file__), '../b3/conf/b3.distribution.xml'))
-DEFAULT_MAIN_CONFIG_FILE_CFG = os.path.normpath(os.path.join(os.path.dirname(__file__), '../b3/conf/b3.distribution.ini'))
-
 
 class CommonDefaultTestMethodsMixin:
 
@@ -94,10 +89,10 @@ class CommonDefaultTestMethodsMixin:
         ], self.conf.get_plugins())
 
 
-@unittest.skipUnless(os.path.exists(DEFAULT_MAIN_CONFIG_FILE_XML), reason="cannot get default main config file at %s" % DEFAULT_MAIN_CONFIG_FILE_XML)
 class Test_XmlMainConfigParser(CommonDefaultTestMethodsMixin, unittest.TestCase):
+
     def setUp(self):
-        self.conf = MainConfig(load(DEFAULT_MAIN_CONFIG_FILE_XML))
+        self.conf = MainConfig(load(b3.getAbsolutePath('@b3/conf/b3.distribution.xml')))
         log = logging.getLogger('output')
         log.setLevel(logging.DEBUG)
 
@@ -110,11 +105,10 @@ class Test_XmlMainConfigParser(CommonDefaultTestMethodsMixin, unittest.TestCase)
                              map(lambda x: x.get('name'), self.conf._config_parser.get('plugins/plugin')))
 
 
-@unittest.skipUnless(os.path.exists(DEFAULT_MAIN_CONFIG_FILE_CFG), reason="cannot get default main config file at %s" % DEFAULT_MAIN_CONFIG_FILE_CFG)\
-
 class Test_CfgMainConfigParser(CommonDefaultTestMethodsMixin, unittest.TestCase):
+
     def setUp(self):
-        self.conf = MainConfig(load(DEFAULT_MAIN_CONFIG_FILE_CFG))
+        self.conf = MainConfig(load(b3.getAbsolutePath('@b3/conf/b3.distribution.ini')))
         log = logging.getLogger('output')
         log.setLevel(logging.DEBUG)
 

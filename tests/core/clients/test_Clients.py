@@ -15,12 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
+
+import b3
+
 from b3.clients import Clients, Client
 from tests import B3TestCase
 from mock import Mock, patch
-import b3
-
 
 
 class TestClients(B3TestCase):
