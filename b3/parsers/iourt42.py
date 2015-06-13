@@ -88,6 +88,8 @@
 # 25/01/2015 - 1.29   - Fenix     - patch the b3.clients.getByMagic method so it's possible to lookup players using their
 #                                   auth login
 # 16/04/2015 - 1.30  - Fenix      - uniform class variables (dict -> variable)
+# 14/06/2015 - 1.31  - Fenix      - override OnClientuserinfochanged from Iourt1Parser: provide some more verbose logging
+#                                   and correctly set racefree client attribute
 
 import b3
 import re
@@ -102,7 +104,7 @@ from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.30'
+__version__ = '1.31'
 
 
 class Iourt42Client(Client):
@@ -818,7 +820,48 @@ class Iourt42Parser(Iourt41Parser):
                                        state=b3.STATE_ALIVE, bot=bot, guid=guid, pbid=fsa, data=auth_info)
 
         return None
-    
+
+    def OnClientuserinfochanged(self, action, data, match=None):
+        # 7 n\[SNT]^1XLR^78or\t\3\r\2\tl\0\f0\\f1\\f2\\a0\0\a1\0\a2\0
+        parseddata = self.parseUserInfo(data)
+        self.verbose('OnClientuserinfochanged: parsed user info: %s', parseddata)
+        if parseddata:
+            client = self.clients.getByCID(parseddata['cid'])
+            if client:
+                # update existing client
+                if 'n' in parseddata:
+                    self.verbose2('Found client name in parsed userinfo: %s', parseddata['n'])
+                    setattr(client, 'name', parseddata['n'])
+
+                if 't' in parseddata:
+                    self.verbose2('Found client team in parsed userinfo: %s', parseddata['t'])
+                    team = self.getTeam(parseddata['t'])
+                    setattr(client, 'team', team)
+
+                    if 'r' in parseddata:
+                        self.verbose2('Found client race in parsed userinfo: %s', parseddata['r'])
+                        if team == b3.TEAM_BLUE:
+                            setattr(client, 'raceblue', parseddata['r'])
+                        elif team == b3.TEAM_RED:
+                            setattr(client, 'racered', parseddata['r'])
+                        elif team == b3.TEAM_FREE:
+                            setattr(client, 'racefree', parseddata['r'])
+                        else:
+                            self.verbose2('Discarding client race information: client is in spectator mode')
+
+                    if parseddata.get('f0') is not None \
+                        and parseddata.get('f1') is not None \
+                        and parseddata.get('f2') is not None:
+
+                        data = "%s,%s,%s" % (parseddata['f0'], parseddata['f1'], parseddata['f2'])
+                        if team == b3.TEAM_BLUE:
+                            setattr(client, 'funblue', data)
+                        elif team == b3.TEAM_RED:
+                            setattr(client, 'funred', data)
+
+                if 'a0' in parseddata and 'a1' in parseddata and 'a2' in parseddata:
+                    setattr(client, 'cg_rgb', "%s %s %s" % (parseddata['a0'], parseddata['a1'], parseddata['a2']))
+
     def OnRadio(self, action, data, match=None):
         cid = match.group('cid')
         msg_group = match.group('msg_group')
