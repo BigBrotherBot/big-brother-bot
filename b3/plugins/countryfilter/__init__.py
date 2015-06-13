@@ -40,7 +40,7 @@ class CountryfilterPlugin(b3.plugin.Plugin):
     block_ips = []
 
     _default_messages = {
-        'cf_allow_message': '^^7$name ^2(country: $country)^7 is accepted by B3',
+        'cf_allow_message': '^7$name ^2(country: $country)^7 is accepted by B3',
         'cf_deny_message': '^7%(name)s ^1(country: %(country)s)^7 was rejected by B3'
     }
 

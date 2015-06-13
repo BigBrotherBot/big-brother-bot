@@ -11,6 +11,7 @@ nosetests --where=tests.plugins.callvote --verbosity=3 --with-cov --cov b3.plugi
 nosetests --where=tests.plugins.censor --verbosity=3 --with-cov --cov b3.plugins.censor --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.chatlogger --verbosity=3 --with-cov --cov b3.plugins.chatlogger --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.cmdmanager --verbosity=3 --with-cov --cov b3.plugins.cmdmanager --cov-report term-missing --cov-config .coveragerc
+nosetests --where=tests.plugins.countryfilter --verbosity=3 --with-cov --cov b3.plugins.countryfilter --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.customcommands --verbosity=3 --with-cov --cov b3.plugins.customcommands --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.firstkill --verbosity=3 --with-cov --cov b3.plugins.firstkill --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.ftpytail --verbosity=3 --with-cov --cov b3.plugins.ftpytail --cov-report term-missing --cov-config .coveragerc
