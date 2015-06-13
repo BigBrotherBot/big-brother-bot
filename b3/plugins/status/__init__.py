@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'ThorN'
-__version__ = '1.6.4'
+__version__ = '1.6.5'
 
 import b3
 import b3.cron
@@ -200,10 +200,13 @@ class StatusPlugin(b3.plugin.Plugin):
             except NoOptionError:
                 self.debug('using default table for saving current clients: %s' % self._tables['cvars'])
 
+    def onStartup(self):
+        """
+        Startup the plugin.
+        """
         self.build_schema()
 
         if self._cronTab:
-            # remove existing crontab
             self.console.cron - self._cronTab
 
         self._cronTab = b3.cron.PluginCronTab(self, self.update, '*/%s' % self._interval)
@@ -500,12 +503,3 @@ class StatusPlugin(b3.plugin.Plugin):
             self.debug('writing XML status to %s', self._outputFile)
             with open(self._outputFile, 'w') as f:
                 f.write(xml)
-
-if __name__ == '__main__':
-    from b3.fake import fakeConsole
-    p = StatusPlugin(fakeConsole, "@b3/conf/plugin_status.ini")
-    p.onStartup()
-    p.update()
-    
-    while True:
-        pass
