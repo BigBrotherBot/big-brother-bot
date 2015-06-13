@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+
+set -ev
 
 export DISPLAY=:99.0
 sh -e /etc/init.d/xvfb start
@@ -30,3 +32,10 @@ cd ..
 
 # REMOVE DOWNLOADS DIRECTORY
 cd .. && sudo rm -R downloads
+
+# PIP PACKAGES
+pip install --upgrade pip
+pip install -r requirements.txt
+pip install -r build-requirements.txt
+pip install -r optional-requirements.txt
+pip install -r test-requirements.txt
