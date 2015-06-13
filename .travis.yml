@@ -20,11 +20,6 @@ env:
     - POSTGRESQL_TEST_PASSWORD=''
     - POSTGRESQL_TEST_DB=b3_test
 
-cache:
-  # cache install across jobs
-  - apt
-  - pip
-
 addons:
   # select postgresql version
   postgresql: "9.3"
