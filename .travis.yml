@@ -5,6 +5,11 @@ python:
   - 2.7
 
 env:
+  matrix:
+    # jobs environment variables
+    - TEST=core
+    - TEST=plugins
+    - TEST=build
   global:
     # global environment variables
     - MYSQL_TEST_HOST=127.0.0.1
@@ -16,7 +21,8 @@ env:
     - POSTGRESQL_TEST_DB=b3_test
 
 cache:
-  # cache PIP install across jobs
+  # cache install across jobs
+  - apt
   - pip
 
 addons:
@@ -24,44 +30,27 @@ addons:
   postgresql: "9.3"
 
 cache:
-  - apt
+  # cache pip installs across jobs
   - pip
 
-before_install:
-  # install build requirements according to the running os
-  - ./scripts/install-build-deps-linux.sh
-
 install:
-  # install PIP requirements
-  - pip install --upgrade pip
-  - pip install -r requirements.txt
-  - pip install -r build-requirements.txt
-  - pip install -r optional-requirements.txt
-  - pip install -r test-requirements.txt
+  # install requirements
+  - ./scripts/install-deps-${TEST}.sh
 
 before_script:
   # create postgresql database
   - psql -c "CREATE DATABASE b3_test WITH OWNER = postgres ENCODING = 'UTF8';" -U postgres
 
 script:
-  - nosetests --where=tests --verbosity=3 --with-cov --cov b3 --cov-report term-missing --cov-config .coveragerc --exclude-dir-file=tests/exclude_dir.txt --exclude-test-file=tests/exclude_test.txt
-  - nosetests --where=tests.plugins.poweradminbf3 --verbosity=3 --with-cov --cov b3.plugins.poweradminbf3 --cov-report term-missing --cov-config .coveragerc
-  - nosetests --where=tests.plugins.poweradminurt --verbosity=3 --with-cov --cov b3.plugins.poweradminurt --cov-report term-missing --cov-config .coveragerc
-  - nosetests --where=tests.plugins.urtserversidedemo --verbosity=3 --with-cov --cov b3.plugins.urtserversidedemo --cov-report term-missing --cov-config .coveragerc
-  - nosetests --where=tests.plugins.test_callvote --verbosity=3 --with-cov --cov b3.plugins.callvote --cov-report term-missing --cov-config .coveragerc
-  - nosetests --where=tests.plugins.test_firstkill --verbosity=3 --with-cov --cov b3.plugins.firstkill --cov-report term-missing --cov-config .coveragerc
-  - nosetests --where=tests.plugins.test_jumper --verbosity=3 --with-cov --cov b3.plugins.jumper --cov-report term-missing --cov-config .coveragerc
-  - nosetests --where=tests.plugins.test_spawnkill --verbosity=3 --with-cov --cov b3.plugins.spawnkill --cov-report term-missing --cov-config .coveragerc
-  - py.test tests/plugins/makeroom
-  - py.test tests/plugins/afk
-  - python setup.py egg_info --tag-build .dev${TRAVIS_COMMIT:0:7} --tag-date sdist bdist_wheel
-  - python setup.py build_exe
+  # execute current job
+  - ./scripts/start-tests-${TEST}.sh
 
 after_success:
-  - pip install coveralls
-  - coveralls
+  # report tests coverage if we are running tests
+  - if [ "${TEST}" != "build" ]; then pip install coveralls && coveralls; fi
 
 notifications:
+  # send notifications to gitter
   webhooks:
     urls:
       - https://webhooks.gitter.im/e/489374443a557d989111
