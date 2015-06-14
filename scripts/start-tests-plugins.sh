@@ -2,8 +2,6 @@
 
 set -ev
 
-# NOTE: this is supposed to be run from Travis CI console, so the current directory is the one outside
-
 nosetests --where=tests.plugins.admin --verbosity=3 --with-cov --cov b3.plugins.admin --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.adv --verbosity=3 --with-cov --cov b3.plugins.adv --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.banlist --verbosity=3 --with-cov --cov b3.plugins.banlist --cov-report term-missing --cov-config .coveragerc
@@ -29,6 +27,7 @@ nosetests --where=tests.plugins.publist --verbosity=3 --with-cov --cov b3.plugin
 nosetests --where=tests.plugins.sftpytail --verbosity=3 --with-cov --cov b3.plugins.sftpytail --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.spamcontrol --verbosity=3 --with-cov --cov b3.plugins.spamcontrol --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.spawnkill --verbosity=3 --with-cov --cov b3.plugins.spawnkill --cov-report term-missing --cov-config .coveragerc
+nosetests --where=tests.plugins.spree --verbosity=3 --with-cov --cov b3.plugins.spree --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.stats --verbosity=3 --with-cov --cov b3.plugins.status --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.tk --verbosity=3 --with-cov --cov b3.plugins.tk --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.translator --verbosity=3 --with-cov --cov b3.plugins.translator --cov-report term-missing --cov-config .coveragerc

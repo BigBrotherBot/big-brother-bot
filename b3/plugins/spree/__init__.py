@@ -110,13 +110,14 @@ class SpreePlugin(b3.plugin.Plugin):
     ####################################################################################################################
               
     def init_spreemessage_list(self):
-        # Get the spree messages from the config
-        # Split the start and end spree messages and save it in the dictionary
+        # get the spree messages from the config
+        # split the start and end spree messages and save it in the dictionary
         for kills, message  in self.config.items('killingspree_messages'):
-            # force the kills to an integer
-            self._killingspree_messages_dict[int(kills)]  = message.split('#')
+            messages = message.split('#')
+            self._killingspree_messages_dict[int(kills)] = [messages[0].strip(), messages[1].strip()]
         for deaths, message in self.config.items('loosingspree_messages'):
-            self._loosingspree_messages_dict[int(deaths)] = message.split('#')
+            messages = message.split('#')
+            self._loosingspree_messages_dict[int(deaths)] = [messages[0].strip(), messages[1].strip()]
         self.verbose('spree-messages are loaded in memory')
 
     def init_spree_stats(self, client):
@@ -169,13 +170,13 @@ class SpreePlugin(b3.plugin.Plugin):
             spreeStats = self.get_spree_stats(victim)
             spreeStats.deaths += 1
             
-            # Check if the victim had a killing spree and show a end_killing_spree message
+            # check if the victim had a killing spree and show a end_killing_spree message
             if spreeStats.endKillSpreeMessage:
                 self.show_message(client, victim, spreeStats.endKillSpreeMessage)
                 # reset any possible end spree to None
                 spreeStats.endKillSpreeMessage = None
 
-            #Check if the victim is on a 'loosing'spree
+            # check if the victim is on a 'loosing'spree
             message = self.get_spree_message(0, spreeStats.deaths)
             if message:
                 #Save the 'loosing'spree message in the client.
@@ -224,7 +225,7 @@ class SpreePlugin(b3.plugin.Plugin):
         <player> - show a players' winning/loosing spree
         """        
         targm = '^7You have'
-        targmns = '^7Your are'
+        targmns = '^7You are'
         if not data:
             sclient = client
         else:
