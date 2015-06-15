@@ -15,7 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
+
+import b3
 import logging
 import unittest2 as unittest
 
@@ -60,7 +61,6 @@ class Iourt42TestCase(unittest.TestCase):
     """
     Test case that is suitable for testing iourt42 parser specific features
     """
-
     @classmethod
     def setUpClass(cls):
         from b3.parsers.q3a.abstractParser import AbstractParser
@@ -68,8 +68,6 @@ class Iourt42TestCase(unittest.TestCase):
         AbstractParser.__bases__ = (FakeConsole,)
         # Now parser inheritance hierarchy is :
         # Iourt42TestCase -> AbstractParser -> FakeConsole -> Parser
-
-        logging.getLogger('output').setLevel(logging.ERROR)
 
     def setUp(self):
         self.parser_conf = XmlConfigParser()
@@ -98,8 +96,6 @@ class Iourt42TestCase(unittest.TestCase):
         if hasattr(self, "parser"):
             del self.parser.clients
             self.parser.working = False
-
-
 
 
 class Test_log_lines_parsing(Iourt42TestCase):
@@ -402,6 +398,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
 
 
 class Test_kill_mods(Test_log_lines_parsing):
+
     def setUp(self):
         Test_log_lines_parsing.setUp(self)
         self.joe = FakeClient(self.console, name="Joe", guid="000000000000000")
@@ -500,8 +497,6 @@ class Test_kill_mods(Test_log_lines_parsing):
         assert_mod('43', 'UT_MOD_GOOMBA')
 
 
-
-
 class Test_OnClientuserinfo(Iourt42TestCase):
 
     def setUp(self):
@@ -566,6 +561,31 @@ class Test_OnClientuserinfo(Iourt42TestCase):
         self.assertEqual('58D4069246865BB5A85F20FB60ED6F65', client.guid)
         self.assertEqual('password_in_database', client.password)
 
+
+class Test_OnClientuserinfochanged(Iourt42TestCase):
+
+    def setUp(self):
+        super(Test_OnClientuserinfochanged, self).setUp()
+        self.console.PunkBuster = None
+
+    def test_ioclient(self):
+        # do OnClientuserinfo first to generate the client
+        infoline = r'''2 \ip\11.22.33.44:27961\challenge\-284496317\qport\13492\protocol\68\name\laCourge\racered\2\raceblue\2\rate\16000\ut_timenudge\0\cg_rgb\128 128 128\cg_predictitems\0\cg_physics\1\cl_anonymous\0\sex\male\handicap\100\color2\5\color1\4\team_headmodel\*james\team_model\james\headmodel\sarge\model\sarge\snaps\20\cg_autoPickup\-1\gear\GLAORWA\authc\0\teamtask\0\cl_guid\00000000011111111122222223333333\weapmodes\00000110220000020002'''
+        self.assertFalse('2' in self.console.clients)
+        self.console.OnClientuserinfo(action=None, data=infoline)
+        self.assertTrue('2' in self.console.clients)
+        client = self.console.clients['2']
+        self.assertEqual('11.22.33.44', client.ip)
+        self.assertEqual('laCourge^7', client.exactName)
+        self.assertEqual('laCourge', client.name)
+        self.assertEqual('00000000011111111122222223333333', client.guid)
+        # now test OnClientuserinfochanged
+        infoline = r'''2 n\UnnamedOne\t\3\r\2\tl\0\f0\\f1\\f2\\a0\0\a1\0\a2\0'''
+        self.console.OnClientuserinfochanged(action=None, data=infoline)
+        client = self.console.clients['2']
+        self.assertEqual('UnnamedOne^7', client.exactName)
+        self.assertEqual('UnnamedOne', client.name)
+        self.assertEqual(b3.TEAM_SPEC, client.team)
 
 
 class Test_queryClientFrozenSandAccount(Iourt42TestCase):

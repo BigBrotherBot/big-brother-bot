@@ -1,6 +1,6 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2012 Courgette
+# Copyright (C) 2012 Thomas LEVEIL <courgette@bigbrotherbot.net>
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -9,19 +9,19 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+
+import b3
 import logging
+import unittest2 as unittest
+
 from mockito import mock, when, any as anything, verify
 from mock import Mock, patch, ANY
-from pip._vendor.distlib.util import socket_timeout
-import unittest2 as unittest
-import b3
 from b3.clients import Client
 from b3.config import XmlConfigParser
 from b3.events import Event
@@ -35,7 +35,6 @@ class Iourt41TestCase(unittest.TestCase):
     """
     Test case that is suitable for testing iourt41 parser specific features
     """
-
     @classmethod
     def setUpClass(cls):
         from b3.parsers.q3a.abstractParser import AbstractParser
@@ -43,8 +42,6 @@ class Iourt41TestCase(unittest.TestCase):
         AbstractParser.__bases__ = (FakeConsole,)
         # Now parser inheritance hierarchy is :
         # Iourt41Parser -> AbstractParser -> FakeConsole -> Parser
-
-        logging.getLogger('output').setLevel(logging.ERROR)
 
     def setUp(self):
         self.parser_conf = XmlConfigParser()
@@ -64,11 +61,32 @@ class Iourt41TestCase(unittest.TestCase):
             return self.output_mock.write(*args, **kwargs)
         self.console.write = write
 
-
     def tearDown(self):
         if hasattr(self, "parser"):
             del self.parser.clients
             self.parser.working = False
+
+    def assertEvent(self, log_line, event_type, event_client=None, event_data=None, event_target=None):
+        with patch.object(self.console, 'queueEvent') as queueEvent:
+            self.console.parseLine(log_line)
+            if event_type is None:
+                assert not queueEvent.called
+                return
+            assert queueEvent.called, "No event was fired"
+            args = queueEvent.call_args
+
+        if type(event_type) is basestring:
+            event_type_name = event_type
+        else:
+            event_type_name = self.console.getEventName(event_type)
+            self.assertIsNotNone(event_type_name, "could not find event with name '%s'" % event_type)
+
+        eventraised = args[0][0]
+        self.assertIsInstance(eventraised, Event)
+        self.assertEquals(self.console.getEventName(eventraised.type), event_type_name)
+        self.assertEquals(eventraised.data, event_data)
+        self.assertEquals(eventraised.target, event_target)
+        self.assertEquals(eventraised.client, event_client)
 
 
 class Test_parser_API_implementation(Iourt41TestCase):
@@ -76,11 +94,11 @@ class Test_parser_API_implementation(Iourt41TestCase):
     have to override because they have to talk to their targeted game server in their specific way"""
 
     def test_getPlayerList(self):
-        """\
+        """
         Query the game server for connected players.
         return a dict having players' id for keys and players' data as another dict for values
         """
-        when(self.output_mock).write('status', maxRetries=anything()).thenReturn("""\
+        when(self.output_mock).write('status', maxRetries=anything()).thenReturn("""
 map: ut4_casa
 num score ping name            lastmsg  address              qport rate
 --- ----- ---- --------------- ------- --------------------- ----- -----
@@ -111,9 +129,8 @@ num score ping name            lastmsg  address              qport rate
                                      'slot': '12'}}
             , result)
 
-
     def test_authorizeClients(self):
-        """\
+        """
         For all connected players, fill the client object with properties allowing to find
         the user in the database (usualy guid, or punkbuster id, ip) and call the
         Client.auth() method
@@ -121,7 +138,7 @@ num score ping name            lastmsg  address              qport rate
         superman = mock()
         self.console.clients = mock()
         when(self.console.clients).getByCID("12").thenReturn(superman)
-        when(self.output_mock).write('status', maxRetries=anything()).thenReturn("""\
+        when(self.output_mock).write('status', maxRetries=anything()).thenReturn("""
 map: ut4_casa
 num score ping name            lastmsg  address              qport rate
 --- ----- ---- --------------- ------- --------------------- ----- -----
@@ -133,7 +150,7 @@ num score ping name            lastmsg  address              qport rate
 
 
     def test_sync(self):
-        """\
+        """
         For all connected players returned by self.getPlayerList(), get the matching Client
         object from self.clients (with self.clients.getByCID(cid) or similar methods) and
         look for inconsistencies. If required call the client.disconnect() method to remove
@@ -145,18 +162,16 @@ num score ping name            lastmsg  address              qport rate
         self.console.sync()
         verify(self.output_mock).write('status', maxRetries=anything())
 
-
     def test_say(self):
-        """\
+        """
         broadcast a message to all players
         """
         self.console.msgPrefix = "B3:"
         self.console.say("something")
         verify(self.output_mock).write('say B3: something')
 
-
     def test_saybig(self):
-        """\
+        """
         broadcast a message to all players in a way that will catch their attention.
         """
         self.console.msgPrefix = "B3:"
@@ -165,7 +180,7 @@ num score ping name            lastmsg  address              qport rate
 
 
     def test_message(self):
-        """\
+        """
         display a message to a given player
         """
         superman = Client(console=self.console, cid="11")
@@ -173,9 +188,8 @@ num score ping name            lastmsg  address              qport rate
         self.console.message(superman, "something")
         verify(self.output_mock).write('tell 11 B3: ^8[pm]^7 something')
 
-
     def test_kick(self):
-        """\
+        """
         kick a given player
         """
         self.console.getMessage = Mock(return_value="")
@@ -186,7 +200,7 @@ num score ping name            lastmsg  address              qport rate
         verify(superman).disconnect()
 
     def test_ban(self):
-        """\
+        """
         ban a given player on the game server and in case of success
         fire the event ('EVT_CLIENT_BAN', data={'reason': reason,
         'admin': admin}, client=target)
@@ -198,9 +212,8 @@ num score ping name            lastmsg  address              qport rate
         verify(self.output_mock).write('addip 11')
         verify(superman).disconnect()
 
-
     def test_unban(self):
-        """\
+        """
         unban a given player on the game server
         """
         superman = mock()
@@ -208,9 +221,8 @@ num score ping name            lastmsg  address              qport rate
         self.console.unban(superman)
         verify(self.output_mock, times=5).write('removeip 1.1.3.4')
 
-
     def test_tempban(self):
-        """\
+        """
         tempban a given player on the game server and in case of success
         fire the event ('EVT_CLIENT_BAN_TEMP', data={'reason': reason,
         'duration': duration, 'admin': admin}, client=target)
@@ -222,9 +234,8 @@ num score ping name            lastmsg  address              qport rate
         verify(self.output_mock).write('clientkick 11')
         verify(superman).disconnect()
 
-
     def test_getMap(self):
-        """\
+        """
         return the current map/level name
         """
         when(self.output_mock).write('status').thenReturn("""\
@@ -233,13 +244,12 @@ num score ping name            lastmsg  address              qport rate
 --- ----- ---- --------------- ------- --------------------- ----- -----
 12     0   10 superman         0       192.168.1.12:53039     9993 15000
 """)
-        map = self.console.getMap()
+        m = self.console.getMap()
         verify(self.output_mock).write('status')
-        self.assertEqual("ut4_casa", map)
-
+        self.assertEqual("ut4_casa", m)
 
     def test_getMaps(self):
-        """\
+        """
         return the available maps/levels name
         """
         when(self.output_mock).write('fdir *.bsp', socketTimeout=anything()).thenReturn("""\
@@ -252,21 +262,19 @@ maps/ut4_casa.bsp
 """)
         maps = self.console.getMaps()
         verify(self.output_mock).write('fdir *.bsp', socketTimeout=anything())
-        self.assertSetEqual(set(['ut4_abbey', 'ut4_algiers', 'ut4_austria', 'ut4_casa']), set(maps))
-
+        self.assertSetEqual({'ut4_abbey', 'ut4_algiers', 'ut4_austria', 'ut4_casa'}, set(maps))
 
     def test_rotateMap(self):
-        """\
+        """
         load the next map/level
         """
         with patch("time.sleep"):
             self.console.rotateMap()
         verify(self.output_mock).write('cyclemap')
 
-
     @patch("time.sleep")
     def test_changeMap(self, sleep_mock):
-        """\
+        """
         load a given map/level
         return a list of suggested map names in cases it fails to recognize the map that was provided
         """
@@ -285,13 +293,12 @@ maps/ut4_casa.bsp
 
         suggestions = self.console.changeMap('bey')
         self.assertIsNotNone(suggestions)
-        self.assertSetEqual(set(['ut4_abbey', 'ut4_abbeyctf']), set(suggestions))
-
+        self.assertSetEqual({'ut4_abbey', 'ut4_abbeyctf'}, set(suggestions))
 
 
     @patch("time.sleep")
     def test_changeMap_2(self, sleep_mock):
-        """\
+        """
         see http://forum.bigbrotherbot.net/urt/!map-x-bug/msg37759/#msg37759
         """
         when(self.output_mock).write('fdir *.bsp', socketTimeout=anything()).thenReturn("""\
@@ -377,10 +384,8 @@ maps/ut4_village.bsp
         self.assertIsNone(suggestions)
         verify(self.output_mock).write('map ut4_tohunga_b8')
 
-
-
     def test_getPlayerPings(self):
-        """\
+        """
         returns a dict having players' id for keys and players' ping for values
         """
         when(self.output_mock).write('status').thenReturn("""\
@@ -393,9 +398,8 @@ num score ping name            lastmsg  address              qport rate
         pings = self.console.getPlayerPings()
         self.assertDictEqual({'10': 13, '12': 110}, pings)
 
-
     def test_getPlayerScores(self):
-        """\
+        """
         returns a dict having players' id for keys and players' scores for values
         """
         when(self.output_mock).write('status').thenReturn("""\
@@ -407,7 +411,6 @@ num score ping name            lastmsg  address              qport rate
 """)
         pings = self.console.getPlayerScores()
         self.assertDictEqual({'10': 5, '12': 27}, pings)
-
 
     def test_inflictCustomPenalty(self):
         """
@@ -433,28 +436,6 @@ num score ping name            lastmsg  address              qport rate
 
 
 class Test_log_lines_parsing(Iourt41TestCase):
-
-    def assertEvent(self, log_line, event_type, event_client=None, event_data=None, event_target=None):
-        with patch.object(self.console, 'queueEvent') as queueEvent:
-            self.console.parseLine(log_line)
-            if event_type is None:
-                assert not queueEvent.called
-                return
-            assert queueEvent.called, "No event was fired"
-            args = queueEvent.call_args
-
-        if type(event_type) is basestring:
-            event_type_name = event_type
-        else:
-            event_type_name = self.console.getEventName(event_type)
-            self.assertIsNotNone(event_type_name, "could not find event with name '%s'" % event_type)
-
-        eventraised = args[0][0]
-        self.assertIsInstance(eventraised, Event)
-        self.assertEquals(self.console.getEventName(eventraised.type), event_type_name)
-        self.assertEquals(eventraised.data, event_data)
-        self.assertEquals(eventraised.target, event_target)
-        self.assertEquals(eventraised.client, event_client)
 
     def setUp(self):
         Iourt41TestCase.setUp(self)
@@ -539,7 +520,6 @@ class Test_OnClientuserinfo(Iourt41TestCase):
         self.assertEqual('InviteYourFriends!', client.name)
         self.assertEqual('BOT0', client.guid)
 
-
     def test_quake3_client(self):
         infoline = r"2 \ip\145.99.135.227:27960\challenge\-232198920\qport\2781\protocol\68\battleye\1\name\[SNT]^1XLR^78or\rate\8000\cg_predictitems\0\snaps\20\model\sarge\headmodel\sarge\team_model\james\team_headmodel\*james\color1\4\color2\5\handicap\100\sex\male\cl_anonymous\0\teamtask\0"
         self.assertFalse('2' in self.console.clients)
@@ -550,7 +530,6 @@ class Test_OnClientuserinfo(Iourt41TestCase):
         self.assertEqual('[SNT]^1XLR^78or^7', client.exactName)
         self.assertEqual('[SNT]XLR8or', client.name)
         self.assertEqual('145.99.135.227', client.guid)
-
 
     def test_client_with_password_gamepassword(self):
         """
@@ -576,13 +555,37 @@ class Test_OnClientuserinfo(Iourt41TestCase):
         self.assertEqual('password_in_database', client.password)
 
 
+class Test_OnClientuserinfochanged(Iourt41TestCase):
+
+    def setUp(self):
+        super(Test_OnClientuserinfochanged, self).setUp()
+        self.console.PunkBuster = None
+
+    def test_ioclient(self):
+        # do OnClientuserinfo at first so it generates the client entry
+        infoline = r"2 \ip\145.99.135.227:27960\challenge\-232198920\qport\2781\protocol\68\battleye\1\name\[SNT]^1XLR^78or\rate\8000\cg_predictitems\0\snaps\20\model\sarge\headmodel\sarge\team_model\james\team_headmodel\*james\color1\4\color2\5\handicap\100\sex\male\cl_anonymous\0\teamtask\0\cl_guid\58D4069246865BB5A85F20FB60ED6F65"
+        self.assertFalse('2' in self.console.clients)
+        self.console.OnClientuserinfo(action=None, data=infoline)
+        self.assertTrue('2' in self.console.clients)
+        client = self.console.clients['2']
+        self.assertEqual('145.99.135.227', client.ip)
+        self.assertEqual('[SNT]^1XLR^78or^7', client.exactName)
+        self.assertEqual('[SNT]XLR8or', client.name)
+        self.assertEqual('58D4069246865BB5A85F20FB60ED6F65', client.guid)
+        # noew test OnClientuserinfochanged
+        infoline = r"2 n\UnnamedOne\t\2\r\2\tl\0\f0\\f1\\f2\\a0\200\a1\\0\a2\20'"
+        self.console.OnClientuserinfochanged(action=None, data=infoline)
+        client = self.console.clients['2']
+        self.assertEqual('UnnamedOne^7', client.exactName)
+        self.assertEqual('UnnamedOne', client.name)
+        self.assertEqual(b3.TEAM_BLUE, client.team)
 
 
 class Test_pluginsStarted(Iourt41TestCase):
 
     def test_hacker_with_no_ip(self):
         """ see http://forum.bigbrotherbot.net/general-usage-support/iourt41-py-1-11-5-error/msg34328/ """
-        when(self.console).write("status", maxRetries=ANY).thenReturn(r"""\
+        when(self.console).write("status", maxRetries=ANY).thenReturn(r"""
 map: ut4_uberjumps_beta3
 num score ping name            lastmsg address               qport rate
 --- ----- ---- --------------- ------- --------------------- ----- -----
@@ -603,7 +606,6 @@ num score ping name            lastmsg address               qport rate
         self.assertEqual('80.54.100.100', client.ip)
 
 
-
 class Test_OnKill(Iourt41TestCase):
 
     def setUp(self):
@@ -614,29 +616,6 @@ class Test_OnKill(Iourt41TestCase):
         self.bob = FakeClient(self.console, name="Bob", guid="111111111111111")
         self.bob.connects('1')
         self.world = self.console.clients['-1']
-
-    def assertEvent(self, log_line, event_type, event_client=None, event_data=None, event_target=None):
-        with patch.object(self.console, 'queueEvent') as queueEvent:
-            self.console.parseLine(log_line)
-            if event_type is None:
-                assert not queueEvent.called
-                return
-            assert queueEvent.called, "No event was fired"
-            args = queueEvent.call_args
-
-        if type(event_type) is basestring:
-            event_type_name = event_type
-        else:
-            event_type_name = self.console.getEventName(event_type)
-            self.assertIsNotNone(event_type_name, "could not find event with name '%s'" % event_type)
-
-        eventraised = args[0][0]
-        self.assertIsInstance(eventraised, Event)
-        self.assertEquals(self.console.getEventName(eventraised.type), event_type_name)
-        self.assertEquals(eventraised.data, event_data)
-        self.assertEquals(eventraised.target, event_target)
-        self.assertEquals(eventraised.client, event_client)
-
 
     def test_nuke(self):
         self.assertEvent('5:19 Kill: 0 0 34: Joe killed Joe by UT_MOD_NUKED',
@@ -715,7 +694,6 @@ class Test_getMapsSoundingLike(Iourt41TestCase):
         Iourt41TestCase.setUp(self)
         self.console.startup()
 
-
     def test_no_map(self):
         # GIVEN
         when(self.console).getMaps().thenReturn([])
@@ -723,14 +701,12 @@ class Test_getMapsSoundingLike(Iourt41TestCase):
         # THEN
         self.assertEqual([], rv)
 
-
     def test_one_map(self):
         # GIVEN
         when(self.console).getMaps().thenReturn(["ut4_baeza"])
         rv = self.console.getMapsSoundingLike('tohunga')
         # THEN
         self.assertEqual('ut4_baeza', rv)
-
 
     def test_lots_of_maps(self):
         # GIVEN

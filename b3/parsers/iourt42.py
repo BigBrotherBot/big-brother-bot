@@ -824,30 +824,25 @@ class Iourt42Parser(Iourt41Parser):
     def OnClientuserinfochanged(self, action, data, match=None):
         # 7 n\[SNT]^1XLR^78or\t\3\r\2\tl\0\f0\\f1\\f2\\a0\0\a1\0\a2\0
         parseddata = self.parseUserInfo(data)
-        self.verbose('OnClientuserinfochanged: parsed user info: %s', parseddata)
+        self.verbose('Parsed userinfo: %s' % parseddata)
         if parseddata:
             client = self.clients.getByCID(parseddata['cid'])
             if client:
                 # update existing client
                 if 'n' in parseddata:
-                    self.verbose2('Found client name in parsed userinfo: %s', parseddata['n'])
                     setattr(client, 'name', parseddata['n'])
 
                 if 't' in parseddata:
-                    self.verbose2('Found client team in parsed userinfo: %s', parseddata['t'])
                     team = self.getTeam(parseddata['t'])
                     setattr(client, 'team', team)
 
                     if 'r' in parseddata:
-                        self.verbose2('Found client race in parsed userinfo: %s', parseddata['r'])
                         if team == b3.TEAM_BLUE:
                             setattr(client, 'raceblue', parseddata['r'])
                         elif team == b3.TEAM_RED:
                             setattr(client, 'racered', parseddata['r'])
                         elif team == b3.TEAM_FREE:
                             setattr(client, 'racefree', parseddata['r'])
-                        else:
-                            self.verbose2('Discarding client race information: client is in spectator mode')
 
                     if parseddata.get('f0') is not None \
                         and parseddata.get('f1') is not None \
