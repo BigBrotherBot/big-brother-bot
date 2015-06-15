@@ -767,7 +767,6 @@ S        Admin "Courgette"
             'sv_cheats': '1'
         }, rv)
 
-
     def test_cvarlist_with_filter(self):
         # GIVEN
         with patch.object(self.console, "cvarList") as cvarList_mock:
@@ -775,3 +774,15 @@ S        Admin "Courgette"
             rv = self.console.cvarList("*the*filter*")
             # THEN
             cvarList_mock.assert_called_with("*the*filter*")
+
+    def test_parseUserInfo(self):
+        self.assertDictEqual({
+            'cid': '7',
+            'n': '[SNT]^1XLR^78or',
+            't': '3',
+            'r': '2',
+            'tl': '0',
+            'a0': '0',
+            'a1': '0',
+            'a2': '0',
+        }, self.console.parseUserInfo(r'7 n\[SNT]^1XLR^78or\t\3\r\2\tl\0\f0\\f1\\f2\\a0\0\a1\0\a2\0'))
