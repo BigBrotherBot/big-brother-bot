@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
+# coding=utf-8
 #
-# Nickreg Plugin for BigBrotherBot(B3) (www.bigbrotherbot.net)
+# Duel Plugin for BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2015 Daniele Pantaleone <fenix@bigbrotherbot.net>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,24 +19,24 @@
 
 import unittest2
 
-from mockito import when
-from b3.config import XmlConfigParser
-from b3.plugins.admin import AdminPlugin
-from tests import logging_disabled
+from mockito import when, unstub
+from b3.config import MainConfig
 from b3.config import CfgConfigParser
-from b3.plugins.nickreg import NickregPlugin
-from textwrap import dedent
+from b3.plugins.admin import AdminPlugin
+from b3.plugins.duel import DuelPlugin
+from tests import logging_disabled
 
 
-class NickregTestCase(unittest2.TestCase):
+class DuelTestCase(unittest2.TestCase):
 
     def setUp(self):
-        # create a FakeConsole parser
-        self.parser_conf = XmlConfigParser()
-        self.parser_conf.loadFromString(r"""<configuration/>""")
+        console_conf = CfgConfigParser()
+        console_conf.loadFromString(r'''''')
+        self.console_main_conf = MainConfig(console_conf)
+
         with logging_disabled():
             from b3.fake import FakeConsole
-            self.console = FakeConsole(self.parser_conf)
+            self.console = FakeConsole(self.console_main_conf)
 
         with logging_disabled():
             self.adminPlugin = AdminPlugin(self.console, '@b3/conf/plugin_admin.ini')
@@ -46,28 +46,16 @@ class NickregTestCase(unittest2.TestCase):
         # make sure the admin plugin obtained by other plugins is our admin plugin
         when(self.console).getPlugin('admin').thenReturn(self.adminPlugin)
 
-        self.conf = CfgConfigParser()
-        self.conf.loadFromString(dedent("""
-            [settings]
-            min_level: mod
-            min_level_global_manage: admin
-            max_nicks: 3
-            interval: 30
-        """))
-
-        self.p = NickregPlugin(self.console, self.conf)
-        self.p.onLoadConfig()
+        # create our plugin instance
+        self.p = DuelPlugin(self.console)
         self.p.onStartup()
 
         with logging_disabled():
             from b3.fake import FakeClient
-            self.senioradmin = FakeClient(console=self.console, name="SeniorAdmin", guid="SENIORADMIN", groupBits=64)
-            self.admin = FakeClient(console=self.console, name="Admin", guid="ADMIN", groupBits=16)
-            self.guest = FakeClient(console=self.console, name="Guest", guid="GUEST", groupBits=0)
 
-        self.admin.connects("1")
-        self.guest.connects("2")
-        self.senioradmin.connects("3")
+        self.mike = FakeClient(console=self.console, name="Mike", guid="MIKEGUID", groupBits=1)
+        self.bill = FakeClient(console=self.console, name="Bill", guid="BILLGUID", groupBits=1)
+        self.anna = FakeClient(console=self.console, name="Anna", guid="ANNAGUID", groupBits=1)
 
     def tearDown(self):
-        pass
+        unstub()

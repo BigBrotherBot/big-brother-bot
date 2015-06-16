@@ -69,7 +69,9 @@ class DuelPlugin(b3.plugin.Plugin):
         if event.client and event.client.isvar(self, 'duelling'):
             duels = event.client.var(self, 'duelling', {}).value
             for duel in duels.values():
-                duel.registerKillEvent(event)
+                if (duel.clientA == event.client and duel.clientB == event.target) or \
+                    (duel.clientB == event.client and duel.clientA == event.target):
+                    duel.registerKillEvent(event)
 
     def onDisconnect(self, event):
         """
@@ -145,7 +147,7 @@ class DuelPlugin(b3.plugin.Plugin):
         """
         duels = client.var(self, 'duelling', {}).value
         if len(duels) == 0:
-            client.message('You have no duel in progress: nothing to cancel')
+            client.message('You have no duel in progress: nothing to cancel!')
             return
 
         x = self.adminPlugin.parseUserCmd(data)
@@ -173,7 +175,7 @@ class DuelPlugin(b3.plugin.Plugin):
         """
         duels = client.var(self, 'duelling', {}).value
         if len(duels) == 0:
-            client.message('You have no duel in progress: nothing to reset')
+            client.message('You have no duel in progress: nothing to reset!')
             return
 
         x = self.adminPlugin.parseUserCmd(data)

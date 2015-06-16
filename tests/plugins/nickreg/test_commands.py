@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Custom Commands Plugin for BigBrotherBot(B3) (www.bigbrotherbot.net)
+# Nickreg Plugin for BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2015 Daniele Pantaleone <fenix@bigbrotherbot.net>
 #
 # This program is free software; you can redistribute it and/or modify
