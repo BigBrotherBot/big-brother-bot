@@ -1,0 +1,5 @@
+2010/08/28 - 1.0 - Courgette - create plugin based on 1989trouble07's suggestion on the B3 forums
+2010/09/14 - 1.1 - Courgette - handle player disconnection
+2015/06/16 - 1.2 - Fenix     - made the plugin built-in
+                             - simplyfied Duel dedicated code
+                             - fixed Duel.announceScoreTo not considering possible ties
