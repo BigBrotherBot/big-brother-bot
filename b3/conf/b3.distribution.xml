@@ -132,9 +132,11 @@
         <!-- <plugin name="afk" config="@conf/plugin_afk.ini" /> -->
         <!-- <plugin name="banlist" config="@conf/plugin_banlist.xml" /> -->
         <!-- <plugin name="callvote" config="@conf/plugin_callvote.ini" /> -->
+        <!-- <plugin name="censorurt" config="@conf/plugin_censorurt.xml" /> -->
         <!-- <plugin name="chatlogger" config="@conf/plugin_chatlogger.ini" /> -->
         <!-- <plugin name="countryfilter" config="@conf/plugin_countryfilter.ini" /> -->
         <!-- <plugin name="customcommands" config="@conf/plugin_customcommands.ini" /> -->
+        <!-- <plugin name="duel" /> -->
         <!-- <plugin name="firstkill" config="@conf/plugin_firstkill.ini" /> -->
         <!-- <plugin name="geowelcome" config="@conf/plugin_geowelcome.ini" /> -->
         <!-- <plugin name="ipban" config="@conf/plugin_ipban.ini" /> -->
@@ -150,6 +152,7 @@
         <!-- <plugin name="poweradminmoh" config="@conf/plugin_poweradminmoh.xml" /> -->
         <!-- <plugin name="poweradminurt" config="@conf/plugin_poweradminurt.ini" /> -->
         <!-- <plugin name="spawnkill" config="@conf/plugin_spawnkill.ini" /> -->
+        <!-- <plugin name="spree" config="@conf/plugin_spree.ini" /> -->
         <!-- <plugin name="translator" config="@conf/plugin_translator.ini" /> -->
         <!-- <plugin name="urtserversidedemo" config="@conf/plugin_urtserversidedemo.ini" /> -->
         <!-- <plugin name="xlrstats" config="@conf/plugin_xlrstats.ini" /> -->
