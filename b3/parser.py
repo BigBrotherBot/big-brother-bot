@@ -599,7 +599,7 @@ class Parser(object):
 
         atexit.register(self.shutdown)
 
-    def getAbsolutePath(self, path, decode):
+    def getAbsolutePath(self, path, decode=False):
         """
         Return an absolute path name and expand the user prefix (~)
         :param path: the relative path we want to expand
