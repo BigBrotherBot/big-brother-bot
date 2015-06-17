@@ -73,9 +73,10 @@
 #                   - allow resolving of @conf in b3.getAbsolutePath by passing as optional parameter the process
 #                     configuration file instance
 # 12/06/2015 - 0.17 - linux adjustments
+# 17/06/2015 - 0.18 - added some more debugging
 
 __author__ = 'Fenix'
-__version__ = '0.17'
+__version__ = '0.18'
 
 
 import b3
@@ -87,8 +88,8 @@ import logging
 import sqlite3
 
 ## USER PATHS
-B3_STORAGE = b3.getWritableFilePath(os.path.join(b3.HOMEDIR, 'app.db'), True)
-B3_LOG = b3.getWritableFilePath(os.path.join(b3.HOMEDIR, 'app.log'), True)
+B3_STORAGE = b3.getWritableFilePath('@home/app.db', True)
+B3_LOG = b3.getWritableFilePath('@home/app.log', True)
 
 ## RESOURCE PATHS
 B3_BANNER = b3.getAbsolutePath('@b3/gui/assets/main.png', True)
@@ -422,8 +423,11 @@ class B3(QProcess):
         self.stdout = STDOutDialog(process=self)
         self.setProcessChannelMode(QProcess.MergedChannels)
         self.readyReadStandardOutput.connect(self.stdout.read_stdout)
+        self.readyReadStandardError.connect(self.stdout.read_stdout)
         # configure signal handlers
+        self.error.connect(self.process_errored)
         self.finished.connect(self.process_finished)
+        self.started.connect(self.process_started)
 
     ############################################### PROPERTIES #########################################################
 
@@ -574,7 +578,7 @@ class B3(QProcess):
             else:
                 program = '%s --config %s --console' % (sys.executable, self.config_path)
 
-        LOG.info('starting %s process: %s', self.name, program)
+        LOG.info('attempt to start %s process: %s', self.name, program)
 
         self.stdout.stdout.clear()
         self.lastrun = time()
@@ -706,9 +710,23 @@ class B3(QProcess):
         :param exit_code: the process exit code
         :param exit_status: the process exit status
         """
+        LOG.info('process %s terminated (%s)', self.name, exit_code)
         if self.stdout:
             self.stdout.stdout.moveCursor(QTextCursor.End)
             self.stdout.stdout.insertPlainText('>>> PROCESS TERMINATED (%s)\n' % exit_code)
+
+    def process_errored(self, error_code):
+        """
+        Executed when the process errors.
+        :param error_code: the generated error (:type int:
+        """
+        LOG.error('process %s errored (%s)', self.name, error_code)
+
+    def process_started(self):
+        """
+        Executed when the process starts.
+        """
+        LOG.info('process %s started successfully', self.name)
 
     ############################################## MAGIC METHODS  ######################################################
 
