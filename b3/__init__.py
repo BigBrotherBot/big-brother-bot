@@ -38,6 +38,7 @@
 # 2015/06/07 - 1.7      - Fenix     - added optional 'conf' parameter to getAbsolutePath and getConfPath: allow the retrieval
 #                                     of @conf by passing a specific configuration file (path or instance) to the function
 #                                     instead of using the globally definied confdir variable (fix @conf retrieval from GUI)
+# 2015/06/17 - 1.8      - Fenix     - changed getAbsolutePath to resolve @home token
 
 import os
 import re
@@ -142,6 +143,8 @@ def getAbsolutePath(path, decode=False, conf=None):
         path = os.path.join(getB3Path(decode=False), path[4:])
     elif path[0:6] == '@conf\\' or path[0:6] == '@conf/':
         path = os.path.join(getConfPath(decode=False, conf=conf), path[6:])
+    elif path[0:6] == '@home\\' or path[0:6] == '@home/':
+        path = os.path.join(HOMEDIR, path[6:])
     if not decode:
         return os.path.normpath(os.path.expanduser(path))
     return decode_(os.path.normpath(os.path.expanduser(path)))
