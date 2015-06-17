@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/06/17 - 1.43.2 - Fenix           - fixed some absolute path retrieval not decoding non-ascii characters
 # 2015/05/26 - 1.43.1 - Fenix           - added StubParser class: can be used when the storage module needs to be
 #                                         initilized without a running B3 console (fakes logging and sys.stdout)
 #                                       - fixed pluginImport not working correctly when starting B3 using OSX app bundle
@@ -188,7 +189,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.43.1'
+__version__ = '1.43.2'
 
 
 import os
@@ -497,7 +498,7 @@ class Parser(object):
                     f = os.path.normpath(os.path.expanduser(logext))
 
                 # make sure game log file can be written
-                f = b3.getWritableFilePath(f)
+                f = b3.getWritableFilePath(f, True)
 
                 if self.config.has_option('server', 'log_append'):
                     if not (self.config.getboolean('server', 'log_append') and os.path.isfile(f)):
@@ -598,13 +599,12 @@ class Parser(object):
 
         atexit.register(self.shutdown)
 
-    @staticmethod
-    def getAbsolutePath(path):
+    def getAbsolutePath(self, path, decode):
         """
         Return an absolute path name and expand the user prefix (~)
         :param path: the relative path we want to expand
         """
-        return b3.getAbsolutePath(path)
+        return b3.getAbsolutePath(path, decode=decode, conf=self.config)
 
     def _dumpEventsStats(self):
         """
