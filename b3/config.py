@@ -53,9 +53,10 @@
 # 22/04/2015 - 1.7.7 - Fenix     - raise ConfigFileNotValid in ConfigParser.readfp for consistency with XmlConfigParser
 #                                - added 'analyze()' method in MainConfig
 # 26/05/2015 - 1.7.8 - Fenix     - changed analyze() to validate also storage protocol
+# 17/06/2015 - 1.7.9 - Fenix     - fixed bad indent which was causing analyze() to generate false positives on admin plugin
 
 __author__  = 'ThorN, Courgette, Fenix'
-__version__ = '1.7.8'
+__version__ = '1.7.9'
 
 import os
 import re
@@ -567,7 +568,7 @@ class MainConfig(B3ConfigParserMixin):
                 has_admin = True
                 if plugin['conf']:
                     has_admin_config = True
-            break
+                break
 
         if not has_admin:
             analysis.append('missing admin plugin in plugins section')
