@@ -417,13 +417,13 @@ class Parser(object):
 
         if self._publicIp and self._publicIp[0:1] in ('~', '/'):
             # load ip from a file
-            f = file(self.getAbsolutePath(self._publicIp))
+            f = file(b3.getAbsolutePath(self._publicIp, decode=True))
             self._publicIp = f.read().strip()
             f.close()
 
         if self._rconIp[0:1] in ('~', '/'):
             # load ip from a file
-            f = file(self.getAbsolutePath(self._rconIp))
+            f = file(b3.getAbsolutePath(self._rconIp, decode=True))
             self._rconIp = f.read().strip()
             f.close()
 
@@ -604,7 +604,7 @@ class Parser(object):
         Return an absolute path name and expand the user prefix (~)
         :param path: the relative path we want to expand
         """
-        return b3.getAbsolutePath(path, decode=decode, conf=self.config)
+        return b3.getAbsolutePath(path, decode=decode)
 
     def _dumpEventsStats(self):
         """
@@ -783,13 +783,13 @@ class Parser(object):
                 :param match: The plugin name
                 """
                 # first look in the built-in plugins directory
-                search = '%s%s*%s*' % (self.getAbsolutePath('@conf\\'), os.path.sep, match)
+                search = '%s%s*%s*' % (b3.getAbsolutePath('@conf\\', decode=True), os.path.sep, match)
                 self.debug('Searching for configuration file(s) matching: %s' % search)
                 collection = glob.glob(search)
                 if len(collection) > 0:
                     return collection
                 # if none is found, then search in the extplugins directory
-                search = '%s%s*%s*' % (os.path.join(self.getAbsolutePath(extplugins_dir), match, 'conf'), os.path.sep, match)
+                search = '%s%s*%s*' % (os.path.join(b3.getAbsolutePath(extplugins_dir, decode=True), match, 'conf'), os.path.sep, match)
                 self.debug('Searching for configuration file(s) matching: %s' % search)
                 collection = glob.glob(search)
                 return collection
@@ -820,7 +820,7 @@ class Parser(object):
                 # configuration file specified: load it if it's found. If we are not able to find the configuration
                 # file, then keep loading the plugin if such a plugin doesn't require a configuration file (optional)
                 # otherwise stop loading the plugin and loag an error message.
-                p_config_absolute_path = self.getAbsolutePath(p_config_path)
+                p_config_absolute_path = b3.getAbsolutePath(p_config_path, decode=True)
                 if os.path.exists(p_config_absolute_path):
                     self.bot('Loading configuration file %s for plugin %s', p_config_absolute_path, p_name)
                     return b3.config.load(p_config_absolute_path)
@@ -1497,7 +1497,7 @@ class Parser(object):
             for x in ('.xml', '.ini'):
                 b3_name = right_cut(b3_name, x)
 
-            pidpath = os.path.join(b3.getAbsolutePath('@b3/'), '..', 'scripts', 'pid', '%s.pid' % b3_name)
+            pidpath = os.path.join(b3.getAbsolutePath('@b3/', decode=True), '..', 'scripts', 'pid', '%s.pid' % b3_name)
             if os.path.isfile(pidpath):
                 self.bot('Found PID file : %s : attempt to remove it' % pidpath)
                 try:
