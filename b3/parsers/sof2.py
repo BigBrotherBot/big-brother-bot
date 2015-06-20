@@ -29,7 +29,7 @@
 # 20/06/2015 - 1.6 - Fenix - accept negative hitlocation number:
 
 __author__ = 'xlr8or, ~cGs*Pr3z, ~cGs*AQUARIUS'
-__version__ = '1.5'
+__version__ = '1.6'
 
 import b3
 import b3.events
