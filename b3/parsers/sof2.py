@@ -26,6 +26,7 @@
 # 11/08/2014 - 1.4 - Fenix - syntax cleanup
 # 16/04/2015 - 1.5 - Fenix - uniform class variables (dict -> variable)
 #                          - implement missing abstract class methods
+# 20/06/2015 - 1.6 - Fenix - accept negative hitlocation number:
 
 __author__ = 'xlr8or, ~cGs*Pr3z, ~cGs*AQUARIUS'
 __version__ = '1.5'
@@ -88,13 +89,13 @@ class Sof2Parser(AbstractParser):
         # hit: 0 0 520 368 0: xlr8or hit xlr8or at location 520 for 368
         # hit: 0 1 8192 80 0: xlr8or hit sh.andrei at location 8192 for 80
         # hit: <acid> <cid> <location> <damage> <meansofdeath>: <aname> hit <name> at location <location> for <damage>
-        re.compile(r'^(?P<action>[a-z]+):\s'
+        re.compile(r'^(?P<action>[\w]+):\s'
                    r'(?P<data>'
-                   r'(?P<acid>[0-9]+)\s'
-                   r'(?P<cid>[0-9]+)\s'
-                   r'(?P<hitloc>[0-9]+)\s'
-                   r'(?P<damage>[0-9]+)\s'
-                   r'(?P<aweap>[0-9]+):\s+'
+                   r'(?P<acid>[\d]+)\s'
+                   r'(?P<cid>[\d]+)\s'
+                   r'(?P<hitloc>[-\d]+)\s'
+                   r'(?P<damage>[\d]+)\s'
+                   r'(?P<aweap>[\d]+):\s+'
                    r'(?P<text>.*))$', re.IGNORECASE),
 
         # say: xlr8or: hello
