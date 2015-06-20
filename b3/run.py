@@ -33,10 +33,10 @@
 # 2015/05/07 - 1.6   - Fenix     - add GUI startup
 # 2015/05/26 - 1.7   - Fenix     - reworked B3 startup routine
 #                                - removed B3 setup procedure: display B3 configuration generator webtool url instead
-from PyQt5.QtWidgets import QSpacerItem, QSizePolicy
+# 2015/06/21 - 1.7.1 - Fenix     - fixed console startup not working properly
 
 __author__  = 'ThorN'
-__version__ = '1.7'
+__version__ = '1.7.1'
 
 import b3
 import b3.config
@@ -151,6 +151,7 @@ def run_gui(options):
     from b3.gui import B3App
     from b3.gui.misc import SplashScreen
     from PyQt5.QtWidgets import QMessageBox
+    from PyQt5.QtWidgets import QSpacerItem, QSizePolicy
 
     if options.console:
         raise EnvironmentError
