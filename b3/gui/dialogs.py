@@ -43,6 +43,28 @@ from time import sleep
 LOG = logging.getLogger('B3')
 
 
+GEOMETRY = {
+    'win32': {
+        'ABOUT_DIALOG_WIDTH': 400,
+        'ABOUT_DIALOG_HEIGHT': 520,
+        'LICENSE_DIALOG_WIDTH': 400,
+        'LICENSE_DIALOG_HEIGHT': 300,
+    },
+    'darwin': {
+        'ABOUT_DIALOG_WIDTH': 400,
+        'ABOUT_DIALOG_HEIGHT': 520,
+        'LICENSE_DIALOG_WIDTH': 400,
+        'LICENSE_DIALOG_HEIGHT': 300,
+    },
+    'linux': {
+        'ABOUT_DIALOG_WIDTH': 400,
+        'ABOUT_DIALOG_HEIGHT': 540,
+        'LICENSE_DIALOG_WIDTH': 420,
+        'LICENSE_DIALOG_HEIGHT': 380,
+    }
+}
+
+
 class AboutDialog(QDialog):
     """
     This class is used to display the 'About' dialog.
@@ -60,7 +82,8 @@ class AboutDialog(QDialog):
         Initialize the About Dialog layout.
         """
         self.setWindowTitle(B3_TITLE_SHORT)
-        self.setFixedSize(400, 540)
+        self.setFixedSize(GEOMETRY[b3.getPlatform()]['ABOUT_DIALOG_WIDTH'],
+                          GEOMETRY[b3.getPlatform()]['ABOUT_DIALOG_HEIGHT'])
         self.setStyleSheet("""
         QDialog {
             background: #F2F2F2;
@@ -147,7 +170,8 @@ class LicenseDialog(QDialog):
         Initialize the Dialog layout.
         """
         self.setWindowTitle(B3_LICENSE)
-        self.setFixedSize(420, 380)
+        self.setFixedSize(GEOMETRY[b3.getPlatform()]['LICENSE_DIALOG_WIDTH'],
+                          GEOMETRY[b3.getPlatform()]['LICENSE_DIALOG_HEIGHT'])
         self.setStyleSheet("""
         QDialog {
             background: #F2F2F2;

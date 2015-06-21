@@ -74,9 +74,11 @@
 #                     configuration file instance
 # 12/06/2015 - 0.17 - linux adjustments
 # 17/06/2015 - 0.18 - added some more debugging
+# 22/06/2015 - 0.19 - make About and License dialog dimensions os dependent
+#                   - adjusted Main Table with to fill up line
 
 __author__ = 'Fenix'
-__version__ = '0.18'
+__version__ = '0.19'
 
 
 import b3
