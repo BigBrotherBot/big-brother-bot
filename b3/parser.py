@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/06/22 - 1.43.3 - Fenix           - added support for the new Plugin attribute: requiresStorage
 # 2015/06/17 - 1.43.2 - Fenix           - fixed some absolute path retrieval not decoding non-ascii characters
 # 2015/05/26 - 1.43.1 - Fenix           - added StubParser class: can be used when the storage module needs to be
 #                                         initilized without a running B3 console (fakes logging and sys.stdout)
@@ -40,7 +41,7 @@
 # 2015/02/15 - 1.41.8 - Fenix           - fix broken 1.41.7
 # 2015/02/15 - 1.41.7 - Fenix           - make game log reading work properly in osx
 # 2015/02/04 - 1.41.6 - Fenix           - optionally specify a log file size: 'logsize' option in 'b3' section of main cfg
-# 2015/02/02 - 1.41.5 - 82ndab.Bravo17  - Remove color codes at start of getWrap if not valid for game
+# 2015/02/02 - 1.41.5 - 82ndab.Bravo17  - remove color codes at start of getWrap if not valid for game
 # 2015/01/29 - 1.41.4 - Fenix           - do not let plugins crash B3 by raising an exception within the constructor
 #                                       - fixed KeyError beiung raised in loadPlugins()
 # 2015/01/28 - 1.41.3 - Fenix           - fixed external plugins directory retrieval in loadPlugins()
@@ -883,6 +884,12 @@ class Parser(object):
                     raise MissingRequirement('plugin %s is not compatible with %s parser : supported games are : %s' % (
                                              p_data.name, self.gameName, ', '.join(p_data.clazz.requiresParsers)))
 
+                # check if the plugin needs a particular storage protocol to work
+                if p_data.clazz.requiresStorage and self.storage.protocol not in p_data.clazz.requiresStorage:
+                    raise MissingRequirement('plugin %s is not compatible with the storage protocol being used (%s) : '
+                                             'supported protocols are : %s' % (p_data.name, self.storage.protocol,
+                                                                               ', '.join(p_data.clazz.requiresStorage)))
+
                 # check for plugin dependency
                 if p_data.clazz.requiresPlugins:
                     # DFS: look first at the whole requirement tree and try to load from ground up
@@ -891,7 +898,7 @@ class Parser(object):
                         if r not in plugins and r not in plugin_required:
                             try:
                                 # missing requirement, try to load it
-                                self.warning('Plugin %s has unmet dependency : %s : trying to load plugin %s...' % (p_data.name, r, r))
+                                self.debug('Plugin %s has unmet dependency : %s : trying to load plugin %s...' % (p_data.name, r, r))
                                 collection += _get_plugin_data(PluginData(name=r))
                                 self.debug('Plugin %s dependency satisfied: %s' % (p_data.name, r))
                             except Exception, ex:

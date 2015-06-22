@@ -52,13 +52,14 @@
 # 25/03/2015 - 1.9.5 - Fenix     - added loadAfterPlugins attribute: specify a list of plugins which needs to be loaded
 #                                  before the current one
 # 06/04/2015 - 1.9.6 - Fenix     - inherit from object class (new-style-class format to support super() in methods call)
-# 21/05/2015 - 1.9.7 - Fenix     - added requiresVersion attribute in plugin class: declares the minimum required
+# 21/05/2015 - 1.9.8 - Fenix     - added requiresVersion attribute in plugin class: declares the minimum required
 #                                  B3 version needed to run the current plugin (if nothing is specified then the plugin
 #                                  will be loaded no matter the version of B3 currently running)
 #                                - added Plugin class documentation
+# 22/06/2015 - 1.9.9 - Fenix     - added requiresStorage attribute: list the storage protocols supported by a plugin
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.9.7'
+__version__ = '1.9.9'
 
 import b3.config
 import b3.events
@@ -107,6 +108,13 @@ class Plugin(object):
     # List of parsers the current plugin supports: if no parser is specified the plugin will
     # be loaded, if listed in B3 main configuraion file, no matter the parser being used.
     requiresParsers = []
+    """:type: list"""
+
+    # List of storage protocols supported by your plugin ('mysql', 'sqlite', 'postgresql'): if no value is specified
+    # B3 will load the plugin no matter the type of storage module being used (so it will assume that your plugin will
+    # not use the storage layer at all, or that your plugin is capable of handling all of them).
+    # NOTE: B3 will not generate the database schema: you would have to handle this yourself in plugin onStartup()
+    requiresStorage = []
     """:type: list"""
 
     # List of plugins the current one needs to run: if no plugin is specified then the plugin
