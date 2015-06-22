@@ -16,6 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
+
+import b3
+import imp
 import logging
 import os
 from ConfigParser import NoOptionError
@@ -387,7 +390,26 @@ class Test_Plugin_requiresParser(B3TestCase):
         self.plugin_list = [
             {'name': 'admin', 'conf': '@b3/conf/plugin_admin.ini', 'path': None, 'disabled': False},
         ]
+
+        fp, pathname, description = imp.find_module('testplugin1', [os.path.join(b3.getB3Path(True), '..', 'tests', 'plugins', 'fakeplugins')])
+        pluginModule1 = imp.load_module('testplugin1', fp, pathname, description)
+        if fp:
+            fp.close()
+
+        fp, pathname, description = imp.find_module('testplugin2', [os.path.join(b3.getB3Path(True), '..', 'tests', 'plugins', 'fakeplugins')])
+        pluginModule2 = imp.load_module('testplugin2', fp, pathname, description)
+        if fp:
+            fp.close()
+
+        fp, pathname, description = imp.find_module('admin', [os.path.join(b3.getB3Path(True), 'plugins')])
+        adminModule = imp.load_module('admin', fp, pathname, description)
+        if fp:
+            fp.close()
+
         when(self.console.config).get_plugins().thenReturn(self.plugin_list)
+        when(self.console).pluginImport('admin', ANY).thenReturn(adminModule)
+        when(self.console).pluginImport('testplugin1', ANY).thenReturn(pluginModule1)
+        when(self.console).pluginImport('testplugin2', ANY).thenReturn(pluginModule2)
 
     def test_nominal(self):
         # GIVEN
@@ -410,3 +432,70 @@ class Test_Plugin_requiresParser(B3TestCase):
             self.console.loadPlugins()
         # THEN
         self.assertListEqual([call('Could not load plugin testplugin2', exc_info=ANY)], error_mock.mock_calls)
+
+
+class Test_Plugin_requiresStorage(B3TestCase):
+
+    def setUp(self):
+        B3TestCase.setUp(self)
+        when(self.console.config).get_external_plugins_dir().thenReturn(external_plugins_dir)
+        self.conf = CfgConfigParser(testplugin_config_file)
+
+        self.plugin_list = [
+            {'name': 'admin', 'conf': '@b3/conf/plugin_admin.ini', 'path': None, 'disabled': False},
+        ]
+
+        fp, pathname, description = imp.find_module('testplugin1', [os.path.join(b3.getB3Path(True), '..', 'tests', 'plugins', 'fakeplugins')])
+        pluginModule1 = imp.load_module('testplugin1', fp, pathname, description)
+        if fp:
+            fp.close()
+
+        fp, pathname, description = imp.find_module('testplugin3', [os.path.join(b3.getB3Path(True), '..', 'tests', 'plugins', 'fakeplugins')])
+        pluginModule3 = imp.load_module('testplugin3', fp, pathname, description)
+        if fp:
+            fp.close()
+
+        fp, pathname, description = imp.find_module('admin', [os.path.join(b3.getB3Path(True), 'plugins')])
+        adminModule = imp.load_module('admin', fp, pathname, description)
+        if fp:
+            fp.close()
+
+        when(self.console.config).get_plugins().thenReturn(self.plugin_list)
+        when(self.console).pluginImport('admin', ANY).thenReturn(adminModule)
+        when(self.console).pluginImport('testplugin1', ANY).thenReturn(pluginModule1)
+        when(self.console).pluginImport('testplugin3', ANY).thenReturn(pluginModule3)
+
+    def test_nominal(self):
+        # GIVEN
+        self.plugin_list.append(
+            {'name': 'testplugin1', 'conf': None, 'path': external_plugins_dir, 'disabled': False}
+        )
+        # WHEN
+        with patch.object(self.console, 'error') as error_mock:
+            self.console.loadPlugins()
+        # THEN
+        self.assertListEqual([], error_mock.mock_calls)
+
+    def test_correct_storage(self):
+        # GIVEN
+        self.console.storage.protocol = 'postgresql'
+        self.plugin_list.append(
+            {'name': 'testplugin3', 'conf': None, 'path': external_plugins_dir, 'disabled': False}
+        )
+        # WHEN
+        with patch.object(self.console, 'error') as error_mock:
+            self.console.loadPlugins()
+        # THEN
+        self.assertListEqual([], error_mock.mock_calls)
+
+    def test_wrong_storage(self):
+        # GIVEN
+        self.console.storage.protocol = 'mysql'
+        self.plugin_list.append(
+            {'name': 'testplugin3', 'conf': None, 'path': external_plugins_dir, 'disabled': False}
+        )
+        # WHEN
+        with patch.object(self.console, 'error') as error_mock:
+            self.console.loadPlugins()
+        # THEN
+        self.assertListEqual([call('Could not load plugin testplugin3', exc_info=ANY)], error_mock.mock_calls)
