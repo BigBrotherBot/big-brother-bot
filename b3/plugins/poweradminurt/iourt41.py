@@ -122,8 +122,12 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
     _hitlocations = {}
 
     # Fenix: round based gametypes are not supposed to teambalance midround
+    # NOTE: skill balancing override teams balancing (since it should "balance more"
     _round_based_gametypes = ('ts', 'bm')
+    _is_round_end = False
     _pending_teambalance = False
+    _pending_skillbalance = False
+    _skillbalance_func = None
 
     requiresParsers = ['iourt41']
 
@@ -970,6 +974,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         Handle EVT_GAME_ROUND_START.
         """
+        self._is_round_end = False
         self._forgetTeamContrib()
         self._killhistory = []
         self._lastbal = self.console.time()
@@ -1490,6 +1495,9 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         return i
 
     def skillcheck(self):
+        """
+        Skill balancer cronjob.
+        """
         if self._balancing or self.ignoreCheck():
             return
 
@@ -1502,8 +1510,8 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                        'skillbalancer disabled', self.console.game.gameType)
             return
 
+        # skill balance disabled
         if self._skill_balance_mode == 0:
-            # disabled
             return
 
         avgdiff, diff = self._getTeamScoreDiffForAdvise(minplayers=3)
@@ -1518,20 +1526,27 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
         if unbalanced or self._skill_balance_mode == 1:
             if absdiff > 0.2:
-                self.console.say('Avg kill ratio diff is %.2f, skill diff is %.2f' %\
-                                 (avgdiff, diff))
+                self.console.say('Avg kill ratio diff is %.2f, skill diff is %.2f' % (avgdiff, diff))
                 if self._skill_balance_mode == 1:
-                    # Give advice if teams are unfair
+                    # give advice if teams are unfair
                     self._advise(avgdiff, 2)
                 else:
-                    # Only report stronger team, we will balance/skuffle below
+                    # only report stronger team, we will balance/skuffle below
                     self._advise(avgdiff, 0)
 
-        if unbalanced:
+        if unbalanced and 2 <= self._skill_balance_mode <= 3:
             if self._skill_balance_mode == 2:
-                self.cmd_pabalance()
-            if self._skill_balance_mode == 3:
-                self.cmd_paskuffle()
+                func = self.cmd_pabalance
+            else:
+                func = self.cmd_paskuffle
+
+            # if we are in the middle of a round in a round based gametype, delay till the end of it
+            if gametype in self._round_based_gametypes and not self._is_round_end:
+                self._pending_skillbalance = True
+                self._skillbalance_func = func
+            else:
+                # execute it now
+                func()
 
     def _advise(self, avgdiff, mode):
         # mode 0: no advice
@@ -1622,9 +1637,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         self._balancing = True
         clients = self.console.clients.getList()
         scores = self._getScores(clients)
-        decorated = [(scores.get(c.id, 0), c) for c in clients
-                     if c.team in (b3.TEAM_BLUE, b3.TEAM_RED)]
-
+        decorated = [(scores.get(c.id, 0), c) for c in clients if c.team in (b3.TEAM_BLUE, b3.TEAM_RED)]
         decorated.sort()
         players = [c for score, c in decorated]
         n = len(players) / 2
@@ -1644,6 +1657,14 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         sincelast = now - self._lastbal
         if client and client.maxLevel < 20 and self.ignoreCheck() and sincelast < 60 * self._minbalinterval:
             client.message('Teams changed recently, please wait a while')
+            return
+
+        # if we are in the middle of a round in a round based gametype, delay till the end of it
+        if self._getGameType() in self._round_based_gametypes and not self._is_round_end:
+            self._pending_skillbalance = True
+            self._skillbalance_func = self.cmd_paskuffle
+            if client:
+                client.message('^7Teams will be balanced at the end of this round')
             return
 
         self._balancing = True
@@ -1677,6 +1698,14 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         sincelast = now - self._lastbal
         if client and client.maxLevel < 20 and self.ignoreCheck() and sincelast < 60 * self._minbalinterval:
             client.message('Teams changed recently, please wait a while')
+            return
+
+        # if we are in the middle of a round in a round based gametype, delay till the end of it
+        if self._getGameType() in self._round_based_gametypes and not self._is_round_end:
+            self._pending_skillbalance = True
+            self._skillbalance_func = self.cmd_pabalance
+            if client:
+                client.message('^7Teams will be balanced at the end of this round')
             return
 
         self._balancing = True
@@ -1778,7 +1807,8 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         Force teambalancing (all gametypes!)
         The player with the least time in a team will be switched.
         """
-        if self._getGameType() in self._round_based_gametypes:
+        # if we are in the middle of a round in a round based gametype, delay till the end of it
+        if self._getGameType() in self._round_based_gametypes and not self._is_round_end:
             self._pending_teambalance = True
             client.message('^7Teams will be balanced at the end of this round')
         else:
@@ -2393,10 +2423,18 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         Handle EVT_GAME_ROUND_END.
         """
-        if self.isEnabled() and self._getGameType() in self._round_based_gametypes and self._pending_teambalance:
-            self.debug('onRoundEnd: checking if teams needs to be balanced')
-            self._pending_teambalance = False
-            self.teambalance()
+        self._is_round_end = True
+        if self.isEnabled() and self._getGameType() in self._round_based_gametypes:
+            if self._pending_skillbalance and self._skillbalance_func:
+                self.debug('onRoundEnd: executing skill balancing')
+                self._skillbalance_func()
+            elif self._pending_teambalance:
+                self.debug('onRoundEnd: executing team balancing')
+                self.teambalance()
+
+        self._pending_teambalance = False
+        self._pending_skillbalance = False
+        self._skillbalance_func = None
 
     def onTeamChange(self, event):
         """
@@ -2626,8 +2664,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                         return False
 
                     # 10/28/2008 - 1.4.0b13 - mindriot
-                    self.verbose('teambalance: red: %s, blue: %s (diff: %s)' %
-                                 (self._teamred, self._teamblue, self._teamdiff))
+                    self.verbose('teambalance: red: %s, blue: %s (diff: %s)' % (self._teamred, self._teamblue, self._teamdiff))
 
                     if self._teamred > self._teamblue:
                         newteam = 'blue'

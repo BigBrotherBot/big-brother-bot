@@ -523,6 +523,7 @@ Changelog
 1.25 - 2015/06/23 - Fenix
   - split event handler hooks into multiple functions
   - delay teambalancing to round end in round based gametypes
+  - delay skillbalancing to round end in round based gametypes
 
 Credit
 ------
