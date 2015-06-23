@@ -1,5 +1,8 @@
 # Python modules needed when building B3 packages
 
+# help updaing version number
+-e git+https://github.com/peritus/bumpversion.git#egg=bumpversion
+
 # build tools
 pip>=1.4
 setuptools>=0.9

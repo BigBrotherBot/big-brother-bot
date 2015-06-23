@@ -53,7 +53,7 @@ from ConfigParser import NoOptionError
 from ConfigParser import NoSectionError
 
 __author__ = 'ThorN'
-__version__ = pkg_handler.version(__name__)
+__version__ = '1.10.0'
 
 modulePath = pkg_handler.resource_directory(__name__)
 

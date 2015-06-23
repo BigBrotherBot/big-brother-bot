@@ -10,6 +10,17 @@ B3 is distributed as different packages:
   - linux zip package
   - apple OS X .dmg disk image
 
+# Bumping the version number
+
+You need the bumpversion tool for that task. See https://pypi.python.org/pypi/bumpversion/
+
+Usage:
+
+    bumpversion patch # will change "1.10.0" to "1.10.1"
+    bumpversion minor # will change "1.10.0" to "1.11.0" 
+    bumpversion major # will change "1.10.0" to "2.0.0"
+
+
 # Packaging B3
 
 To be able to build B3 distribution packages you need to have installed Python 2.7 32bit on your system.

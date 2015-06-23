@@ -10,6 +10,7 @@ desktop.ini
 *.orig
 *.patch
 *.lnk
+b3.egg-info
 build
 dist
 releases/*
