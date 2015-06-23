@@ -34,6 +34,7 @@ class PoweradminurtPlugin(object):
     loadAfterPlugins = []
     requiresVersion = b3_version
     requiresParsers = ['iourt41', 'iourt42']
+    requiresStorage = []
 
     def __new__(cls, *args, **kwargs):
         console, plugin_config = args
