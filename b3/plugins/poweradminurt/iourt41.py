@@ -1004,7 +1004,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             self.debug('Starting Vote delay Timer: %s seconds' % tm)
             t1.start()
 
-    def onGameExit(self):
+    def onGameExit(self, _):
         """
         Handle EVT_GAME_EXIT.
         """
