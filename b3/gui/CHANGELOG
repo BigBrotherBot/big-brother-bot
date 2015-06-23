@@ -55,3 +55,4 @@
 17/06/2015 - 0.18 - added some more debugging
 22/06/2015 - 0.19 - make About and License dialog dimensions os dependent
                   - adjusted Main Table with to fill up line
+23/06/2015 - 0.20 - adjusted Main Table width on darwin system not to show horizontal scrollbar
