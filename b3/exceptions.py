@@ -23,6 +23,7 @@
 # 2015-04-06 - 1.2 - Fenix - added UpdateError exception class
 # 2015-04-20 - 1.3 - Fenix - added DatabaseError exception class
 # 2015-06-02 - 1.4 - Fenix - alias ConfigParser.NoOptionError in b3.exceptions and b3.config
+# 2015-06-23 - 1.5 - Fenix - alias ConfigParser.NoSectionError in b3.exceptions and b3.config
 
 
 import ConfigParser
@@ -101,3 +102,4 @@ class UpdateError(Exception):
 
 
 NoOptionError = ConfigParser.NoOptionError
+NoSectionError = ConfigParser.NoSectionError
