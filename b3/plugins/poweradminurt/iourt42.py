@@ -58,6 +58,8 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
     _rsp_falloffRate = 2  # spam points will fall off by 1 point every 4 seconds
     _rsp_maxSpamins = 10
 
+    _round_based_gametypes = ['ts', 'bm', 'freeze']
+
     def onStartup(self):
         """
         Initialize plugin settings
@@ -70,7 +72,7 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         Register events needed
         """
         Poweradminurt41Plugin.registerEvents(self)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_RADIO'))
+        self.registerEvent('EVT_CLIENT_RADIO', self.onRadio)
 
     def onLoadConfig(self):
         """
@@ -78,15 +80,6 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         """
         Poweradminurt41Plugin.onLoadConfig(self)
         self.loadRadioSpamProtection()
-
-    def onEvent(self, event):
-        """
-        Handle intercepted events
-        """
-        if event.type == self.console.getEventID('EVT_CLIENT_RADIO'):
-            self.onRadio(event)
-        else:
-            Poweradminurt41Plugin.onEvent(self, event)
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -108,14 +101,12 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
             self.debug('using default value (%s) for radio_spam_protection/enable' % self._rsp_enable)
 
         try:
-
             self._rsp_mute_duration = self.config.getint('radio_spam_protection', 'mute_duration')
             if self._rsp_mute_duration < 1:
                 raise ValueError('radio_spam_protection/mute_duration cannot be lower than 1')
-
         except ConfigParser.NoOptionError:
-            self.warning('could not find radio_spam_protection/mute_duration in config file, using default: %s' %
-                         self._rsp_mute_duration)
+            self.warning('could not find radio_spam_protection/mute_duration in config file, '
+                         'using default: %s' % self._rsp_mute_duration)
         except ValueError, e:
             self._rsp_mute_duration = 2  # set again because it might have been overwritten
             self.error('could not load radio_spam_protection/mute_duration config value: %s' % e)
@@ -136,8 +127,6 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         """
         if not self._rsp_enable:
             return
-
-        # event.data : {'msg_group': '7', 'msg_id': '2', 'location': 'New Alley', 'text': "I'm going for the flag" }
 
         client = event.client
         if client.var(self, 'radio_ignore_till', self.getTime()).value > self.getTime():
@@ -214,7 +203,6 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         self.console.setCvar('g_gametype', '1')
         if client:
             client.message('^7game type changed to ^4Last Man Standing')
-
         self.set_configmode('lms')
 
     def cmd_pajump(self, data, client, cmd=None):
@@ -225,7 +213,6 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         self.console.setCvar('g_gametype', '9')
         if client:
             client.message('^7game type changed to ^4Jump')
-
         self.set_configmode('jump')
 
     def cmd_pafreeze(self, data, client, cmd=None):
@@ -236,7 +223,6 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         self.console.setCvar('g_gametype', '10')
         if client:
             client.message('^7game type changed to ^4Freeze Tag')
-
         self.set_configmode('freeze')
 
     def cmd_paskins(self, data, client, cmd=None):
@@ -244,14 +230,14 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         Set the use of client skins <on/off>
         (You can safely use the command without the 'pa' at the beginning)
         """
-        if not data or data not in ('on', 'off'):
+        if not data or data.lower() not in ('on', 'off'):
             client.message('^7invalid or missing data, try !help paskins')
             return
 
-        if data == 'on':
+        if data.lower() == 'on':
             self.console.setCvar('g_skins', '1')
             self.console.say('^7Client skins: ^2ON')
-        elif data == 'off':
+        elif data.lower() == 'off':
             self.console.setCvar('g_skins', '0')
             self.console.say('^7Client skins: ^1OFF')
 
@@ -260,14 +246,14 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         Set the use of funstuff <on/off>
         (You can safely use the command without the 'pa' at the beginning)
         """
-        if not data or data not in ('on', 'off'):
+        if not data or data.lower() not in ('on', 'off'):
             client.message('^7invalid or missing data, try !help pafunstuff')
             return
 
-        if data == 'on':
+        if data.lower() == 'on':
             self.console.setCvar('g_funstuff', 1)
             self.console.say('^7Funstuff: ^2ON')
-        elif data == 'off':
+        elif data.lower() == 'off':
             self.console.setCvar('g_funstuff', 0)
             self.console.say('^7Funstuff: ^1OFF')
 
@@ -276,14 +262,14 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         Set the goto <on/off>
         (You can safely use the command without the 'pa' at the beginning)
         """
-        if not data or data not in ('on', 'off'):
+        if not data or data.lower() not in ('on', 'off'):
             client.message('^7invalid or missing data, try !help pagoto')
             return
 
-        if data == 'on':
+        if data.lower() == 'on':
             self.console.setCvar('g_allowgoto', 1)
             self.console.say('^7Goto: ^2ON')
-        elif data == 'off':
+        elif data.lower() == 'off':
             self.console.setCvar('g_allowgoto', 0)
             self.console.say('^7Goto: ^1OFF')
 
@@ -292,17 +278,17 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         Set the stamina behavior <default/regain/infinite>
         (You can safely use the command without the 'pa' at the beginning)
         """
-        if not data or data not in ('default', 'regain', 'infinite'):
+        if not data or data.lower() not in ('default', 'regain', 'infinite'):
             client.message('^7invalid or missing data, try !help pastamina')
             return
 
-        if data == 'default':
+        if data.lower() == 'default':
             self.console.setCvar('g_stamina', 0)
             self.console.say('^7Stamina mode: ^3DEFAULT')
-        elif data == 'regain':
+        elif data.lower() == 'regain':
             self.console.setCvar('g_stamina', 1)
             self.console.say('^7Stamina mode: ^3REGAIN')
-        elif data == 'infinite':
+        elif data.lower() == 'infinite':
             self.console.setCvar('g_stamina', 2)
             self.console.say('^7Stamina mode: ^3INFINITE')
 

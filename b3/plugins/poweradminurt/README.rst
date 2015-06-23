@@ -521,8 +521,8 @@ Changelog
 1.24 - 2015/05/13 - Fenix
   - fixed invalid plugin class reference 'requiresParsers' which was crashing B3 on startup
 1.25 - 2015/06/23 - Fenix
-  - split event handler hooks into multiple sunctions
-
+  - split event handler hooks into multiple functions
+  - delay teambalancing to round end in round based gametypes
 
 Credit
 ------

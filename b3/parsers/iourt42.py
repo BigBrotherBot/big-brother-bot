@@ -82,7 +82,7 @@
 # 14/09/2014 - 1.26   - Fenix     - added FreezeTag events: EVT_CLIENT_FREEZE, EVT_CLIENT_THAWOUT_STARTED,
 #                                   EVT_CLIENT_THAWOUT_FINISHED, EVT_CLIENT_MELTED
 #                                 - set client.state to b3.STATE_ALIVE on Client Spawn
-# 17/09/2014 - 1.26.1 - Fenix     - added missing Freeze Tag gametype declaration (10) in defineGametype()
+# 17/09/2014 - 1.26.1 - Fenix     - added missing Freeze Tag gametype declaration (10) in defineGameType()
 # 02/10/2014 - 1.27   - Fenix     - fixed regression introduced in 1.25
 # 12/12/2014 - 1.28   - Fenix     - increased chat line length to comply with the new HUD setting (4.2.021)
 # 25/01/2015 - 1.29   - Fenix     - patch the b3.clients.getByMagic method so it's possible to lookup players using their
@@ -1307,7 +1307,7 @@ class Iourt42Parser(Iourt41Parser):
         else:
             return False
 
-    def define_gametype(self, gametype_int):
+    def defineGameType(self, gametype_int):
         """
         Translate the gametype to a readable format (also for teamkill plugin!)
         """
