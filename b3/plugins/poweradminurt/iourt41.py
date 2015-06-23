@@ -121,6 +121,10 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
     _killhistory = []
     _hitlocations = {}
 
+    # Fenix: round based gametypes are not supposed to teambalance midround
+    _round_based_gametypes = ('ts', 'bm')
+    _pending_teambalance = False
+
     requiresParsers = ['iourt41']
 
     ####################################################################################################################
@@ -223,6 +227,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         self.verbose('registering events')
         self.registerEvent('EVT_GAME_ROUND_START', self.onGameRoundStart)
+        self.registerEvent('EVT_GAME_ROUND_END', self.onGameRoundEnd)
         self.registerEvent('EVT_GAME_EXIT', self.onGameExit)
         self.registerEvent('EVT_CLIENT_AUTH', self.onClientAuth)
         self.registerEvent('EVT_CLIENT_DISCONNECT', self.onClientDisconnect)
@@ -994,7 +999,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             self.debug('Starting Vote delay Timer: %s seconds' % tm)
             t1.start()
 
-    def onGameExit(self, event):
+    def onGameExit(self):
         """
         Handle EVT_GAME_EXIT.
         """
@@ -1773,14 +1778,18 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         Force teambalancing (all gametypes!)
         The player with the least time in a team will be switched.
         """
-        if self.teambalance():
-            if self._teamsbalanced:
-                client.message('^7Teams are already balanced')
-            else:
-                client.message('^7Teams are now balanced')
-                self._teamsbalanced = True
+        if self._getGameType() in self._round_based_gametypes:
+            self._pending_teambalance = True
+            client.message('^7Teams will be balanced at the end of this round')
         else:
-            client.message('^7Teambalancing failed, please try a again in a few moments')
+            if self.teambalance():
+                if self._teamsbalanced:
+                    client.message('^7Teams are already balanced')
+                else:
+                    client.message('^7Teams are now balanced')
+                    self._teamsbalanced = True
+            else:
+                client.message('^7Teambalancing failed, please try a again in a few moments')
 
     def cmd_pavote(self, data, client=None, cmd=None):
         """
@@ -2380,6 +2389,15 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 #   they return which clients are in the red or blue team
 #   not with numbers but characters (clientnum 0 = A, clientnum 1 = B, etc.
 
+    def onGameRoundEnd(self, _):
+        """
+        Handle EVT_GAME_ROUND_END.
+        """
+        if self.isEnabled() and self._getGameType() in self._round_based_gametypes and self._pending_teambalance:
+            self.debug('onRoundEnd: checking if teams needs to be balanced')
+            self._pending_teambalance = False
+            self.teambalance()
+
     def onTeamChange(self, event):
         """
         Handle EVT_CLIENT_TEAM_CHANGE.
@@ -2510,11 +2528,18 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         return self.console.game.gameType
 
     def teamcheck(self):
+        """
+        Teambalancer cronjob.
+        """
         gametype = self._getGameType()
         # run teambalance only if current gametype is in autobalance_gametypes list
         if not gametype in self._autobalance_gametypes_array:
-            self.debug('current gametype (%s) is not specified in autobalance_gametypes - '
-                       'teambalancer disabled',gametype)
+            self.debug('current gametype (%s) is not specified in autobalance_gametypes - teambalancer disabled', gametype)
+            return
+
+        if gametype in self._round_based_gametypes:
+            self.debug('round based gametype detected (%s) : delaying teambalance till round end', gametype)
+            self._pending_teambalance = True
             return
 
         if self._skill_balance_mode != 0:
@@ -2540,16 +2565,16 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             if abs(self._teamred - self._teamblue) <= self._teamdiff:
                 # teams are balanced
                 self._teamsbalanced = True
-                self.verbose('teambalance: teams are balanced, red: %s, blue: %s (diff: %s)' % (
-                             self._teamred, self._teamblue, self._teamdiff))
+                self.verbose('teambalance: teams are balanced, '
+                             'red: %s, blue: %s (diff: %s)' % (self._teamred, self._teamblue, self._teamdiff))
                 # done balancing
                 self._balancing = False
                 return True
             else:
                 #teams are not balanced
                 self._teamsbalanced = False
-                self.verbose('teambalance: teams are NOT balanced, red: %s, blue: %s (diff: %s)' % (
-                             self._teamred, self._teamblue, self._teamdiff))
+                self.verbose('teambalance: teams are NOT balanced, '
+                             'red: %s, blue: %s (diff: %s)' % (self._teamred, self._teamblue, self._teamdiff))
                 if self._announce == 1:
                     self.console.write('say Autobalancing Teams!')
                 elif self._announce == 2:
