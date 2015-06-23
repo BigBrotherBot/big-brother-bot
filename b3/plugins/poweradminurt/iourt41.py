@@ -16,6 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 import b3
+import b3.config
 import b3.events
 import b3.plugin
 import b3.cron
@@ -26,8 +27,8 @@ import re
 import os
 import random
 import string
-import ConfigParser
 
+from b3.functions import getCmd
 from . import __version__
 from . import __author__
 
@@ -122,14 +123,18 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
     requiresParsers = ['iourt41']
 
+    ####################################################################################################################
+    #                                                                                                                  #
+    #    STARTUP                                                                                                       #
+    #                                                                                                                  #
+    ####################################################################################################################
+
     def onStartup(self):
         """
         Initialize plugin settings
         """
         # get the admin plugin so we can register commands
         self._adminPlugin = self.console.getPlugin('admin')
-
-        # get some constants from the B3 parser
         
         try:
             self._hitlocations['HL_HEAD'] = self.console.HL_HEAD
@@ -137,15 +142,11 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             self._hitlocations['HL_HEAD'] = '0'
             self.warning("could not get HL_HEAD value from B3 parser: %s" % e)
 
-        self.debug("HL_HEAD is %s" % self._hitlocations['HL_HEAD'])
-
         try:
             self._hitlocations['HL_HELMET'] = self.console.HL_HELMET
         except AttributeError, e:
             self._hitlocations['HL_HELMET'] = '1'
             self.warning("could not get HL_HELMET value from B3 parser: %s" % e)
-
-        self.debug("HL_HELMET is %s" % self._hitlocations['HL_HELMET'])
 
         try:
             self._hitlocations['HL_TORSO'] = self.console.HL_TORSO
@@ -153,6 +154,8 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             self._hitlocations['HL_TORSO'] = '2'
             self.warning("could not get HL_TORSO value from B3 parser: %s" % e)
 
+        self.debug("HL_HEAD is %s" % self._hitlocations['HL_HEAD'])
+        self.debug("HL_HELMET is %s" % self._hitlocations['HL_HELMET'])
         self.debug("HL_TORSO is %s" % self._hitlocations['HL_TORSO'])
 
         # register our commands
@@ -164,7 +167,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                 if len(sp) == 2:
                     cmd, alias = sp
 
-                func = self.getCmd(cmd)
+                func = getCmd(self, cmd)
                 if func:
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
@@ -212,24 +215,24 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
         self.installCrontabs()
 
-        self.debug('Started')
+        self.debug('plugin started')
 
     def registerEvents(self):
         """
         Register events needed
         """
-        self.verbose('Registering events')
-        self.registerEvent('EVT_GAME_ROUND_START')
-        self.registerEvent('EVT_GAME_EXIT')
-        self.registerEvent('EVT_CLIENT_AUTH')
-        self.registerEvent('EVT_CLIENT_DISCONNECT')
-        self.registerEvent('EVT_CLIENT_TEAM_CHANGE')
-        self.registerEvent('EVT_CLIENT_DAMAGE')
-        self.registerEvent('EVT_CLIENT_NAME_CHANGE')
-        self.registerEvent('EVT_CLIENT_KILL')
-        self.registerEvent('EVT_CLIENT_KILL_TEAM')
-        self.registerEvent('EVT_CLIENT_ACTION')
-        self.registerEvent('EVT_GAME_MAP_CHANGE')
+        self.verbose('registering events')
+        self.registerEvent('EVT_GAME_ROUND_START', self.onGameRoundStart)
+        self.registerEvent('EVT_GAME_EXIT', self.onGameExit)
+        self.registerEvent('EVT_CLIENT_AUTH', self.onClientAuth)
+        self.registerEvent('EVT_CLIENT_DISCONNECT', self.onClientDisconnect)
+        self.registerEvent('EVT_CLIENT_TEAM_CHANGE', self.onTeamChange)
+        self.registerEvent('EVT_CLIENT_DAMAGE', self.headshotcounter)
+        self.registerEvent('EVT_CLIENT_NAME_CHANGE', self.onNameChange)
+        self.registerEvent('EVT_CLIENT_KILL', self.onKill)
+        self.registerEvent('EVT_CLIENT_KILL_TEAM', self.onKillTeam)
+        self.registerEvent('EVT_CLIENT_ACTION', self.onAction)
+        self.registerEvent('EVT_GAME_MAP_CHANGE', self.onGameMapChange)
 
     def onLoadConfig(self):
         """
@@ -254,11 +257,11 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         try:
             self._ninterval = self.config.getint('namechecker', 'ninterval')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find namechecker/ninterval in config file, using default: %s' % self._ninterval)
+        except b3.config.NoOptionError:
+            self.warning('could not find namechecker/ninterval in config file, using default: %s' % self._ninterval)
         except ValueError, e:
-            self.error('Could not load namechecker/ninterval config value: %s' % e)
-            self.debug('Using default value (%s) for namechecker/ninterval' % self._ninterval)
+            self.error('could not load namechecker/ninterval config value: %s' % e)
+            self.debug('using default value (%s) for namechecker/ninterval' % self._ninterval)
 
         # clamp name checker interval
         if self._ninterval > 59:
@@ -266,47 +269,47 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
         try:
             self._checkdupes = self.config.getboolean('namechecker', 'checkdupes')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find namechecker/checkdupes in config file, using default: %s' % self._checkdupes)
+        except b3.config.NoOptionError:
+            self.warning('could not find namechecker/checkdupes in config file, using default: %s' % self._checkdupes)
         except ValueError, e:
-            self.error('Could not load namechecker/checkdupes config value: %s' % e)
-            self.debug('Using default value (%s) for namechecker/checkdupes' % self._checkdupes)
+            self.error('could not load namechecker/checkdupes config value: %s' % e)
+            self.debug('using default value (%s) for namechecker/checkdupes' % self._checkdupes)
 
         try:
             self._checkunknown = self.config.getboolean('namechecker', 'checkunknown')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find namechecker/checkunknown in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find namechecker/checkunknown in config file, using default: %s' %
                          self._checkunknown)
         except ValueError, e:
-            self.error('Could not load namechecker/checkunknown config value: %s' % e)
-            self.debug('Using default value (%s) for namechecker/checkunknown' % self._checkunknown)
+            self.error('could not load namechecker/checkunknown config value: %s' % e)
+            self.debug('using default value (%s) for namechecker/checkunknown' % self._checkunknown)
 
         try:
             self._checkbadnames = self.config.getboolean('namechecker', 'checkbadnames')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find namechecker/checkbadnames in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find namechecker/checkbadnames in config file, using default: %s' %
                          self._checkbadnames)
         except ValueError, e:
-            self.error('Could not load namechecker/checkbadnames config value: %s' % e)
-            self.debug('Using default value (%s) for namechecker/checkbadnames' % self._checkbadnames)
+            self.error('could not load namechecker/checkbadnames config value: %s' % e)
+            self.debug('using default value (%s) for namechecker/checkbadnames' % self._checkbadnames)
 
         try:
             self._checkchanges = self.config.getboolean('namechecker', 'checkchanges')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find namechecker/checkchanges in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find namechecker/checkchanges in config file, using default: %s' %
                          self._checkchanges)
         except ValueError, e:
-            self.error('Could not load namechecker/checkchanges config value: %s' % e)
-            self.debug('Using default value (%s) for namechecker/checkchanges' % self._checkchanges)
+            self.error('could not load namechecker/checkchanges config value: %s' % e)
+            self.debug('using default value (%s) for namechecker/checkchanges' % self._checkchanges)
 
         try:
             self._checkallowedchanges = self.config.getint('namechecker', 'checkallowedchanges')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find namechecker/checkallowedchanges in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find namechecker/checkallowedchanges in config file, using default: %s' %
                          self._checkallowedchanges)
         except ValueError, e:
-            self.error('Could not load namechecker/checkallowedchanges config value: %s' % e)
-            self.debug('Using default value (%s) for namechecker/checkallowedchanges' % self._checkallowedchanges)
+            self.error('could not load namechecker/checkallowedchanges config value: %s' % e)
+            self.debug('using default value (%s) for namechecker/checkallowedchanges' % self._checkallowedchanges)
 
         self.debug('Name checker interval: %s' % self._ninterval)
         self.debug('Check bad names: %s' % self._checkbadnames)
@@ -321,11 +324,11 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         try:
             self._tinterval = self.config.getint('teambalancer', 'tinterval')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find teambalancer/tinterval in config file, using default: %s' % self._tinterval)
+        except b3.config.NoOptionError:
+            self.warning('could not find teambalancer/tinterval in config file, using default: %s' % self._tinterval)
         except ValueError, e:
-            self.error('Could not load teambalancer/tinterval config value: %s' % e)
-            self.debug('Using default value (%s) for teambalancer/tinterval' % self._tinterval)
+            self.error('could not load teambalancer/tinterval config value: %s' % e)
+            self.debug('using default value (%s) for teambalancer/tinterval' % self._tinterval)
 
         # clamp team balancer interval
         if self._tinterval > 59:
@@ -333,12 +336,12 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
         try:
             self._teamdiff = self.config.getint('teambalancer', 'teamdifference')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find teambalancer/teamdifference in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find teambalancer/teamdifference in config file, using default: %s' %
                          self._teamdiff)
         except ValueError, e:
-            self.error('Could not load teambalancer/teamdifference config value: %s' % e)
-            self.debug('Using default value (%s) for teambalancer/teamdifference' % self._teamdiff)
+            self.error('could not load teambalancer/teamdifference config value: %s' % e)
+            self.debug('using default value (%s) for teambalancer/teamdifference' % self._teamdiff)
 
         # set a minimum/maximum teamdifference
         if self._teamdiff < 1:
@@ -348,37 +351,37 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
         try:
             self._tmaxlevel = self.config.getint('teambalancer', 'maxlevel')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find teambalancer/maxlevel in config file, using default: %s' % self._tmaxlevel)
+        except b3.config.NoOptionError:
+            self.warning('could not find teambalancer/maxlevel in config file, using default: %s' % self._tmaxlevel)
         except ValueError, e:
-            self.error('Could not load teambalancer/maxlevel config value: %s' % e)
-            self.debug('Using default value (%s) for teambalancer/maxlevel' % self._tmaxlevel)
+            self.error('could not load teambalancer/maxlevel config value: %s' % e)
+            self.debug('using default value (%s) for teambalancer/maxlevel' % self._tmaxlevel)
 
         try:
             self._announce = self.config.getint('teambalancer', 'announce')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find teambalancer/announce in config file, using default: %s' % self._announce)
+        except b3.config.NoOptionError:
+            self.warning('could not find teambalancer/announce in config file, using default: %s' % self._announce)
         except ValueError, e:
-            self.error('Could not load teambalancer/announce config value: %s' % e)
-            self.debug('Using default value (%s) for teambalancer/announce' % self._announce)
+            self.error('could not load teambalancer/announce config value: %s' % e)
+            self.debug('using default value (%s) for teambalancer/announce' % self._announce)
 
         try:
             # 10/21/2008 - 1.4.0b9 - mindriot
             self._team_change_force_balance_enable = self.config.getboolean('teambalancer',
                                                                             'team_change_force_balance_enable')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find teambalancer/team_change_force_balance_enable in config file, \
+        except b3.config.NoOptionError:
+            self.warning('could not find teambalancer/team_change_force_balance_enable in config file, \
                           using default: %s' % self._team_change_force_balance_enable)
         except ValueError, e:
-            self.error('Could not load teambalancer/team_change_force_balance_enable config value: %s' % e)
-            self.debug('Using default value (%s) for teambalancer/team_change_force_balance_enable' %
+            self.error('could not load teambalancer/team_change_force_balance_enable config value: %s' % e)
+            self.debug('using default value (%s) for teambalancer/team_change_force_balance_enable' %
                        self._team_change_force_balance_enable)
 
         try:
             # 10/22/2008 - 1.4.0b10 - mindriot
             self._autobalance_gametypes = self.config.get('teambalancer', 'autobalance_gametypes')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find teambalancer/autobalance_gametypes in config file, '
+        except b3.config.NoOptionError:
+            self.warning('could not find teambalancer/autobalance_gametypes in config file, '
                          'using default: %s' % self._autobalance_gametypes)
 
         self._autobalance_gametypes = self._autobalance_gametypes.lower()
@@ -386,20 +389,20 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
         try:
             self._teamLocksPermanent = self.config.getboolean('teambalancer', 'teamLocksPermanent')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find teambalancer/teamLocksPermanent in config file, '
+        except b3.config.NoOptionError:
+            self.warning('could not find teambalancer/teamLocksPermanent in config file, '
                          'using default: %s' % self._teamLocksPermanent)
         except ValueError, e:
-            self.error('Could not load teambalancer/teamLocksPermanent config value: %s' % e)
-            self.debug('Using default value (%s) for teambalancer/teamLocksPermanent' % self._teamLocksPermanent)
+            self.error('could not load teambalancer/teamLocksPermanent config value: %s' % e)
+            self.debug('using default value (%s) for teambalancer/teamLocksPermanent' % self._teamLocksPermanent)
 
         try:
             self._ignorePlus = self.config.getint('teambalancer', 'timedelay')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find teambalancer/timedelay in config file, using default: %s' % self._ignorePlus)
+        except b3.config.NoOptionError:
+            self.warning('could not find teambalancer/timedelay in config file, using default: %s' % self._ignorePlus)
         except ValueError, e:
-            self.warning('Could not load teambalancer/timedelay config value: %s' % e)
-            self.debug('Using default value (%s) for teambalancer/timedelay' % self._ignorePlus)
+            self.warning('could not load teambalancer/timedelay config value: %s' % e)
+            self.debug('using default value (%s) for teambalancer/timedelay' % self._ignorePlus)
 
         self.debug('Teambalance interval: %s' % self._tinterval)
         self.debug('Teambalance difference: %s' % self._teamdiff)
@@ -416,11 +419,11 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         try:
             self._skinterval = self.config.getint('skillbalancer', 'interval')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find skillbalancer/interval in config file, using default: %s' % self._skinterval)
+        except b3.config.NoOptionError:
+            self.warning('could not find skillbalancer/interval in config file, using default: %s' % self._skinterval)
         except ValueError, e:
-            self.error('Could not load skillbalancer/interval config value: %s' % e)
-            self.debug('Using default value (%s) for skillbalancer/interval' % self._skinterval)
+            self.error('could not load skillbalancer/interval config value: %s' % e)
+            self.debug('using default value (%s) for skillbalancer/interval' % self._skinterval)
 
         # clamp skill balancer interval
         if self._skinterval > 59:
@@ -428,11 +431,11 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
         try:
             self._skilldiff = self.config.getfloat('skillbalancer', 'difference')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find skillbalancer/difference in config file, using default: %s' % self._skilldiff)
+        except b3.config.NoOptionError:
+            self.warning('could not find skillbalancer/difference in config file, using default: %s' % self._skilldiff)
         except ValueError, e:
-            self.error('Could not load skillbalancer/difference config value: %s' % e)
-            self.debug('Using default value (%s) for skillbalancer/difference' % self._skilldiff)
+            self.error('could not load skillbalancer/difference config value: %s' % e)
+            self.debug('using default value (%s) for skillbalancer/difference' % self._skilldiff)
 
         # clamp skill difference
         if self._skilldiff < 0.1:
@@ -442,21 +445,21 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
         try:
             self._skill_balance_mode = self.config.getint('skillbalancer', 'mode')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find skillbalancer/mode in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find skillbalancer/mode in config file, using default: %s' %
                          self._skill_balance_mode)
         except ValueError, e:
-            self.error('Could not load skillbalancer/mode config value: %s' % e)
-            self.debug('Using default value (%s) for skillbalancer/mode' % self._skill_balance_mode)
+            self.error('could not load skillbalancer/mode config value: %s' % e)
+            self.debug('using default value (%s) for skillbalancer/mode' % self._skill_balance_mode)
 
         try:
             self._minbalinterval = self.config.getint('skillbalancer', 'min_bal_interval')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find skillbalancer/min_bal_interval in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find skillbalancer/min_bal_interval in config file, using default: %s' %
                          self._minbalinterval)
         except ValueError, e:
-            self.warning('Could not load skillbalancer/min_bal_interval config value: %s' % e)
-            self.debug('Using default value (%s) for skillbalancer/min_bal_interval' % self._minbalinterval)
+            self.warning('could not load skillbalancer/min_bal_interval config value: %s' % e)
+            self.debug('using default value (%s) for skillbalancer/min_bal_interval' % self._minbalinterval)
 
         self.debug('Skillbalance interval: %s' % self._skinterval)
         self.debug('Skillbalance difference: %s' % self._skilldiff)
@@ -469,11 +472,11 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         try:
             self._votedelay = self.config.getint('votedelay', 'votedelay')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find votedelay/votedelay in config file, using default: %s' % self._votedelay)
+        except b3.config.NoOptionError:
+            self.warning('could not find votedelay/votedelay in config file, using default: %s' % self._votedelay)
         except ValueError, e:
-            self.warning('Could not load votedelay/votedelay config value: %s' % e)
-            self.debug('Using default value (%s) for votedelay/votedelay' % self._votedelay)
+            self.warning('could not load votedelay/votedelay config value: %s' % e)
+            self.debug('using default value (%s) for votedelay/votedelay' % self._votedelay)
 
         # set a max delay, setting it larger than timelimit would be foolish
         timelimit = self.console.getCvar('timelimit').getInt()
@@ -493,43 +496,43 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         try:
             self._sinterval = self.config.getint('speccheck', 'sinterval')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find speccheck/sinterval in config file, using default: %s' % self._sinterval)
+        except b3.config.NoOptionError:
+            self.warning('could not find speccheck/sinterval in config file, using default: %s' % self._sinterval)
         except ValueError, e:
-            self.error('Could not load speccheck/sinterval config value: %s' % e)
-            self.debug('Using default value (%s) for speccheck/sinterval' % self._sinterval)
+            self.error('could not load speccheck/sinterval config value: %s' % e)
+            self.debug('using default value (%s) for speccheck/sinterval' % self._sinterval)
 
         try:
             self._smaxspectime = self.config.getint('speccheck', 'maxspectime')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find speccheck/maxspectime in config file, using default: %s' % self._smaxspectime)
+        except b3.config.NoOptionError:
+            self.warning('could not find speccheck/maxspectime in config file, using default: %s' % self._smaxspectime)
         except ValueError, e:
-            self.error('Could not load speccheck/maxspectime e config value: %s' % e)
-            self.debug('Using default value (%s) for speccheck/maxspectime ' % self._smaxspectime)
+            self.error('could not load speccheck/maxspectime e config value: %s' % e)
+            self.debug('using default value (%s) for speccheck/maxspectime ' % self._smaxspectime)
 
         try:
             # loading spec max level configuration value
             self._smaxlevel = self.config.getint('speccheck', 'maxlevel')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find speccheck/maxlevel in config file, using default: %s' % self._smaxlevel)
+        except b3.config.NoOptionError:
+            self.warning('could not find speccheck/maxlevel in config file, using default: %s' % self._smaxlevel)
         except ValueError, e:
-            self.error('Could not load speccheck/maxlevel config value: %s' % e)
-            self.debug('Using default value (%s) for speccheck/maxlevel' % self._smaxlevel)
+            self.error('could not load speccheck/maxlevel config value: %s' % e)
+            self.debug('using default value (%s) for speccheck/maxlevel' % self._smaxlevel)
 
         try:
             self._smaxplayers = self.config.getint('speccheck', 'maxplayers')
-        except (ConfigParser.NoOptionError, ValueError), e:
-            if isinstance(e, ConfigParser.NoOptionError):
-                self.warning('Could not find speccheck/maxplayers in config file')
+        except (b3.config.NoOptionError, ValueError), e:
+            if isinstance(e, b3.config.NoOptionError):
+                self.warning('could not find speccheck/maxplayers in config file')
             elif isinstance(e, ValueError):
-                self.error('Could not load speccheck/maxplayers config value: %s' % e)
+                self.error('could not load speccheck/maxplayers config value: %s' % e)
 
             # load default value according to server configuration
             maxclients = self.console.getCvar('sv_maxclients').getInt()
             pvtclients = self.console.getCvar('sv_privateClients').getInt()
             self._smaxplayers = maxclients - pvtclients
-            self.debug('using default server value (sv_maxclients - sv_privateClients = %s) for \
-                        speccheck/maxplayers' % self._smaxplayers)
+            self.debug('using default server value (sv_maxclients - sv_privateClients = %s) for '
+                       'speccheck/maxplayers' % self._smaxplayers)
 
         self.debug('Speccheck interval: %s' % self._sinterval)
         self.debug('Max spec time: %s' % self._smaxspectime)
@@ -542,20 +545,20 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         try:
             self._moon_on_gravity = self.config.getint('moonmode', 'gravity_on')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find moonmode/gravity_on in config file, using default: %s' % self._moon_on_gravity)
+        except b3.config.NoOptionError:
+            self.warning('could not find moonmode/gravity_on in config file, using default: %s' % self._moon_on_gravity)
         except ValueError, e:
-            self.error('Could not load moonmode/gravity_on config value: %s' % e)
-            self.debug('Using default value (%s) for moonmode/gravity_on' % self._moon_on_gravity)
+            self.error('could not load moonmode/gravity_on config value: %s' % e)
+            self.debug('using default value (%s) for moonmode/gravity_on' % self._moon_on_gravity)
 
         try:
             self._moon_off_gravity = self.config.getint('moonmode', 'gravity_off')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find moonmode/gravity_off in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find moonmode/gravity_off in config file, using default: %s' %
                          self._moon_off_gravity)
         except ValueError, e:
-            self.error('Could not load moonmode/gravity_off config value: %s' % e)
-            self.debug('Using default value (%s) for moonmode/gravity_off' % self._moon_off_gravity)
+            self.error('could not load moonmode/gravity_off config value: %s' % e)
+            self.debug('using default value (%s) for moonmode/gravity_off' % self._moon_off_gravity)
 
         self.debug('Moon ON gravity: %s' % self._moon_on_gravity)
         self.debug('Moon OFF gravity: %s' % self._moon_off_gravity)
@@ -566,26 +569,25 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         try:
             self._randnum = self.config.getint('publicmode', 'randnum')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find publicmode/randnum in config file, using default: %s' % self._randnum)
+        except b3.config.NoOptionError:
+            self.warning('could not find publicmode/randnum in config file, using default: %s' % self._randnum)
         except ValueError, e:
-            self.error('Could not load publicmode/randnum config value: %s' % e)
-            self.debug('Using default value (%s) for publicmode/randnum' % self._randnum)
+            self.error('could not load publicmode/randnum config value: %s' % e)
+            self.debug('using default value (%s) for publicmode/randnum' % self._randnum)
 
         try:
 
             try:
                 padic = self.config.getboolean('publicmode', 'usedic')
-            except ConfigParser.NoOptionError:
+            except b3.config.NoOptionError:
                 padic = False
-                self.warning('Could not find publicmode/usedic in config file, using default: %s' % padic)
+                self.warning('could not find publicmode/usedic in config file, using default: %s' % padic)
             except ValueError, e:
                 padic = False
-                self.error('Could not load publicmode/usedic config value: %s' % e)
-                self.debug('Using default value (%s) for publicmode/usedic' % padic)
+                self.error('could not load publicmode/usedic config value: %s' % e)
+                self.debug('using default value (%s) for publicmode/usedic' % padic)
 
             if padic:
-
                 padicfile = self.config.getpath('publicmode', 'dicfile')
                 self.debug('trying to use password dictionnary %s' % padicfile)
                 if os.path.exists(padicfile):
@@ -602,12 +604,11 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                             self._pass_lines = text.splitlines()
 
                     self.debug('using dictionary password')
-
                 else:
                     self.warning('dictionary is enabled but the file doesn\'t exists: switching to default')
 
         except Exception, e:
-            self.error('Could not load dictionary config: %s' % e)
+            self.error('could not load dictionary config: %s' % e)
             self.debug('using default dictionary')
 
         try:
@@ -616,7 +617,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             if self._papublic_password is None:
                 self.warning('could not setup papublic command because there is no password set in config')
 
-        except ConfigParser.NoOptionError:
+        except b3.config.NoOptionError:
             self.debug('could not setup papublic command because there is no password set in config')
 
         self.debug('papublic password set to : %s' % self._papublic_password)
@@ -628,18 +629,15 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         try:
             # load a list of plugins to be disabled/enabled upon match mode enabled/disabled
             self.debug('matchmode/plugins_disable : %s' % self.config.get('matchmode', 'plugins_disable'))
-            self._match_plugin_disable = [x for x in re.split('\W+',
-                                                              self.config.get('matchmode', 'plugins_disable')) if x]
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find matchmode/plugins_disable in config file')
+            self._match_plugin_disable = [x for x in re.split('\W+', self.config.get('matchmode', 'plugins_disable')) if x]
+        except b3.config.NoOptionError:
+            self.warning('could not find matchmode/plugins_disable in config file')
 
         try:
-
             # load all the configuration files into a dict
             for key, value in self.config.items('matchmode_configs'):
                 self._gameconfig[key] = value
-
-        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError, KeyError), e:
+        except (b3.config.NoSectionError, b3.config.NoOptionError, KeyError), e:
             self.warning('could not read matchmode configs: %s' % e)
 
     def loadBotSupport(self):
@@ -648,19 +646,19 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         try:
             self._botenable = self.config.getboolean('botsupport', 'bot_enable')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find botsupport/bot_enable in config file, using default: %s' % self._botenable)
+        except b3.config.NoOptionError:
+            self.warning('could not find botsupport/bot_enable in config file, using default: %s' % self._botenable)
         except ValueError, e:
-            self.error('Could not load botsupport/bot_enable config value: %s' % e)
-            self.debug('Using default value (%s) for botsupport/bot_enable' % self._botenable)
+            self.error('could not load botsupport/bot_enable config value: %s' % e)
+            self.debug('using default value (%s) for botsupport/bot_enable' % self._botenable)
 
         try:
             self._botskill = self.config.getint('botsupport', 'bot_skill')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find botsupport/bot_skill in config file, using default: %s' % self._botskill)
+        except b3.config.NoOptionError:
+            self.warning('could not find botsupport/bot_skill in config file, using default: %s' % self._botskill)
         except ValueError, e:
-            self.error('Could not load botsupport/bot_skill config value: %s' % e)
-            self.debug('Using default value (%s) for botsupport/bot_skill' % self._botskill)
+            self.error('could not load botsupport/bot_skill config value: %s' % e)
+            self.debug('using default value (%s) for botsupport/bot_skill' % self._botskill)
 
         # clamp botskill value
         if self._botskill > 5:
@@ -670,12 +668,12 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
         try:
             self._botminplayers = self.config.getint('botsupport', 'bot_minplayers')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find botsupport/bot_minplayers in config file, '
+        except b3.config.NoOptionError:
+            self.warning('could not find botsupport/bot_minplayers in config file, '
                          'using default: %s' % self._botminplayers)
         except ValueError, e:
-            self.error('Could not load botsupport/bot_minplayers config value: %s' % e)
-            self.debug('Using default value (%s) for botsupport/bot_minplayers' % self._botminplayers)
+            self.error('could not load botsupport/bot_minplayers config value: %s' % e)
+            self.debug('using default value (%s) for botsupport/bot_minplayers' % self._botminplayers)
 
         # clamp botminplayers value
         if self._botminplayers > 16:
@@ -687,7 +685,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             maps = self.config.get('botsupport', 'bot_maps')
             maps = maps.split(' ')
             self._botmaps = maps
-        except ConfigParser.NoOptionError:
+        except b3.config.NoOptionError:
             self.debug('no map specified for botsupport...')
 
         if self._botenable:
@@ -711,93 +709,93 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         try:
             self._hsenable = self.config.getboolean('headshotcounter', 'hs_enable')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find headshotcounter/hs_enable in config file, using default: %s' % self._hsenable)
+        except b3.config.NoOptionError:
+            self.warning('could not find headshotcounter/hs_enable in config file, using default: %s' % self._hsenable)
         except ValueError, e:
-            self.error('Could not load headshotcounter/hs_enable config value: %s' % e)
-            self.debug('Using default value (%s) for headshotcounter/hs_enable' % self._hsenable)
+            self.error('could not load headshotcounter/hs_enable config value: %s' % e)
+            self.debug('using default value (%s) for headshotcounter/hs_enable' % self._hsenable)
 
         try:
             self._hsresetvars = self.config.get('headshotcounter', 'reset_vars')
             if not self._hsresetvars in ['no', 'map', 'round']:
                 raise KeyError('configuration setting not valid')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find headshotcounter/reset_vars in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find headshotcounter/reset_vars in config file, using default: %s' %
                          self._hsresetvars)
         except KeyError, e:
-            self.error('Could not load headshotcounter/reset_vars config value: %s' % e)
-            self.debug('Using default value (%s) for headshotcounter/reset_vars' % self._hsresetvars)
+            self.error('could not load headshotcounter/reset_vars config value: %s' % e)
+            self.debug('using default value (%s) for headshotcounter/reset_vars' % self._hsresetvars)
 
         try:
             self._hsbroadcast = self.config.getboolean('headshotcounter', 'broadcast')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find headshotcounter/broadcast in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find headshotcounter/broadcast in config file, using default: %s' %
                          self._hsbroadcast)
         except ValueError, e:
-            self.error('Could not load headshotcounter/broadcast config value: %s' % e)
-            self.debug('Using default value (%s) for headshotcounter/broadcast' % self._hsbroadcast)
+            self.error('could not load headshotcounter/broadcast config value: %s' % e)
+            self.debug('using default value (%s) for headshotcounter/broadcast' % self._hsbroadcast)
 
         try:
             self._hsall = self.config.getboolean('headshotcounter', 'announce_all')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find headshotcounter/announce_all in config file, using default: %s' % self._hsall)
+        except b3.config.NoOptionError:
+            self.warning('could not find headshotcounter/announce_all in config file, using default: %s' % self._hsall)
         except ValueError, e:
-            self.error('Could not load headshotcounter/announce_all config value: %s' % e)
-            self.debug('Using default value (%s) for headshotcounter/announce_all' % self._hsall)
+            self.error('could not load headshotcounter/announce_all config value: %s' % e)
+            self.debug('using default value (%s) for headshotcounter/announce_all' % self._hsall)
 
         try:
             self._hspercent = self.config.getboolean('headshotcounter', 'announce_percentages')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find headshotcounter/announce_percentages in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find headshotcounter/announce_percentages in config file, using default: %s' %
                          self._hspercent)
         except ValueError, e:
-            self.error('Could not load headshotcounter/announce_percentages config value: %s' % e)
-            self.debug('Using default value (%s) for headshotcounter/announce_percentages' % self._hspercent)
+            self.error('could not load headshotcounter/announce_percentages config value: %s' % e)
+            self.debug('using default value (%s) for headshotcounter/announce_percentages' % self._hspercent)
 
         try:
             self._hspercentmin = self.config.getint('headshotcounter', 'percent_min')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find headshotcounter/percent_min in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find headshotcounter/percent_min in config file, using default: %s' %
                          self._hspercentmin)
         except ValueError, e:
-            self.error('Could not load headshotcounter/percent_min config value: %s' % e)
-            self.debug('Using default value (%s) for headshotcounter/percent_min' % self._hspercentmin)
+            self.error('could not load headshotcounter/percent_min config value: %s' % e)
+            self.debug('using default value (%s) for headshotcounter/percent_min' % self._hspercentmin)
 
         try:
             self._hswarnhelmet = self.config.getboolean('headshotcounter', 'warn_helmet')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find headshotcounter/warn_helmet in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find headshotcounter/warn_helmet in config file, using default: %s' %
                          self._hswarnhelmet)
         except ValueError, e:
-            self.error('Could not load headshotcounter/warn_helmet config value: %s' % e)
-            self.debug('Using default value (%s) for headshotcounter/warn_helmet' % self._hswarnhelmet)
+            self.error('could not load headshotcounter/warn_helmet config value: %s' % e)
+            self.debug('using default value (%s) for headshotcounter/warn_helmet' % self._hswarnhelmet)
 
         try:
             self._hswarnhelmetnr = self.config.getint('headshotcounter', 'warn_helmet_nr')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find headshotcounter/warn_helmet_nr in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find headshotcounter/warn_helmet_nr in config file, using default: %s' %
                          self._hswarnhelmetnr)
         except ValueError, e:
-            self.error('Could not load headshotcounter/warn_helmet_nr config value: %s' % e)
-            self.debug('Using default value (%s) for headshotcounter/warn_helmet_nr' % self._hswarnhelmetnr)
+            self.error('could not load headshotcounter/warn_helmet_nr config value: %s' % e)
+            self.debug('using default value (%s) for headshotcounter/warn_helmet_nr' % self._hswarnhelmetnr)
 
         try:
             self._hswarnkevlar = self.config.getboolean('headshotcounter', 'warn_kevlar')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find headshotcounter/warn_kevlar in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find headshotcounter/warn_kevlar in config file, using default: %s' %
                          self._hswarnkevlar)
         except ValueError, e:
-            self.error('Could not load headshotcounter/warn_kevlar config value: %s' % e)
-            self.debug('Using default value (%s) for headshotcounter/warn_kevlar' % self._hswarnkevlar)
+            self.error('could not load headshotcounter/warn_kevlar config value: %s' % e)
+            self.debug('using default value (%s) for headshotcounter/warn_kevlar' % self._hswarnkevlar)
 
         try:
             self._hswarnkevlarnr = self.config.getint('headshotcounter', 'warn_kevlar_nr')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find headshotcounter/warn_kevlar_nr in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find headshotcounter/warn_kevlar_nr in config file, using default: %s' %
                          self._hswarnkevlarnr)
         except ValueError, e:
-            self.error('Could not load headshotcounter/warn_kevlar_nr config value: %s' % e)
-            self.debug('Using default value (%s) for headshotcounter/warn_kevlar_nr' % self._hswarnkevlarnr)
+            self.error('could not load headshotcounter/warn_kevlar_nr config value: %s' % e)
+            self.debug('using default value (%s) for headshotcounter/warn_kevlar_nr' % self._hswarnkevlarnr)
 
         # making shure loghits is enabled to count headshots
         if self._hsenable:
@@ -819,60 +817,60 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         try:
             self._rmenable = self.config.getboolean('rotationmanager', 'rm_enable')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find rotationmanager/rm_enable in config file, using default: %s' % self._rmenable)
+        except b3.config.NoOptionError:
+            self.warning('could not find rotationmanager/rm_enable in config file, using default: %s' % self._rmenable)
         except ValueError, e:
-            self.error('Could not load rotationmanager/rm_enable config value: %s' % e)
-            self.debug('Using default value (%s) for rotationmanager/rm_enable' % self._rmenable)
+            self.error('could not load rotationmanager/rm_enable config value: %s' % e)
+            self.debug('using default value (%s) for rotationmanager/rm_enable' % self._rmenable)
 
         if self._rmenable:
 
             try:
                 self._switchcount1 = self.config.getint('rotationmanager', 'switchcount1')
-            except ConfigParser.NoOptionError:
-                self.warning('Could not find rotationmanager/switchcount1 in config file, using default: %s' %
+            except b3.config.NoOptionError:
+                self.warning('could not find rotationmanager/switchcount1 in config file, using default: %s' %
                              self._switchcount1)
             except ValueError, e:
-                self.error('Could not load rotationmanager/switchcount1 config value: %s' % e)
-                self.debug('Using default value (%s) for rotationmanager/switchcount1' % self._switchcount1)
+                self.error('could not load rotationmanager/switchcount1 config value: %s' % e)
+                self.debug('using default value (%s) for rotationmanager/switchcount1' % self._switchcount1)
 
             try:
                 self._switchcount2 = self.config.getint('rotationmanager', 'switchcount3')
-            except ConfigParser.NoOptionError:
-                self.warning('Could not find rotationmanager/switchcount2 in config file, using default: %s' %
+            except b3.config.NoOptionError:
+                self.warning('could not find rotationmanager/switchcount2 in config file, using default: %s' %
                              self._switchcount2)
             except ValueError, e:
-                self.error('Could not load rotationmanager/switchcount2 config value: %s' % e)
-                self.debug('Using default value (%s) for rotationmanager/switchcount2' % self._switchcount2)
+                self.error('could not load rotationmanager/switchcount2 config value: %s' % e)
+                self.debug('using default value (%s) for rotationmanager/switchcount2' % self._switchcount2)
 
             try:
                 self._hysteresis = self.config.getint('rotationmanager', 'hysteresis')
-            except ConfigParser.NoOptionError:
-                self.warning('Could not find rotationmanager/hysteresis in config file, using default: %s' %
+            except b3.config.NoOptionError:
+                self.warning('could not find rotationmanager/hysteresis in config file, using default: %s' %
                              self._hysteresis)
             except ValueError, e:
-                self.error('Could not load rotationmanager/hysteresis config value: %s' % e)
-                self.debug('Using default value (%s) for rotationmanager/hysteresis' % self._hysteresis)
+                self.error('could not load rotationmanager/hysteresis config value: %s' % e)
+                self.debug('using default value (%s) for rotationmanager/hysteresis' % self._hysteresis)
 
             try:
                 self._rotation_small = self.config.get('rotationmanager', 'smallrotation')
-            except ConfigParser.NoOptionError:
-                self.warning('Could not find rotationmanager/smallrotation in config file')
+            except b3.config.NoOptionError:
+                self.warning('could not find rotationmanager/smallrotation in config file')
 
             try:
                 self._rotation_medium = self.config.get('rotationmanager', 'mediumrotation')
-            except ConfigParser.NoOptionError:
-                self.warning('Could not find rotationmanager/mediumrotation in config file')
+            except b3.config.NoOptionError:
+                self.warning('could not find rotationmanager/mediumrotation in config file')
 
             try:
                 self._rotation_large = self.config.get('rotationmanager', 'largerotation')
-            except ConfigParser.NoOptionError:
-                self.warning('Could not find rotationmanager/largerotation in config file')
+            except b3.config.NoOptionError:
+                self.warning('could not find rotationmanager/largerotation in config file')
 
             try:
                 self._gamepath = self.config.get('rotationmanager', 'gamepath')
-            except ConfigParser.NoOptionError:
-                self.warning('Could not find rotationmanager/gamepath in config file')
+            except b3.config.NoOptionError:
+                self.warning('could not find rotationmanager/gamepath in config file')
 
             self.debug('Rotation Manager is enabled')
             self.debug('Switchcount 1: %s' % self._switchcount1)
@@ -891,21 +889,21 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         try:
             self._slapSafeLevel = self.config.getint('special', 'slap_safe_level')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find special/slap_safe_level in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find special/slap_safe_level in config file, using default: %s' %
                          self._slapSafeLevel)
         except ValueError, e:
-            self.error('Could not load special/slap_safe_level config value: %s' % e)
-            self.debug('Using default value (%s) for special/slap_safe_level' % self._slapSafeLevel)
+            self.error('could not load special/slap_safe_level config value: %s' % e)
+            self.debug('using default value (%s) for special/slap_safe_level' % self._slapSafeLevel)
 
         try:
             self._full_ident_level = self.config.getint('special', 'paident_full_level')
-        except ConfigParser.NoOptionError:
-            self.warning('Could not find special/paident_full_level in config file, using default: %s' %
+        except b3.config.NoOptionError:
+            self.warning('could not find special/paident_full_level in config file, using default: %s' %
                          self._full_ident_level)
         except ValueError, e:
-            self.error('Could not load special/paident_full_level config value: %s' % e)
-            self.debug('Using default value (%s) for special/paident_full_level' % self._full_ident_level)
+            self.error('could not load special/paident_full_level config value: %s' % e)
+            self.debug('using default value (%s) for special/paident_full_level' % self._full_ident_level)
 
     def installCrontabs(self):
         """
@@ -937,112 +935,105 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             self._skcronTab = b3.cron.PluginCronTab(self, self.skillcheck, 0, '*/%s' % self._skinterval)
             self.console.cron + self._skcronTab
 
-    def getCmd(self, cmd):
-        cmd = 'cmd_%s' % cmd
-        if hasattr(self, cmd):
-            func = getattr(self, cmd)
-            return func
+    ####################################################################################################################
+    #                                                                                                                  #
+    #    EVENTS                                                                                                        #
+    #                                                                                                                  #
+    ####################################################################################################################
 
-        return None
-
-    def onEvent(self, event):
+    def onClientDisconnect(self, _):
         """
-        Handle intercepted events
+        Handle EVT_CLIENT_DISCONNECT.
         """
-        if event.type == self.console.getEventID('EVT_CLIENT_DISCONNECT'):
-            if self._rmenable and self.console.time() > self._dontcount and self._mapchanged:
-                self._playercount -= 1
-                self.debug('PlayerCount: %s' % self._playercount)
-                self.adjustrotation(-1)
+        if self._rmenable and self.console.time() > self._dontcount and self._mapchanged:
+            self._playercount -= 1
+            self.debug('PlayerCount: %s' % self._playercount)
+            self.adjustrotation(-1)
 
-        elif event.type ==  self.console.getEventID('EVT_CLIENT_AUTH'):
-            if self._hsenable:
-                self.setupVars(event.client)
-            if self._rmenable and self.console.time() > self._dontcount and self._mapchanged:
-                self._playercount += 1
-                self.debug('PlayerCount: %s' % self._playercount)
-                self.adjustrotation(+1)
+    def onClientAuth(self, event):
+        """
+        Handle EVT_CLIENT_AUTH.
+        """
+        if self._hsenable:
+            self.setupVars(event.client)
+        if self._rmenable and self.console.time() > self._dontcount and self._mapchanged:
+            self._playercount += 1
+            self.debug('PlayerCount: %s' % self._playercount)
+            self.adjustrotation(+1)
 
-        elif event.type ==  self.console.getEventID('EVT_CLIENT_TEAM_CHANGE'):
-            self.onTeamChange(event.data, event.client)
+    def onGameRoundStart(self, _):
+        """
+        Handle EVT_GAME_ROUND_START.
+        """
+        self._forgetTeamContrib()
+        self._killhistory = []
+        self._lastbal = self.console.time()
 
-        elif event.type ==  self.console.getEventID('EVT_CLIENT_DAMAGE'):
-            self.headshotcounter(event.client, event.target, event.data)
+        # check for botsupport
+        if self._botenable:
+            self.botsdisable()
+            self.botsupport()
 
-        elif event.type ==  self.console.getEventID('EVT_GAME_EXIT'):
-            self._mapchanged = True
-            if self._botenable:
-                self.botsdisable()
+        # reset headshotcounter (per round) if applicable
+        if self._hsresetvars == 'round':
+            self.resetVars()
 
-            self.ignoreSet(self._ignorePlus)
+        # ignore teambalance checking for 1 minute
+        self.ignoreSet(self._ignorePlus)
+        self._teamred = 0
+        self._teamblue = 0
 
-            # reset headshotcounter (per map) if applicable
-            if self._hsresetvars == 'map':
-                self.resetVars()
+        # vote delay init
+        if self._votedelay > 0 and self.console.getCvar('g_allowvote').getInt() != 0:
+            # delay voting
+            data = 'off'
+            self.votedelay(data)
+            # re-enable voting
+            tm = self._votedelay * 60
+            t1 = threading.Timer(tm, self.votedelay)
+            self.debug('Starting Vote delay Timer: %s seconds' % tm)
+            t1.start()
 
-            # reset number of name changes per client
-            self.resetNameChanges()
-            if not self._teamLocksPermanent:
-                # release TeamLocks
-                self.resetTeamLocks()
+    def onGameExit(self, event):
+        """
+        Handle EVT_GAME_EXIT.
+        """
+        self._mapchanged = True
+        if self._botenable:
+            self.botsdisable()
 
-            # setup timer for recounting players
-            if self._rmenable:
-                tm = 60
-                self._dontcount = self.console.time() + tm
-                t2 = threading.Timer(tm, self.recountplayers)
-                self.debug('Starting RecountPlayers Timer: %s seconds' % tm)
-                t2.start()
+        self.ignoreSet(self._ignorePlus)
 
-        elif event.type ==  self.console.getEventID('EVT_GAME_ROUND_START'):
-            self._forgetTeamContrib()
-            self._killhistory = []
-            self._lastbal = self.console.time()
+        # reset headshotcounter (per map) if applicable
+        if self._hsresetvars == 'map':
+            self.resetVars()
 
-            # check for botsupport
-            if self._botenable:
-                self.botsdisable()
-                self.botsupport()
+        # reset number of name changes per client
+        self.resetNameChanges()
+        if not self._teamLocksPermanent:
+            # release TeamLocks
+            self.resetTeamLocks()
 
-            # reset headshotcounter (per round) if applicable
-            if self._hsresetvars == 'round':
-                self.resetVars()
+        # setup timer for recounting players
+        if self._rmenable:
+            tm = 60
+            self._dontcount = self.console.time() + tm
+            t2 = threading.Timer(tm, self.recountplayers)
+            self.debug('Starting RecountPlayers Timer: %s seconds' % tm)
+            t2.start()
 
-            # ignore teambalance checking for 1 minute
-            self.ignoreSet(self._ignorePlus)
-            self._teamred = 0
-            self._teamblue = 0
+    def onGameMapChange(self, _):
+        """
+        Handle EVT_GAME_MAP_CHANGE.
+        """
+        self._matchmode = self.console.getCvar('g_matchmode').getBoolean()
 
-            # vote delay init
-            if self._votedelay > 0 and self.console.getCvar('g_allowvote').getInt() != 0:
-                # delay voting
-                data = 'off'
-                self.votedelay(data)
-                # re-enable voting
-                tm = self._votedelay * 60
-                t1 = threading.Timer(tm, self.votedelay)
-                self.debug('Starting Vote delay Timer: %s seconds' % tm)
-                t1.start()
-
-        elif event.type ==  self.console.getEventID('EVT_CLIENT_NAME_CHANGE'):
-            self.onNameChange(event.data, event.client)
-
-        elif event.type ==  self.console.getEventID('EVT_CLIENT_KILL'):
-            self.onKill(event.client, event.target, int(event.data[0]))
-
-        elif event.type ==  self.console.getEventID('EVT_CLIENT_KILL_TEAM'):
-            self.onKillTeam(event.client, event.target, int(event.data[0]))
-
-        elif event.type ==  self.console.getEventID('EVT_CLIENT_ACTION'):
-            self.onAction(event.client, event.data)
-
-        elif event.type == self.console.getEventID('EVT_GAME_MAP_CHANGE'):
-            self._matchmode = self.console.getCvar('g_matchmode').getBoolean()
-
-        else:
-            self.dumpEvent(event)
-
-    def onKill(self, killer, victim, points):
+    def onKill(self, event):
+        """
+        Handle EVT_CLIENT_KILL.
+        """
+        killer = event.client
+        victim = event.target
         killer.var(self, 'kills', 0).value += 1
         victim.var(self, 'deaths', 0).value += 1
         now = self.console.time()
@@ -1050,18 +1041,20 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         victim.var(self, 'teamcontribhist', []).value.append((now, -1))
         self._killhistory.append((now, killer.team))
 
-    def onKillTeam(self, killer, victim, points):
-        killer.var(self, 'teamkills', 0).value += 1
+    def onKillTeam(self, event):
+        """
+        Handle EVT_CLIENT_KILL_TEA;.
+        """
+        event.client.var(self, 'teamkills', 0).value += 1
 
-    def onAction(self, client, actiontype):
-        if actiontype in ('flag_captured', 'flag_dropped', 'flag_returned', 'bomb_planted', 'bomb_defused'):
-            client.var(self, actiontype, 0).value += 1
-        if actiontype in ('team_CTF_redflag', 'team_CTF_blueflag'):
-            client.var(self, 'flag_taken', 0).value += 1
-
-    def dumpEvent(self, event):
-        self.debug('poweradminurt.dumpEvent -- Type %s, Client %s, Target %s, Data %s',
-                   event.type, event.client, event.target, event.data)
+    def onAction(self, event):
+        """
+        Handle EVT_CLIENT_ACTION.
+        """
+        if event.data in ('flag_captured', 'flag_dropped', 'flag_returned', 'bomb_planted', 'bomb_defused'):
+            event.client.var(self, event.data, 0).value += 1
+        if event.data in ('team_CTF_redflag', 'team_CTF_blueflag'):
+            event.client.var(self, 'flag_taken', 0).value += 1
 
     def _teamvar(self, client, var):
         """
@@ -1489,7 +1482,6 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         for c in old:
             if c.name not in newnames:
                 i += 1
-
         return i
 
     def skillcheck(self):
@@ -1501,18 +1493,17 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         # run skillbalancer only if current
         # gametype is in autobalance_gametypes list
         if not gametype in self._autobalance_gametypes_array:
-            self.debug('Current gametype (%s) is not specified in autobalance_gametypes - skillbalancer disabled',
-                       self.console.game.gameType)
-            return None
+            self.debug('current gametype (%s) is not specified in autobalance_gametypes - '
+                       'skillbalancer disabled', self.console.game.gameType)
+            return
 
         if self._skill_balance_mode == 0:
             # disabled
             return
 
         avgdiff, diff = self._getTeamScoreDiffForAdvise(minplayers=3)
-
         if avgdiff is None:
-            return None
+            return
 
         absdiff = abs(avgdiff)
         unbalanced = False
@@ -1536,8 +1527,6 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                 self.cmd_pabalance()
             if self._skill_balance_mode == 3:
                 self.cmd_paskuffle()
-
-        return None
 
     def _advise(self, avgdiff, mode):
         # mode 0: no advice
@@ -1779,14 +1768,12 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
         client.message("^3Successfully swapped %s and %s" % (client1.name, client2.name))
 
-
     def cmd_pateams(self, data, client, cmd=None):
         """
         Force teambalancing (all gametypes!)
         The player with the least time in a team will be switched.
         """
         if self.teambalance():
-
             if self._teamsbalanced:
                 client.message('^7Teams are already balanced')
             else:
@@ -1801,45 +1788,39 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         Setting vote on will set the vote back to the value when it was set off.
         """
         if not data:
-
             if client:
                 client.message('^7Invalid or missing data, try !help pavote')
             else:
                 self.debug('No data sent to cmd_pavote')
-
             return
 
-        else:
-
-            if data in ('on', 'off', 'reset'):
-                if client:
-                    client.message('^7Voting: ^1%s' % data)
-                else:
-                    self.debug('Voting: %s' % data)
+        if data.lower() in ('on', 'off', 'reset'):
+            if client:
+                client.message('^7Voting: ^1%s' % data)
             else:
+                self.debug('Voting: %s' % data)
+        else:
+            if client:
+                client.message('^7Invalid data, try !help pavote')
+            else:
+                self.debug('Invalid data sent to cmd_pavote')
+            return
 
-                if client:
-                    client.message('^7Invalid data, try !help pavote')
-                else:
-                    self.debug('Invalid data sent to cmd_pavote')
-
-                return
-
-        if data == 'off':
+        if data.lower() == 'off':
             curvalue = self.console.getCvar('g_allowvote').getInt()
             if curvalue != 0:
                 self._lastvote = curvalue
             self.console.setCvar('g_allowvote', '0')
-        elif data == 'on':
+        elif data.lower() == 'on':
             self.console.setCvar('g_allowvote', '%s' % self._lastvote)
-        elif data == 'reset':
+        elif data.lower() == 'reset':
             self.console.setCvar('g_allowvote', '%s' % self._origvote)
 
     def cmd_paversion(self, data, client, cmd=None):
         """
-        This command identifies PowerAdminUrt version and creator
+        This command identifies PowerAdminUrt version and creator.
         """
-        cmd.sayLoudOrPM(client, 'I am PowerAdminUrt version %s by %s' % (__version__, __author__))
+        cmd.sayLoudOrPM(client, 'I am PowerAdminUrt version ^2%s ^7by ^3%s' % (__version__, __author__))
 
     def cmd_paexec(self, data, client, cmd=None):
         """
@@ -2399,8 +2380,13 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 #   they return which clients are in the red or blue team
 #   not with numbers but characters (clientnum 0 = A, clientnum 1 = B, etc.
 
-    def onTeamChange(self, team, client):
-        #store the time of teamjoin for autobalancing purposes
+    def onTeamChange(self, event):
+        """
+        Handle EVT_CLIENT_TEAM_CHANGE.
+        """
+        client = event.client
+        team = event.data
+        # store the time of teamjoin for autobalancing purposes
         client.setvar(self, 'teamtime', self.console.time())
         self.verbose('client variable teamtime set to: %s' % client.var(self, 'teamtime').value)
         # remember current stats so we can tell how the player
@@ -2413,7 +2399,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                 self.console.write('forceteam %s %s' % (client.cid, forcedteam))
                 client.message('^1You are LOCKED! You are NOT allowed to switch!')
                 self.verbose('%s was locked and forced back to %s' % (client.name, forcedteam))
-                # Break out of this function, nothing more to do here
+            # break out of this function, nothing more to do here
             return None
 
         # 10/21/2008 - 1.4.0b9 - mindriot
@@ -2468,21 +2454,18 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
                         self.verbose('Applying Teamswitch penalties')
 
+                        self.console.queueEvent(self.console.getEvent('EVT_CLIENT_SUICIDE',
+                                                                      (100, 'penalty', 'body', 'Team_Switch_Penalty'),
+                                                                      client, client))
 
                         self.console.queueEvent(self.console.getEvent('EVT_CLIENT_SUICIDE',
                                                                       (100, 'penalty', 'body', 'Team_Switch_Penalty'),
-                                                                      client,
-                                                                      client))
-
-                        self.console.queueEvent(self.console.getEvent('EVT_CLIENT_SUICIDE',
-                                                                      (100, 'penalty', 'body', 'Team_Switch_Penalty'),
-                                                                      client,
-                                                                      client))
+                                                                      client, client))
 
                         plugin = self.console.getPlugin('xlrstats')
                         if plugin:
-                            client.message('Switching made teams unfair. Points where deducted from your stats \
-                                            as a penalty!')
+                            client.message('^7Switching made teams ^1UNFAIR^7! '
+                                           'Points where deducted from your stats as a penalty!')
 
                     if self._teamred > self._teamblue:
                         # join the blue team
@@ -2499,9 +2482,10 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         else:
             self.debug('onTeamChange DISABLED')
 
-        return None
-
     def countteams(self):
+        """
+        Count the amount of players in RED and BLUE team.
+        """
         try:
             self._teamred = len(self.console.getCvar('g_redteamlist').getString())
             self._teamblue = len(self.console.getCvar('g_blueteamlist').getString())
@@ -2527,13 +2511,11 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
     def teamcheck(self):
         gametype = self._getGameType()
-
-        # run teambalance only if current gametype
-        # is in autobalance_gametypes list
+        # run teambalance only if current gametype is in autobalance_gametypes list
         if not gametype in self._autobalance_gametypes_array:
-            self.debug('current gametype (%s) is not specified in autobalance_gametypes - teambalancer disabled',
-                       gametype)
-            return None
+            self.debug('current gametype (%s) is not specified in autobalance_gametypes - '
+                       'teambalancer disabled',gametype)
+            return
 
         if self._skill_balance_mode != 0:
             self.debug('skill balancer is active, not performing classic teamcheck')
@@ -2541,9 +2523,10 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         if self.console.time() > self._ignoreTill:
             self.teambalance()
 
-        return None
-
     def teambalance(self):
+        """
+        Balance current teams.
+        """
         if self.isEnabled() and not self._balancing and not self._matchmode:
             # set balancing flag
             self._balancing = True
@@ -2557,7 +2540,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             if abs(self._teamred - self._teamblue) <= self._teamdiff:
                 # teams are balanced
                 self._teamsbalanced = True
-                self.verbose('Teambalance: teams are balanced, red: %s, blue: %s (diff: %s)' % (
+                self.verbose('teambalance: teams are balanced, red: %s, blue: %s (diff: %s)' % (
                              self._teamred, self._teamblue, self._teamdiff))
                 # done balancing
                 self._balancing = False
@@ -2565,7 +2548,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             else:
                 #teams are not balanced
                 self._teamsbalanced = False
-                self.verbose('Teambalance: teams are NOT balanced, red: %s, blue: %s (diff: %s)' % (
+                self.verbose('teambalance: teams are NOT balanced, red: %s, blue: %s (diff: %s)' % (
                              self._teamred, self._teamblue, self._teamdiff))
                 if self._announce == 1:
                     self.console.write('say Autobalancing Teams!')
@@ -2608,7 +2591,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                         else:
                             self.debug('no new team to force to')
                     else:
-                        self.debug('No client to force')
+                        self.debug('no client to force')
 
                     count -= 1
                     # recount the teams... do we need to balance once more?
@@ -2618,7 +2601,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                         return False
 
                     # 10/28/2008 - 1.4.0b13 - mindriot
-                    self.verbose('Teambalance: red: %s, blue: %s (diff: %s)' %
+                    self.verbose('teambalance: red: %s, blue: %s (diff: %s)' %
                                  (self._teamred, self._teamblue, self._teamdiff))
 
                     if self._teamred > self._teamblue:
@@ -2688,9 +2671,12 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                                   (client.exactName, client.cid, client.id))
                         self._adminPlugin.warnClient(client, 'badname')
 
-        return None
-
-    def onNameChange(self, name, client):
+    def onNameChange(self, event):
+        """
+        Handle EVT_CLIENT_NAME_CHANGE.
+        """
+        client = event.client
+        name = event.data
         if self.isEnabled() and self._checkchanges and client.maxLevel < 9:
             if not client.isvar(self, 'namechanges'):
                 client.setvar(self, 'namechanges', 0)
@@ -2714,8 +2700,6 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                         r = self._checkallowedchanges - n
                         client.message('^1WARNING:^7 ^2%s^7 more namechanges allowed during this map!' % r)
 
-        return None
-
     def resetNameChanges(self):
         if self.isEnabled() and self._checkchanges:
             clients = self.console.clients.getList()
@@ -2723,7 +2707,6 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                 if c.isvar(self, 'namechanges'):
                     c.setvar(self, 'namechanges', 0)
             self.debug('Namechanges Reset')
-        return None
 
 
 ########################################################################################################################
@@ -2743,7 +2726,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             clients = self.console.clients.getList()
             if len(clients) < self._smaxplayers:
                 self.verbose('clients online (%s) < maxplayers (%s), ignoring' % (len(clients), self._smaxplayers))
-                return None
+                return
 
             for c in clients:
                 if not c.isvar(self, 'teamtime'):
@@ -2764,12 +2747,13 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                     self.debug('warning %s for speccing on full server' % c.name)
                     self._adminPlugin.warnClient(c, 'spec')
 
-        return None
-
 ########################################################################################################################
 #---Bot support---------------------------------------------------------------------------------------------------------
 
     def botsupport(self, data=None):
+        """
+        Check for bot support on the current map.
+        """
         self.debug('checking for bot support')
         if self.isEnabled() and not self._matchmode:
 
@@ -2777,18 +2761,13 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                 test = self.console.game.mapName
             except AttributeError:
                 self.debug('mapName not yet available')
-                return None
-
-            if not self._botenable:
-                return None
-
-            for m in self._botmaps:
-                if m == self.console.game.mapName:
-                    # we got ourselves a winner
-                    self.debug('enabling bots for this map: %s' % self.console.game.mapName)
-                    self.botsenable()
-
-        return None
+            else:
+                if self._botenable:
+                    for m in self._botmaps:
+                        if m == self.console.game.mapName:
+                            # we got ourselves a winner
+                            self.debug('enabling bots for this map: %s' % self.console.game.mapName)
+                            self.botsenable()
 
     def botsdisable(self):
         self.debug('disabling the bots')
@@ -2833,12 +2812,18 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             self.debug('ClientVars Reset')
         return None
 
-    def headshotcounter(self, attacker, victim, data):
-        if self.isEnabled() and self._hsenable and attacker.isvar(self, 'hitvars') and \
-           victim.isvar(self, 'hitvars') and not self._matchmode:
-            headshots = 0
-            #damage = int(data[0])
-            weapon = data[1]
+    def headshotcounter(self, event):
+        """
+        Handle EVT_CLIENT_DAMAGE.
+        """
+        attacker = event.client
+        victim = event.target
+        data = event.data
+        if self.isEnabled() and \
+            self._hsenable and \
+            attacker.isvar(self, 'hitvars') and \
+            victim.isvar(self, 'hitvars') and not self._matchmode:
+
             hitloc = data[2]
 
             # set totals
@@ -2884,21 +2869,18 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
             # wear a helmet!
             if self._hswarnhelmet and \
-                    victim.connections < 20 and \
-                    victim.var(self, 'headhitted').value == self._hswarnhelmetnr and \
-                    hitloc == 0:
+                victim.connections < 20 and \
+                victim.var(self, 'headhitted').value == self._hswarnhelmetnr and \
+                hitloc == self._hitlocations['HL_HEAD']:
                 victim.message('You were hit in the head %s times! Consider wearing a helmet!' % self._hswarnhelmetnr)
 
             # wear kevlar!
             if self._hswarnkevlar and \
-                    victim.connections < 20 and \
-                    victim.var(self, 'torsohitted').value == self._hswarnkevlarnr and \
-                    hitloc == 2:
-                victim.message('You were hit in the torso %s times! Wearing kevlar will reduce \
+                victim.connections < 20 and \
+                victim.var(self, 'torsohitted').value == self._hswarnkevlarnr and \
+                hitloc == self._hitlocations['HL_TORSO']:
+                victim.message('You were hit in the torso %s times! Wearing kevlar vest will reduce \
                                 your number of deaths!' % self._hswarnkevlarnr)
-
-        return None
-
 
 ########################################################################################################################
 #---Rotation Manager----------------------------------------------------------------------------------------------------
@@ -2906,7 +2888,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
     def adjustrotation(self, delta):
         # if the round just started, don't do anything
         if self.console.time() < self._dontcount:
-            return None
+            return
 
         if delta == +1:
             if self._playercount > (self._switchcount2 + self._hysteresis):
@@ -2927,18 +2909,16 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         else:
             self.error('invalid delta passed to adjustrotation')
 
-        return None
-
     def setrotation(self, newrotation):
         if not self._gamepath or \
-                not self._rotation_small or \
-                not self._rotation_medium or \
-                not self._rotation_large or \
-                not self._mapchanged:
-            return None
+            not self._rotation_small or \
+            not self._rotation_medium or \
+            not self._rotation_large or \
+            not self._mapchanged:
+            return
 
         if newrotation == self._currentrotation:
-            return None
+            return
 
         if newrotation == 1:
             rotname = "small"
@@ -2950,22 +2930,19 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             rotname = "large"
             rotation = self._rotation_large
         else:
-            self.error('Error: Invalid newrotation passed to setrotation.')
-            return None
+            self.error('invalid newrotation passed to setrotation')
+            return
 
-        self.debug('Adjusting to %s mapRotation' % rotname)
+        self.debug('adjusting to %s mapRotation' % rotname)
         self.console.setCvar('g_mapcycle', rotation)
         self._currentrotation = newrotation
 
     def recountplayers(self):
         # reset, recount and set a rotation
         self._oldplayercount = self._playercount
-        self._playercount = 0
+        self._playercount = len(self.console.clients.getList())
 
-        for p in self.console.clients.getList():
-            self._playercount += 1
-
-        self.debug('Initial PlayerCount: %s' % self._playercount)
+        self.debug('initial playercount: %s' % self._playercount)
 
         if self._oldplayercount == -1:
             self.adjustrotation(0)
@@ -2986,21 +2963,16 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         self._ignoreTill is a plugin flag that holds a time which ignoreCheck checks against
         """
         self._ignoreTill = self.console.time() + data
-        return None
 
     def ignoreDel(self):
         self._ignoreTill = 0
-        return None
 
     def ignoreCheck(self):
         """
         Tests if the ignore flag is set, to disable certain automatic functions when unwanted
         Returns True if the functionality should be ignored
         """
-        if self._ignoreTill - self.console.time() > 0:
-            return True
-        else:
-            return False
+        return self._ignoreTill - self.console.time() > 0
 
 ########################################################################################################################
 #---Rcon commands------by:FSK405|Fear-----------------------------------------------------------------------------------
@@ -3019,14 +2991,14 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         <on/off> - Set waverespawns on, or off.
         """
-        if not data or data not in ('on', 'off'):
+        if not data or data.lower() not in ('on', 'off'):
             client.message('^7Invalid or missing data, try !help pawaverespawns')
             return
 
-        if data == 'on':
+        if data.lower() == 'on':
             self.console.setCvar('g_waverespawns', '1')
             self.console.say('^7Wave Respawns: ^2ON')
-        elif data == 'off':
+        elif data.lower() == 'off':
             self.console.setCvar('g_waverespawns', '0')
             self.console.say('^7Wave Respawns: ^1OFF')
 
@@ -3036,18 +3008,17 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         if not data:
             client.message('^7Invalid or missing data, try !help pasetnextmap')
-            return
-
-        match = self.console.getMapsSoundingLike(data)
-        if isinstance(match, basestring):
-            mapname = match
-            self.console.setCvar('g_nextmap', mapname)
-            if client:
-                client.message('^7nextmap set to %s' % mapname)
-        elif isinstance(match, list):
-            client.message('do you mean : %s ?' % string.join(match[:5], ', '))
         else:
-            client.message('^7cannot find any map like [^4%s^7]' % data)
+            match = self.console.getMapsSoundingLike(data)
+            if isinstance(match, basestring):
+                mapname = match
+                self.console.setCvar('g_nextmap', mapname)
+                if client:
+                    client.message('^7nextmap set to %s' % mapname)
+            elif isinstance(match, list):
+                client.message('do you mean : %s ?' % string.join(match[:5], ', '))
+            else:
+                client.message('^7cannot find any map like [^4%s^7]' % data)
 
     def cmd_parespawngod(self, data, client, cmd=None):
         """
@@ -3055,9 +3026,8 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         if not data:
             client.message('^7Missing data, try !help parespawngod')
-            return
-
-        self.console.setCvar('g_respawnProtection', data)
+        else:
+            self.console.setCvar('g_respawnProtection', data)
 
     def cmd_parespawndelay(self, data, client, cmd=None):
         """
@@ -3065,9 +3035,8 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         if not data:
             client.message('^7Missing data, try !help parespawndelay')
-            return
-
-        self.console.setCvar('g_respawnDelay', data)
+        else:
+            self.console.setCvar('g_respawnDelay', data)
 
     def cmd_pacaplimit(self, data, client, cmd=None):
         """
@@ -3075,9 +3044,8 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         if not data:
             client.message('^7Missing data, try !help pacaplimit')
-            return
-
-        self.console.setCvar('capturelimit', data)
+        else:
+            self.console.setCvar('capturelimit', data)
 
     def cmd_patimelimit(self, data, client, cmd=None):
         """
@@ -3085,9 +3053,8 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         if not data:
             client.message('^7Missing data, try !help patimelimit')
-            return
-
-        self.console.setCvar('timelimit', data)
+        else:
+            self.console.setCvar('timelimit', data)
 
     def cmd_pafraglimit(self, data, client, cmd=None):
         """
@@ -3095,9 +3062,8 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         if not data:
             client.message('^7Missing data, try !help pafraglimit')
-            return
-
-        self.console.setCvar('fraglimit', data)
+        else:
+            self.console.setCvar('fraglimit', data)
 
     def cmd_pabluewave(self, data, client, cmd=None):
         """
@@ -3105,9 +3071,8 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         if not data:
             client.message('^7Missing data, try !help pabluewave')
-            return False
-
-        self.console.setCvar('g_bluewave', data)
+        else:
+            self.console.setCvar('g_bluewave', data)
 
     def cmd_paredwave(self, data, client, cmd=None):
         """
@@ -3115,9 +3080,8 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         if not data:
             client.message('^7Missing data, try !help paredwave')
-            return False
-
-        self.console.setCvar('g_redwave', data)
+        else:
+            self.console.setCvar('g_redwave', data)
 
     def cmd_pahotpotato(self, data, client, cmd=None):
         """
@@ -3125,9 +3089,8 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         if not data:
             client.message('^7Missing data, try !help pahotpotato')
-            return False
-
-        self.console.setCvar('g_hotpotato', data)
+        else:
+            self.console.setCvar('g_hotpotato', data)
 
 #------------- SGT --------------------------------------------
 
@@ -3137,10 +3100,9 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         if not data:
             client.message('^7Missing data, try !help pasetwave')
-            return
-
-        self.console.setCvar('g_bluewave', data)
-        self.console.setCvar('g_redwave', data)
+        else:
+            self.console.setCvar('g_bluewave', data)
+            self.console.setCvar('g_redwave', data)
 
     def cmd_pasetgravity(self, data, client, cmd=None):
         """
@@ -3148,13 +3110,11 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         if not data:
             client.message('^7Missing data, try !help pasetgravity')
-            return
-
-        if data == 'def':
-            data = 800
-
-        self.console.setCvar('g_gravity', data)
-        client.message('^7Gravity: %s' % data)
+        else:
+            if data.lower() in ('def', 'reset'):
+                data = 800
+            self.console.setCvar('g_gravity', data)
+            client.message('^7Gravity: %s' % data)
 
     def set_configmode(self, mode=None):
         if mode:
