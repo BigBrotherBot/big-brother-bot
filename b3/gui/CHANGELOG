@@ -57,3 +57,4 @@
                   - adjusted Main Table with to fill up line
 23/06/2015 - 0.20 - adjusted Main Table width on darwin system not to show horizontal scrollbar
                   - fixed UpdateDatabase dialog layout not showing information message properly
+                  - added an overlay help message above Main Table when no process are available

@@ -283,17 +283,19 @@ class MainTable(QTableWidget):
         self.verticalHeader().setVisible(False)
         self.verticalHeader().sectionResizeMode(QHeaderView.Fixed)
         self.verticalHeader().setDefaultSectionSize(34)
-        self.verticalScrollBar().setStyleSheet(
-            """QScrollBar:vertical {
-                background: #B7B7B7;
-                border: 0;
-        }""")
+        self.verticalScrollBar().setStyleSheet("""
+        QScrollBar:vertical {
+            background: #B7B7B7;
+            border: 0;
+        }
+        """)
 
     def paint(self):
         """
         Paint table contents.
         """
-        self.setRowCount(len(B3App.Instance().processes))
+        rowcount = len(B3App.Instance().processes)
+        self.setRowCount(rowcount)
         self.setColumnCount(4)
         self.setColumnWidth(0, 34)
 
@@ -308,6 +310,10 @@ class MainTable(QTableWidget):
         self.setColumnWidth(3, 200)
         for i in range(len(B3App.Instance().processes)):
             self.paint_row(i)
+
+        ## SHOW THE HELP LABEL IF NEEDED
+        if self.parent().help_label:
+            self.parent().help_label.setVisible(rowcount == 0)
 
     def repaint(self):
         """
@@ -457,7 +463,7 @@ class MainTable(QTableWidget):
         __paint_column_status(self, row, process)
         __paint_column_toolbar(self, row, process)
 
-    ############################################# EVENT HANDLERS  ######################################################
+    ############################################# EVENT HANDLERS #######################################################
 
     def dragEnterEvent(self, event):
         """
@@ -502,7 +508,7 @@ class MainTable(QTableWidget):
         else:
             event.ignore()
 
-    ############################################ TOOLBAR HANDLERS  #####################################################
+    ############################################ TOOLBAR HANDLERS ######################################################
 
     def process_start(self, row, process, warn=True):
         """
@@ -638,11 +644,68 @@ class MainTable(QTableWidget):
             B3App.Instance().openpath(path)
 
 
+class HelpLabel(QLabel):
+    """
+    This class implements the text which is overlaying the Main Table when there are no B3 processes.
+    """
+    def __init__(self, parent=None):
+        """
+        :param parent: the parent widget
+        """
+        QLabel.__init__(self, parent)
+        self.initUI()
+
+    def initUI(self):
+        """
+        Initialize the Help label user interface.
+        """
+        self.setText('drop your configuration(s) file here')
+        self.setFixedSize(594, GEOMETRY[b3.getPlatform()]['MAIN_TABLE_HEIGHT'])
+        self.setAlignment(Qt.AlignCenter)
+        self.setVisible(len(B3App.Instance().processes) == 0)
+        self.setAcceptDrops(True)
+        self.setStyleSheet("""
+        QLabel {
+            background: transparent;
+            font-size: 20px;
+            font-style: italic;
+            color: #CCCCCC;
+        }
+        """)
+
+    ############################################# EVENT HANDLERS #######################################################
+
+    def dragEnterEvent(self, event):
+        """
+        Handle 'Drag Enter' event.
+        """
+        self.parent().dragEnterEvent(event)
+
+    def dragMoveEvent(self, event):
+        """
+        Handle 'Drag Move' event.
+        """
+        self.parent().dragMoveEvent(event)
+
+    def dragLeaveEvent(self, event):
+        """
+        Handle 'Drag Leave' event.
+        """
+        self.parent().dragLeaveEvent(event)
+
+    def dropEvent(self, event):
+        """
+        Handle 'Drop' event.
+        """
+        self.parent().dropEvent(event)
+
+
 class CentralWidget(QWidget):
     """
     This class implements the central widget.
     """
     main_table = None
+    help_label = None
     news = None
 
     def __init__(self, parent=None):
@@ -667,8 +730,10 @@ class CentralWidget(QWidget):
 
         def __get_middle_layout(parent):
             parent.main_table = MainTable(parent)
+            parent.help_label = HelpLabel(parent.main_table)
             layout = QVBoxLayout()
             layout.addWidget(parent.main_table)
+            #layout.addWidget(parent.help_label)
             layout.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
             layout.setContentsMargins(0, 2, 0, 0)
             return layout
@@ -799,7 +864,7 @@ class MainWindow(QMainWindow):
                                              self.system_tray_balloon[b3.getPlatform()],
                                              QSystemTrayIcon.Information, 20000)
 
-    ############################################# ACTION HANDLERS  #####################################################
+    ############################################# ACTION HANDLERS ######################################################
 
     def make_new_process(self, path):
         """
