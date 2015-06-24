@@ -397,7 +397,7 @@ class UpdateDatabaseDialog(QDialog):
         self.progress.setValue(-1)
         ## INIT DISPLAY MESSAGE
         self.message = QLabel("This tool will update all your B3 databases to version %s.\n"
-                              "The update process should take less than 2 minutes and "
+                              "The update process should take less than 2 minutes and\n"
                               "cannot be interrupted." % b3.__version__, self)
 
         def __get_top_layout(parent):
@@ -485,7 +485,7 @@ class UpdateDatabaseDialog(QDialog):
                 for proc in collection:
 
                     index = collection.index(proc) + 1
-                    self.msignal.emit('[%s/%s] updating database: %s' % (index, collection_len, proc.name))
+                    self.msignal.emit('(%s/%s) updating database: %s' % (index, collection_len, proc.name))
                     self.psignal.emit(0, collection_len, index)
 
                     sleep(1)
