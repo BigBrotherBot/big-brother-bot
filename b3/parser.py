@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/06/25 - 1.43.4 - Fenix           - correct handle Plugin attribute requiresVersion (branch rebase lost it???)
 # 2015/06/22 - 1.43.3 - Fenix           - added support for the new Plugin attribute: requiresStorage
 # 2015/06/17 - 1.43.2 - Fenix           - fixed some absolute path retrieval not decoding non-ascii characters
 # 2015/05/26 - 1.43.1 - Fenix           - added StubParser class: can be used when the storage module needs to be
@@ -190,7 +191,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.43.2'
+__version__ = '1.43.4'
 
 
 import os
@@ -218,6 +219,7 @@ import b3.timezones
 
 from ConfigParser import NoOptionError
 from collections import OrderedDict
+from b3 import __version__ as currentVersion
 from b3.clients import Clients
 from b3.clients import Group
 from b3.decorators import Memoize
@@ -229,6 +231,7 @@ from b3.functions import splitDSN
 from b3.functions import right_cut
 from b3.functions import topological_sort
 from b3.plugin import PluginData
+from b3.update import B3version
 from textwrap import TextWrapper
 from traceback import extract_tb
 
@@ -877,6 +880,11 @@ class Parser(object):
             :return: list[PluginData] a list of PluginData of plugins needed by the current one
             """
             if p_data.clazz:
+
+                # check for correct B3 version
+                if p_data.clazz.requiresVersion and B3version(p_data.clazz.requiresVersion) > B3version(currentVersion):
+                    raise MissingRequirement('plugin %s requires B3 version %s (you have version %s) : please update your '
+                                             'B3 if you want to run this plugin' % (p_data.name, p_data.clazz.requiresVersion, currentVersion))
 
                 # check if the current game support this plugin (this may actually exclude more than one plugin
                 # in case a plugin is built on top of an incompatible one, due to plugin dependencies)
