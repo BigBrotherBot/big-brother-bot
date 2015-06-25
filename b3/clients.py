@@ -19,6 +19,7 @@
 #
 # CHANGELOG
 #
+# 2015/06/25 - 1.8.1  - Fenix       - changed client.message to accept positional parameter for string substitution
 # 2015/03/19 - 1.8    - Fenix       - actually catch Exception class in try-except
 #                                   - removed deprecated usage of dict.has_key (us 'in dict' instead)
 # 2014/08/09 - 1.7.1  - Courgette   - fire new event EVT_CLIENT_TEAM_CHANGE2
@@ -776,11 +777,13 @@ class Client(object):
             ban.timeExpire = self.console.time() + (duration * 60)
             ban.save(self.console)
 
-    def message(self, msg):
+    def message(self, msg, *args):
         """
-        Send a private message to this client.
+        Send a private message to this client
+        :param msg: the message to send
+        :param args: substitution arguments (if any).
         """
-        self.console.message(self, msg)
+        self.console.message(self, msg % args)
 
     def warn(self, duration, warning, keyword=None, admin=None, data=''):
         """
