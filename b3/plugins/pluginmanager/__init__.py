@@ -16,22 +16,24 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'Fenix'
-__version__ = '1.1'
+__version__ = '1.2'
 
 import b3
 import b3.cron
 import b3.plugin
 import b3.plugins.admin
 import b3.events
-import b3.exceptions
 import glob
 import os
 import re
 import sys
 
+from b3 import __version__ as currentVersion
+from b3.exceptions import MissingRequirement
 from b3.functions import getCmd
 from b3.functions import topological_sort
 from b3.plugin import PluginData
+from b3.update import B3version
 from traceback import extract_tb
 
 class PluginmanagerPlugin(b3.plugin.Plugin):
@@ -197,7 +199,24 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
                 :param p_data: A PluginData containing plugin information
                 :return: list[PluginData] a list of PluginData of plugins needed by the current one
                 """
-                if p_data.clazz and p_data.clazz.requiresPlugins:
+                # check for correct B3 version
+                if p_data.clazz.requiresVersion and B3version(p_data.clazz.requiresVersion) > B3version(currentVersion):
+                    raise MissingRequirement('plugin %s requires B3 version %s (you have version %s) : please update your '
+                                             'B3 if you want to run this plugin' % (p_data.name, p_data.clazz.requiresVersion, currentVersion))
+
+                # check if the current game support this plugin (this may actually exclude more than one plugin
+                # in case a plugin is built on top of an incompatible one, due to plugin dependencies)
+                if p_data.clazz.requiresParsers and self.console.gameName not in p_data.clazz.requiresParsers:
+                    raise MissingRequirement('plugin %s is not compatible with %s parser : supported games are : %s' % (
+                                             p_data.name, self.console.gameName, ', '.join(p_data.clazz.requiresParsers)))
+
+                # check if the plugin needs a particular storage protocol to work
+                if p_data.clazz.requiresStorage and self.console.storage.protocol not in p_data.clazz.requiresStorage:
+                    raise MissingRequirement('plugin %s is not compatible with the storage protocol being used (%s) : '
+                                             'supported protocols are : %s' % (p_data.name, self.console.storage.protocol,
+                                                                               ', '.join(p_data.clazz.requiresStorage)))
+
+                if p_data.clazz.requiresPlugins:
                     collection = []
                     for r in p_data.requiresPlugins:
                         if r not in self.console._plugins and r not in plugin_required:
@@ -207,7 +226,7 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
                                 collection += _get_plugin_data(PluginData(name=r))
                                 self.debug('plugin %s dependency satisfied: %s' % r)
                             except Exception, err:
-                                raise b3.exceptions.MissingRequirement('missing required plugin: %s' % r, err)
+                                raise MissingRequirement('missing required plugin: %s' % r, err)
 
                     return collection
 
