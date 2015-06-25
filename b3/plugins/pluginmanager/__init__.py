@@ -245,7 +245,7 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
                     v = getattr(p.module, '__version__', 'unknown')
                     a = getattr(p.module, '__author__', 'unknown')
                     self.bot('plugin %s (%s - %s) loaded', p.name, v, a)
-                    client.message('^7Plugin ^2%s ^7(^3%s ^7- ^3%s^7) loaded', p.name, v, a)
+                    client.message('^7Plugin ^2%s ^7(^3%s ^7- ^3%s^7) loaded' % p.name, v, a)
                     # queue an event so other plugins may react on this change (for example if 2 plugins provide the
                     # same functionalities, one of them can be disabled not to do duplicated work)
                     self.console.queueEvent(self.console.getEvent('EVT_PLUGIN_LOADED', data=p.name))
