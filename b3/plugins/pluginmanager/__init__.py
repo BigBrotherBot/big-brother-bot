@@ -114,7 +114,7 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
                 if not plugin.isEnabled():
                     client.message('^7Plugin ^3%s ^7is already disabled' % name)
                 else:
-                    plugin.enable()
+                    plugin.disable()
                     client.message('^7Plugin ^3%s ^7is now ^1disabled' % name)
 
     def do_load(self, client, name=None):
