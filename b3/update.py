@@ -33,10 +33,6 @@ import string
 import sys
 import urllib2
 
-from b3 import B3_CONFIG_GENERATOR, HOMEDIR
-from b3.functions import console_exit, splitDSN, clearscreen
-from b3.parser import StubParser
-from b3.storage import getStorage
 from distutils import version
 from time import sleep
 from types import StringType
@@ -355,3 +351,9 @@ class DBUpdate(object):
         _update_database(database, '1.10.0')
 
         console_exit('B3 database update completed!')
+
+
+from b3 import B3_CONFIG_GENERATOR, HOMEDIR
+from b3.functions import console_exit, splitDSN, clearscreen
+from b3.parser import StubParser
+from b3.storage import getStorage
