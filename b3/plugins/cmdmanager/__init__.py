@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
 __author__ = 'Fenix'
-__version__ = '1.3.3'
+__version__ = '1.4'
 
 import b3
 import b3.plugin
@@ -55,12 +55,12 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         """
         try:
             self._update_config_file = self.config.getboolean('settings', 'update_config_file')
-            self.debug('loaded settings/update_config_file setting: %s' % self._update_config_file)
+            self.debug('loaded settings/update_config_file setting: %s', self._update_config_file)
         except NoOptionError:
-            self.warning('could not find settings/update_config_file setting, using default: %s' % self._update_config_file)
+            self.warning('could not find settings/update_config_file setting, using default: %s', self._update_config_file)
         except ValueError, e:
-            self.error('could not load settings/update_config_file config value: %s' % e)
-            self.debug('using default value (%s) for settings/update_config_file' % self._update_config_file)
+            self.error('could not load settings/update_config_file config value: %s', e)
+            self.debug('using default value (%s) for settings/update_config_file', self._update_config_file)
 
     def onStartup(self):
         """
@@ -120,13 +120,13 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         Load client command grants from the storage.
         :param client: The client whose command grants needs to be loaded
         """
-        self.debug('checking command grants for client @%s...' % client.id)
+        self.debug('checking command grants for %s [@%s]...', client.name, client.id)
 
         try:
             query = QueryBuilder(self.console.storage.db).SelectQuery(('id', 'commands'), 'cmdgrants', {'id': client.id})
             cursor = self.console.storage.query(query)
             if cursor.EOF:
-                self.debug('no command grant found for client @%s' % client.id)
+                self.debug('no command grant found for %s [@%s]', client.name, client.id)
                 return
 
             row = cursor.getOneRow()
@@ -134,9 +134,9 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
             # the command grants from a client and the storage layer will save an empty string
             grantlist = set([x for x in row['commands'].split(GRANT_SET_JOIN) if x != ''])
             setattr(client, GRANT_SET_ATTR, grantlist)
-            self.debug('retrieved command grants for client @%s from the storage: %r' % (client.id, grantlist))
+            self.debug('retrieved command grants for %s [@%s] from the storage: %r', client.name, client.id, grantlist)
         except Exception, e:
-            self.error('could not retrieve command grants for client @%s: %s' % (client.id, e))
+            self.error('could not retrieve command grants for %s [@%s] : %s', client.name, client.id, e)
 
     def save_command_grants(self, client):
         """
@@ -144,7 +144,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         :param client: The client whose command grants needs to be stored
         """
         if not hasattr(client, GRANT_SET_ATTR):
-            self.debug('not storing command grants for client @%s: no command grant found in client object' % client.id)
+            self.debug('not storing command grants for %s [@%s]: no command grant found in client object', client.name, client.id)
             return
 
         cursor = None
@@ -158,9 +158,9 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
                 self.console.storage.query(QueryBuilder(self.console.storage.db).InsertQuery(data, 'cmdgrants'))
             else:
                 self.console.storage.query(QueryBuilder(self.console.storage.db).UpdateQuery(data, 'cmdgrants', {'id': client.id}))
-            self.debug('stored command grants for client @%s' % client.id)
+            self.debug('stored command grants for %s [@%s]', client.name, client.id)
         except Exception, e:
-            self.error('could not store command grants for client @%s: %s' % (client.id, e))
+            self.error('could not store command grants for %s [@%s]: %s', client.name, client.id, e)
         finally:
             if cursor:
                 cursor.close()
@@ -187,8 +187,8 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
 
         # set the new command option value
         config.set('commands', data['command_name'], data['command_level'])
-        self.debug('%s command <%s> in plugin <%s> config file' % ('updated' if found else 'created new entry for',
-                                                                   command.command, data['plugin_name']))
+        self.debug('%s command <%s> in plugin <%s> config file', 'updated' if found else 'created new entry for',
+                                                                 command.command, data['plugin_name'])
 
         # write the updated configuration file
         with open(command.plugin.config.fileName, 'wb') as configfile:
@@ -212,8 +212,8 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
                             if v.nodeType == v.TEXT_NODE:
                                 v.data = data['command_level']
                                 node.setAttribute('name', data['command_name'])
-                                self.debug('updated command <%s> in plugin <%s> config '
-                                           'file' % (command.command, data['plugin_name']))
+                                self.debug('updated command <%s> in plugin <%s> config file',
+                                           command.command, data['plugin_name'])
                                 changed = True
                                 break
 
@@ -227,8 +227,8 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
                     child.setAttribute('name', data['command_name'])
                     child.appendChild(document.createTextNode(data['command_level']))
                     setting.appendChild(child)
-                    self.debug('created new entry for command <%s> in <%s> plugin config '
-                               'file' % (data['command_name'], data['plugin_name']))
+                    self.debug('created new entry for command <%s> in <%s> plugin config file',
+                               data['command_name'], data['plugin_name'])
                     changed = True
                     break
 
@@ -247,12 +247,12 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         plugin = command.plugin
         plugin_name = self.get_plugin_name(plugin)
         if not plugin.requiresConfigFile:
-            self.debug('could not change %s plugin configuration file: no configuration file specified' % plugin_name)
+            self.debug('could not change %s plugin configuration file: no configuration file specified', plugin_name)
             return
 
         if not plugin.config.fileName or not os.path.isfile(plugin.config.fileName):
-            client.message('^7could not open plugin ^1%s ^7config file' % plugin_name)
-            self.warning('could not open %s plugin configuration file: %s' % (plugin_name, plugin.config.fileName))
+            client.message('^7could not open plugin ^1%s ^7config file', plugin_name)
+            self.warning('could not open %s plugin configuration file: %s', plugin_name, plugin.config.fileName)
             return
 
         # the command name
@@ -279,8 +279,8 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
             func = getattr(self, 'write_%s_config_file' % ('xml' if isinstance(plugin.config, XmlConfigParser) else 'ini'))
             func(command, data)
         except (AttributeError, TypeError, IOError, NoSectionError), e:
-            self.warning('could not change plugin <%s> config file: %s' % (data['plugin_name'], e))
-            client.message('^7could not change plugin ^1%s ^7configuration file' % data['plugin_name'])
+            self.warning('could not change plugin <%s> config file: %s', data['plugin_name'], e)
+            client.message('^7could not change plugin ^1%s ^7configuration file', data['plugin_name'])
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -348,7 +348,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         r = re.compile(r'''^(?P<minlevel>\w+)-*(?P<maxlevel>\w*)$''')
         m = r.match(level)
         if not m:
-            client.message('^7invalid level format specified: ^1%s' % level)
+            client.message('^7invalid level format specified: ^1%s', level)
             return
 
         # get the minlevel
@@ -358,7 +358,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
             # get the group corresponsing to minlevel
             mingroup = self.console.getGroup(minlevel)
         except KeyError:
-            client.message('^7invalid level specified: ^1%s' % minlevel)
+            client.message('^7invalid level specified: ^1%s', minlevel)
             return
 
         # get the maxiumum required level
@@ -370,11 +370,11 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
                 # here below, so only when the value we are checking has been entered by the user
                 maxgroup = self.console.getGroup(maxlevel)
             except KeyError:
-                client.message('^7invalid level specified: ^1%s' % maxlevel)
+                client.message('^7invalid level specified: ^1%s', maxlevel)
                 return
 
             if mingroup.level > maxgroup.level:
-                client.message('^7invalid level: ^1%s ^7is greater than ^1%s' % (mingroup.keyword, maxgroup.keyword))
+                client.message('^7invalid level: ^1%s ^7is greater than ^1%s', mingroup.keyword, maxgroup.keyword)
                 return
         else:
             # maxlevel not specified => fallback to superadmin
@@ -382,8 +382,8 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
 
         # change the command inside the commands dict()
         command.level = (mingroup.level, maxgroup.level)
-        self.debug('command <%s> level changed to <%s-%s>' % (command.command, mingroup.keyword, maxgroup.keyword))
-        cmd.sayLoudOrPM(client, '^7command ^3%s ^7level changed: %s' % (command.command, self.get_command_level_string(command)))
+        self.debug('command <%s> level changed to <%s-%s>', command.command, mingroup.keyword, maxgroup.keyword)
+        cmd.sayLoudOrPM(client, '^7command ^3%s ^7level changed: %s', command.command, self.get_command_level_string(command))
 
         # change the plugin configuration file
         if self._update_config_file:
@@ -404,7 +404,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         # already an alias of another command
         tempcommand = self.get_command(alias)
         if tempcommand:
-            client.message('^7command ^1%s ^7is already in use' % alias)
+            client.message('^7command ^1%s ^7is already in use', alias)
             return
 
         found = False
@@ -414,9 +414,9 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         # change the alias
         command.alias = alias
         self._adminPlugin._commands[alias] = command
-        self.debug('%s alias <%s> for command <%s>' % ('added' if not found else 'updated', alias, command.command))
-        cmd.sayLoudOrPM(client, '^7%s alias for command ^3%s^7: ^2%s' % ('added' if not found else 'updated',
-                                                                         command.command, command.alias))
+        self.debug('%s alias <%s> for command <%s>', 'added' if not found else 'updated', alias, command.command)
+        cmd.sayLoudOrPM(client, '^7%s alias for command ^3%s^7: ^2%s', 'added' if not found else 'updated',
+                                                                       command.command, command.alias)
         # change the plugin configuration file
         if self._update_config_file:
             self.write_config_file(command, client)
@@ -441,18 +441,18 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         name = self.command_name_sanitize(m.group('command'))
         command = self.get_command(name)
         if not command:
-            client.message('^7could not find command ^1%s' % name)
+            client.message('^7could not find command ^1%s',  name)
             return
 
         # checking if the guy can access the command
         if not command.canUse(client):
-            client.message('^7no sufficient access to ^1%s ^7command' % name)
+            client.message('^7no sufficient access to ^1%s ^7command',  name)
             return
 
         # if no new level given
         if not m.group('level'):
             # if no new level is specified display the current one
-            cmd.sayLoudOrPM(client, '^7command ^3%s ^7level: %s' % (name, self.get_command_level_string(command)))
+            cmd.sayLoudOrPM(client, '^7command ^3%s ^7level: %s', name, self.get_command_level_string(command))
             return
 
         # change the command level with the new given value
@@ -472,23 +472,23 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         name = self.command_name_sanitize(m.group('command'))
         command = self.get_command(name)
         if not command:
-            client.message('^7could not find command ^1%s' % name)
+            client.message('^7could not find command ^1%s',  name)
             return
 
         # checking if the guy can access the command
         if not command.canUse(client):
-            client.message('^7no sufficient access to ^1%s ^7command' % name)
+            client.message('^7no sufficient access to ^1%s ^7command',  name)
             return
 
         # if no new level is given
         if not m.group('alias'):
             if not command.alias:
                 # inform that no alias is set for this command
-                cmd.sayLoudOrPM(client, '^7command ^3%s ^7has not alias set' % command.command)
+                cmd.sayLoudOrPM(client, '^7command ^3%s ^7has not alias set',  command.command)
                 return
 
             # print the command alias
-            cmd.sayLoudOrPM(client, '^7command ^3%s ^7alias: ^2%s' % (command.command, command.alias))
+            cmd.sayLoudOrPM(client, '^7command ^3%s ^7alias: ^2%s', command.command, command.alias)
             return
 
         # change the command level with the new given value
@@ -513,17 +513,17 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         name = self.command_name_sanitize(m.group('command'))
         command = self.get_command(name)
         if not command:
-            client.message('^7could not find command ^1%s' % name)
+            client.message('^7could not find command ^1%s', name)
             return
 
         # checking if the client who executed the command can access the specified one
         if not command.canUse(client):
-            client.message('^7no sufficient access to ^1%s ^7command' % name)
+            client.message('^7no sufficient access to ^1%s ^7command', name)
             return
 
         if command.canUse(sclient):
             # this will check both the client level and a possible grant already given
-            client.message('^7%s is already ^2able ^7to use ^3%s ^7command' % (sclient.name, command.command))
+            client.message('^7%s is already ^2able ^7to use ^3%s ^7command', sclient.name, command.command)
             return
 
         # add the grant for this command
@@ -535,7 +535,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         self.save_command_grants(sclient)
 
         # inform the client that the grant has been set
-        cmd.sayLoudOrPM(client, '^7%s has now a ^2grant ^7for ^3%s ^7command' % (sclient.name, command.command))
+        cmd.sayLoudOrPM(client, '^7%s has now a ^2grant ^7for ^3%s ^7command', sclient.name, command.command)
 
     def cmd_cmdrevoke(self, data, client, cmd=None):
         """
@@ -556,16 +556,16 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         name = self.command_name_sanitize(m.group('command'))
         command = self.get_command(name)
         if not command:
-            client.message('^7could not find command ^1%s' % name)
+            client.message('^7could not find command ^1%s', name)
             return
 
         # checking if the client who executed the command can access the specified one
         if not command.canUse(client):
-            client.message('^7no sufficient access to ^1%s ^7command' % name)
+            client.message('^7no sufficient access to ^1%s ^7command', name)
             return
 
         if not command.canUse(sclient):
-            client.message('^7%s is already ^1not able ^7to use ^3%s ^7command' % (sclient.name, command.command))
+            client.message('^7%s is already ^1not able ^7to use ^3%s ^7command', sclient.name, command.command)
             return
 
         try:
@@ -579,13 +579,13 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
             self.save_command_grants(sclient)
 
             # inform the client that the grant has been removed
-            cmd.sayLoudOrPM(client, '^7%s\'s ^1grant ^7for ^3%s ^7command has been removed' % (sclient.name, command.command))
+            cmd.sayLoudOrPM(client, '^7%s\'s ^1grant ^7for ^3%s ^7command has been removed', sclient.name, command.command)
             if command.canUse(sclient):
                 cmd.sayLoudOrPM(client, '^7but his group level is high enough to access the command')
 
         except KeyError:
             # there was no grant after all
-            cmd.sayLoudOrPM(client, '^7%s has no grant for ^3%s ^7command' % (sclient.name, command.command))
+            cmd.sayLoudOrPM(client, '^7%s has no grant for ^3%s ^7command', sclient.name, command.command)
 
     def cmd_cmduse(self, data, client, cmd=None):
         """
@@ -606,21 +606,21 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         name = self.command_name_sanitize(m.group('command'))
         command = self.get_command(name)
         if not command:
-            client.message('^7could not find command ^1%s' % name)
+            client.message('^7could not find command ^1%s', name)
             return
 
         # checking if the client who executed the command can access the specified one
         if not command.canUse(client):
-            client.message('^7no sufficient access to ^1%s ^7command' % name)
+            client.message('^7no sufficient access to ^1%s ^7command', name)
             return
 
         status = '^2access' if command.canUse(sclient) else '^1no access'
-        cmd.sayLoudOrPM(client, '^7%s has %s ^7to ^3%s ^7command' % (sclient.name, status, command.command))
+        cmd.sayLoudOrPM(client, '^7%s has %s ^7to ^3%s ^7command', sclient.name, status, command.command)
 
 ########################################################################################################################
-##                                                                                                                    ##
-##   APPLY PATCHES                                                                                                    ##
-##                                                                                                                    ##
+#                                                                                                                      #
+#   APPLY PATCHES                                                                                                      #
+#                                                                                                                      #
 ########################################################################################################################
 
 def patch_admin_module(adminPlugin):
