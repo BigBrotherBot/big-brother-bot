@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-__version__ = '1.34.3'
+__version__ = '1.34.4'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
 import re
@@ -2459,18 +2459,18 @@ class Command(object):
         self.func(data, client, cmd)
         self.time = self.plugin.console.time()
 
-    def sayLoudOrPM(self, client, message):
+    def sayLoudOrPM(self, client, message, *args):
         """
         Display a message with visibility regulated by the command prefix.
         :param client: The client on who to send the message
         :param message: The message to be sent
         """
         if self.loud:
-            self.plugin.console.say(message)
+            self.plugin.console.say(message, *args)
         elif self.big:
-            self.plugin.console.saybig(message)
+            self.plugin.console.saybig(message, *args)
         else:
-            client.message(message)
+            client.message(message, *args)
 
     def parseData(self, data, *args):
         """
