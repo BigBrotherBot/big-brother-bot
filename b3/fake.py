@@ -308,7 +308,8 @@ class FakeClient(b3.clients.Client):
                 result.append(m)
         return result
     
-    def message(self, msg):
+    def message(self, msg, *args):
+        msg = msg % args
         cleanmsg = re.sub(re.compile('\^[0-9]'), '', msg).strip()
         self.message_history.append(cleanmsg)
         print "sending msg to %s: %s" % (self.name, cleanmsg)
