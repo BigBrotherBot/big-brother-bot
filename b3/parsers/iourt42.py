@@ -232,7 +232,7 @@ class Iourt42Client(Client):
             self.save()
             self.authed = True
 
-            self.console.debug("Client authorized: %s [@%s] [GUID: '%s'] [FSA: '%s']", self.name, self.cid, self.guid, self.pbid)
+            self.console.debug("Client authorized: %s [@%s] [GUID: '%s'] [FSA: '%s']", self.name, self.id, self.guid, self.pbid)
 
             # check for bans
             if self.numBans > 0:
