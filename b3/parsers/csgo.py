@@ -544,12 +544,13 @@ class CsgoParser(Parser):
                 mlist[cid] = client
         return mlist
 
-    def say(self, msg):
+    def say(self, msg, *args):
         """
         Broadcast a message to all players.
         :param msg: The message to be broadcasted
         """
         if msg and len(msg.strip()):
+            msg = msg % args
             template = 'sm_say %s'
             if "B3 Say" in self.sm_plugins:
                 template = 'b3_say %s'
@@ -558,12 +559,13 @@ class CsgoParser(Parser):
             for line in self.getWrap(msg):
                 self.output.write(template % line)
 
-    def saybig(self, msg):
+    def saybig(self, msg, *args):
         """
         Broadcast a message to all players in a way that will catch their attention.
         :param msg: The message to be broadcasted
         """
         if msg and len(msg.strip()):
+            msg = msg % args
             template = 'sm_hsay %s'
             if "B3 Say" in self.sm_plugins:
                 template = 'b3_hsay %s'
@@ -572,13 +574,14 @@ class CsgoParser(Parser):
             for line in self.getWrap(msg):
                 self.output.write(template % line)
 
-    def message(self, client, msg):
+    def message(self, client, msg, *args):
         """
         Display a message to a given client
         :param client: The client to who send the message
         :param msg: The message to be sent
         """
         if not client.bot:  # do not talk to bots
+            msg = msg % args
             if msg and len(msg.strip()):
                 template = 'sm_psay #%(guid)s "%(msg)s"'
                 if "B3 Say" in self.sm_plugins:

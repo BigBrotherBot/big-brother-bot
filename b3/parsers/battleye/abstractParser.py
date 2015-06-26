@@ -880,27 +880,28 @@ class AbstractParser(b3.parser.Parser):
         self.queueEvent(self.getEvent('EVT_PLAYER_SYNC_COMPLETED'))
         return mlist
 
-    def say(self, msg):
+    def say(self, msg, *args):
         """
         Broadcast a message to all players.
         :param msg: The message to be broadcasted
         """
-        self.sayqueue.put(msg)
+        self.sayqueue.put(msg % args)
 
-    def saybig(self, msg):
+    def saybig(self, msg, *args):
         """
         Broadcast a message to all players in a way that will catch their attention.
         :param msg: The message to be broadcasted
         """
-        self.say(msg)
+        self.say(msg % args)
 
-    def message(self, client, text):
+    def message(self, client, text, *args):
         """
         Display a message to a given client
         :param client: The client to who send the message
         :param text: The message to be sent
         """
         if client:
+            text = text % args
             for line in self.getWrap(self.stripColors(self.msgPrefix + ' ' + text)):
                 self.write(self.getCommand('message', cid=client.cid, message=line))
 

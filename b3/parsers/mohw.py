@@ -270,11 +270,12 @@ class MohwParser(AbstractParser):
         # TODO: implements getPlayerPings when pings available on admin.listPlayers
         return {}
 
-    def saybig(self, msg):
+    def saybig(self, msg, *args):
         """
         Broadcast a message to all players in a way that will catch their attention.
         """
         if msg and len(msg.strip()) > 0:
+            msg = msg % args
             text = self.stripColors(prefixText([self.msgPrefix], msg))
             for line in self.getWrap(text):
                 self.write(self.getCommand('yell', message=line))

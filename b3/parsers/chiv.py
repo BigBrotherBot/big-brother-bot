@@ -284,35 +284,35 @@ class ChivParser(Parser):
         """
         pass
     
-    def say(self, msg):
+    def say(self, msg, *args):
         """
         Broadcast a message to all players.
         :param msg: The message to be broadcasted
         """
-        msg = self.stripColors(msg)
+        msg = self.stripColors(msg % args)
         packet = Packet()
         packet.msgType = MessageType.SAY_ALL
         packet.addString(msg)
         self.sendPacket(packet)
 
-    def saybig(self, msg):
+    def saybig(self, msg, *args):
         """
         Broadcast a message to all players in a way that will catch their attention.
         :param msg: The message to be broadcasted
         """
-        msg = self.stripColors(msg)
+        msg = self.stripColors(msg % args)
         packet = Packet()
         packet.msgType = MessageType.SAY_ALL_BIG
         packet.addString(msg)
         self.sendPacket(packet)
 
-    def message(self, client, text):
+    def message(self, client, text, *args):
         """
         Display a message to a given client
         :param client: The client to who send the message
         :param text: The message to be sent
         """
-        text = self.stripColors(text)
+        text = self.stripColors(text % args)
         packet = Packet()
         packet.msgType = MessageType.SAY
         packet.addGUID(client.guid)

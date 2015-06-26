@@ -1700,19 +1700,19 @@ class Parser(object):
         """
         raise NotImplementedError
     
-    def say(self, msg):
+    def say(self, msg, *args):
         """
         Broadcast a message to all players
         """
         raise NotImplementedError
 
-    def saybig(self, msg):
+    def saybig(self, msg, *args):
         """
         Broadcast a message to all players in a way that will catch their attention.
         """
         raise NotImplementedError
 
-    def message(self, client, text):
+    def message(self, client, text, *args):
         """
         Display a message to a given player
         """

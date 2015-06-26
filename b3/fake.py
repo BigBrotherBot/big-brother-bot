@@ -186,17 +186,17 @@ class FakeConsole(b3.parser.Parser):
     def getPlayerScores(self):
         return {0:5,1:4}
     
-    def say(self, msg):
+    def say(self, msg, *args):
         """
         Send text to the server.
         """
-        print ">>> %s" % re.sub(re.compile('\^[0-9]'), '', msg).strip()
+        print ">>> %s" % re.sub(re.compile('\^[0-9]'), '', msg % args).strip()
     
-    def saybig(self, msg):
+    def saybig(self, msg, *args):
         """
         Send bigtext to the server.
         """
-        print "+++ %s" % re.sub(re.compile('\^[0-9]'), '', msg).strip()
+        print "+++ %s" % re.sub(re.compile('\^[0-9]'), '', msg % args).strip()
     
     def write(self, msg, maxRetries=0, socketTimeout=None):
         """
@@ -248,16 +248,16 @@ class FakeConsole(b3.parser.Parser):
         self.queueEvent(self.getEvent('EVT_CLIENT_KICK', data={'reason': reason, 'admin': admin}, client=client))
         client.disconnect()
     
-    def message(self, client, text):
+    def message(self, client, text, *args):
         """
         Send a message to a client.
         """
         if client is None:
-            self.say(text)
+            self.say(text % args)
         elif client.cid is None:
             pass
         else:
-            print "sending msg to %s: %s" % (client.name, re.sub(re.compile('\^[0-9]'), '', text).strip())
+            print "sending msg to %s: %s" % (client.name, re.sub(re.compile('\^[0-9]'), '', text % args).strip())
     
     def getCvar(self, key):
         """

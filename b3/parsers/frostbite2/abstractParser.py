@@ -897,18 +897,19 @@ class AbstractParser(b3.parser.Parser):
                 client.teamId = int(newTeam)
         return mlist
 
-    def say(self, msg):
+    def say(self, msg, *args):
         """
         Broadcast a message to all players.
         :param msg: The message to be broadcasted
         """
-        self.sayqueue.put(msg)
+        self.sayqueue.put(msg % args)
 
-    def saybig(self, msg):
+    def saybig(self, msg, *args):
         """
         Broadcast a message to all players in a way that will catch their attention.
         """
-        if msg and len(msg.strip())>0:
+        if msg and len(msg.strip()) > 0:
+            msg = msg % args
             text = self.stripColors(prefixText([self.msgPrefix], msg))
             for line in self.getWrap(text):
                 self.write(self.getCommand('yell', message=line,

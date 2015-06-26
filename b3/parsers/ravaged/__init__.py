@@ -301,33 +301,36 @@ class RavagedParser(Parser):
                 mlist[cid] = client
         return mlist
 
-    def say(self, msg):
+    def say(self, msg, *args):
         """
         Broadcast a message to all players.
         :param msg: The message to be broadcasted
         """
         if msg and len(msg.strip()):
+            msg = msg % args
             msg = "%s <FONT COLOR='#%s'> %s" % (self.msgPrefix, self._say_color, msg)
             for line in self.getWrap(msg):
                 self.output.write("say <FONT COLOR='#%s'> %s" % (self._say_color, line))
 
-    def saybig(self, msg):
+    def saybig(self, msg, *args):
         """
         Broadcast a message to all players in a way that will catch their attention.
         :param msg: The message to be broadcasted
         """
         if msg and len(msg.strip()):
+            msg = msg % args
             msg = "%s <FONT COLOR='#%s'> %s" % (self.msgPrefix, self._saybig_color, msg)
             for line in self.getWrap(msg):
                 self.output.write("say <FONT COLOR='#%s'> %s" % (self._saybig_color, line))
 
-    def message(self, client, msg):
+    def message(self, client, msg, *args):
         """
         Display a message to a given client
         :param client: The client to who send the message
         :param msg: The message to be sent
         """
         if msg and len(msg.strip()):
+            msg = msg % args
             msg = "%s <FONT COLOR='#%s'> %s" % (self.msgPrefix, self._private_message_color, msg)
             for line in self.getWrap(msg):
                 self.output.write("playersay %s <FONT COLOR='#%s'> %s" % (client.cid, self._private_message_color, line))

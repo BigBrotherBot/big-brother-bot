@@ -783,7 +783,7 @@ class Client(object):
         :param msg: the message to send
         :param args: substitution arguments (if any).
         """
-        self.console.message(self, msg % args)
+        self.console.message(self, msg, *args)
 
     def warn(self, duration, warning, keyword=None, admin=None, data=''):
         """
