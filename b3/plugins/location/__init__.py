@@ -17,7 +17,7 @@
 
 
 __author__ = 'Fenix, Courgette'
-__version__ = '2.1'
+__version__ = '2.2'
 
 
 import b3
@@ -35,7 +35,7 @@ class LocationPlugin(b3.plugin.Plugin):
     _announce = True
 
     requiresPlugins = ['geolocation']
-    loadAfterPlugins = ['countryfilter']
+    loadAfterPlugins = ['countryfilter', 'proxyfilter']
 
     ####################################################################################################################
     #                                                                                                                  #
