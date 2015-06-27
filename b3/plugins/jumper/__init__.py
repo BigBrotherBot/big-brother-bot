@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'Fenix'
-__version__ = '2.27'
+__version__ = '2.28'
 
 import b3
 import b3.plugin
@@ -403,12 +403,6 @@ class JumperPlugin(b3.plugin.Plugin):
                 self.warning("automatic demo recording is enabled in configuration file but plugin 'urtserversidedemo' "
                              "has not been loaded in B3 main configuration file: automatic demo recording will be disabled")
 
-        # unregister some commands
-        self.adminPlugin.unregisterCommand('map')
-        self.adminPlugin.unregisterCommand('maps')
-        if self.powerAdminUrtPlugin:
-            self.adminPlugin.unregisterCommand('pasetnextmap')
-
         # register our commands
         if 'commands' in self.config.sections():
             for cmd in self.config.options('commands'):
@@ -421,6 +415,17 @@ class JumperPlugin(b3.plugin.Plugin):
                 func = getCmd(self, cmd)
                 if func:
                     self.adminPlugin.registerCommand(self, cmd, level, func, alias)
+
+        for cmd in ('map', 'maps', 'pasetnextmap'):
+
+            try:
+                alias = self.adminPlugin._commands[cmd].alias
+                level = '-'.join(map(str, self.adminPlugin._commands[cmd].level))
+                func = getCmd(self, cmd)
+                self.adminPlugin.unregisterCommand(cmd)
+                self.adminPlugin.registerCommand(self, cmd, level, func, alias)
+            except KeyError:
+                self.debug('not overriding command (%s) : it has not been registered by any other plugin')
 
         # create database tables (if needed)
         current_tables = self.console.storage.getTables()
@@ -1059,7 +1064,7 @@ class JumperPlugin(b3.plugin.Plugin):
         # no map found
         client.message('^7could not find any map matching ^1%s' % data)
 
-    def cmd_setnextmap(self, data, client=None, cmd=None):
+    def cmd_pasetnextmap(self, data, client=None, cmd=None):
         """
         <mapname> - Set the nextmap (partial map name works)
         """

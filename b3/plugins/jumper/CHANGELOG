@@ -70,3 +70,4 @@
                                 - let the plugin listen to EVT_PLUGIN_ENABLED and EVT_PLUGIN_DISABLED
                                 - replaced urllib2 with requests module
                                 - removed 'jmp' prefix from commands
+27/26/2015 - 2.28 - Fenix       - made commands overriding more transparent to the users
