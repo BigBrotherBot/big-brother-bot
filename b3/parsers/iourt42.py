@@ -87,9 +87,10 @@
 # 12/12/2014 - 1.28   - Fenix     - increased chat line length to comply with the new HUD setting (4.2.021)
 # 25/01/2015 - 1.29   - Fenix     - patch the b3.clients.getByMagic method so it's possible to lookup players using their
 #                                   auth login
-# 16/04/2015 - 1.30  - Fenix      - uniform class variables (dict -> variable)
-# 14/06/2015 - 1.31  - Fenix      - override OnClientuserinfochanged from Iourt1Parser: provide some more verbose logging
+# 16/04/2015 - 1.30   - Fenix     - uniform class variables (dict -> variable)
+# 14/06/2015 - 1.31   - Fenix     - override OnClientuserinfochanged from Iourt1Parser: provide some more verbose logging
 #                                   and correctly set racefree client attribute
+# 29/06/2015 - 1.32   - Fenix     - fixed onSay regular expression not parsing lines with empty say text
 
 import b3
 import re
@@ -104,7 +105,7 @@ from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.31'
+__version__ = '1.32'
 
 
 class Iourt42Client(Client):
@@ -413,10 +414,14 @@ class Iourt42Parser(Iourt41Parser):
                    r'(?P<name>.+?):\s+'
                    r'(?P<text>.*))$', re.IGNORECASE),
 
-        # SGT: fix issue with on_say when something like this come and the match could'nt find the name group
+        # SGT: fix issue with onSay when something like this come and the match could'nt find the name group
         # say: 7 -crespino-:
         # say: 6 ^5Marcel ^2[^6CZARMY^2]: !help
-        re.compile(r'^(?P<action>[a-z]+):\s(?P<data>(?P<cid>[0-9]+)\s(?P<name>.+?): (?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>[a-z]+):\s'
+                   r'(?P<data>'
+                   r'(?P<cid>[0-9]+)\s'
+                   r'(?P<name>[^ ]+):\s*'
+                   r'(?P<text>.*))$', re.IGNORECASE),
 
         # 15:42 Flag Return: RED
         # 15:42 Flag Return: BLUE
