@@ -131,7 +131,7 @@ class BanlistContent(object):
         return "BanlistContent[%s]" % ', '.join([repr(x) for x in self])
 
 
-class PlayerInfoBlock:
+class PlayerInfoBlock(object):
     """
     Help extract player info from a frostbite Player Info Block which we obtain
     from admin.listPlayers
@@ -209,7 +209,7 @@ class PlayerInfoBlock:
         return txt
 
 
-class TeamScoresBlock:
+class TeamScoresBlock(object):
     """
     help extract team scores info from frostbite data obtain from game events
     
@@ -261,7 +261,7 @@ class MapListBlockError(Exception):
     pass
 
 
-class MapListBlock:
+class MapListBlock(object):
     """
     Help extract map list from frostbite data
     

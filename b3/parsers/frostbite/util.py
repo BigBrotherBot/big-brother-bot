@@ -32,7 +32,7 @@ __version__ = '1.2'
 
 
 
-class BanlistContent:
+class BanlistContent(object):
     """
     Help extract banlist info from a frostbite banList.list response
     
@@ -101,7 +101,7 @@ class BanlistContent:
         return txt        
         
 
-class PlayerInfoBlock:
+class PlayerInfoBlock(object):
     """
     Help extract player info from a frostbite Player Info Block which we obtain
     from admin.listPlayers

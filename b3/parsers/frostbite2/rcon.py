@@ -35,7 +35,7 @@ __author__ = 'Courgette'
 __version__ = '1.1'
 
 
-class Rcon:
+class Rcon(object):
 
     def __init__(self, console, *args):
         """

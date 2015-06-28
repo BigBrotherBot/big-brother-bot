@@ -34,8 +34,10 @@ __version__ = '1.2'
 RE_CHALLENGE = re.compile(r'WELCOME! Frontlines: Fuel of War \(RCON\) VER=\d+ CHALLENGE=(?P<challenge>.+)')
 CMD_TERMINATOR = '\x04'
 
+
 class FrontlineConnectionError(Exception):
     pass
+
 
 class Client(asyncore.dispatcher_with_send):
 

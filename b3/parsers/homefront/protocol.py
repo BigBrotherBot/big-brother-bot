@@ -37,7 +37,7 @@ from struct import pack, unpack
 from hashlib import sha1
 
 
-class MessageType:
+class MessageType(object):
 
     CONNECT = 'CC'
     CLIENT_TRANSMISSION = 'CT'
@@ -66,7 +66,7 @@ class MessageType:
             return "unkown(%s)" % t
 
 
-class ChannelType:
+class ChannelType(object):
 
     BROADCAST = 0
     NORMAL = 1

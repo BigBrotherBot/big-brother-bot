@@ -44,7 +44,7 @@ from b3.parsers.frostbite.connection import FrostbiteConnection
 from b3.parsers.frostbite.connection import FrostbiteException
 from b3.parsers.frostbite.connection import FrostbiteCommandFailedError
 
-class Rcon:
+class Rcon(object):
 
     console = None
 
