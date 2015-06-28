@@ -217,15 +217,15 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_data=(100, '38', 'body', 'UT_MOD_GLOCK'))
 
     def test_say(self):
-        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel = FakeClient(self.console, name="^5Marcel^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('6')
-        self.assertEvent(r'''say: 6 ^5Marcel ^2[^6CZARMY^2]: !help''',
+        self.assertEvent(r'''say: 6 ^5Marcel^2[^6CZARMY^2]: !help''',
             event_type='EVT_CLIENT_SAY',
             event_client=marcel,
             event_data="!help")
 
     def test_ClientJumpRunStarted(self):
-        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel = FakeClient(self.console, name="^5Marcel^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
         self.assertEvent(r'''ClientJumpRunStarted: 0 - way: 1''',
             event_type='EVT_CLIENT_JUMP_RUN_START',
@@ -233,7 +233,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_data={'way_id': '1', 'attempt_num': None, 'attempt_max': None})
 
     def test_ClientJumpRunStarted_with_attempt(self):
-        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel = FakeClient(self.console, name="^5Marcel^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
         self.assertEvent(r'''ClientJumpRunStarted: 0 - way: 1 - attempt: 1 of 5''',
             event_type='EVT_CLIENT_JUMP_RUN_START',
@@ -241,7 +241,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_data={'way_id': '1', 'attempt_num': '1', 'attempt_max': '5'})
 
     def test_ClientJumpRunStopped(self):
-        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel = FakeClient(self.console, name="^5Marcel^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
         self.assertEvent(r'''ClientJumpRunStopped: 0 - way: 1 - time: 12345''',
             event_type='EVT_CLIENT_JUMP_RUN_STOP',
@@ -249,7 +249,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_data={'way_id': '1', 'way_time': '12345', 'attempt_max': None, 'attempt_num': None})
 
     def test_ClientJumpRunStopped_with_attempt(self):
-        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel = FakeClient(self.console, name="^5Marcel^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
         self.assertEvent(r'''ClientJumpRunStopped: 0 - way: 1 - time: 12345 - attempt: 1 of 5''',
             event_type='EVT_CLIENT_JUMP_RUN_STOP',
@@ -257,7 +257,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_data={'way_id': '1', 'way_time': '12345', 'attempt_max': '5', 'attempt_num': '1'})
 
     def test_ClientJumpRunCancelled(self):
-        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel = FakeClient(self.console, name="^5Marcel^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
         self.assertEvent(r'''ClientJumpRunCanceled: 0 - way: 1''',
             event_type='EVT_CLIENT_JUMP_RUN_CANCEL',
@@ -265,7 +265,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_data={'way_id': '1', 'attempt_max': None, 'attempt_num': None})
 
     def test_ClientJumpRunCancelled_with_attempt(self):
-        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel = FakeClient(self.console, name="^5Marcel^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
         self.assertEvent(r'''ClientJumpRunCanceled: 0 - way: 1 - attempt: 1 of 5''',
             event_type='EVT_CLIENT_JUMP_RUN_CANCEL',
@@ -274,7 +274,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
 
 
     def test_ClientSavePosition(self):
-        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel = FakeClient(self.console, name="^5Marcel^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
         self.assertEvent(r'''ClientSavePosition: 0 - 335.384887 - 67.469154 - -23.875000''',
             event_type='EVT_CLIENT_POS_SAVE',
@@ -282,7 +282,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_data={'position': (335.384887, 67.469154, -23.875)})
 
     def test_ClientLoadPosition(self):
-        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel = FakeClient(self.console, name="^5Marcel^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
         self.assertEvent(r'''ClientLoadPosition: 0 - 335.384887 - 67.469154 - -23.875000''',
             event_type='EVT_CLIENT_POS_LOAD',
@@ -345,7 +345,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
         self.assertEvent(r'''ClientMelted: 0''', event_type='EVT_CLIENT_MELTED', event_client=alice)
 
     def test_SurvivorWinner_player(self):
-        marcel = FakeClient(self.console, name="^5Marcel ^2[^6CZARMY^2]", guid="11111111111111")
+        marcel = FakeClient(self.console, name="^5Marcel^2[^6CZARMY^2]", guid="11111111111111")
         marcel.connects('0')
         self.assertEvent(r'''SurvivorWinner: 0''', event_type='EVT_CLIENT_SURVIVOR_WINNER', event_client=marcel)
 
@@ -372,7 +372,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
             self.assertEvent(r'''777:18 say: 2 %s: %s''' % (new_name, text),
                 event_type='EVT_CLIENT_SAY',
                 event_client=player,
-                event_data=text)
+                event_data=text.lstrip())
 
         # GIVEN a known player with FSA louk, cl_guid "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" that will connect on slot 2
         player = FakeClient(console=self.console, name="Chucky", guid="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", pbid="louk")
