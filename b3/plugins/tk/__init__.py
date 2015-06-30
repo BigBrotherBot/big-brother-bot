@@ -26,7 +26,7 @@ import time
 
 from ConfigParser import NoOptionError
 
-__version__ = '1.3.4'
+__version__ = '1.3.5'
 __author__ = 'ThorN, mindriot, Courgette, xlr8or, SGT, 82ndab-Bravo17, ozon, Fenix'
 
 
@@ -296,7 +296,7 @@ class TkPlugin(b3.plugin.Plugin):
             self.debug('using default value (%s) for settings/grudge_enable' % self._grudge_enable)
 
         try:
-            self._grudge_level = self.config.getboolean('settings', 'grudge_level')
+            self._grudge_level = self.config.getint('settings', 'grudge_level')
             self.debug('loaded settings/grudge_level: %s' % self._grudge_level)
         except NoOptionError:
             self.warning('could not find settings/grudge_level in config file, '
