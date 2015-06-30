@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__  = 'PtitBigorneau - www.ptitbigorneau.fr'
-__version__ = '1.5'
+__version__ = '1.5.1'
 
 import b3
 import b3.plugin
@@ -134,7 +134,7 @@ class FirstkillPlugin(b3.plugin.Plugin):
             if self._firsths and \
                 self.console.gameName in ('iourt41', 'iourt42') and \
                     event.data[2] in (self.console.HL_HEAD, self.console.HL_HELMET) and \
-                        event.data[2] not in (self.console.UT_MOD_BLED, self.console.UT_MOD_HEGRENADE):
+                        event.data[1] not in (self.console.UT_MOD_BLED, self.console.UT_MOD_HEGRENADE):
                 self._hs += 1
                 if self._hs == 1:
                     self.announce_first_kill_by_headshot(client, target)
