@@ -324,7 +324,7 @@ class Plugin(object):
                 func = handlers[value_type]
             except KeyError:
                 val = default
-                self.warning('could not convert %s::%s (%s) : invalid value type specified (%s) : expecting one of (%s), '
+                self.warning('could not convert %s::%s : invalid value type specified (%s) : expecting one of (%s), '
                              'using default : %s', section, option , value_type, ', '.join(map(str, handlers.keys())), default)
             else:
                 try:
