@@ -33,6 +33,7 @@ from b3.plugin import Plugin
 from b3.events import Event
 from tests import B3TestCase
 from tests.plugins.fakeplugins import __file__ as external_plugins__file__
+from textwrap import dedent
 
 external_plugins_dir = os.path.dirname(external_plugins__file__)
 testplugin_config_file = os.path.join(external_plugins_dir, "testplugin/conf/plugin_testplugin.ini")
@@ -433,6 +434,73 @@ class Test_Plugin_requiresParser(B3TestCase):
         # THEN
         self.assertListEqual([call('Could not load plugin testplugin2', exc_info=ANY)], error_mock.mock_calls)
 
+
+class Test_Plugin_getSetting(B3TestCase):
+
+    def setUp(self):
+        B3TestCase.setUp(self)
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString(dedent("""
+        [section_foo]
+        option_str: string value with spaces
+        option_int: 7
+        option_bool1: false
+        option_bool2: true
+        option_bool3: 0
+        option_bool4: 1
+        option_bool5: 2
+        option_float: 0.97
+        option_level1: senioradmin
+        option_level2: guest
+        option_level3: badkeyword
+        option_duration1: 300
+        option_duration2: 3h
+        option_path: @b3/conf/b3.distribution.ini
+        """))
+
+        self.p = MyPlugin(self.console, self.conf)
+
+    def test_value_retrieval_valid(self):
+        self.assertEqual(self.p.getSetting('section_foo', 'option_str', b3.STRING), 'string value with spaces')
+        self.assertEqual(self.p.getSetting('section_foo', 'option_int', b3.STRING), '7')
+        self.assertEqual(self.p.getSetting('section_foo', 'option_int', b3.INTEGER), 7)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_bool1', b3.BOOLEAN), False)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_bool2', b3.BOOLEAN), True)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_bool3', b3.BOOLEAN), False)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_bool4', b3.BOOLEAN), True)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_float', b3.STRING), '0.97')
+        self.assertEqual(self.p.getSetting('section_foo', 'option_float', b3.FLOAT), 0.97)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_level1', b3.LEVEL), 80)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_level2', b3.LEVEL), 0)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_duration1', b3.DURATION), 300)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_duration2', b3.DURATION), 180)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_path', b3.PATH), b3.getAbsolutePath('@b3/conf/b3.distribution.ini', decode=True))
+
+    def test_value_retrieval_invalid(self):
+        self.assertEqual(self.p.getSetting('section_foo', 'option_path', b3.INTEGER, 40), 40)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_bool5', b3.BOOLEAN, True), True)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_level3', b3.LEVEL, 100), 100)
+        self.assertEqual(self.p.getSetting('section_foo', 'my_bad_option', b3.STRING, 'my string'), 'my string')
+        self.assertEqual(self.p.getSetting('section_foo', 'option_int', 90, 40), 40)
+        self.assertEqual(self.p.getSetting('my_bad_section', 'my_bad_option', b3.STRING, 'my string'), 'my string')
+
+    def test_value_retrieval_invalid_no_default(self):
+        self.assertEqual(self.p.getSetting('section_foo', 'option_path', b3.INTEGER), None)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_bool5', b3.BOOLEAN), None)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_level3', b3.LEVEL), None)
+        self.assertEqual(self.p.getSetting('section_foo', 'my_bad_option', b3.STRING), None)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_int', 90), None)
+        self.assertEqual(self.p.getSetting('my_bad_section', 'my_bad_option', b3.STRING), None)
+
+    def test_with_no_config(self):
+        self.p.config = None
+        self.assertEqual(self.p.getSetting('section_foo', 'option_str', b3.STRING, 'string value with spaces'), 'string value with spaces')
+        self.assertEqual(self.p.getSetting('section_foo', 'option_int', b3.STRING, '7'), '7')
+        self.assertEqual(self.p.getSetting('section_foo', 'option_int', b3.INTEGER, 7), 7)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_bool1', b3.BOOLEAN, False), False)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_bool2', b3.BOOLEAN, True), True)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_bool3', b3.BOOLEAN, False), False)
+        self.assertEqual(self.p.getSetting('section_foo', 'option_bool4', b3.BOOLEAN, True), True)
 
 class Test_Plugin_requiresStorage(B3TestCase):
 
