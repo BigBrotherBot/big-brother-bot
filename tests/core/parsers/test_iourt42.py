@@ -362,6 +362,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
         self.assertEvent(r'''Pop!''', event_type='EVT_BOMB_EXPLODED', event_data=None, event_client=None)
 
     def test_say_after_player_changed_name(self):
+
         def assert_new_name_and_text_does_not_break_auth(new_name, text="!help"):
             # WHEN the player renames himself
             self.console.parseLine(r'''777:16 ClientUserinfoChanged: 2 n\%s\t\3\r\1\tl\0\f0\\f1\\f2\\a0\0\a1\255\a2\0''' % new_name)
@@ -504,6 +505,7 @@ class Test_OnClientuserinfo(Iourt42TestCase):
         self.console.PunkBuster = None
 
     def test_ioclient(self):
+        self.console.queryClientFrozenSandAccount = Mock(return_value={})
         infoline = r'''2 \ip\11.22.33.44:27961\challenge\-284496317\qport\13492\protocol\68\name\laCourge\racered\2\raceblue\2\rate\16000\ut_timenudge\0\cg_rgb\128 128 128\cg_predictitems\0\cg_physics\1\cl_anonymous\0\sex\male\handicap\100\color2\5\color1\4\team_headmodel\*james\team_model\james\headmodel\sarge\model\sarge\snaps\20\cg_autoPickup\-1\gear\GLAORWA\authc\0\teamtask\0\cl_guid\00000000011111111122222223333333\weapmodes\00000110220000020002'''
         self.assertFalse('2' in self.console.clients)
         self.console.OnClientuserinfo(action=None, data=infoline)
@@ -513,6 +515,21 @@ class Test_OnClientuserinfo(Iourt42TestCase):
         self.assertEqual('laCourge^7', client.exactName)
         self.assertEqual('laCourge', client.name)
         self.assertEqual('00000000011111111122222223333333', client.guid)
+        self.assertEqual(self.console.queryClientFrozenSandAccount.call_count, 2) # both on connect and auth
+
+    def test_ioclient_with_authl_token(self):
+        self.console.queryClientFrozenSandAccount = Mock(return_value={})
+        infoline = r'''2 \ip\11.22.33.44:27961\challenge\-284496317\qport\13492\protocol\68\name\laCourge\racered\2\raceblue\2\rate\16000\ut_timenudge\0\cg_rgb\128 128 128\cg_predictitems\0\cg_physics\1\cl_anonymous\0\sex\male\handicap\100\color2\5\color1\4\team_headmodel\*james\team_model\james\headmodel\sarge\model\sarge\snaps\20\cg_autoPickup\-1\gear\GLAORWA\authl\lacourge\authc\0\teamtask\0\cl_guid\00000000011111111122222223333333\weapmodes\00000110220000020002'''
+        self.assertFalse('2' in self.console.clients)
+        self.console.OnClientuserinfo(action=None, data=infoline)
+        self.assertTrue('2' in self.console.clients)
+        client = self.console.clients['2']
+        self.assertEqual('11.22.33.44', client.ip)
+        self.assertEqual('laCourge^7', client.exactName)
+        self.assertEqual('laCourge', client.name)
+        self.assertEqual('lacourge', client.pbid)
+        self.assertEqual('00000000011111111122222223333333', client.guid)
+        self.assertEqual(self.console.queryClientFrozenSandAccount.call_count, 0)
 
     @unittest.skip("need to validate rcon responses from real 4.2 gameserver")
     def test_bot(self):
