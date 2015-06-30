@@ -91,6 +91,10 @@
 # 14/06/2015 - 1.31   - Fenix     - override OnClientuserinfochanged from Iourt1Parser: provide some more verbose logging
 #                                   and correctly set racefree client attribute
 # 29/06/2015 - 1.32   - Fenix     - fixed onSay regular expression not parsing lines with empty say text
+# 30/06/2015 - 1.33   - Fenix     - get client auth login from Clientuserinfo line if available
+#                                 - removed notoriety attribute in Iourt42Client: useless in UrT4.2
+#                                 - improved logging
+
 
 import b3
 import re
@@ -105,18 +109,16 @@ from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.32'
+__version__ = '1.33'
 
 
 class Iourt42Client(Client):
-
-    notoriety = None
 
     def auth_by_guid(self):
         """
         Authorize this client using his GUID.
         """
-        self.console.verbose("Auth by guid: %r" % self.guid)
+        self.console.debug("Auth by guid: %r", self.guid)
         try:
             return self.console.storage.getClient(self)
         except KeyError, msg:
@@ -127,25 +129,24 @@ class Iourt42Client(Client):
         """
         Authorize this client using his PBID.
         """
-        self.console.verbose("Auth by FSA: %r" % self.pbid)
+        self.console.debug("Auth by FSA: %r", self.pbid)
         clients_matching_pbid = self.console.storage.getClientsMatching(dict(pbid=self.pbid))
         if len(clients_matching_pbid) > 1:
-            self.console.error("DATA ERROR: found %s client having Frozen Sand "
-                               "account '%s'" % (len(clients_matching_pbid), self.pbid))
+            self.console.warning("Found %s client having FSA '%s'", len(clients_matching_pbid), self.pbid)
             return self.auth_by_pbid_and_guid()
         elif len(clients_matching_pbid) == 1:
             self.id = clients_matching_pbid[0].id
             # we may have a second client entry in database with current guid.
             # we want to update our current client guid only if it is not the case.
             try:
-                client_by_guid = self.console.storage.getClient(Client(guid=self.guid))
+                client_by_guid = self.console.storage.getClient(Iourt42Client(guid=self.guid))
             except KeyError:
-                client_by_guid = None
-
-            if client_by_guid and client_by_guid.id != self.id:
-                # so storage.get_client is able to overwrite the value which will make
-                # it remain unchanged in database when .save() will be called later on
-                self._guid = None
+                pass
+            else:
+                if client_by_guid.id != self.id:
+                    # so storage.getClient is able to overwrite the value which will make
+                    # it remain unchanged in database when .save() will be called later on
+                    self._guid = None
             return self.console.storage.getClient(self)
         else:
             self.console.debug('Frozen Sand account [%s] unknown in database', self.pbid)
@@ -155,13 +156,13 @@ class Iourt42Client(Client):
         """
         Authorize this client using both his PBID and GUID.
         """
-        self.console.verbose("Auth by both guid and FSA: %r, %r" % (self.guid, self.pbid))
+        self.console.debug("Auth by both guid and FSA: %r, %r", self.guid, self.pbid)
         clients_matching_pbid = self.console.storage.getClientsMatching({'pbid': self.pbid, 'guid': self.guid})
         if len(clients_matching_pbid):
             self.id = clients_matching_pbid[0].id
             return self.console.storage.getClient(self)
         else:
-            self.console.debug("Frozen Sand account [%s] with guid '%s' unknown in database" % (self.pbid, self.guid))
+            self.console.debug("Frozen Sand account [%s] with guid '%s' unknown in database", self.pbid, self.guid)
             return False
 
     def auth(self):
@@ -170,24 +171,23 @@ class Iourt42Client(Client):
         In UrT4.2 :
            * all connected players have a cl_guid
            * some have a Frozen Sand account (FSA)
-
         The FSA is a worldwide identifier while the cl_guid only identify a player on a given game server.
         See http://forum.bigbrotherbot.net/urban-terror-4-2/urt-4-2-discussion/
         """
         if not self.authed and self.guid and not self.authorizing:
+
             self.authorizing = True
+
             name = self.name
-            ip = self.ip
             pbid = self.pbid
-            self.console.verbose2("Auth with %r" % {'name': name, 'ip': ip, 'pbid': pbid})
+            guid = self.guid
+            ip = self.ip
 
             if not pbid and self.cid:
                 fsa_info = self.console.queryClientFrozenSandAccount(self.cid)
                 self.pbid = pbid = fsa_info.get('login', None)
 
-            # Frozen Sand Account related info
-            if not hasattr(self, 'notoriety'):
-                self.notoriety = None
+            self.console.verbose("Auth with %r", {'name': name, 'ip': ip, 'pbid': pbid, 'guid': guid})
 
             # FSA will be found in pbid
             if not self.pbid:
@@ -244,10 +244,8 @@ class Iourt42Client(Client):
                     return False
 
             self.refreshLevel()
-
             self.console.queueEvent(self.console.getEvent('EVT_CLIENT_AUTH', data=self, client=self))
             self.authorizing = False
-
             return self.authed
         else:
             return False
@@ -698,7 +696,6 @@ class Iourt42Parser(Iourt41Parser):
                           "the bans on the urbanterror.info website. To unban a player you will "
                           "have to first unban him on B3 and then also unban him on the official Frozen Sand "
                           "website : http://www.urbanterror.info/groups/list/all/?search=%s" % frozensand_auth_owners)
-
         else:
             self.info("Ignoring settings about banning with Frozen Sand auth system as the "
                       "auth system is not enabled or auth_owners not set")
@@ -762,6 +759,7 @@ class Iourt42Parser(Iourt41Parser):
         self.verbose('Parsed user info: %s' % bclient)
 
         if bclient:
+
             client = self.clients.getByCID(bclient['cid'])
 
             if client:
@@ -769,20 +767,22 @@ class Iourt42Parser(Iourt41Parser):
                 for k, v in bclient.iteritems():
                     if hasattr(client, 'gear') and k == 'gear' and client.gear != v:
                         self.queueEvent(b3.events.Event(self.getEventID('EVT_CLIENT_GEAR_CHANGE'), v, client))
-                    if not k.startswith('_') and k not in ('login', 'password', 'groupBits',
-                                                           'maskLevel', 'autoLogin', 'greeting'):
+                    if not k.startswith('_') and k not in ('login', 'password', 'groupBits', 'maskLevel', 'autoLogin', 'greeting'):
                         setattr(client, k, v)
             else:
                 # make a new client
-                # use cl_guid
                 if 'cl_guid' in bclient:
                     guid = bclient['cl_guid']
                 else:
                     guid = 'unknown'
 
-                # query FrozenSand Account
-                auth_info = self.queryClientFrozenSandAccount(bclient['cid'])
-                fsa = auth_info.get('login', None)
+                if 'authl' in bclient:
+                    # authl contains FSA since UrT 4.2.022
+                    fsa = bclient['authl']
+                else:
+                    # query FrozenSand Account
+                    auth_info = self.queryClientFrozenSandAccount(bclient['cid'])
+                    fsa = auth_info.get('login', None)
 
                 # v1.0.17 - mindriot - 02-Nov-2008
                 if 'name' not in bclient:
@@ -803,7 +803,7 @@ class Iourt42Parser(Iourt41Parser):
                             bclient['ip'] = client_data['ip']
                         except Exception, err:
                             bclient['ip'] = ''
-                            self.warning("failed to get client %s ip address" % bclient['cid'], err)
+                            self.warning("Failed to get client %s ip address" % bclient['cid'], err)
 
                 nguid = ''
                 # override the guid... use ip's only if self.console.IpsOnly is set True.
@@ -812,8 +812,8 @@ class Iourt42Parser(Iourt41Parser):
                 # replace last part of the guid with two segments of the ip
                 elif self.IpCombi:
                     i = bclient['ip'].split('.')
-                    d = len(i[0])+len(i[1])
-                    nguid = guid[:-d]+i[0]+i[1]
+                    d = len(i[0]) + len(i[1])
+                    nguid = guid[:-d] + i[0] + i[1]
                 # Quake clients don't have a cl_guid, we'll use ip instead
                 elif guid == 'unknown':
                     nguid = bclient['ip']
@@ -821,8 +821,7 @@ class Iourt42Parser(Iourt41Parser):
                 if nguid != '':
                     guid = nguid
 
-                self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'],
-                                       state=b3.STATE_ALIVE, bot=bot, guid=guid, pbid=fsa, data=auth_info)
+                self.clients.newClient(bclient['cid'], name=bclient['name'], ip=bclient['ip'], bot=bot, guid=guid, pbid=fsa)
 
         return None
 
