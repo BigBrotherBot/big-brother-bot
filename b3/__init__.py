@@ -91,6 +91,15 @@ STATE_DEAD = 1
 STATE_ALIVE = 2
 STATE_UNKNOWN = 3
 
+# CUSTOM TYPES FOR DYNAMIC CASTING
+STRING = STR = 1                        ## built-in string
+INTEGER = INT = 2                       ## built-in integer
+BOOLEAN = BOOL = 3                      ## built-in boolean
+FLOAT = 4                               ## built-in float
+LEVEL = 5                               ## b3.clients.Group level
+DURATION = 6                            ## b3.functions.time2minutes conversion
+PATH = 7                                ## b3.getAbsolutePath path conversion
+
 # APP HOME DIRECTORY
 HOMEDIR = os.path.normpath(os.path.expanduser('~/BigBrotherBot')).decode(sys.getfilesystemencoding())
 if not os.path.isdir(HOMEDIR):

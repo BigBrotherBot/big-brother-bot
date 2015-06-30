@@ -57,10 +57,13 @@
 #                                  will be loaded no matter the version of B3 currently running)
 #                                - added Plugin class documentation
 # 22/06/2015 - 1.9.9 - Fenix     - added requiresStorage attribute: list the storage protocols supported by a plugin
+# 01/07/2015 - 1.10  - Fenix     - added getSetting method: safely return a configuration file setting value
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.9.9'
+__version__ = '1.10'
 
+
+import b3.clients
 import b3.config
 import b3.events
 import b3.functions
@@ -166,12 +169,18 @@ class Plugin(object):
                     self.loadConfig(config)
                 except b3.config.ConfigFileNotValid, e:
                     self.critical("The configuration file syntax is broken: %s" % e)
-                    self.critical("TIP: make use of a text editor with syntax highlighting to modify your config "
-                                  "files: it makes easy to spot errors")
+                    self.critical("TIP: make use of a text editor with syntax highlighting to "
+                                  "modify your config files: it makes easy to spot errors")
                     raise e
 
         self.registerEvent('EVT_STOP', self.onStop)
         self.registerEvent('EVT_EXIT', self.onExit)
+
+    def start(self):
+        """
+        Called after Plugin.startup().
+        """
+        pass
 
     def enable(self):
         """
@@ -197,6 +206,135 @@ class Plugin(object):
         :return True if the plugin is enabled, False otherwise
         """
         return self._enabled
+
+    ####################################################################################################################
+    #                                                                                                                  #
+    #   CONFIG RELATED METHODS                                                                                         #
+    #                                                                                                                  #
+    ####################################################################################################################
+
+    def loadConfig(self, filename=None):
+        """
+        Load the plugin configuration file.
+        :param filename: The plugin configuration file name
+        """
+        if filename:
+            self.bot('loading config %s for %s', filename, self.__class__.__name__)
+            try:
+                self.config = b3.config.load(filename)
+            except b3.config.ConfigFileNotFound:
+                if self.requiresConfigFile:
+                    self.critical('could not find config file %s', filename)
+                    return False
+                else:
+                    self.bot('no config file found for %s: was not required either', self.__class__.__name__)
+                    return True
+        elif self.config:
+            self.bot('loading config %s for %s', self.config.fileName, self.__class__.__name__)
+            self.config = b3.config.load(self.config.fileName)
+        else:
+            if self.requiresConfigFile:
+                self.error('could not load config for %s', self.__class__.__name__)
+                return False
+            else:
+                self.bot('no config file found for %s: was not required either', self.__class__.__name__)
+                return True
+
+        # empty message cache
+        self._messages = {}
+
+    def saveConfig(self):
+        """
+        Save the plugin configuration file.
+        """
+        self.bot('saving config %s', self.config.fileName)
+        return self.config.save()
+
+    def getSetting(self, section, option, value_type=b3.STRING, default=None):
+        """
+        Safely return a setting value from the configuration file.
+        Will print in the log file information about the value being loaded
+        :param section: the configuration file section
+        :param option: the configuration file option
+        :param value_type: the value type used to cast the retrieved value
+        :param default: the default value to be returned when an error occurs
+        """
+        def _get_string(value):
+            """convert the given value to str"""
+            self.verbose('trying to convert value to string : %s', value)
+            return str(value)
+
+        def _get_integer(value):
+            """convert the given value to int"""
+            self.verbose('trying to convert value to integer : %s', value)
+            return int(str(value))
+
+        def _get_boolean(value):
+            """convert the given value to bool"""
+            self.verbose('trying to convert value to boolean : %s', value)
+            x = str(value).lower()
+            if x in ('yes', '1', 'on', 'true'):
+                return True
+            elif x in ('no', '0', 'off', 'false'):
+                return False
+            else:
+                raise ValueError('%s is not a boolean value' % x)
+
+        def _get_float(value):
+            """convert the given value to float"""
+            self.verbose('trying to convert value to float : %s', value)
+            return float(str(value))
+
+        def _get_level(value):
+            """convert the given value to a b3 group level"""
+            self.verbose('trying to convert value to b3 group level : %s', value)
+            return self.console.getGroupLevel(str(value).lower().strip())
+
+        def _get_duration(value):
+            """convert the given value using b3.functions.time2minutes"""
+            self.verbose('trying to convert value to time duration : %s', value)
+            return b3.functions.time2minutes(str(value).strip())
+
+        def _get_path(value):
+            """convert the given path using b3.getAbsolutePath"""
+            self.verbose('trying to convert value to absolute path : %s', value)
+            return b3.getAbsolutePath(str(value), decode=True)
+
+        handlers = {
+            b3.STRING: _get_string,
+            b3.INTEGER: _get_integer,
+            b3.BOOLEAN: _get_boolean,
+            b3.FLOAT: _get_float,
+            b3.LEVEL: _get_level,
+            b3.DURATION: _get_duration,
+            b3.PATH: _get_path,
+        }
+
+        if not self.config:
+            self.warning('could not find %s::%s : no configuration file loaded, using default : %s', section, option, default)
+            return default
+
+        try:
+            val = self.config.get(section, option)
+        except b3.config.NoOptionError:
+            self.warning('could not find %s::%s in configuration file, using default : %s', section, option, default)
+            val = default
+        else:
+            try:
+                func = handlers[value_type]
+            except KeyError:
+                val = default
+                self.warning('could not convert %s::%s (%s) : invalid value type specified (%s) : expecting one of (%s), '
+                             'using default : %s', section, option , value_type, ', '.join(map(str, handlers.keys())), default)
+            else:
+                try:
+                    val = func(val)
+                except (ValueError, KeyError), e:
+                    self.warning('could not convert %s::%s (%s) : %s, using default : %s', section, option , val, e, default)
+                    val = default
+
+        self.debug('loaded value from configuration file : %s::%s = %s', section, option, val)
+        return val
 
     def getMessage(self, msg, *args):
         """
@@ -231,47 +369,15 @@ class Plugin(object):
                 self.error("failed to format message %r (%r) with parameters %r: %s", msg, _msg, args, err)
                 raise
 
-    def loadConfig(self, filename=None):
-        """
-        Load the plugin configuration file.
-        :param filename: The plugin configuration file name
-        """
-        if filename:
-            self.bot('loading config %s for %s', filename, self.__class__.__name__)
-            try:
-                self.config = b3.config.load(filename)
-            except b3.config.ConfigFileNotFound:
-                if self.requiresConfigFile:
-                    self.critical('could not find config file %s' % filename)
-                    return False
-                else:
-                    self.bot('no config file found for %s: was not required either' % self.__class__.__name__)
-                    return True
-        elif self.config:
-            self.bot('loading config %s for %s', self.config.fileName, self.__class__.__name__)
-            self.config = b3.config.load(self.config.fileName)
-        else:
-            if self.requiresConfigFile:
-                self.error('could not load config for %s', self.__class__.__name__)
-                return False
-            else:
-                self.bot('no config file found for %s: was not required either' % self.__class__.__name__)
-                return True
-
-        # empty message cache
-        self._messages = {}
-
-    def saveConfig(self):
-        """
-        Save the plugin configuration file.
-        """
-        self.bot('saving config %s', self.config.fileName)
-        return self.config.save()
+    ####################################################################################################################
+    #                                                                                                                  #
+    #   EVENTS RELATED METHODS                                                                                         #
+    #                                                                                                                  #
+    ####################################################################################################################
 
     def registerEventHook(self, event_id, hook):
         """
-        Register an event hook which will be used to
-        dispatch a specific event once it reaches our plugin.
+        Register an event hook which will be used to dispatch a specific event once it reaches our plugin.
         NOTE: This should be only called internally by registerEvent().
         :param event_id: The event id
         :param hook: The reference to the method that will handle the event
@@ -326,12 +432,6 @@ class Plugin(object):
         :param name: The event name.
         """
         self.console.createEvent(key, name)
-
-    def start(self):
-        """
-        Called after Plugin.startup().
-        """
-        pass
 
     def parseEvent(self, event):
         """
@@ -468,7 +568,7 @@ class Plugin(object):
     #                                                                                                                  #
     ####################################################################################################################
 
-    def handle(self, event):
+    def handle(self, _):
         """
         Deprecated. Use onEvent().
         """

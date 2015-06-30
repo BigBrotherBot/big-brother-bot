@@ -122,7 +122,7 @@ class B3ConfigParserMixin(object):
         :param section: The configuration file section.
         :param setting: The configuration file setting.
         """
-        return b3.getAbsolutePath(self.get(section, setting))
+        return b3.getAbsolutePath(self.get(section, setting), decode=True)
 
     def getTextTemplate(self, section, setting=None, **kwargs):
         """
