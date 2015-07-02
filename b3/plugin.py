@@ -300,6 +300,10 @@ class Plugin(object):
             self.verbose('trying to convert value to absolute path : %s', value)
             return b3.getAbsolutePath(str(value), decode=True)
 
+        def _get_template(value):
+            """process the given value using b3.functions.vars2printf"""
+            return b3.functions.vars2printf(value).strip()
+
         handlers = {
             b3.STRING: _get_string,
             b3.INTEGER: _get_integer,
@@ -308,6 +312,7 @@ class Plugin(object):
             b3.LEVEL: _get_level,
             b3.DURATION: _get_duration,
             b3.PATH: _get_path,
+            b3.TEMPLATE: _get_template,
         }
 
         if not self.config:
@@ -315,7 +320,7 @@ class Plugin(object):
             return default
 
         try:
-            val = self.config.get(section, option)
+            val = self.config.get(section, option, value_type == b3.TEMPLATE)
         except b3.config.NoOptionError:
             self.warning('could not find %s::%s in configuration file, using default : %s', section, option, default)
             val = default
