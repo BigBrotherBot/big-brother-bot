@@ -120,8 +120,7 @@ class B3App(QApplication):
         """
         Initialize B3 HOME directory.
         """
-        if not os.path.isdir(b3.HOMEDIR):
-            os.mkdir(b3.HOMEDIR)
+        b3.getHomePath()
 
     @staticmethod
     def __init_log():

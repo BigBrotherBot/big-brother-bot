@@ -39,6 +39,8 @@
 #                                     of @conf by passing a specific configuration file (path or instance) to the function
 #                                     instead of using the globally definied confdir variable (fix @conf retrieval from GUI)
 # 2015/06/17 - 1.8      - Fenix     - changed getAbsolutePath to resolve @home token
+# 2015/07/03 - 1.9      - Fenix     - added getHomePath() function: return the b3 HOME path creating it if it doesn't exists
+
 
 import os
 import re
@@ -47,6 +49,7 @@ import pkg_handler
 import traceback
 import time
 import signal
+import shutil
 
 from tempfile import TemporaryFile
 from ConfigParser import NoOptionError
@@ -101,10 +104,27 @@ DURATION = 6                            ## b3.functions.time2minutes conversion
 PATH = 7                                ## b3.getAbsolutePath path conversion
 TEMPLATE = 8                            ## b3.functions.vars2printf conversion
 
+
+def getHomePath():
+    """
+    Return the path to the B3 home directory.
+    """
+    path = os.path.normpath(os.path.expanduser('~/.b3')).decode(sys.getfilesystemencoding())
+
+    ## RENAME v1.10.1 -> v1.10.2
+    path_1 = os.path.normpath(os.path.expanduser('~/BigBrotherBot')).decode(sys.getfilesystemencoding())
+    if os.path.isdir(path_1):
+        shutil.move(path_1, path)
+
+    ## CREATE IT IF IT DOESN'T EXISTS
+    if not os.path.isdir(path):
+        os.mkdir(path)
+
+    return path
+
+
 # APP HOME DIRECTORY
-HOMEDIR = os.path.normpath(os.path.expanduser('~/BigBrotherBot')).decode(sys.getfilesystemencoding())
-if not os.path.isdir(HOMEDIR):
-    os.mkdir(HOMEDIR)
+HOMEDIR = getHomePath()
 
 
 def getB3Path(decode=False):
