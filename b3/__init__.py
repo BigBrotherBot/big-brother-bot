@@ -40,6 +40,7 @@
 #                                     instead of using the globally definied confdir variable (fix @conf retrieval from GUI)
 # 2015/06/17 - 1.8      - Fenix     - changed getAbsolutePath to resolve @home token
 # 2015/07/03 - 1.9      - Fenix     - added getHomePath() function: return the b3 HOME path creating it if it doesn't exists
+# 2015/07/04 - 1.10     - Fenix     - correctly retrieve @home token in getShortPath() function
 
 
 import os
@@ -222,6 +223,9 @@ def getShortPath(filepath, decode=False, first_time=True):
     :return: string
     """
     # NOTE: make sure to have os.path.sep at the end otherwise also files starting with 'b3' will be matched
+    homepath = getAbsolutePath('@home/', decode) + os.path.sep
+    if filepath.startswith(homepath):
+        return filepath.replace(homepath, '@home' + os.path.sep)
     confpath = getAbsolutePath('@conf/', decode) + os.path.sep
     if filepath.startswith(confpath):
         return filepath.replace(confpath, '@conf' + os.path.sep)
