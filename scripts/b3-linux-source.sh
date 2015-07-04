@@ -2,8 +2,8 @@
 
 # Big Brother Bot (B3) Management - http://www.bigbrotherbot.net
 # Maintainer: Daniele Pantaleone <fenix@bigbrotherbot.net>
-# App Version: 0.12
-# Last Edit: 16/05/2015
+# App Version: 0.13
+# Last Edit: 04/07/2015
 
 ### BEGIN INIT INFO
 # Provides:          b3
@@ -37,30 +37,32 @@
 #                                    - remove all the readlink commands in favor of ${SCRIPT_DIR} and ${B3_DIR}
 #  2015-02-10 - 0.9  - Thomas LEVEIL - fixed infinite loop between p_out and p_log
 #                                    - simplify colors stripping
-#                                    - temporarily activate logging using B3_LOG_ENABLED environment variable
+#                                    - temporarily activate logging using B3_LOG environment variable
 #                                    - fix log failure detection and in case of errors, display the reason why it failed
 #  2015-03-06 - 0.10 - Fenix         - removed python 2.6 support
 #  2015-03-17 - 0.11 - Fenix         - added developer mode, temporarily activable with B3_DEV environment variable
 #  2015-05-16 - 0.12 - Fenix         - use the --console parameter when starting B3 (otherwise GUI startup is triggered)
-
+#  2015-07-04 - 0.13 - Fenix         - renamed B3_LOG_ENABLED into B3_LOG
+#                                    - removed some LOG_EXT and PID_EXT variables: they are not needed
+#                                    - activate/deactivate autorestart mode using B3_AUTORESTART env variable
+#                                    - fixed b3_list matching also non configuration files while retrieving instances
 
 ### SETUP
-AUTO_RESTART="1"                   # will run b3 in auto-restart mode if set to 1
-DATE_FORMAT="%a, %b %d %Y - %r"    # data format to be used when logging console output
-LOG_ENABLED="${B3_LOG_ENABLED:-0}" # if set to 1, will log console output to file
-DEVELOPER="${B3_DEV:-0}"           # if set to 1, will activate developer mode
-USE_COLORS="1"                     # if set to 1, will make use of bash color codes in the console output
+AUTO_RESTART="${B3_AUTORESTART:-1}" # will run b3 in auto-restart mode if set to 1
+DATE_FORMAT="%a, %b %d %Y - %r"     # data format to be used when logging console output
+LOG_ENABLED="${B3_LOG:-0}"          # if set to 1, will log console output to file
+DEVELOPER="${B3_DEV:-0}"            # if set to 1, will activate developer mode
+USE_COLORS="1"                      # if set to 1, will make use of bash color codes in the console output
 
 ### DO NOT MODIFY!!!
 B3_DIR=""                   # will be set to the directory containing b3 source code (where we can find b3_run.py)
 B3_RUN="b3_run.py"          # python executable which starts b3
+B3_HOME=".b3"               # the name of the B3 home directory (located inside $HOME)
 COMMON_PREFIX="b3_"         # a common prefix b3 configuration files must have to beparsed by this script
 CONFIG_DIR="b3/conf"        # directory containing b3 configuration files (will be appended to ${B3_DIR}
 CONFIG_EXT=(".ini" ".xml")  # list of b3 configuration file extensions
 LOG_DIR="log"               # the name of the directory containing the log file (will be appended to ${SCRIPT_DIR})
-LOG_EXT=".log"              # the extension of the log file
 PID_DIR="pid"               # the name of the directory containing the b3 pid file (will be appended to ${SCRIPT_DIR})
-PID_EXT=".pid"              # the extension of the pid file
 SCRIPT_DIR=""               # will be set to the directory containing this very script
 
 ########################################################################################################################
@@ -88,7 +90,7 @@ function p_log()  {
         if [ ! -d "${SCRIPT_DIR}/${LOG_DIR}" ]; then
             mkdir "${SCRIPT_DIR}/${LOG_DIR}"
         fi
-        LOG_FILE="${SCRIPT_DIR}/${LOG_DIR}/b3_init${LOG_EXT}"
+        LOG_FILE="${SCRIPT_DIR}/${LOG_DIR}/app.log"
         if [ ! -f "${LOG_FILE}" ]; then
             if ! STDERR=$(touch "${LOG_FILE}" 2>&1 > /dev/null); then
                 LOG_ENABLED=0  # prevent infinite loop between p_out and p_log
@@ -123,9 +125,13 @@ function join() {
 function b3_conf_path() {
     local B3="${1}"
     for i in ${CONFIG_EXT[@]}; do
-        local CONFIG_FILE="${B3_DIR}/${CONFIG_DIR}/${COMMON_PREFIX}${B3}${i}"
-        if [ -f "${CONFIG_FILE}" ]; then
-            echo "${CONFIG_FILE}"
+        local HOME_CONFIG="${HOME}/${B3_HOME}/${COMMON_PREFIX}${B3}${i}"
+        local B3_CONFIG="${B3_DIR}/${CONFIG_DIR}/${COMMON_PREFIX}${B3}${i}"
+        if [ -f "${HOME_CONFIG}" ]; then
+            echo "${HOME_CONFIG}"
+            break
+        elif [ -f "${B3_CONFIG}" ]; then
+            echo "${B3_CONFIG}"
             break
         fi
     done
@@ -137,7 +143,7 @@ function b3_conf_path() {
 #              If no configuration file is found it outputs nothing check using if [ -z $VAR ]).
 function b3_pid_path() {
     local B3="${1}"
-    local PID_FILE="${SCRIPT_DIR}/${PID_DIR}/${COMMON_PREFIX}${B3}${PID_EXT}"
+    local PID_FILE="${SCRIPT_DIR}/${PID_DIR}/${COMMON_PREFIX}${B3}.pid"
     if [ -f "${PID_FILE}" ]; then
         echo "${PID_FILE}"
     fi
@@ -198,8 +204,9 @@ function b3_uptime() {
 #              specified in the configuration value ${CONFIG_EXT[@]})
 function b3_list() {
     local B3_LIST=()
-    local PATTERN="${COMMON_PREFIX}*[$(join "|" "${CONFIG_EXT[@]}")]"
-    local B3_CONFIG_LIST=$(find "${B3_DIR}/${CONFIG_DIR}" -maxdepth 1 -type f -name "${PATTERN}" -print | sort)
+    local B3_CONF_PATH="${B3_DIR}/${CONFIG_DIR}"
+    local B3_HOME_PATH="${HOME}/${B3_HOME}"
+    local B3_CONFIG_LIST=$(find "${B3_HOME_PATH}" "${B3_CONF_PATH}" -maxdepth 1 -type f  \( -name "b3_*.ini" -o -name "b3_*.xml" \) -print | sort)
     for i in ${B3_CONFIG_LIST}; do
         local B3_NAME="$(basename ${i})"
         local B3_NAME="${B3_NAME:${#COMMON_PREFIX}}"
@@ -215,7 +222,7 @@ function b3_list() {
         done
         if [ ${IN} -eq 0 ]; then
             B3_LIST+=("${B3_NAME}")
-        fi;
+        fi
     done
     echo $(join ' ' "${B3_LIST[@]}")
 }
@@ -241,7 +248,7 @@ function b3_start() {
         p_out "B3[${B3}] is already running [PID : ^2${PID}^0 - UPTIME : ^2${UPTIME}^0]"
         return 1
     elif [ ${RTN} -eq 2 ]; then
-        p_out "^3WARNING^0: B3[${B3}] recently crashed... removing PID file"
+        p_out "^3WARNING^0: B3[${B3}] recently crashed..."
         rm "${PID_FILE}"
         sleep 1
     fi
@@ -251,7 +258,7 @@ function b3_start() {
     # if the B3 was not running (and thus no PID file could be found in previous call)
     local SCREEN="${COMMON_PREFIX}${B3}"
     local PROCESS="${B3_DIR}/${B3_RUN}"
-    local PID_FILE="${SCRIPT_DIR}/${PID_DIR}/${COMMON_PREFIX}${B3}${PID_EXT}"
+    local PID_FILE="${SCRIPT_DIR}/${PID_DIR}/${COMMON_PREFIX}${B3}.pid"
 
     if [ ${AUTO_RESTART} -eq 1 ]; then
         screen -DmS "${SCREEN}" python "${PROCESS}" --restart --console --config "${CONFIG_FILE}" &
@@ -262,7 +269,7 @@ function b3_start() {
     echo "${!}" > "${PID_FILE}"
 
     if [ ${AUTO_RESTART} -eq 1 ]; then
-        sleep 4
+        sleep 6
     else
         sleep 1
     fi
@@ -301,7 +308,7 @@ function b3_stop() {
         p_out "B3[${B3}] is already stopped"
         return 1
     elif [ ${RTN} -eq 2 ]; then
-        p_out "^3WARNING^0: B3[${B3}] recently crashed... removing PID file"
+        p_out "^3WARNING^0: B3[${B3}] recently crashed..."
         rm "${PID_FILE}"
         return 1
     fi
@@ -380,7 +387,7 @@ function b3_clean() {
     done
 
     local B3_RUNNING_LIST=$(join ' ' "${B3_RUNNING[@]}")
-    find "${B3_DIR}" -type f \( -name "*.pyc" -o -name "*${PID_EXT}" \) \
+    find "${B3_DIR}" -type f \( -name "*.pyc" -o -name "*.pid" \) \
                                 -exec rm {} \; \
                                 -exec printf "." \; \
 
@@ -399,12 +406,11 @@ function b3_clean() {
 function b3_usage() {
     # do not  use p_out here otherwise it gets logged
     echo "
-    -usage: b3.sh 
-                    start   [<name>] - start B3
-                    stop    [<name>] - stop B3
-                    restart [<name>] - restart B3
-                    status  [<name>] - display current B3 status
-                    clean            - clean B3 directory
+    -usage: b3.sh  start   [<name>] - start B3
+                   stop    [<name>] - stop B3
+                   restart [<name>] - restart B3
+                   status  [<name>] - display current B3 status
+                   clean            - clean B3 directory
 
     Copyright (C) 2014 Daniele Pantaleone <fenix@bigbrotherbot.net>
     Support: http://forum.bigbrotherbot.net
