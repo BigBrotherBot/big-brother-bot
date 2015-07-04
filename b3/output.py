@@ -25,24 +25,31 @@
 # 20/04/2011 - 1.6.2 - Courgette - again getting rid of UnicodeDecodeError
 # 21/07/2014 - 1.7   - Fenix     - syntax cleanup
 # 04/02/2015 - 1.7.1 - Fenix     - getInstance() now accepts an optional 'logsize' parameter (amount of bytes of the log file)
+# 04/07/2015 - 1.7.2 - Fenix     - changed log formatter to keep the same width for log levels
 
 __author__  = 'ThorN'
-__version__ = '1.7.1'
+__version__ = '1.7.2'
 
 import sys
 import logging
 
 from logging import handlers
+from logging import CRITICAL, ERROR, INFO, WARNING, DEBUG
 
 CONSOLE = 22
 BOT = 21
 VERBOSE = 9
 VERBOSE2 = 8
 
-logging.addLevelName(CONSOLE, 'CONSOLE')
-logging.addLevelName(BOT, 'BOT    ')
-logging.addLevelName(VERBOSE, 'VERBOSE')
-logging.addLevelName(VERBOSE2, 'VERBOS2')
+logging.addLevelName(CRITICAL, 'CRITICAL')
+logging.addLevelName(ERROR,    'ERROR   ')
+logging.addLevelName(INFO,     'INFO    ')
+logging.addLevelName(WARNING,  'WARNING ')
+logging.addLevelName(DEBUG,    'DEBUG   ')
+logging.addLevelName(CONSOLE,  'CONSOLE ')
+logging.addLevelName(BOT,      'BOT     ')
+logging.addLevelName(VERBOSE,  'VERBOSE ')
+logging.addLevelName(VERBOSE2, 'VERBOS2 ')
 
 # this has to be done to prevent callstack checking in the logging
 # has been causing problems with threaded applications logging
@@ -159,7 +166,7 @@ def getInstance(logfile='b3.log', loglevel=21, logsize=10485760, log2console=Fal
         __output = logging.getLogger('output')
 
         # FILE HANDLER
-        file_formatter = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)r', '%y%m%d %H:%M:%S')
+        file_formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)r', '%y%m%d %H:%M:%S')
         handler = handlers.RotatingFileHandler(logfile, maxBytes=logsize, backupCount=5, encoding="UTF-8")
         handler.doRollover()
         handler.setFormatter(file_formatter)
