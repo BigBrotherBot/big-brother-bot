@@ -59,3 +59,4 @@
                   - fixed UpdateDatabase dialog layout not showing information message properly
                   - added an overlay help message above Main Table when no process are available
 04/04/2015 - 0.21 - fixed main windows buttons overlapping status bar on Linux
+                  - display high resolution icon on Linux system

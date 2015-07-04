@@ -228,7 +228,7 @@ class B3App(QApplication):
         Initialize the QApplication main window.
         """
         # set the icon here so it's global
-        self.setWindowIcon(QIcon(B3_ICON_SMALL))
+        self.setWindowIcon(QIcon(B3_ICON if b3.getPlatform() == 'linux' else B3_ICON_SMALL))
         self.main_window = MainWindow()
 
     def __build_schema(self):
