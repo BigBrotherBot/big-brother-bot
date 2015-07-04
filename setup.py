@@ -36,6 +36,7 @@
 # 2015/03/08 - 3.2   - Thomas LEVEIL - build up the list of requirement by reading the requirements.txt file
 # 2015/04/19 - 3.3   - Fenix         - implement bdist_mac and bdist_dmg commands
 # 2015/07/04 - 3.4   - Fenix         - renamed Linux binary into 'b3_run'
+#                                    - changed build_exe zip file name on Linux when freezing 64 bit binary
 
 __author__ = 'ThorN, xlr8or, courgette, Fenix'
 __version__ = '3.4'
@@ -47,6 +48,7 @@ import sys
 import shutil
 import stat
 import zipfile
+import platform
 import setuptools
 
 from distutils import dir_util, log
@@ -154,7 +156,12 @@ else:
             self.clean_compiled_files()
             self.chmod_exec()
             self.unix2dos()
-            self.make_zip('b3-%s%s-%s' % (current_b3_version_part1, current_b3_version_part2, sys.platform))
+            release_name = 'b3-%s%s-%s' % (current_b3_version_part1, current_b3_version_part2, b3.getPlatform())
+            if b3.getPlatform() == 'linux':
+                if platform.architecture()[0] == '64bit':
+                    release_name += '-amd64'
+
+            self.make_zip(release_name)
             self.make_innosetup(current_b3_version_part1, current_b3_version_part2)
 
         def get_version(self):
