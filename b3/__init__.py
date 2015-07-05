@@ -57,7 +57,7 @@ from ConfigParser import NoOptionError
 from ConfigParser import NoSectionError
 
 __author__ = 'ThorN'
-__version__ = '1.10.2'
+__version__ = '1.10.3'
 
 modulePath = pkg_handler.resource_directory(__name__)
 
@@ -112,7 +112,7 @@ def getHomePath():
     """
     path = os.path.normpath(os.path.expanduser('~/.b3')).decode(sys.getfilesystemencoding())
 
-    ## RENAME v1.10.1 -> v1.10.2
+    ## RENAME v1.10.1 -> v1.10.3
     path_1 = os.path.normpath(os.path.expanduser('~/BigBrotherBot')).decode(sys.getfilesystemencoding())
     if os.path.isdir(path_1):
         shutil.move(path_1, path)
