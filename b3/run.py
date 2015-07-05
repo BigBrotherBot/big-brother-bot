@@ -245,10 +245,6 @@ def run_console(options):
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__
         traceback.print_exc()
-    if main_is_frozen():
-        if sys.stdout != sys.__stdout__:
-            sys.stdout = sys.__stdout__
-            sys.stderr = sys.__stderr__
         raw_input("press any key to continue...")
 
 
