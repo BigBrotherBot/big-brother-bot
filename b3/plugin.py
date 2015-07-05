@@ -58,9 +58,11 @@
 #                                - added Plugin class documentation
 # 22/06/2015 - 1.9.9 - Fenix     - added requiresStorage attribute: list the storage protocols supported by a plugin
 # 01/07/2015 - 1.10  - Fenix     - added getSetting method: safely return a configuration file setting value
+# 05/07/2015 - 1.11  - Fenix     - changed getSetting to accept a validate function to validate (and correct if needed
+#                                  the configuration value being loaded)
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.10'
+__version__ = '1.11'
 
 
 import b3.clients
@@ -250,7 +252,7 @@ class Plugin(object):
         self.bot('saving config %s', self.config.fileName)
         return self.config.save()
 
-    def getSetting(self, section, option, value_type=b3.STRING, default=None):
+    def getSetting(self, section, option, value_type=b3.STRING, default=None, validate=None):
         """
         Safely return a setting value from the configuration file.
         Will print in the log file information about the value being loaded
@@ -258,6 +260,9 @@ class Plugin(object):
         :param option: the configuration file option
         :param value_type: the value type used to cast the retrieved value
         :param default: the default value to be returned when an error occurs
+        :param validate: a reference to a function which has the job of validating the given value: the function
+                         should return the valid itself (or modified if it can be done) or raise ValueError if the value
+                          is not acceptable.
         """
         def _get_string(value):
             """convert the given value to str"""
@@ -337,6 +342,13 @@ class Plugin(object):
                 except (ValueError, KeyError), e:
                     self.warning('could not convert %s::%s (%s) : %s, using default : %s', section, option , val, e, default)
                     val = default
+
+        if validate:
+            try:
+                val = validate(val)
+            except ValueError, e:
+                self.warning('invalid value specified for %s::%s (%s) : %s,  using default : %s', section, option, val, e, default)
+                val = default
 
         self.debug('loaded value from configuration file : %s::%s = %s', section, option, val)
         return val
