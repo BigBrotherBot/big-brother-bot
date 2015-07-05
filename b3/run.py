@@ -188,14 +188,15 @@ def run_console(options):
     Run B3 in console mode.
     :param options: command line options
     """
-    ## MAIN CONFIG ANALYSUS RESULT
-    analysis = None
+    analysis = None     # main config analysis result
+    printexit = False   # whether the exit message has been printed alreadty or not
 
     try:
 
         if options.config:
             config = b3.getAbsolutePath(options.config, True)
             if not os.path.isfile(config):
+                printexit = True
                 console_exit('ERROR: configuration file not found (%s).\n'
                              'Please visit %s to create one.' % (config, B3_CONFIG_GENERATOR))
         else:
@@ -212,6 +213,7 @@ def run_console(options):
                         break
 
             if not config:
+                printexit = True
                 console_exit('ERROR: could not find any valid configuration file.\n'
                              'Please visit %s to create one.' % B3_CONFIG_GENERATOR)
 
@@ -224,16 +226,16 @@ def run_console(options):
         # START B3
         b3.start(main_config, options)
 
-    except b3.config.ConfigFileNotValid, err:
+    except b3.config.ConfigFileNotValid:
         if analysis:
             print 'CRITICAL: invalid configuration file specified:\n'
             for problem in analysis:
                 print"  >>> %s\n" % problem
         else:
             print 'CRITICAL: invalid configuration file specified!'
-            raise err
+        raise SystemExit(1)
     except SystemExit, msg:
-        if main_is_frozen():
+        if not printexit and main_is_frozen():
             if sys.stdout != sys.__stdout__:
                 sys.stdout = sys.__stdout__
                 sys.stderr = sys.__stderr__

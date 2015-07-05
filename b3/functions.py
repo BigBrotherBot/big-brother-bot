@@ -274,7 +274,7 @@ def decode(text):
     return text.decode(sys.getfilesystemencoding())
 
 
-def console_exit(message):
+def console_exit(message=''):
     """
     Terminate the current console application displaying the given message.
     Will make sure that the user is able to see the exit message.
