@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'Fenix'
-__version__ = '1.4'
+__version__ = '1.5'
 
 import b3
 import b3.plugin
@@ -24,7 +24,6 @@ import b3.events
 import time
 
 from b3.functions import getCmd
-from ConfigParser import NoOptionError
 
 
 class SpawnkillPlugin(b3.plugin.Plugin):
@@ -59,48 +58,25 @@ class SpawnkillPlugin(b3.plugin.Plugin):
 
     def onLoadConfig(self):
         """
-        Load plugin configuration
+        Load plugin configuration.
         """
+        def validate(x):
+            """helper used to validate the penalty value"""
+            acceptable = ('warn', 'kick', 'tempban', 'slap', 'nuke', 'kill')
+            if x not in acceptable:
+                raise ValueError('value must be one of [%s]' % ', '.join(acceptable))
+            return x
+
         for index in ('hit', 'kill'):
-
-            try:
-                self.settings[index]['maxlevel'] = self.console.getGroupLevel(self.config.get(index, 'maxlevel'))
-            except (NoOptionError, KeyError), e:
-                self.warning('could not load %s/maxlevel from config file: %s' % (index, e))
-
-            try:
-                self.settings[index]['delay'] = self.config.getint(index, 'delay')
-            except (NoOptionError, ValueError), e:
-                self.warning('could not load %s/delay from config file: %s' % (index, e))
-
-            try:
-                if self.config.get(index, 'penalty') not in ('warn', 'kick', 'tempban', 'slap', 'nuke', 'kill'):
-                    # specified penalty is not supported by this plugin: fallback to default
-                    raise ValueError('invalid penalty specified: %s' % self.config.get(index, 'penalty'))
-                self.settings[index]['penalty'] = self.config.get(index, 'penalty')
-            except (NoOptionError, ValueError), e:
-                self.warning('could not load %s/penalty from config file: %s' % (index, e))
-
-            try:
-                self.settings[index]['duration'] = self.config.getDuration(index, 'duration')
-            except (NoOptionError, ValueError), e:
-                self.warning('could not load %s/duration from config file: %s' % (index, e))
-
-            try:
-                self.settings[index]['reason'] = self.config.get(index, 'reason')
-            except NoOptionError, e:
-                self.warning('could not load %s/reason from config file: %s' % (index, e))
-
-            # print current configuration in the log file for later inspection
-            self.debug('setting %s/maxlevel: %s' % (index, self.settings[index]['maxlevel']))
-            self.debug('setting %s/delay: %s' % (index, self.settings[index]['delay']))
-            self.debug('setting %s/penalty: %s' % (index, self.settings[index]['penalty']))
-            self.debug('setting %s/duration: %s' % (index, self.settings[index]['duration']))
-            self.debug('setting %s/reason: %s' % (index, self.settings[index]['reason']))
+            self.settings[index]['maxlevel'] = self.getSetting(index, 'maxlevel', b3.LEVEL, self.settings[index]['maxlevel'])
+            self.settings[index]['delay'] = self.getSetting(index, 'delay', b3.INT, self.settings[index]['delay'])
+            self.settings[index]['duration'] = self.getSetting(index, 'duration', b3.DURATION, self.settings[index]['duration'])
+            self.settings[index]['reason'] = self.getSetting(index, 'reason', b3.STR, self.settings[index]['reason'])
+            self.settings[index]['penalty'] = self.getSetting(index, 'penalty', b3.STR, self.settings[index]['penalty'], validate)
 
     def onStartup(self):
         """
-        Initialize plugin settings
+        Initialize plugin settings.
         """
         # get the admin plugin
         self.adminPlugin = self.console.getPlugin('admin')
