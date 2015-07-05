@@ -5,3 +5,4 @@
                          - do not let the plugin shutdown B3 when invalid parser is being used (just unload the plugin)
 2015-03-22 - 1.4 - Fenix - adapted plugin after committing first built-in release
 2015-07-05 - 1.5 - Fenix - make use of the new getSettings method to load configuration file values
+                         - produce EVT_CLIENT_SPAWNKILL and EVT_CLIENT_SPAWNKILL_TEAM

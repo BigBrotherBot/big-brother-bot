@@ -15,8 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-import time
-
 from textwrap import dedent
 from tests.plugins.spawnkill import SpawnkillTestCase
 
@@ -58,8 +56,8 @@ class Test_events(SpawnkillTestCase):
         """))
         self.mark.connects("1")
         self.bill.connects("2")
-        self.mark.setvar(self.p, 'spawntime', time.time() - 5)
-        self.bill.setvar(self.p, 'spawntime', time.time() - 5)
+        self.mark.setvar(self.p, 'spawntime', self.console.time() - 5)
+        self.bill.setvar(self.p, 'spawntime', self.console.time() - 5)
         # WHEN
         self.mark.damages(self.bill)
         # THEN
@@ -94,8 +92,8 @@ class Test_events(SpawnkillTestCase):
         """))
         self.mike.connects("1")
         self.bill.connects("2")
-        self.mike.setvar(self.p, 'spawntime', time.time() - 5)
-        self.bill.setvar(self.p, 'spawntime', time.time() - 5)
+        self.mike.setvar(self.p, 'spawntime', self.console.time() - 5)
+        self.bill.setvar(self.p, 'spawntime', self.console.time() - 5)
         # WHEN
         self.mike.clearMessageHistory()
         self.mike.damages(self.bill)
@@ -115,8 +113,8 @@ class Test_events(SpawnkillTestCase):
         """))
         self.mike.connects("1")
         self.bill.connects("2")
-        self.mike.setvar(self.p, 'spawntime', time.time() - 5)
-        self.bill.setvar(self.p, 'spawntime', time.time() - 5)
+        self.mike.setvar(self.p, 'spawntime', self.console.time() - 5)
+        self.bill.setvar(self.p, 'spawntime', self.console.time() - 5)
         # WHEN
         self.mike.clearMessageHistory()
         self.mike.damages(self.bill)
@@ -135,8 +133,8 @@ class Test_events(SpawnkillTestCase):
         """))
         self.mike.connects("1")
         self.bill.connects("2")
-        self.mike.setvar(self.p, 'spawntime', time.time() - 5)
-        self.bill.setvar(self.p, 'spawntime', time.time() - 5)
+        self.mike.setvar(self.p, 'spawntime', self.console.time() - 5)
+        self.bill.setvar(self.p, 'spawntime', self.console.time() - 5)
         # WHEN
         self.mike.clearMessageHistory()
         self.mike.damages(self.bill)
@@ -173,8 +171,8 @@ class Test_events(SpawnkillTestCase):
         """))
         self.mark.connects("1")
         self.bill.connects("2")
-        self.mark.setvar(self.p, 'spawntime', time.time() - 5)
-        self.bill.setvar(self.p, 'spawntime', time.time() - 5)
+        self.mark.setvar(self.p, 'spawntime', self.console.time() - 5)
+        self.bill.setvar(self.p, 'spawntime', self.console.time() - 5)
         # WHEN
         self.mark.kills(self.bill)
         # THEN
@@ -209,8 +207,8 @@ class Test_events(SpawnkillTestCase):
         """))
         self.mike.connects("1")
         self.bill.connects("2")
-        self.mike.setvar(self.p, 'spawntime', time.time() - 5)
-        self.bill.setvar(self.p, 'spawntime', time.time() - 5)
+        self.mike.setvar(self.p, 'spawntime', self.console.time() - 5)
+        self.bill.setvar(self.p, 'spawntime', self.console.time() - 5)
         # WHEN
         self.mike.clearMessageHistory()
         self.mike.kills(self.bill)
@@ -230,8 +228,8 @@ class Test_events(SpawnkillTestCase):
         """))
         self.mike.connects("1")
         self.bill.connects("2")
-        self.mike.setvar(self.p, 'spawntime', time.time() - 5)
-        self.bill.setvar(self.p, 'spawntime', time.time() - 5)
+        self.mike.setvar(self.p, 'spawntime', self.console.time() - 5)
+        self.bill.setvar(self.p, 'spawntime', self.console.time() - 5)
         # WHEN
         self.mike.clearMessageHistory()
         self.mike.kills(self.bill)
@@ -250,8 +248,8 @@ class Test_events(SpawnkillTestCase):
         """))
         self.mike.connects("1")
         self.bill.connects("2")
-        self.mike.setvar(self.p, 'spawntime', time.time() - 5)
-        self.bill.setvar(self.p, 'spawntime', time.time() - 5)
+        self.mike.setvar(self.p, 'spawntime', self.console.time() - 5)
+        self.bill.setvar(self.p, 'spawntime', self.console.time() - 5)
         # WHEN
         self.mike.clearMessageHistory()
         self.mike.kills(self.bill)

@@ -21,7 +21,6 @@ __version__ = '1.5'
 import b3
 import b3.plugin
 import b3.events
-import time
 
 from b3.functions import getCmd
 
@@ -98,6 +97,11 @@ class SpawnkillPlugin(b3.plugin.Plugin):
         self.registerEvent('EVT_CLIENT_SPAWN', self.onSpawn)
         self.registerEvent('EVT_CLIENT_DAMAGE', self.onDamage)
         self.registerEvent('EVT_CLIENT_KILL', self.onKill)
+        self.registerEvent('EVT_CLIENT_KILL_TEAM', self.onKillTeam)
+
+        # create out custom events
+        self.console.createEvent('EVT_CLIENT_SPAWNKILL', 'Event client spawnkill')
+        self.console.createEvent('EVT_CLIENT_SPAWNKILL_TEAM', 'Event client spawnkill team')
 
         # register penalty handlers
         self.penalties['warn'] = self.warn_client
@@ -120,19 +124,58 @@ class SpawnkillPlugin(b3.plugin.Plugin):
         """
         Handle EVT_CLIENT_SPAWN.
         """
-        event.client.setvar(self, 'spawntime', time.time())
+        event.client.setvar(self, 'spawntime', self.console.time())
 
     def onDamage(self, event):
         """
         Handle EVT_CLIENT_DAMAGE.
         """
-        self.onSpawnKill('hit', event.client, event.target)
+        client = event.client
+        target = event.target
+        
+        if client.maxLevel >= self.settings['hit']['maxlevel']:
+            self.verbose('bypassing spawnhit check: %s <@%s> is a high group level player', client.name, client.id)
+            return
+        
+        if not target.isvar(self, 'spawntime'):
+            self.verbose('bypassing spawnhit check: %s <@%s> has no spawntime marked', target.name, target.id)
+            return
+        
+        if self.console.time() - target.var(self, 'spawntime').toInt() < self.settings['hit']['delay']:
+            func = self.penalties[self.settings['hit']['penalty']]
+            func('hit', client)
 
     def onKill(self, event):
         """
         Handle EVT_CLIENT_KILL.
         """
-        self.onSpawnKill('kill', event.client, event.target)
+        client = event.client
+        target = event.target
+        
+        if client.maxLevel >= self.settings['kill']['maxlevel']:
+            self.verbose('bypassing spawnkill check: %s <@%s> is a high group level player', client.name, client.id)
+            return
+        
+        if not target.isvar(self, 'spawntime'):
+            self.verbose('bypassing spawnkill check: %s <@%s> has no spawntime marked', target.name, target.id)
+            return
+        
+        if self.console.time() - target.var(self, 'spawntime').toInt() < self.settings['kill']['delay']:
+            func = self.penalties[self.settings['kill']['penalty']]
+            func('kill', client)
+            ## EVENT: produce an event so other plugins can perform other actions
+            self.console.queueEvent(self.console.getEvent('EVT_CLIENT_SPAWNKILL', client=client, target=target))
+
+    def onKillTeam(self, event):
+        """
+        Handle EVT_CLIENT_KILL_TEAM.
+        """
+        client = event.client
+        target = event.target
+
+        if client.maxLevel < self.settings['kill']['maxlevel'] and target.isvar(self, 'spawntime'):
+            ## EVENT: produce an event so other plugins can perform other actions
+            self.console.queueEvent(self.console.getEvent('EVT_CLIENT_SPAWNKILL_TEAM', client=client, target=target))
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -140,14 +183,12 @@ class SpawnkillPlugin(b3.plugin.Plugin):
     #                                                                                                                  #
     ####################################################################################################################
 
-    def onSpawnKill(self, index, client, target):
+    def doSpawnCheck(self, index, client, target):
         """
         Handle possible spawn(hit|kill) events
         """
         # checking for correct client level
-        if client.maxLevel >= self.settings[index]['maxlevel']:
-            self.verbose('bypassing spawn%s check: client <@%s> is a high group level player' % (index, client.id))
-            return
+        
 
         # checking for spawntime mark in client object
         if not target.isvar(self, 'spawntime'):
@@ -155,7 +196,7 @@ class SpawnkillPlugin(b3.plugin.Plugin):
             return
 
         # if we got a spawn(hit|kill) action, applies the configured penalty
-        if time.time() - target.var(self, 'spawntime').toInt() < self.settings[index]['delay']:
+        if self.console.time() - target.var(self, 'spawntime').toInt() < self.settings[index]['delay']:
             func = self.penalties[self.settings[index]['penalty']]
             func(index, client)
 
