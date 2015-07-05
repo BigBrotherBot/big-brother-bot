@@ -4,10 +4,11 @@ BigBrotherBot (B3) management script
 In this directory you can find a set of BASH scripts which can help you dealing with B3 on Linux systems.  
 In particular 2 BASH scripts needs some more attention:
 
-* `b3-linux-source.sh` : shipped with the source distribution as `b3.sh`
-* `b3-linux.sh` : shipped with the B3 linux frozen application  as `b3.sh`
+* `b3-linux-source.sh` : to be used when running b3 from sources
+* `b3-linux.sh` : to be used when running the linux frozen distribution
 
-_NOTE: from now on we'll refer to those scripts as a unique one named `b3.sh`._
+_NOTE: from now on we'll refer to those scripts as a unique one named `b3.sh` since they provides the very same 
+functionalities (on a production environment you need to use obviously the correct name)._
 
 Such BASH script provides a set of tools which can help you managing your B3 instances on a Linux system.  
 They allow you to: 

@@ -351,10 +351,10 @@ function b3_status() {
 function b3_usage() {
     # do not  use p_out here otherwise it gets logged
     echo "
-    -usage: b3.sh  start   [<name>] - start B3
-                   stop    [<name>] - stop B3
-                   restart [<name>] - restart B3
-                   status  [<name>] - display current B3 status
+    -usage: b3-linux.sh  start   [<name>] - start B3
+                         stop    [<name>] - stop B3
+                         restart [<name>] - restart B3
+                         status  [<name>] - display current B3 status
 
     Copyright (C) 2014 Daniele Pantaleone <fenix@bigbrotherbot.net>
     Support: http://forum.bigbrotherbot.net

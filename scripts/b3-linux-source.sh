@@ -406,11 +406,11 @@ function b3_clean() {
 function b3_usage() {
     # do not  use p_out here otherwise it gets logged
     echo "
-    -usage: b3.sh  start   [<name>] - start B3
-                   stop    [<name>] - stop B3
-                   restart [<name>] - restart B3
-                   status  [<name>] - display current B3 status
-                   clean            - clean B3 directory
+    -usage: b3-linux-source.sh  start   [<name>] - start B3
+                                stop    [<name>] - stop B3
+                                restart [<name>] - restart B3
+                                status  [<name>] - display current B3 status
+                                clean            - clean B3 directory
 
     Copyright (C) 2014 Daniele Pantaleone <fenix@bigbrotherbot.net>
     Support: http://forum.bigbrotherbot.net

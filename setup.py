@@ -37,6 +37,7 @@
 # 2015/04/19 - 3.3   - Fenix         - implement bdist_mac and bdist_dmg commands
 # 2015/07/04 - 3.4   - Fenix         - renamed Linux binary into 'b3_run'
 #                                    - changed build_exe zip file name on Linux when freezing 64 bit binary
+#                                    - include scripts directory when packaging frozen application
 
 __author__ = 'ThorN, xlr8or, courgette, Fenix'
 __version__ = '3.4'
@@ -629,6 +630,7 @@ setup(
                 ('b3/sql/postgresql', 'sql/postgresql'),
                 ('b3/sql/sqlite', 'sql/sqlite'),
                 ('examples', 'examples'),
+                ('scripts', 'scripts'),
             ],
         }
     },
