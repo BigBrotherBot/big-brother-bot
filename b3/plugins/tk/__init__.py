@@ -26,11 +26,11 @@ import time
 
 from ConfigParser import NoOptionError
 
-__version__ = '1.3.5'
+__version__ = '1.4'
 __author__ = 'ThorN, mindriot, Courgette, xlr8or, SGT, 82ndab-Bravo17, ozon, Fenix'
 
 
-class TkInfo:
+class TkInfo(object):
 
     def __init__(self, plugin, cid):
         self._attackers = {}
@@ -198,22 +198,16 @@ class TkPlugin(b3.plugin.Plugin):
         """
         Load plugin configuration.
         """
-        try:
-            self._issue_warning = self.config.get('settings', 'issue_warning')
-            self.debug('loaded settings/issue_warning: %s' % self._issue_warning)
-        except NoOptionError:
-            self.warning('could not find settings/issue_warning in config file, '
-                         'using default: %s' % self._issue_warning)
-
-        try:
-            self._round_grace = self.config.getint('settings', 'round_grace')
-            self.debug('loaded settings/round_grace: %s' % self._round_grace)
-        except NoOptionError:
-            self.warning('could not find settings/round_grace in config file, '
-                         'using default: %s' % self._round_grace)
-        except ValueError, e:
-            self.error('could not load settings/round_grace config value: %s' % e)
-            self.debug('using default value (%s) for settings/round_grace' % self._round_grace)
+        self._issue_warning = self.getSetting('settings', 'issue_warning', b3.STR, self._issue_warning)
+        self._round_grace = self.getSetting('settings', 'round_grace', b3.INT, self._round_grace)
+        self._maxPoints = self.getSetting('settings', 'max_points', b3.INT, self._maxPoints)
+        self._private_messages = self.getSetting('settings', 'private_messages', b3.BOOL, self._private_messages)
+        self._damage_threshold = self.getSetting('settings', 'damage_threshold', b3.INT, self._damage_threshold)
+        self._tk_warn_duration = self.getSetting('settings', 'warn_duration', b3.STR, self._tk_warn_duration)
+        self._warn_level = self.getSetting('settings', 'warn_level', b3.INT, self._warn_level)
+        self._tkpointsHalflife = self.getSetting('settings', 'halflife', b3.INT, self._tkpointsHalflife)
+        self._grudge_enable = self.getSetting('settings', 'grudge_enable', b3.BOOL, self._grudge_enable)
+        self._grudge_level = self.getSetting('settings', 'grudge_level', b3.INT, self._grudge_level)
 
         try:
             self._levels = self.load_config_for_levels()
@@ -227,83 +221,6 @@ class TkPlugin(b3.plugin.Plugin):
 
         self._maxLevel = max(self._levels.keys())
         self.debug('teamkill max level is %s', self._maxLevel)
-
-        try:
-            self._maxPoints = self.config.getint('settings', 'max_points')
-            self.debug('loaded settings/max_points: %s' % self._maxPoints)
-        except NoOptionError:
-            self.warning('could not find settings/max_points in config file, '
-                         'using default: %s' % self._maxPoints)
-        except ValueError, e:
-            self.error('could not load settings/max_points config value: %s' % e)
-            self.debug('using default value (%s) for settings/max_points' % self._maxPoints)
-
-        try:
-            self._private_messages = self.config.getboolean('settings', 'private_messages')
-            self.debug('loaded settings/private_messages: %s' % self._private_messages)
-        except NoOptionError:
-            self.warning('could not find settings/private_messages in config file, '
-                         'using default: %s' % self._private_messages)
-        except ValueError, e:
-            self.error('could not load settings/private_messages config value: %s' % e)
-            self.debug('using default value (%s) for settings/private_messages' % self._private_messages)
-
-        try:
-            self._damage_threshold = self.config.getint('settings', 'damage_threshold')
-            self.debug('loaded settings/damage_threshold: %s' % self._damage_threshold)
-        except NoOptionError:
-            self.warning('could not find settings/damage_threshold in config file, '
-                         'using default: %s' % self._damage_threshold)
-        except ValueError, e:
-            self.error('could not load settings/damage_threshold config value: %s' % e)
-            self.debug('using default value (%s) for settings/damage_threshold' % self._damage_threshold)
-
-        try:
-            self._tk_warn_duration = self.config.get('settings', 'warn_duration')
-            self.debug('loaded settings/warn_duration: %s' % self._tk_warn_duration)
-        except NoOptionError:
-            self.warning('could not find settings/warn_duration in config file, '
-                         'using default: %s' % self._tk_warn_duration)
-
-        try:
-            self._warn_level = self.config.getint('settings', 'warn_level')
-            self.debug('loaded settings/warn_level: %s' % self._warn_level)
-        except NoOptionError:
-            self.warning('could not find settings/warn_level in config file, '
-                         'using default: %s' % self._warn_level)
-        except ValueError, e:
-            self.error('could not load settings/warn_level config value: %s' % e)
-            self.debug('using default value (%s) for settings/warn_level' % self._warn_level)
-
-        try:
-            self._tkpointsHalflife = self.config.getint('settings', 'halflife')
-            self.debug('loaded settings/halflife: %s' % self._tkpointsHalflife)
-        except NoOptionError:
-            self.warning('could not find settings/halflife in config file, '
-                         'using default: %s' % self._tkpointsHalflife)
-        except ValueError, e:
-            self.error('could not load settings/halflife config value: %s' % e)
-            self.debug('using default value (%s) for settings/halflife' % self._tkpointsHalflife)
-
-        try:
-            self._grudge_enable = self.config.getboolean('settings', 'grudge_enable')
-            self.debug('loaded settings/grudge_enable: %s' % self._grudge_enable)
-        except NoOptionError:
-            self.warning('could not find settings/grudge_enable in config file, '
-                         'using default: %s' % self._grudge_enable)
-        except ValueError, e:
-            self.error('could not load settings/grudge_enable config value: %s' % e)
-            self.debug('using default value (%s) for settings/grudge_enable' % self._grudge_enable)
-
-        try:
-            self._grudge_level = self.config.getint('settings', 'grudge_level')
-            self.debug('loaded settings/grudge_level: %s' % self._grudge_level)
-        except NoOptionError:
-            self.warning('could not find settings/grudge_level in config file, '
-                         'using default: %s' % self._grudge_level)
-        except ValueError, e:
-            self.error('could not load settings/grudge_level config value: %s' % e)
-            self.debug('using default value (%s) for settings/grudge_level' % self._grudge_level)
 
         if self.console.gameName in self._round_end_games:
             self._use_round_end = True
