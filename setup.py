@@ -38,9 +38,10 @@
 # 2015/07/04 - 3.4   - Fenix         - renamed Linux binary into 'b3_run'
 #                                    - changed build_exe zip file name on Linux when freezing 64 bit binary
 #                                    - include scripts directory when packaging frozen application
+# 2015/07/06 - 3.5   - Fenix         - added missing requests module to be included in the Frozen application
 
 __author__ = 'ThorN, xlr8or, courgette, Fenix'
-__version__ = '3.4'
+__version__ = '3.5'
 
 import b3
 import re
@@ -614,6 +615,7 @@ setup(
                 'SocketServer',  # telnet plugin
                 'paramiko',  # sftpytail plugin
                 'fileinput',  # badrcon plugin
+                'requests', # geolocation, jumper
             ],
             'include_files': [
                 ('README.md', 'README.md'),
