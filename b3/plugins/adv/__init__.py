@@ -253,8 +253,9 @@ class AdvPlugin(b3.plugin.Plugin):
         ad = self._msg.getnext()
         if ad:
             if ad == "@nextmap":
-                if self.console.getNextMap():
-                    ad = "^2Next map: ^3" + self.console.getNextMap()
+                nextmap = self.console.getNextMap()
+                if nextmap:
+                    ad = "^2Next map: ^3" + nextmap
                 else:
                     self.debug('could not get nextmap')
                     ad = None
