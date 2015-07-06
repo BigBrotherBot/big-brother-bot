@@ -34,6 +34,8 @@
 # 2014/05/25 - 1.2.7 - Courgette - fix crash when command description is an empty string
 # 2014/08/31 - 1.2.8 - Fenix     - syntax cleanup
 # 2014/11/30 - 1.2.9 - xlr8or    - fix template checking in load_html_template()
+# 2015/07/06 - 1.3.0 - Fenix     - make sure to have a writable filepath when locally saving user documentation
+
 
 """ 
 This module will generate a user documentation depending
@@ -49,7 +51,7 @@ import re
 import StringIO
 import time
 
-from b3 import getConfPath, getB3Path
+from b3 import getConfPath, getB3Path, getWritableFilePath
 from b3.functions import splitDSN
 from cgi import escape
 from ftplib import FTP
@@ -302,8 +304,9 @@ class DocBuilder:
             ftpfile.seek(0)
             ftp.storbinary('STOR ' + os.path.basename(dsn['path']), ftpfile)
         elif dsn['protocol'] == 'file':
-            self._console.debug('AUTODOC: writing to %s', dsn['path'])
-            f = file(dsn['path'], 'w')
+            path = getWritableFilePath(dsn['path'], True)
+            self._console.debug('AUTODOC: writing to %s', path)
+            f = file(path, 'w')
             f.write(text)
             f.close()
         else:
