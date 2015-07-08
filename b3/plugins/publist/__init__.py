@@ -39,7 +39,6 @@ class PublistPlugin(b3.plugin.Plugin):
 
     requiresConfigFile = False
 
-    _adminPlugin = None
     _cronTab = None
     _url = 'http://www.bigbrotherbot.net/master/serverping.php'
     _secondUrl = None
@@ -75,8 +74,6 @@ class PublistPlugin(b3.plugin.Plugin):
         """
         Initialize the plugin.
         """
-        self._adminPlugin = self.console.getPlugin('admin')
-
         try:
             # set cvar for advertising purposes
             self.console.setCvar('_B3', 'B3 %s' % b3.versionId)
