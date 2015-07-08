@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.13'
+__version__ = '1.14'
 
 import b3
 import b3.cron
@@ -154,7 +154,7 @@ class PublistPlugin(b3.plugin.Plugin):
             try:
                 pl = self.console.getPlugin(pname)
                 p_module = getModule(pl.__module__)
-                p_version = getattr(p_module, '__version__', 'Unknown Version')
+                p_version = getattr(p_module, '__version__', 'unknown')
                 plugins.append("%s/%s" % (pname, p_version))
             except Exception, e:
                 self.warning("could not get version for plugin named '%s'" % pname, exc_info=e)
@@ -163,10 +163,11 @@ class PublistPlugin(b3.plugin.Plugin):
             database = functions.splitDSN(self.console.storage.dsn)['protocol']
         except Exception:
             database = "unknown"
-            
-        version = getattr(b3, '__version__', 'Unknown Version')
+
+        version = getattr(b3, '__version__', 'unknown')
         if b3.functions.main_is_frozen():
-            version += " win32"
+            version_info = b3.getB3versionInfo()
+            version = '%s %s%s' % (version, version_info[1], version_info[2])
             
         info = {
             'action': 'update',
@@ -175,7 +176,7 @@ class PublistPlugin(b3.plugin.Plugin):
             'rconPort': self.console._rconPort,
             'version': version,
             'parser': self.console.gameName,
-            'parserversion': getattr(getModule(self.console.__module__), '__version__', 'Unknown Version'),
+            'parserversion': getattr(getModule(self.console.__module__), '__version__', 'unknown'),
             'database': database,
             'plugins': ','.join(plugins),
             'os': os.name,

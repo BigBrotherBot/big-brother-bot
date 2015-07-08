@@ -40,3 +40,4 @@
 30/08/2014 - 1.12   - Fenix     - syntax cleanup
                                 - make use of the new onStop() event handler
 15/01/2015 - 1.13   - Fenix     - removed outdated reference to Parser._pluginOrder
+08/07/2015 - 1.14   - Fenix     - changed b3 version info format
