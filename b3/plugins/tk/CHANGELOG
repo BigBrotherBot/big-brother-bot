@@ -1,3 +1,4 @@
+07/08/2015 - 1.4.1   - Fenix          - removed interface with spawnkill plugin: needs a separate plugin
 07/05/2015 - 1.4     - Fenix          - make use of Plugin.getSettings to retrieve configuration file values
                                       - interface with spawnkill plugin
 06/30/2015 - 1.3.5   - Fenix          - fixed grudge_level retrieval from configuration file

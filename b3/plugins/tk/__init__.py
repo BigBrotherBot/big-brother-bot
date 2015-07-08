@@ -26,7 +26,7 @@ import time
 
 from ConfigParser import NoOptionError
 
-__version__ = '1.4'
+__version__ = '1.4.1'
 __author__ = 'ThorN, mindriot, Courgette, xlr8or, SGT, 82ndab-Bravo17, ozon, Fenix'
 
 
@@ -150,7 +150,6 @@ class TkPlugin(b3.plugin.Plugin):
         """
         b3.plugin.Plugin.__init__(self, console, config)
         self._adminPlugin = self.console.getPlugin('admin')
-        self._spawnkillPlugin = self.console.getPlugin('spawnkill')
 
         # game types that have no team based game play and for which there should be no tk detected
         self._ffa = ['dm', 'ffa', 'syc-ffa', 'lms']
@@ -195,7 +194,6 @@ class TkPlugin(b3.plugin.Plugin):
         self._tkpointsHalflife = 0
         self._cronTab_tkhalflife = None
         self._tk_warn_duration = '1h'
-        self._team_spawnkill_extra_points = 100
 
     def onLoadConfig(self):
         """
@@ -211,9 +209,6 @@ class TkPlugin(b3.plugin.Plugin):
         self._tkpointsHalflife = self.getSetting('settings', 'halflife', b3.INT, self._tkpointsHalflife)
         self._grudge_enable = self.getSetting('settings', 'grudge_enable', b3.BOOL, self._grudge_enable)
         self._grudge_level = self.getSetting('settings', 'grudge_level', b3.INT, self._grudge_level)
-        if self._spawnkillPlugin:
-            self._team_spawnkill_extra_points = self.getSetting('settings', 'team_spawnkill_extra_points', b3.INT,
-                                                                self._team_spawnkill_extra_points, lambda x: int(max(x, 0)))
 
         try:
             self._levels = self.load_config_for_levels()
@@ -311,9 +306,6 @@ class TkPlugin(b3.plugin.Plugin):
         self.registerEvent('EVT_GAME_ROUND_END')
         self.registerEvent('EVT_GAME_ROUND_START')
 
-        if self._spawnkillPlugin:
-            self.registerEvent('EVT_CLIENT_SPAWNKILL_TEAM')
-
         self._adminPlugin.registerCommand(self, 'forgive', 0, self.cmd_forgive, 'f')
         self._adminPlugin.registerCommand(self, 'forgivelist', 0, self.cmd_forgivelist, 'fl')
         self._adminPlugin.registerCommand(self, 'forgiveall', 0, self.cmd_forgiveall, 'fa')
@@ -346,13 +338,6 @@ class TkPlugin(b3.plugin.Plugin):
         elif event.type == self.console.getEventID('EVT_CLIENT_DAMAGE_TEAM'):
             if event.client.maxLevel <= self._maxLevel:
                 self.clientDamage(event.client, event.target, int(event.data[0]))
-
-        elif event.type == self.console.getEventID('EVT_CLIENT_SPAWNKILL_TEAM'):
-            # this event is fired after EVT_CLIENT_KILL_TEAM, so the client already got some TK points:
-            # we'll give him some more TK points since if he did it on spawnpoint he probably did that
-            # on purpose and not by mistake
-            if event.client.maxLevel <= self._maxLevel and self._team_spawnkill_extra_points > 0:
-                self.clientSpawnkillTeam(event.client, event.target)
 
         elif event.type == self.console.getEventID('EVT_CLIENT_KILL_TEAM'):
             if event.client.maxLevel <= self._maxLevel:
@@ -494,18 +479,6 @@ class TkPlugin(b3.plugin.Plugin):
             level = (level[0] * 1.5, level[1] * 3, level[2])
 
         return level
-
-    def clientSpawnkillTeam(self, attacker, victim):
-        """
-        Executed when EVT_CLIENT_SPAWNKILL_TEAM is received after EVT_CLIENT_TEAM.
-        """
-        points = int(min(100, self._team_spawnkill_extra_points))
-        a = self.getClientTkInfo(attacker)
-        v = self.getClientTkInfo(victim)
-        a.damage(v.cid, points)
-        v.damaged(a.cid, points)
-        self.debug('team spawnkill detected: giving %s %s extra TK points', attacker.name, points)
-        attacker.message('^7You have been punished with ^1%s ^7 extra TK points for spawnkilling', points)
 
     def clientDamage(self, attacker, victim, points, killed=False):
         points = int(min(100, points))
