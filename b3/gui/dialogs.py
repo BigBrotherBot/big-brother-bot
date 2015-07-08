@@ -44,7 +44,7 @@ LOG = logging.getLogger('B3')
 
 
 GEOMETRY = {
-    'win32': {
+    'nt': {
         'ABOUT_DIALOG_WIDTH': 400,
         'ABOUT_DIALOG_HEIGHT': 520,
         'LICENSE_DIALOG_WIDTH': 400,

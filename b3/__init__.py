@@ -41,11 +41,14 @@
 # 2015/06/17 - 1.8      - Fenix     - changed getAbsolutePath to resolve @home token
 # 2015/07/03 - 1.9      - Fenix     - added getHomePath() function: return the b3 HOME path creating it if it doesn't exists
 # 2015/07/04 - 1.10     - Fenix     - correctly retrieve @home token in getShortPath() function
+# 2015/07/08 - 1.11     - Fenix     - added getB3versionInfo function: return a tuple with B3 version information
+#                                   - changed getPlatform to return 'nt' instead of 'win32'
 
 
 import os
 import re
 import sys
+import platform
 import pkg_handler
 import traceback
 import time
@@ -61,16 +64,15 @@ __version__ = '1.10.3'
 
 modulePath = pkg_handler.resource_directory(__name__)
 
-versionOs = os.name
-versionId = 'v%s [%s]' % (__version__, versionOs)
+versionId = 'v%s' % __version__
 version = '^8www.bigbrotherbot.net ^0(^8b3^0) ^9%s ^9[^3AngryBiscuit^9]^3' % versionId
 
 confdir = None
 console = None
 
 # STRINGS
-B3_TITLE = 'BigBrotherBot (B3) %s' % __version__
-B3_TITLE_SHORT = 'B3 %s' % __version__
+B3_TITLE = 'BigBrotherBot (B3) %s' % versionId
+B3_TITLE_SHORT = 'B3 %s' % versionId
 B3_COPYRIGHT = 'Copyright © 2005 Michael "ThorN" Thornton'
 B3_LICENSE = 'GNU General Public License v2'
 B3_FORUM = 'http://forum.bigbrotherbot.net/'
@@ -181,13 +183,38 @@ def getAbsolutePath(path, decode=False, conf=None):
     return decode_(os.path.normpath(os.path.expanduser(path)))
 
 
+def getPlatform():
+    """
+    Return the current platform name.
+    :return: nt || darwin || linux
+    """
+    if sys.platform in ('win32', 'win64'):
+        # Windows family
+        return 'nt'
+    elif sys.platform in ('darwin', 'mac'):
+        # OS X faimily
+        return 'darwin'
+    else:
+        # Fallback linux distro
+        return 'linux'
+
+
+def getB3versionInfo():
+    """
+    Returns a tuple with B3 version information.
+    :return: version, platform, architecture :type: tuple
+    """
+    return __version__, getPlatform(), right_cut(platform.architecture()[0], 'bit')
+
+
 def getB3versionString():
     """
     Return the B3 version as a string.
     """
     sversion = re.sub(r'\^[0-9a-z]', '', version)
     if main_is_frozen():
-        sversion = "%s [%s standalone]" % (sversion, getPlatform())
+        vinfo = getB3versionInfo()
+        sversion = '%s [%s%s]' % (sversion, vinfo[1], vinfo[2])
     return sversion
 
 
@@ -253,16 +280,6 @@ def loadParser(pname):
     for comp in components[1:]:
         mod = getattr(mod, comp)
     return mod
-
-
-def getPlatform():
-    """
-    Return the current platform name.
-    :return: win32, darwin, linux
-    """
-    if sys.platform not in ('win32', 'darwin'):
-        return 'linux'
-    return sys.platform
 
 
 def start(mainconfig, options):
@@ -347,4 +364,5 @@ from b3.config import XmlConfigParser, CfgConfigParser, MainConfig
 from b3.functions import clearscreen
 from b3.functions import decode as decode_
 from b3.functions import main_is_frozen
+from b3.functions import right_cut
 from b3.update import checkUpdate

@@ -50,7 +50,6 @@ import sys
 import shutil
 import stat
 import zipfile
-import platform
 import setuptools
 
 from distutils import dir_util, log
@@ -58,15 +57,16 @@ from setuptools.command.egg_info import egg_info as orig_egg_info
 from time import strftime
 
 b3_version = '1.10.3'
+b3_version_info = b3.getB3versionInfo()
 
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))  # directory where this file is in
 DIST_DIR = os.path.join(PROJECT_DIR, 'dist')  # directory where all the final builds will be found
 BUILD_DIR = os.path.join(PROJECT_DIR, 'build')  # directory where all work will be done
 BUILD_TIME = strftime('%Y%m%d')  # current build time (for distribution zip name)
-BUILD_PATH = os.path.join(BUILD_DIR, 'b3-%s-%s-%s' % (b3_version, BUILD_TIME, b3.getPlatform()))  # frozen distribution path
+BUILD_PATH = os.path.join(BUILD_DIR, 'b3-%s-%s-%s%s' % (b3_version, BUILD_TIME, b3_version_info[1], b3_version_info[2]))  # frozen distribution path
 
 settings = {
-    'win32': {
+    'nt': {
         'binary_name': 'b3_run.exe',
         'icon': os.path.join(PROJECT_DIR, 'installer/assets_common', 'b3.ico'),
     },
@@ -158,10 +158,7 @@ else:
             self.clean_compiled_files()
             self.chmod_exec()
             self.unix2dos()
-            release_name = 'b3-%s%s-%s' % (current_b3_version_part1, current_b3_version_part2, b3.getPlatform())
-            if b3.getPlatform() == 'linux':
-                if platform.architecture()[0] == '64bit':
-                    release_name += '-amd64'
+            release_name = 'b3-%s%s-%s%s' % (current_b3_version_part1, current_b3_version_part2, b3_version_info[1], b3_version_info[2])
 
             self.make_zip(release_name)
             self.make_innosetup(current_b3_version_part1, current_b3_version_part2)
@@ -199,7 +196,7 @@ else:
 
         def chmod_exec(self):
             """set +x flag on compiled binary if on Linux"""
-            if sys.platform == 'linux':
+            if b3.getPlatform() == 'linux':
                 log.info(">>> chmod")
                 filename = os.path.join(self.build_exe, self.linux_binary_name)
                 st = os.stat(filename)
@@ -207,7 +204,7 @@ else:
 
         def unix2dos(self):
             """makes sure text files from directory have 'Windows style' end of lines"""
-            if sys.platform == 'win32':
+            if b3.getPlatform() == 'nt':
                 log.info(">>> unix2dos")
                 for root, dirs, files in os.walk(self.build_exe):
                     for filename in files:
@@ -234,7 +231,7 @@ else:
 
         def make_innosetup(self, current_b3_version_part1, current_b3_version_part2):
             """create windows installer"""
-            if sys.platform == 'win32':
+            if b3.getPlatform() == 'nt':
                 log.info(">>> InnoSetup")
                 import subprocess
                 import yaml
@@ -275,6 +272,8 @@ else:
                             '/O' + DIST_DIR,
                             '/dB3_VERSION_NUMBER=' + current_b3_version_part1,
                             '/dB3_VERSION_SUFFIX=' + current_b3_version_part2,
+                            '/dB3_VERSION_PLATFORM=' + b3_version_info[1],
+                            '/dB3_VERSION_ARCHITECTURE=' + b3_version_info[2],
                             '/dB3_BUILD_PATH=' + self.build_exe,
                         ]
                         subprocess.call(cmd)
@@ -477,7 +476,7 @@ else:
         cmdclass['bdist_dmg'] = my_bdist_dmg
 
     base = None
-    if sys.platform == 'win32':
+    if b3.getPlatform():
         base = 'Win32GUI'
 
     executables = [

@@ -37,7 +37,7 @@ from functools import partial
 LOG = logging.getLogger('B3')
 
 GEOMETRY = {
-    'win32': {
+    'nt': {
         'MAIN_TABLE_HEIGHT': 260,
         'MAIN_TABLE_COLUMN_NAME_WIDTH': 200,
         'MAIN_TABLE_COLUMN_NAME_WIDTH_SCROLLBAR': 188,
@@ -498,7 +498,7 @@ class MainTable(QTableWidget):
             # multi-drag support
             for url in event.mimeData().urls():
                 path = url.path()
-                if b3.getPlatform() == 'win32':
+                if b3.getPlatform() == 'nt':
                     # on win32 the absolute path returned for each url has a leading slash: this obviously
                     # is not correct on win32 platform when absolute url have the form C:\\Programs\\... (Qt bug?)
                     path = path.lstrip('/').lstrip('\\')
@@ -836,7 +836,7 @@ class MainWindow(QMainWindow):
         Executed when the main window is modified.
         """
         QMainWindow.changeEvent(self, event)
-        if b3.getPlatform() == 'win32':
+        if b3.getPlatform() == 'nt':
             if event.type() == QEvent.WindowStateChange:
                 if event.oldState() != Qt.WindowMinimized and self.isMinimized():
                     self.minimize_in_system_tray()

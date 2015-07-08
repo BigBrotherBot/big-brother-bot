@@ -1506,8 +1506,8 @@ class Parser(object):
         Commons operation to be done on B3 shutdown.
         Called internally by b3.parser.die()
         """
-        if not main_is_frozen() and (b3.getPlatform() == 'linux' or b3.getPlatform() == 'darwin'):
-            # B3 has been started from sources under a UNIX like operating system => check for pid file
+        if b3.getPlatform() in ('linux', 'darwin'):
+            # check for PID file if B3 has been started using the provided BASH initialization scripts.
             b3_name = os.path.basename(self.config.fileName)
             for x in ('.xml', '.ini'):
                 b3_name = right_cut(b3_name, x)
