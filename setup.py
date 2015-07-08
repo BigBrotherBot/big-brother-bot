@@ -476,7 +476,7 @@ else:
         cmdclass['bdist_dmg'] = my_bdist_dmg
 
     base = None
-    if b3.getPlatform():
+    if b3.getPlatform() == 'nt':
         base = 'Win32GUI'
 
     executables = [
