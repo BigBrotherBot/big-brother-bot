@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'Fenix'
-__version__ = '1.5'
+__version__ = '1.5.1'
 
 import b3
 import b3.plugin
@@ -176,29 +176,6 @@ class SpawnkillPlugin(b3.plugin.Plugin):
         if client.maxLevel < self.settings['kill']['maxlevel'] and target.isvar(self, 'spawntime'):
             ## EVENT: produce an event so other plugins can perform other actions
             self.console.queueEvent(self.console.getEvent('EVT_CLIENT_SPAWNKILL_TEAM', client=client, target=target))
-
-    ####################################################################################################################
-    #                                                                                                                  #
-    #   OTHER METHODS                                                                                                  #
-    #                                                                                                                  #
-    ####################################################################################################################
-
-    def doSpawnCheck(self, index, client, target):
-        """
-        Handle possible spawn(hit|kill) events
-        """
-        # checking for correct client level
-        
-
-        # checking for spawntime mark in client object
-        if not target.isvar(self, 'spawntime'):
-            self.verbose('bypassing spawn%s check: client <@%s> has no spawntime marked' % (index, target.id))
-            return
-
-        # if we got a spawn(hit|kill) action, applies the configured penalty
-        if self.console.time() - target.var(self, 'spawntime').toInt() < self.settings[index]['delay']:
-            func = self.penalties[self.settings[index]['penalty']]
-            func(index, client)
 
     ####################################################################################################################
     #                                                                                                                  #
