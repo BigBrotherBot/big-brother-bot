@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-__version__ = '1.2.0beta'
+__version__ = '1.3.0'
 __author__ = 'xlr8or'
 
 import b3
@@ -64,11 +64,7 @@ class IpbanPlugin(b3.plugin.Plugin):
         """
         Load plugin configuration
         """
-        try:
-            self._maxLevel = self.console.getGroupLevel(self.config.get('settings', 'maxlevel'))
-        except (NoOptionError, KeyError), err:
-            self.error(err)
-        self.debug('maximum level affected: %s' % self._maxLevel)
+        self._maxLevel = self.getSetting('settings', 'maxlevel', b3.LEVEL, self._maxLevel)
 
     ####################################################################################################################
     #                                                                                                                  #

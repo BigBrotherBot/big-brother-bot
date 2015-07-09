@@ -18,3 +18,4 @@
                                 - removed redundancy with location plugin
                                 - stop processing events after applying kick penalty
                                 - added cf_announce_accept, cf_announce_reject configuration values
+10/07/2015 - 1.7    - Fenix     - make use of Plugin.getSettings() to load configuration values

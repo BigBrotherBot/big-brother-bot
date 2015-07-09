@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
 __author__ = 'Walker, ThorN'
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 import b3
 import b3.events
@@ -75,12 +75,7 @@ class SpreePlugin(b3.plugin.Plugin):
         """
         Load plugin configuration
         """
-        try:
-            self._reset_spree_stats = self.config.boolean('settings', 'reset_spree')
-        except:
-            pass
-
-        self.debug('settings/reset_spree: %s' % self._reset_spree_stats)
+        self._reset_spree_stats = self.getSetting('settings', 'reset_spree', b3.BOOL, self._reset_spree_stats)
         self.init_spreemessage_list()
 
     ####################################################################################################################

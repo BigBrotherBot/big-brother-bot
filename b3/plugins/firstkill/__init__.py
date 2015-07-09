@@ -18,14 +18,13 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__  = 'PtitBigorneau - www.ptitbigorneau.fr'
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 
 import b3
 import b3.plugin
 import b3.events
 
 from b3.functions import getCmd
-from ConfigParser import NoOptionError
 
 
 class FirstkillPlugin(b3.plugin.Plugin):
@@ -56,28 +55,10 @@ class FirstkillPlugin(b3.plugin.Plugin):
         """
         Load plugin configuration.
         """
-        try:
-            self._firstkill = self.config.getboolean('settings', 'firstkill')
-        except (NoOptionError, ValueError):
-            self.warning('no or bad value for settings::firstkill : using default (%s)' % self._firstkill)
-
-        try:
-            self._firsttk = self.config.getboolean('settings', 'firsttk')
-        except (NoOptionError, ValueError):
-            self.warning('no or bad value for settings::firsttk : using default (%s)' % self._firsttk)
-
+        self._firstkill = self.getSetting('settings', 'firstkill', b3.BOOL, self._firstkill)
+        self._firsttk = self.getSetting('settings', 'firsttk', b3.BOOL, self._firsttk)
         if self.console.gameName in ('iourt41', 'iourt42'):
-
-            try:
-                self._firsths = self.config.getboolean('settings', 'firsths')
-            except (NoOptionError, ValueError):
-                self.warning('no or bad value for settings::firsths : using default (%s)' % self._firsths)
-
-        self.debug('settings::firstkill = %s' % self._firstkill)
-        self.debug('settings::firsttk = %s' % self._firsttk)
-
-        if self.console.gameName in ('iourt41', 'iourt42'):
-            self.debug('settings::firsths = %s' % self._firsths)
+            self._firsths = self.getSetting('settings', 'firsths', b3.BOOL, self._firsths)
 
     def onStartup(self):
         """

@@ -10,3 +10,4 @@
 2014/05/02 - 1.4.1 - Fenix     - make use of the new getCmd function from functions module
 2014/07/23 - 1.4.2 - Fenix     - let the plugin react on EVT_CLIENT_PRIVATE_SAY
 2014/08/31 - 1.4.3 - Fenix     - syntax cleanup
+2015/07/10 - 1.4.4 - Fenix     - make use of Plugin.getSettings() to load configuration values

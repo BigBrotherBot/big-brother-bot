@@ -24,7 +24,7 @@ from b3.functions import getCmd
 from ConfigParser import NoOptionError
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.4.3'
+__version__ = '1.4.4'
 
 
 class SpamcontrolPlugin(b3.plugin.Plugin):
@@ -45,34 +45,9 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
         """
         Load plugin configuration
         """
-        try:
-            self._maxSpamins = self.config.getint('settings', 'max_spamins')
-            if self._maxSpamins < 0:
-                self._maxSpamins = 0
-            self.debug('loaded settings/max_spamins: %s' % self._maxSpamins)
-        except NoOptionError:
-            self.warning('could not find settings/max_spamins in config file, using default: %s' % self._maxSpamins)
-        except ValueError, e:
-            self.error('could not load settings/max_spamins config value: %s' % e)
-            self.debug('using default value (%s) for settings/max_spamins' % self._maxSpamins)
-
-        try:
-            self._modLevel = self.console.getGroupLevel(self.config.get('settings', 'mod_level'))
-            self.debug('loaded settings/mod_level: %s' % self._modLevel)
-        except NoOptionError:
-            self.warning('could not find settings/mod_level in config file, using default: %s' % self._modLevel)
-        except KeyError, e:
-            self.error('could not load settings/mod_level config value: %s' % e)
-            self.debug('using default value (%s) for settings/mod_level' % self._modLevel)
-
-        try:
-            self._falloffRate = self.config.getfloat('settings', 'falloff_rate')
-            self.debug('loaded settings/falloff_rate: %s' % self._falloffRate)
-        except NoOptionError:
-            self.warning('could not find settings/falloff_rate in config file, using default: %s' % self._falloffRate)
-        except ValueError, e:
-            self.error('could not load settings/falloff_rate config value: %s' % e)
-            self.debug('using default value (%s) for settings/falloff_rate' % self._falloffRate)
+        self._maxSpamins = self.getSetting('settings', 'max_spamins', b3.INTEGER, self._maxSpamins, lambda x: int(max(x, 0)))
+        self._modLevel = self.getSetting('settings', 'mod_level', b3.LEVEL, self._modLevel)
+        self._falloffRate = self.getSetting('settings', 'falloff_rate', b3.FLOAT, self._falloffRate)
 
     def onStartup(self):
         """

@@ -53,14 +53,7 @@ class CmdmanagerPlugin(b3.plugin.Plugin):
         """
         Load the configuration file.
         """
-        try:
-            self._update_config_file = self.config.getboolean('settings', 'update_config_file')
-            self.debug('loaded settings/update_config_file setting: %s', self._update_config_file)
-        except NoOptionError:
-            self.warning('could not find settings/update_config_file setting, using default: %s', self._update_config_file)
-        except ValueError, e:
-            self.error('could not load settings/update_config_file config value: %s', e)
-            self.debug('using default value (%s) for settings/update_config_file', self._update_config_file)
+        self._update_config_file = self.getSetting('settings', 'update_config_file', b3.BOOL, self._update_config_file)
 
     def onStartup(self):
         """

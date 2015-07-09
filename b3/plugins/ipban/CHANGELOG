@@ -7,3 +7,4 @@
                                  - fixed usage of deprecated method startup()
 26-03-2015 : v1.2.0beta : Fenix  - made IPban a built in plugin
                                  - removed B3 1.9.x backwards compatibility
+10-07-2015 : v1.3.0     : Fenix  - make use of Plugin.getSettings() to load configuration values

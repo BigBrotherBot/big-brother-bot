@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'Fenix'
-__version__ = '2.28'
+__version__ = '2.29'
 
 import b3
 import b3.plugin
@@ -333,35 +333,10 @@ class JumperPlugin(b3.plugin.Plugin):
         """
         Load plugin configuration.
         """
-        try:
-            self._demo_record = self.config.getboolean('settings', 'demorecord')
-            self.debug('loaded settings/demorecord: %s' % self._demo_record)
-        except NoOptionError:
-            self.warning('could not find settings/demorecord in config file, using default: %s' % self._demo_record)
-        except ValueError, e:
-            self.error('could not load settings/demorecord config value: %s' % e)
-            self.debug('using default value (%s) for settings/demorecord' % self._demo_record)
+        self._demo_record = self.getSetting('settings', 'demorecord', b3.BOOL, self._demo_record)
+        self._skip_standard_maps = self.getSetting('settings', 'skipstandardmaps', b3.BOOL, self._skip_standard_maps)
+        self._min_level_delete = self.getSetting('minleveldelete', b3.LEVEL, self._min_level_delete)
 
-        try:
-            self._skip_standard_maps = self.config.getboolean('settings', 'skipstandardmaps')
-            self.debug('loaded settings/skipstandardmaps: %s' % self._skip_standard_maps)
-        except NoOptionError:
-            self.warning('could not find settings/skipstandardmaps in config file, using default: %s' % self._skip_standard_maps)
-        except ValueError, e:
-            self.error('could not load settings/skipstandardmaps config value: %s' % e)
-            self.debug('using default value (%s) for settings/skipstandardmaps' % self._skip_standard_maps)
-
-        try:
-            level = self.config.get('settings', 'minleveldelete')
-            self._min_level_delete = self.console.getGroupLevel(level)
-            self.debug('loaded settings/minleveldelete: %d' % self._min_level_delete)
-        except NoOptionError:
-            self.warning('could not find settings/minleveldelete in config file, using default: %s' % self._min_level_delete)
-        except KeyError, e:
-            self.error('could not load settings/minleveldelete config value: %s' % e)
-            self.debug('using default value (%s) for settings/minleveldelete' % self._min_level_delete)
-
-        # set default messages
         self._default_messages = {
             'client_record_unknown': '''^7no record found for ^3$client ^7(^4@$id^7) on ^3$mapname''',
             'client_record_deleted': '''^7removed ^3$num ^7record$plural for ^3$client ^7(^4@$id^7) on ^3$mapname''',

@@ -18,7 +18,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 __author__ = 'Fenix'
-__version__ = '2.9'
+__version__ = '2.10'
 
 import b3
 import b3.plugin
@@ -27,7 +27,6 @@ import json
 import re
 
 from b3.functions import getCmd
-from ConfigParser import NoOptionError
 from urllib import urlencode
 from urllib2 import urlopen
 from urllib2 import Request
@@ -65,78 +64,28 @@ class TranslatorPlugin(b3.plugin.Plugin):
         """
         Load the configuration file
         """
-        try:
-            value = self.config.get('settings', 'default_source_language')
-            if value in self.languages.keys() or value == 'auto':
-                self.settings['default_source_language'] = value
-                self.debug('loaded default_source_language setting: %s' % self.settings['default_source_language'])
-            else:
-                self.warning('invalid value speficied in settings/default_source_language (%s), '
-                             'using default: %s' % (value, self.settings['default_source_language']))
-        except NoOptionError:
-            self.warning('could not find settings/default_source_language in config file, '
-                         'using default: %s' % self.settings['default_source_language'])
+        def validate_source(x):
+            """helper used to validate the source language"""
+            acceptable = self.languages.keys()
+            acceptable.append('auto')
+            if x not in acceptable and x != 'auto':
+                raise ValueError('value must be one of [%s]' % ', '.join(acceptable))
+            return x
 
-        try:
-            value = self.config.get('settings', 'default_target_language')
-            if value in self.languages.keys():
-                self.settings['default_target_language'] = value
-                self.debug('loaded default_target_language setting: %s' % self.settings['default_target_language'])
-            else:
-                self.warning('invalid value speficied in settings/default_target_language (%s), '
-                             'using default: %s' % (value, self.settings['default_target_language']))
-        except NoOptionError:
-            self.warning('could not find settings/default_target_language in config file, '
-                         'using default: %s' % self.settings['default_target_language'])
+        def validate_target(x):
+            """helper used to validate the target language"""
+            acceptable = self.languages.keys()
+            if x not in acceptable and x != 'auto':
+                raise ValueError('value must be one of [%s]' % ', '.join(acceptable))
+            return x
 
-        try:
-            self.settings['display_translator_name'] = self.config.getboolean('settings', 'display_translator_name')
-            self.debug('loaded display_translator_name setting: %s' % self.settings['display_translator_name'])
-        except NoOptionError:
-            self.warning('could not find settings/display_translator_name in config file, '
-                         'using default: %s' % self.settings['display_translator_name'])
-        except ValueError, e:
-            self.error('could not load settings/display_translator_name config value: %s' % e)
-            self.debug('using default value (%s) for settings/display_translator_name' %
-                       self.settings['display_translator_name'])
-
-        try:
-            self.settings['translator_name'] = self.config.get('settings', 'translator_name')
-            self.debug('loaded translator_name setting: %s' % self.settings['translator_name'])
-        except NoOptionError:
-            self.warning('could not find settings/translator_name in config file, '
-                         'using default: %s' % self.settings['translator_name'])
-
-        try:
-            self.settings['min_sentence_length'] = self.config.getint('settings', 'min_sentence_length')
-            self.debug('loaded min_sentence_length setting: %s' % self.settings['min_sentence_length'])
-        except NoOptionError:
-            self.warning('could not find settings/min_sentence_length in config file, '
-                         'using default: %s' % self.settings['min_sentence_length'])
-        except ValueError, e:
-            self.error('could not load settings/min_sentence_length config value: %s' % e)
-            self.debug('using default value (%s) for settings/min_sentence_length' %
-                       self.settings['min_sentence_length'])
-
-        try:
-            value = self.config.get('settings', 'microsoft_client_id')
-            if value and len(value.strip()) != 0:
-                self.settings['microsoft_client_id'] = value
-                self.debug('loaded microsoft_client_id setting: %s' % self.settings['microsoft_client_id'])
-            else:
-                self.warning('invalid value speficied in settings/microsoft_client_id: plugin will be disabled')
-        except NoOptionError:
-            self.warning('could not find settings/microsoft_client_id in config file: plugin will be disabled')
-
-        try:
-            value = self.config.get('settings', 'microsoft_client_secret')
-            if value and len(value.strip()) != 0:
-                self.settings['microsoft_client_secret'] = value
-                self.debug('loaded microsoft_client_secret setting: %s' % self.settings['microsoft_client_secret'])
-            else:
-                self.warning('invalid value speficied in settings/microsoft_client_secret: plugin will be disabled')
-        except NoOptionError:
-            self.warning('could not find settings/microsoft_client_secret in config file: plugin will be disabled')
+        self.settings['default_source_language'] = self.getSetting('settings', 'default_source_language', b3.STR, 'auto', validate_source)
+        self.settings['default_target_language'] = self.getSetting('settings', 'default_target_language', b3.STR, 'en', validate_target)
+        self.settings['display_translator_name'] = self.getSetting('settings', 'display_translator_name', b3.BOOL, True)
+        self.settings['translator_name'] = self.getSetting('settings', 'translator_name', b3.STR, '^7[^1T^7]')
+        self.settings['min_sentence_length'] = self.getSetting('settings', 'min_sentence_length', b3.INT, 6)
+        self.settings['microsoft_client_id'] = self.getSetting('settings', 'microsoft_client_id', b3.STR)
+        self.settings['microsoft_client_secret'] = self.getSetting('settings', 'microsoft_client_secret', b3.STR)
 
         if not self.settings['microsoft_client_id'] or not self.settings['microsoft_client_secret']:
             self.error('microsoft translator is not configured properly: disabling the plugin...')
@@ -259,10 +208,12 @@ class TranslatorPlugin(b3.plugin.Plugin):
         Make an HTTP POST request to the token service, and return the access_token
         See description here: http://msdn.microsoft.com/en-us/library/hh454949.aspx
         """
-        data = urlencode({'client_id': client_id,
-                          'client_secret': client_secret,
-                          'grant_type': 'client_credentials',
-                          'scope': 'http://api.microsofttranslator.com'})
+        data = urlencode({
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'grant_type': 'client_credentials',
+            'scope': 'http://api.microsofttranslator.com'
+        })
     
         try:
             self.debug('requesting microsoft translator access token.....')

@@ -17,7 +17,7 @@
 
 
 __author__ = 'Fenix, Courgette'
-__version__ = '2.2'
+__version__ = '2.3'
 
 
 import b3
@@ -47,14 +47,7 @@ class LocationPlugin(b3.plugin.Plugin):
         """
         Load plugin configuration.
         """
-        try:
-            self._announce = self.config.getboolean('settings', 'announce')
-            self.debug('loaded announce setting: %s' % self._announce)
-        except NoOptionError:
-            self.warning('could not find settings/announce in config file, using default: %s' % self._announce)
-        except ValueError, e:
-            self.error('could not load settings/announce config value: %s' % e)
-            self.debug('using default value (%s) for settings/announce' % self._announce)
+        self._announce = self.getSetting('settings', 'announce', b3.BOOL, self._announce)
 
         self._default_messages = {
             'client_connect': '^7$name ^3from ^7$city ^3(^7$country^3) connected',
@@ -110,17 +103,17 @@ class LocationPlugin(b3.plugin.Plugin):
 
     def onGeolocalization(self, event):
         """
-        Handle EVT_CLIENT_GEOLOCATION_SUCCESS
+        Handle EVT_CLIENT_GEOLOCATION_SUCCESS.
         """
         if self._announce and event.client.location and self.console.upTime() > 300:
             self.console.say(self.getMessage('client_connect', self.getMessageVariables(event.client)))
 
     def onPluginDisable(self, event):
         """
-        Handle EVT_PLUGIN_DISABLED
+        Handle EVT_PLUGIN_DISABLED.
         """
         if event.data in self.requiresPlugins:
-            self.warning('required plugin (%s) has been disabled: can\'t work without it' % event.data)
+            self.warning('required plugin (%s) has been disabled: can\'t work without it', event.data)
             self.disable()
 
     ####################################################################################################################
@@ -153,14 +146,14 @@ class LocationPlugin(b3.plugin.Plugin):
         Return the distance between 2 clients (in Km)
         """
         if not client.location or client.location.lat is None:
-            self.debug('could not compute distance: %s has not enough geolocation data' % client.name)
+            self.debug('could not compute distance: %s has not enough geolocation data', client.name)
             return False
         
         if not sclient.location or sclient.location.lat is None:
-            self.debug('could not compute distance: %s has not enough geolocation data' % sclient.name)
+            self.debug('could not compute distance: %s has not enough geolocation data', sclient.name)
             return False
 
-        self.verbose('computing distance between %s and %s' % (client.name, sclient.name))
+        self.verbose('computing distance between %s and %s', client.name, sclient.name)
 
         lat1 = float(client.location.lat)
         lon1 = float(client.location.lon)

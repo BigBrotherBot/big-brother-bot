@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-__version__ = '1.6'
+__version__ = '1.7'
 __author__ = 'guwashi / xlr8or'
 
 import b3
@@ -62,54 +62,14 @@ class CountryfilterPlugin(b3.plugin.Plugin):
         Load plugin configuration
         """
         # settings section
-        try:
-            self.cf_announce_accept = self.config.getboolean('settings', 'cf_announce_accept')
-        except:
-            pass
 
-        self.debug('setting/cf_announce_accept: %s' % self.cf_announce_accept)
-
-        try:
-            self.cf_announce_reject = self.config.getboolean('settings', 'cf_announce_reject')
-        except:
-            pass
-
-        self.debug('setting/cf_announce_reject: %s' % self.cf_announce_reject)
-
-        try:
-            self.cf_message_exclude_from = self.config.get('settings', 'cf_message_exclude_from')
-        except:
-            pass
-
-        self.debug('setting/cf_message_exclude_from: %s' % self.cf_message_exclude_from)
-
-        try:
-            self.cf_order = self.config.get('settings', 'cf_order')
-        except:
-            pass
-
-        self.debug('setting/cf_order: %s' % self.cf_order)
-
-        try:
-            self.cf_deny_from = self.config.get('settings', 'cf_deny_from')
-        except:
-            pass
-
-        self.debug('setting/cf_deny_from: %s' % self.cf_deny_from)
-
-        try:
-            self.cf_allow_from = self.config.get('settings', 'cf_allow_from')
-        except:
-            pass
-
-        self.debug('setting/cf_allow_from: %s' % self.cf_allow_from)
-
-        try:
-            self.maxLevel = self.config.getint('settings', 'maxlevel')
-        except:
-            pass
-
-        self.debug('setting/maxlevel: %s' % self.maxLevel)
+        self.cf_announce_accept = self.getSetting('settings', 'cf_announce_accept', b3.BOOL, self.cf_announce_accept)
+        self.cf_announce_reject = self.getSetting('settings', 'cf_announce_reject', b3.BOOL, self.cf_announce_reject)
+        self.cf_message_exclude_from = self.getSetting('settings', 'cf_message_exclude_from', b3.STR, self.cf_message_exclude_from)
+        self.cf_order = self.getSetting('settings', 'cf_order', b3.STR, self.cf_order)
+        self.cf_deny_from = self.getSetting('settings', 'cf_deny_from', b3.STR, self.cf_deny_from)
+        self.cf_allow_from = self.getSetting('settings', 'cf_allow_from', b3.STR, self.cf_allow_from)
+        self.maxLevel = self.getSetting('settings', 'maxlevel', b3.LEVEL, self.maxLevel)
 
         # ignore section
         try:

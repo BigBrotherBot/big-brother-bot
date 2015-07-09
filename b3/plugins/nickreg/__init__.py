@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-__version__ = '2.0'
+__version__ = '2.1'
 __author__  = 'Ismael, SGT, Fenix'
 
 import b3
@@ -47,33 +47,10 @@ class NickregPlugin(b3.plugin.Plugin):
         """
         Load plugin configuration.
         """
-        try:
-            self.min_level = self.console.getGroupLevel(self.config.get('settings', 'min_level'))
-        except (b3.config.NoOptionError, KeyError):
-            self.warning('no or bad value for settings::min_level : using default (%s)' % self.min_level)
-
-        try:
-            self.min_level_global_manage = self.console.getGroupLevel(self.config.get('settings', 'min_level_global_manage'))
-            if self.min_level_global_manage < self.min_level:
-                self.min_level_global_manage = 100
-                self.warning('settings::min_level_global_manage cannot be lower than settings:min_level: using default (%s)' % self.min_level_global_manage)
-        except (b3.config.NoOptionError, KeyError):
-            self.warning('no or bad value for settings::min_level_global_manage : using default (%s)' % self.min_level_global_manage)
-
-        try:
-            self.max_nicks = self.config.getint('settings', 'max_nicks')
-        except (b3.config.NoOptionError, ValueError):
-            self.warning('no or bad value for settings::max_nicks : using default (%s)' % self.max_nicks)
-
-        try:
-            self.interval = self.config.getint('settings', 'interval')
-        except (b3.config.NoOptionError, ValueError):
-            self.warning('no or bad value for settings::interval : using default (%s)' % self.interval)
-
-        self.debug('settings::min_level = %s' % self.min_level)
-        self.debug('settings::min_level_global_manage = %s' % self.min_level_global_manage)
-        self.debug('settings::maxnicks = %s' % self.max_nicks)
-        self.debug('settings::interval = %ss' % self.interval)
+        self.min_level = self.getSetting('settings', 'min_level', b3.LEVEL, 20)
+        self.min_level_global_manage = self.getSetting('settings', 'min_level_global_manage', b3.LEVEL, 100, lambda x: int(max(x, self.min_level)))
+        self.max_nicks = self.getSetting('settings', 'max_nicks', b3.INTEGER, 3)
+        self.interval = self.getSetting('settings', 'interval', b3.INTEGER, 30)
 
     def onStartup(self):
         """
