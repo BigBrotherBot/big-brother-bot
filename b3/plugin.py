@@ -60,11 +60,13 @@
 # 01/07/2015 - 1.10  - Fenix     - added getSetting method: safely return a configuration file setting value
 # 05/07/2015 - 1.11  - Fenix     - changed getSetting to accept a validate function to validate (and correct if needed
 #                                  the configuration value being loaded)
+# 11/07/2015 - 1.12  - Fenix     - changed getSetting to parse lists from configuration entries
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.11'
+__version__ = '1.12'
 
 
+import re
 import b3.clients
 import b3.config
 import b3.events
@@ -309,6 +311,10 @@ class Plugin(object):
             """process the given value using b3.functions.vars2printf"""
             return b3.functions.vars2printf(value).strip()
 
+        def _get_list(value):
+            """process the given value by extracting tokens"""
+            return re.split('\W+', value)
+
         handlers = {
             b3.STRING: _get_string,
             b3.INTEGER: _get_integer,
@@ -318,6 +324,7 @@ class Plugin(object):
             b3.DURATION: _get_duration,
             b3.PATH: _get_path,
             b3.TEMPLATE: _get_template,
+            b3.LIST: _get_list,
         }
 
         if not self.config:

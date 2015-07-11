@@ -106,6 +106,7 @@ LEVEL = 5                               ## b3.clients.Group level
 DURATION = 6                            ## b3.functions.time2minutes conversion
 PATH = 7                                ## b3.getAbsolutePath path conversion
 TEMPLATE = 8                            ## b3.functions.vars2printf conversion
+LIST = 9                                ## string split into list of tokens
 
 
 def getHomePath():
