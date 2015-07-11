@@ -91,29 +91,8 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         """
         Setup the radio spam protection
         """
-        try:
-            self._rsp_enable = self.config.getboolean('radio_spam_protection', 'enable')
-        except ConfigParser.NoOptionError:
-            self.warning('could not find radio_spam_protection/enable in config file, using default: %s' %
-                         self._rsp_enable)
-        except ValueError, e:
-            self.error('could not load radio_spam_protection/enable config value: %s' % e)
-            self.debug('using default value (%s) for radio_spam_protection/enable' % self._rsp_enable)
-
-        try:
-            self._rsp_mute_duration = self.config.getint('radio_spam_protection', 'mute_duration')
-            if self._rsp_mute_duration < 1:
-                raise ValueError('radio_spam_protection/mute_duration cannot be lower than 1')
-        except ConfigParser.NoOptionError:
-            self.warning('could not find radio_spam_protection/mute_duration in config file, '
-                         'using default: %s' % self._rsp_mute_duration)
-        except ValueError, e:
-            self._rsp_mute_duration = 2  # set again because it might have been overwritten
-            self.error('could not load radio_spam_protection/mute_duration config value: %s' % e)
-            self.debug('using default value (%s) for radio_spam_protection/mute_duration' % self._rsp_mute_duration)
-
-        self.debug('radio spam protection enable: %s' % self._rsp_enable)
-        self.debug('radio spam protection mute duration: %s' % self._rsp_mute_duration)
+        self._rsp_enable = self.getSetting('radio_spam_protection', 'enable', b3.BOOL, self._rsp_enable)
+        self._rsp_mute_duration = self.getSetting('radio_spam_protection', 'mute_duration', b3.INT, self._rsp_mute_duration, lambda x: int(max(x, 1)))
 
     ####################################################################################################################
     #                                                                                                                  #

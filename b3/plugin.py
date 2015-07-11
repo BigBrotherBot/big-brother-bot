@@ -313,7 +313,7 @@ class Plugin(object):
 
         def _get_list(value):
             """process the given value by extracting tokens"""
-            return re.split('\W+', value)
+            return [x for x in re.split('\W+', value) if x]
 
         handlers = {
             b3.STRING: _get_string,

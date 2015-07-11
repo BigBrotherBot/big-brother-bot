@@ -148,23 +148,23 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             self._hitlocations['HL_HEAD'] = self.console.HL_HEAD
         except AttributeError, e:
             self._hitlocations['HL_HEAD'] = '0'
-            self.warning("could not get HL_HEAD value from B3 parser: %s" % e)
+            self.warning("could not get HL_HEAD value from B3 parser: %s", e)
 
         try:
             self._hitlocations['HL_HELMET'] = self.console.HL_HELMET
         except AttributeError, e:
             self._hitlocations['HL_HELMET'] = '1'
-            self.warning("could not get HL_HELMET value from B3 parser: %s" % e)
+            self.warning("could not get HL_HELMET value from B3 parser: %s", e)
 
         try:
             self._hitlocations['HL_TORSO'] = self.console.HL_TORSO
         except AttributeError, e:
             self._hitlocations['HL_TORSO'] = '2'
-            self.warning("could not get HL_TORSO value from B3 parser: %s" % e)
+            self.warning("could not get HL_TORSO value from B3 parser: %s", e)
 
-        self.debug("HL_HEAD is %s" % self._hitlocations['HL_HEAD'])
-        self.debug("HL_HELMET is %s" % self._hitlocations['HL_HELMET'])
-        self.debug("HL_TORSO is %s" % self._hitlocations['HL_TORSO'])
+        self.debug("HL_HEAD is %s", self._hitlocations['HL_HEAD'])
+        self.debug("HL_HELMET is %s", self._hitlocations['HL_HELMET'])
+        self.debug("HL_TORSO is %s", self._hitlocations['HL_TORSO'])
 
         # register our commands
         if 'commands' in self.config.sections():
@@ -196,7 +196,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             # save original vote settings
             self._origvote = self.console.getCvar('g_allowvote').getInt()
         except ValueError, e:
-            self.warning("could not retrieve g_allowvote CVAR value: %s" % e)
+            self.warning("could not retrieve g_allowvote CVAR value: %s", e)
             self._origvote = 0  # no votes
 
         # if by any chance on botstart g_allowvote is 0
@@ -218,7 +218,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                 # if the game is iourt42 don't log since the above cvar retrieval
                 # is going to raise an exception everytime: iourt42 uses a gear
                 # string instead of gear bitmask so int casting will raise a ValueError
-                self.warning("could not retrieve g_gear CVAR value: %s" % e)
+                self.warning("could not retrieve g_gear CVAR value: %s", e)
                 self._origgear = 0  # allow all weapons
 
         self.installCrontabs()
@@ -264,232 +264,45 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         Setup the name checker
         """
-        try:
-            self._ninterval = self.config.getint('namechecker', 'ninterval')
-        except b3.config.NoOptionError:
-            self.warning('could not find namechecker/ninterval in config file, using default: %s' % self._ninterval)
-        except ValueError, e:
-            self.error('could not load namechecker/ninterval config value: %s' % e)
-            self.debug('using default value (%s) for namechecker/ninterval' % self._ninterval)
-
-        # clamp name checker interval
-        if self._ninterval > 59:
-            self._ninterval = 59
-
-        try:
-            self._checkdupes = self.config.getboolean('namechecker', 'checkdupes')
-        except b3.config.NoOptionError:
-            self.warning('could not find namechecker/checkdupes in config file, using default: %s' % self._checkdupes)
-        except ValueError, e:
-            self.error('could not load namechecker/checkdupes config value: %s' % e)
-            self.debug('using default value (%s) for namechecker/checkdupes' % self._checkdupes)
-
-        try:
-            self._checkunknown = self.config.getboolean('namechecker', 'checkunknown')
-        except b3.config.NoOptionError:
-            self.warning('could not find namechecker/checkunknown in config file, using default: %s' %
-                         self._checkunknown)
-        except ValueError, e:
-            self.error('could not load namechecker/checkunknown config value: %s' % e)
-            self.debug('using default value (%s) for namechecker/checkunknown' % self._checkunknown)
-
-        try:
-            self._checkbadnames = self.config.getboolean('namechecker', 'checkbadnames')
-        except b3.config.NoOptionError:
-            self.warning('could not find namechecker/checkbadnames in config file, using default: %s' %
-                         self._checkbadnames)
-        except ValueError, e:
-            self.error('could not load namechecker/checkbadnames config value: %s' % e)
-            self.debug('using default value (%s) for namechecker/checkbadnames' % self._checkbadnames)
-
-        try:
-            self._checkchanges = self.config.getboolean('namechecker', 'checkchanges')
-        except b3.config.NoOptionError:
-            self.warning('could not find namechecker/checkchanges in config file, using default: %s' %
-                         self._checkchanges)
-        except ValueError, e:
-            self.error('could not load namechecker/checkchanges config value: %s' % e)
-            self.debug('using default value (%s) for namechecker/checkchanges' % self._checkchanges)
-
-        try:
-            self._checkallowedchanges = self.config.getint('namechecker', 'checkallowedchanges')
-        except b3.config.NoOptionError:
-            self.warning('could not find namechecker/checkallowedchanges in config file, using default: %s' %
-                         self._checkallowedchanges)
-        except ValueError, e:
-            self.error('could not load namechecker/checkallowedchanges config value: %s' % e)
-            self.debug('using default value (%s) for namechecker/checkallowedchanges' % self._checkallowedchanges)
-
-        self.debug('Name checker interval: %s' % self._ninterval)
-        self.debug('Check bad names: %s' % self._checkbadnames)
-        self.debug('Check duplicate names: %s' % self._checkdupes)
-        self.debug('Check unknown names: %s' % self._checkunknown)
-        self.debug('Check name changes: %s' % self._checkchanges)
-        self.debug('Max. allowed name changes per game: %s' % self._checkallowedchanges)
+        self._ninterval = self.getSetting('namechecker', 'ninterval', b3.INT, self._ninterval, lambda x: int(min(x, 59)))
+        self._checkdupes = self.getSetting('namechecker', 'checkdupes', b3.BOOL, self._checkdupes)
+        self._checkunknown = self.getSetting('namechecker', 'checkunknown', b3.BOOL, self._checkunknown)
+        self._checkbadnames = self.getSetting('namechecker', 'checkbadnames', b3.BOOL, self._checkbadnames)
+        self._checkchanges = self.getSetting('namechecker', 'checkchanges', b3.BOOL, self._checkchanges)
+        self._checkallowedchanges = self.getSetting('namechecker', 'checkallowedchanges', b3.INT, self._checkallowedchanges, lambda x: int(max(x, 1)))
 
     def loadTeamBalancer(self):
         """
         Setup the teambalancer
         """
-        try:
-            self._tinterval = self.config.getint('teambalancer', 'tinterval')
-        except b3.config.NoOptionError:
-            self.warning('could not find teambalancer/tinterval in config file, using default: %s' % self._tinterval)
-        except ValueError, e:
-            self.error('could not load teambalancer/tinterval config value: %s' % e)
-            self.debug('using default value (%s) for teambalancer/tinterval' % self._tinterval)
-
-        # clamp team balancer interval
-        if self._tinterval > 59:
-            self._tinterval = 59
-
-        try:
-            self._teamdiff = self.config.getint('teambalancer', 'teamdifference')
-        except b3.config.NoOptionError:
-            self.warning('could not find teambalancer/teamdifference in config file, using default: %s' %
-                         self._teamdiff)
-        except ValueError, e:
-            self.error('could not load teambalancer/teamdifference config value: %s' % e)
-            self.debug('using default value (%s) for teambalancer/teamdifference' % self._teamdiff)
-
-        # set a minimum/maximum teamdifference
-        if self._teamdiff < 1:
-            self._teamdiff = 1
-        elif self._teamdiff > 9:
-            self._teamdiff = 9
-
-        try:
-            self._tmaxlevel = self.config.getint('teambalancer', 'maxlevel')
-        except b3.config.NoOptionError:
-            self.warning('could not find teambalancer/maxlevel in config file, using default: %s' % self._tmaxlevel)
-        except ValueError, e:
-            self.error('could not load teambalancer/maxlevel config value: %s' % e)
-            self.debug('using default value (%s) for teambalancer/maxlevel' % self._tmaxlevel)
-
-        try:
-            self._announce = self.config.getint('teambalancer', 'announce')
-        except b3.config.NoOptionError:
-            self.warning('could not find teambalancer/announce in config file, using default: %s' % self._announce)
-        except ValueError, e:
-            self.error('could not load teambalancer/announce config value: %s' % e)
-            self.debug('using default value (%s) for teambalancer/announce' % self._announce)
-
-        try:
-            # 10/21/2008 - 1.4.0b9 - mindriot
-            self._team_change_force_balance_enable = self.config.getboolean('teambalancer',
-                                                                            'team_change_force_balance_enable')
-        except b3.config.NoOptionError:
-            self.warning('could not find teambalancer/team_change_force_balance_enable in config file, \
-                          using default: %s' % self._team_change_force_balance_enable)
-        except ValueError, e:
-            self.error('could not load teambalancer/team_change_force_balance_enable config value: %s' % e)
-            self.debug('using default value (%s) for teambalancer/team_change_force_balance_enable' %
-                       self._team_change_force_balance_enable)
-
-        try:
-            # 10/22/2008 - 1.4.0b10 - mindriot
-            self._autobalance_gametypes = self.config.get('teambalancer', 'autobalance_gametypes')
-        except b3.config.NoOptionError:
-            self.warning('could not find teambalancer/autobalance_gametypes in config file, '
-                         'using default: %s' % self._autobalance_gametypes)
-
-        self._autobalance_gametypes = self._autobalance_gametypes.lower()
+        self._tinterval = self.getSetting('teambalancer', 'tinterval', b3.INT, self._tinterval, lambda x: int(min(x, 59)))
+        self._teamdiff = self.getSetting('teambalancer', 'teamdifference', b3.INT, self._teamdiff, lambda x: int(min(9, max(1, x))))
+        self._tmaxlevel = self.getSetting('teambalancer', 'maxlevel', b3.LEVEL, self._tmaxlevel)
+        self._announce = self.getSetting('teambalancer', 'announce', b3.INT, self._announce)
+        # 10/21/2008 - 1.4.0b9 - mindriot
+        self._team_change_force_balance_enable = self.getSetting('teambalancer', 'team_change_force_balance_enable', b3.BOOL, self._team_change_force_balance_enable)
+        # 10/22/2008 - 1.4.0b10 - mindriot
+        self._autobalance_gametypes = self.getSetting('teambalancer', 'autobalance_gametypes', b3.STR, self._autobalance_gametypes, lambda x: x.lower())
         self._autobalance_gametypes_array = re.split(r'[\s,]+', self._autobalance_gametypes)
-
-        try:
-            self._teamLocksPermanent = self.config.getboolean('teambalancer', 'teamLocksPermanent')
-        except b3.config.NoOptionError:
-            self.warning('could not find teambalancer/teamLocksPermanent in config file, '
-                         'using default: %s' % self._teamLocksPermanent)
-        except ValueError, e:
-            self.error('could not load teambalancer/teamLocksPermanent config value: %s' % e)
-            self.debug('using default value (%s) for teambalancer/teamLocksPermanent' % self._teamLocksPermanent)
-
-        try:
-            self._ignorePlus = self.config.getint('teambalancer', 'timedelay')
-        except b3.config.NoOptionError:
-            self.warning('could not find teambalancer/timedelay in config file, using default: %s' % self._ignorePlus)
-        except ValueError, e:
-            self.warning('could not load teambalancer/timedelay config value: %s' % e)
-            self.debug('using default value (%s) for teambalancer/timedelay' % self._ignorePlus)
-
-        self.debug('Teambalance interval: %s' % self._tinterval)
-        self.debug('Teambalance difference: %s' % self._teamdiff)
-        self.debug('Teambalance max level: %s' % self._tmaxlevel)
-        self.debug('Teambalance announce: %s' % self._announce)
-        self.debug('Team change force balance enable: %s' % self._team_change_force_balance_enable)
-        self.debug('Team locks permanent: %s' % self._teamLocksPermanent)
-        self.debug('Time delay: %s' % self._ignorePlus)
-        self.debug('Autobalance gametypes: %s' % self._autobalance_gametypes)
+        self._teamLocksPermanent = self.getSetting('teambalancer', 'teamLocksPermanent', b3.BOOL, self._teamLocksPermanent)
+        self._ignorePlus = self.getSetting('teambalancer', 'timedelay', b3.INT, self._ignorePlus)
 
     def loadSkillBalancer(self):
         """
         Setup the skill balancer
         """
-        try:
-            self._skinterval = self.config.getint('skillbalancer', 'interval')
-        except b3.config.NoOptionError:
-            self.warning('could not find skillbalancer/interval in config file, using default: %s' % self._skinterval)
-        except ValueError, e:
-            self.error('could not load skillbalancer/interval config value: %s' % e)
-            self.debug('using default value (%s) for skillbalancer/interval' % self._skinterval)
-
-        # clamp skill balancer interval
-        if self._skinterval > 59:
-            self._skinterval = 59
-
-        try:
-            self._skilldiff = self.config.getfloat('skillbalancer', 'difference')
-        except b3.config.NoOptionError:
-            self.warning('could not find skillbalancer/difference in config file, using default: %s' % self._skilldiff)
-        except ValueError, e:
-            self.error('could not load skillbalancer/difference config value: %s' % e)
-            self.debug('using default value (%s) for skillbalancer/difference' % self._skilldiff)
-
-        # clamp skill difference
-        if self._skilldiff < 0.1:
-            self._skilldiff = 0.1
-        elif self._skilldiff > 9:
-            self._skilldiff = 9
-
-        try:
-            self._skill_balance_mode = self.config.getint('skillbalancer', 'mode')
-        except b3.config.NoOptionError:
-            self.warning('could not find skillbalancer/mode in config file, using default: %s' %
-                         self._skill_balance_mode)
-        except ValueError, e:
-            self.error('could not load skillbalancer/mode config value: %s' % e)
-            self.debug('using default value (%s) for skillbalancer/mode' % self._skill_balance_mode)
-
-        try:
-            self._minbalinterval = self.config.getint('skillbalancer', 'min_bal_interval')
-        except b3.config.NoOptionError:
-            self.warning('could not find skillbalancer/min_bal_interval in config file, using default: %s' %
-                         self._minbalinterval)
-        except ValueError, e:
-            self.warning('could not load skillbalancer/min_bal_interval config value: %s' % e)
-            self.debug('using default value (%s) for skillbalancer/min_bal_interval' % self._minbalinterval)
-
-        self.debug('Skillbalance interval: %s' % self._skinterval)
-        self.debug('Skillbalance difference: %s' % self._skilldiff)
-        self.debug('Skillbalance mode: %s' % self._skill_balance_mode)
-        self.debug('Minimum skillbalance interval: %s' % self._minbalinterval)
+        self._skinterval = self.getSetting('skillbalancer', 'interval', b3.INT, self._skinterval, lambda x: int(min(x, 59)))
+        self._skilldiff = self.getSetting('skillbalancer', 'difference', b3.FLOAT, self._skilldiff, lambda x: float(min(9.0, max(0.1, x))))
+        self._skill_balance_mode = self.getSetting('skillbalancer', 'mode', b3.INT, self._skill_balance_mode)
+        self._minbalinterval = self.getSetting('skillbalancer', 'min_bal_interval', b3.INT, self._minbalinterval)
 
     def loadVoteDelayer(self):
         """
         Setup the vote delayer
         """
-        try:
-            self._votedelay = self.config.getint('votedelay', 'votedelay')
-        except b3.config.NoOptionError:
-            self.warning('could not find votedelay/votedelay in config file, using default: %s' % self._votedelay)
-        except ValueError, e:
-            self.warning('could not load votedelay/votedelay config value: %s' % e)
-            self.debug('using default value (%s) for votedelay/votedelay' % self._votedelay)
-
+        self._votedelay = self.getSetting('votedelay', 'votedelay', b3.INT, self._votedelay)
         # set a max delay, setting it larger than timelimit would be foolish
         timelimit = self.console.getCvar('timelimit').getInt()
-
         if timelimit == 0 and self._votedelay != 0:
             # endless map or frag limited settings
             self._votedelay = 10
@@ -497,105 +310,34 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             # don't overlap rounds
             self._votedelay = timelimit - 1
 
-        self.debug('Vote delay: %s' % self._votedelay)
-
     def loadSpecChecker(self):
         """
         Setup the spec checker
         """
-        try:
-            self._sinterval = self.config.getint('speccheck', 'sinterval')
-        except b3.config.NoOptionError:
-            self.warning('could not find speccheck/sinterval in config file, using default: %s' % self._sinterval)
-        except ValueError, e:
-            self.error('could not load speccheck/sinterval config value: %s' % e)
-            self.debug('using default value (%s) for speccheck/sinterval' % self._sinterval)
-
-        try:
-            self._smaxspectime = self.config.getint('speccheck', 'maxspectime')
-        except b3.config.NoOptionError:
-            self.warning('could not find speccheck/maxspectime in config file, using default: %s' % self._smaxspectime)
-        except ValueError, e:
-            self.error('could not load speccheck/maxspectime e config value: %s' % e)
-            self.debug('using default value (%s) for speccheck/maxspectime ' % self._smaxspectime)
-
-        try:
-            # loading spec max level configuration value
-            self._smaxlevel = self.config.getint('speccheck', 'maxlevel')
-        except b3.config.NoOptionError:
-            self.warning('could not find speccheck/maxlevel in config file, using default: %s' % self._smaxlevel)
-        except ValueError, e:
-            self.error('could not load speccheck/maxlevel config value: %s' % e)
-            self.debug('using default value (%s) for speccheck/maxlevel' % self._smaxlevel)
-
-        try:
-            self._smaxplayers = self.config.getint('speccheck', 'maxplayers')
-        except (b3.config.NoOptionError, ValueError), e:
-            if isinstance(e, b3.config.NoOptionError):
-                self.warning('could not find speccheck/maxplayers in config file')
-            elif isinstance(e, ValueError):
-                self.error('could not load speccheck/maxplayers config value: %s' % e)
-
-            # load default value according to server configuration
-            maxclients = self.console.getCvar('sv_maxclients').getInt()
-            pvtclients = self.console.getCvar('sv_privateClients').getInt()
-            self._smaxplayers = maxclients - pvtclients
-            self.debug('using default server value (sv_maxclients - sv_privateClients = %s) for '
-                       'speccheck/maxplayers' % self._smaxplayers)
-
-        self.debug('Speccheck interval: %s' % self._sinterval)
-        self.debug('Max spec time: %s' % self._smaxspectime)
-        self.debug('Speccheck max level: %s' % self._smaxlevel)
-        self.debug('Spec max players: %s' % self._smaxplayers)
+        self._sinterval = self.getSetting('speccheck', 'sinterval', b3.INT, self._sinterval, lambda x: int(min(x, 59)))
+        self._smaxspectime = self.getSetting('speccheck', 'maxspectime', b3.INT, self._smaxspectime)
+        self._smaxlevel = self.getSetting('speccheck', 'maxlevel', b3.LEVEL, self._smaxlevel)
+        maxclients = self.console.getCvar('sv_maxclients').getInt()
+        pvtclients = self.console.getCvar('sv_privateClients').getInt()
+        smaxplayers = maxclients - pvtclients
+        self._smaxplayers = self.getSetting('speccheck', 'maxplayers', b3.INT, smaxplayers)
 
     def loadMoonMode(self):
         """
         Setup the moon mode
         """
-        try:
-            self._moon_on_gravity = self.config.getint('moonmode', 'gravity_on')
-        except b3.config.NoOptionError:
-            self.warning('could not find moonmode/gravity_on in config file, using default: %s' % self._moon_on_gravity)
-        except ValueError, e:
-            self.error('could not load moonmode/gravity_on config value: %s' % e)
-            self.debug('using default value (%s) for moonmode/gravity_on' % self._moon_on_gravity)
-
-        try:
-            self._moon_off_gravity = self.config.getint('moonmode', 'gravity_off')
-        except b3.config.NoOptionError:
-            self.warning('could not find moonmode/gravity_off in config file, using default: %s' %
-                         self._moon_off_gravity)
-        except ValueError, e:
-            self.error('could not load moonmode/gravity_off config value: %s' % e)
-            self.debug('using default value (%s) for moonmode/gravity_off' % self._moon_off_gravity)
-
-        self.debug('Moon ON gravity: %s' % self._moon_on_gravity)
-        self.debug('Moon OFF gravity: %s' % self._moon_off_gravity)
+        self._moon_on_gravity = self.getSetting('moonmode', 'gravity_on', b3.INT, self._moon_on_gravity)
+        self._moon_off_gravity = self.getSetting('moonmode', 'gravity_off', b3.INT, self._moon_off_gravity)
 
     def loadPublicMode(self):
         """
         Setup the public mode
         """
-        try:
-            self._randnum = self.config.getint('publicmode', 'randnum')
-        except b3.config.NoOptionError:
-            self.warning('could not find publicmode/randnum in config file, using default: %s' % self._randnum)
-        except ValueError, e:
-            self.error('could not load publicmode/randnum config value: %s' % e)
-            self.debug('using default value (%s) for publicmode/randnum' % self._randnum)
+        self._randnum = self.getSetting('publicmode', 'randnum', b3.INT, self._randnum)
 
         try:
 
-            try:
-                padic = self.config.getboolean('publicmode', 'usedic')
-            except b3.config.NoOptionError:
-                padic = False
-                self.warning('could not find publicmode/usedic in config file, using default: %s' % padic)
-            except ValueError, e:
-                padic = False
-                self.error('could not load publicmode/usedic config value: %s' % e)
-                self.debug('using default value (%s) for publicmode/usedic' % padic)
-
+            padic = self.getSetting('publicmode', 'usedic', b3.BOOL, False)
             if padic:
                 padicfile = self.config.getpath('publicmode', 'dicfile')
                 self.debug('trying to use password dictionnary %s' % padicfile)
@@ -611,7 +353,6 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                             self.warning('dictionary file is empty: switching to default')
                         else:
                             self._pass_lines = text.splitlines()
-
                     self.debug('using dictionary password')
                 else:
                     self.warning('dictionary is enabled but the file doesn\'t exists: switching to default')
@@ -620,27 +361,15 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
             self.error('could not load dictionary config: %s' % e)
             self.debug('using default dictionary')
 
-        try:
-
-            self._papublic_password = self.config.get('publicmode', 'g_password')
-            if self._papublic_password is None:
-                self.warning('could not setup papublic command because there is no password set in config')
-
-        except b3.config.NoOptionError:
-            self.debug('could not setup papublic command because there is no password set in config')
-
-        self.debug('papublic password set to : %s' % self._papublic_password)
+        self._papublic_password = self.getSetting('publicmode', 'g_password', b3.STR, None)
+        if self._papublic_password is None:
+            self.warning('could not setup papublic command because there is no password set in config')
 
     def loadMatchMode(self):
         """
         Setup the match mode
         """
-        try:
-            # load a list of plugins to be disabled/enabled upon match mode enabled/disabled
-            self.debug('matchmode/plugins_disable : %s' % self.config.get('matchmode', 'plugins_disable'))
-            self._match_plugin_disable = [x for x in re.split('\W+', self.config.get('matchmode', 'plugins_disable')) if x]
-        except b3.config.NoOptionError:
-            self.warning('could not find matchmode/plugins_disable in config file')
+        self._match_plugin_disable = self.getSetting('matchmode', 'plugins_disable', b3.LIST, [])
 
         try:
             # load all the configuration files into a dict
@@ -653,49 +382,10 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         Setup the bot support
         """
-        try:
-            self._botenable = self.config.getboolean('botsupport', 'bot_enable')
-        except b3.config.NoOptionError:
-            self.warning('could not find botsupport/bot_enable in config file, using default: %s' % self._botenable)
-        except ValueError, e:
-            self.error('could not load botsupport/bot_enable config value: %s' % e)
-            self.debug('using default value (%s) for botsupport/bot_enable' % self._botenable)
-
-        try:
-            self._botskill = self.config.getint('botsupport', 'bot_skill')
-        except b3.config.NoOptionError:
-            self.warning('could not find botsupport/bot_skill in config file, using default: %s' % self._botskill)
-        except ValueError, e:
-            self.error('could not load botsupport/bot_skill config value: %s' % e)
-            self.debug('using default value (%s) for botsupport/bot_skill' % self._botskill)
-
-        # clamp botskill value
-        if self._botskill > 5:
-            self._botskill = 5
-        elif self._botskill < 1:
-            self._botskill = 1
-
-        try:
-            self._botminplayers = self.config.getint('botsupport', 'bot_minplayers')
-        except b3.config.NoOptionError:
-            self.warning('could not find botsupport/bot_minplayers in config file, '
-                         'using default: %s' % self._botminplayers)
-        except ValueError, e:
-            self.error('could not load botsupport/bot_minplayers config value: %s' % e)
-            self.debug('using default value (%s) for botsupport/bot_minplayers' % self._botminplayers)
-
-        # clamp botminplayers value
-        if self._botminplayers > 16:
-            self._botminplayers = 16
-        elif self._botminplayers < 0:
-            self._botminplayers = 0
-
-        try:
-            maps = self.config.get('botsupport', 'bot_maps')
-            maps = maps.split(' ')
-            self._botmaps = maps
-        except b3.config.NoOptionError:
-            self.debug('no map specified for botsupport...')
+        self._botenable = self.getSetting('botsupport', 'bot_enable', b3.BOOL, self._botenable)
+        self._botskill = self.getSetting('botsupport', 'bot_skill', b3.INT, self._botskill, lambda x: int(min(5, max(1, x))))
+        self._botminplayers = self.getSetting('botsupport', 'bot_minplayers', b3.INT, self._botminplayers, lambda x: int(min(16, max(0, x))))
+        self._botmaps = self.getSetting('botsupport', 'bot_maps', b3.LIST, [])
 
         if self._botenable:
             # if it isn't enabled already it takes a mapchange to activate
@@ -703,12 +393,6 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
 
         # set the correct botskill anyway
         self.console.write('set g_spskill %s' % self._botskill)
-
-        self.debug('Bot enable: %s' % self._botenable)
-        self.debug('Bot skill: %s' % self._botskill)
-        self.debug('Bot minplayers: %s' % self._botminplayers)
-        self.debug('Bot maps: %s' % self._botmaps)
-
         # first check for botsupport
         self.botsupport()
 
@@ -716,179 +400,40 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         Setup the headshot counter
         """
-        try:
-            self._hsenable = self.config.getboolean('headshotcounter', 'hs_enable')
-        except b3.config.NoOptionError:
-            self.warning('could not find headshotcounter/hs_enable in config file, using default: %s' % self._hsenable)
-        except ValueError, e:
-            self.error('could not load headshotcounter/hs_enable config value: %s' % e)
-            self.debug('using default value (%s) for headshotcounter/hs_enable' % self._hsenable)
+        def validate_reset_vars(x):
+            acceptable = ('no', 'map', 'round')
+            if x.lower() not in acceptable:
+                raise ValueError('value must be one of [%s]' % ', '.join(acceptable))
+            return x.lower()
 
-        try:
-            self._hsresetvars = self.config.get('headshotcounter', 'reset_vars')
-            if not self._hsresetvars in ['no', 'map', 'round']:
-                raise KeyError('configuration setting not valid')
-        except b3.config.NoOptionError:
-            self.warning('could not find headshotcounter/reset_vars in config file, using default: %s' %
-                         self._hsresetvars)
-        except KeyError, e:
-            self.error('could not load headshotcounter/reset_vars config value: %s' % e)
-            self.debug('using default value (%s) for headshotcounter/reset_vars' % self._hsresetvars)
-
-        try:
-            self._hsbroadcast = self.config.getboolean('headshotcounter', 'broadcast')
-        except b3.config.NoOptionError:
-            self.warning('could not find headshotcounter/broadcast in config file, using default: %s' %
-                         self._hsbroadcast)
-        except ValueError, e:
-            self.error('could not load headshotcounter/broadcast config value: %s' % e)
-            self.debug('using default value (%s) for headshotcounter/broadcast' % self._hsbroadcast)
-
-        try:
-            self._hsall = self.config.getboolean('headshotcounter', 'announce_all')
-        except b3.config.NoOptionError:
-            self.warning('could not find headshotcounter/announce_all in config file, using default: %s' % self._hsall)
-        except ValueError, e:
-            self.error('could not load headshotcounter/announce_all config value: %s' % e)
-            self.debug('using default value (%s) for headshotcounter/announce_all' % self._hsall)
-
-        try:
-            self._hspercent = self.config.getboolean('headshotcounter', 'announce_percentages')
-        except b3.config.NoOptionError:
-            self.warning('could not find headshotcounter/announce_percentages in config file, using default: %s' %
-                         self._hspercent)
-        except ValueError, e:
-            self.error('could not load headshotcounter/announce_percentages config value: %s' % e)
-            self.debug('using default value (%s) for headshotcounter/announce_percentages' % self._hspercent)
-
-        try:
-            self._hspercentmin = self.config.getint('headshotcounter', 'percent_min')
-        except b3.config.NoOptionError:
-            self.warning('could not find headshotcounter/percent_min in config file, using default: %s' %
-                         self._hspercentmin)
-        except ValueError, e:
-            self.error('could not load headshotcounter/percent_min config value: %s' % e)
-            self.debug('using default value (%s) for headshotcounter/percent_min' % self._hspercentmin)
-
-        try:
-            self._hswarnhelmet = self.config.getboolean('headshotcounter', 'warn_helmet')
-        except b3.config.NoOptionError:
-            self.warning('could not find headshotcounter/warn_helmet in config file, using default: %s' %
-                         self._hswarnhelmet)
-        except ValueError, e:
-            self.error('could not load headshotcounter/warn_helmet config value: %s' % e)
-            self.debug('using default value (%s) for headshotcounter/warn_helmet' % self._hswarnhelmet)
-
-        try:
-            self._hswarnhelmetnr = self.config.getint('headshotcounter', 'warn_helmet_nr')
-        except b3.config.NoOptionError:
-            self.warning('could not find headshotcounter/warn_helmet_nr in config file, using default: %s' %
-                         self._hswarnhelmetnr)
-        except ValueError, e:
-            self.error('could not load headshotcounter/warn_helmet_nr config value: %s' % e)
-            self.debug('using default value (%s) for headshotcounter/warn_helmet_nr' % self._hswarnhelmetnr)
-
-        try:
-            self._hswarnkevlar = self.config.getboolean('headshotcounter', 'warn_kevlar')
-        except b3.config.NoOptionError:
-            self.warning('could not find headshotcounter/warn_kevlar in config file, using default: %s' %
-                         self._hswarnkevlar)
-        except ValueError, e:
-            self.error('could not load headshotcounter/warn_kevlar config value: %s' % e)
-            self.debug('using default value (%s) for headshotcounter/warn_kevlar' % self._hswarnkevlar)
-
-        try:
-            self._hswarnkevlarnr = self.config.getint('headshotcounter', 'warn_kevlar_nr')
-        except b3.config.NoOptionError:
-            self.warning('could not find headshotcounter/warn_kevlar_nr in config file, using default: %s' %
-                         self._hswarnkevlarnr)
-        except ValueError, e:
-            self.error('could not load headshotcounter/warn_kevlar_nr config value: %s' % e)
-            self.debug('using default value (%s) for headshotcounter/warn_kevlar_nr' % self._hswarnkevlarnr)
+        self._hsenable = self.getSetting('headshotcounter', 'hs_enable', b3.BOOL, self._hsenable)
+        self._hsresetvars = self.getSetting('headshotcounter', 'reset_vars', b3.STR, self._hsresetvars, validate_reset_vars)
+        self._hsbroadcast = self.getSetting('headshotcounter', 'broadcast', b3.BOOL, self._hsbroadcast)
+        self._hsall = self.getSetting('headshotcounter', 'announce_all', b3.BOOL, self._hsall)
+        self._hspercent = self.getSetting('headshotcounter', 'announce_percentages', b3.BOOL, self._hspercent)
+        self._hspercentmin = self.getSetting('headshotcounter', 'percent_min', b3.INT, self._hspercentmin)
+        self._hswarnhelmet = self.getSetting('headshotcounter', 'warn_helmet', b3.BOOL, self._hswarnhelmet)
+        self._hswarnhelmetnr = self.getSetting('headshotcounter', 'warn_helmet_nr', b3.INT, self._hswarnhelmetnr)
+        self._hswarnkevlar = self.getSetting('headshotcounter', 'warn_kevlar', b3.BOOL, self._hswarnkevlar)
+        self._hswarnkevlarnr = self.getSetting('headshotcounter', 'warn_kevlar_nr', b3.INT, self._hswarnkevlarnr)
 
         # making shure loghits is enabled to count headshots
         if self._hsenable:
             self.console.write('set g_loghits 1')
 
-        self.debug('Headshotcounter enable: %s' % self._hsenable)
-        self.debug('Broadcasting: %s' % self._hsbroadcast)
-        self.debug('Announce all: %s' % self._hsall)
-        self.debug('Announce percentages: %s' % self._hspercent)
-        self.debug('Minimum percentage: %s' % self._hspercentmin)
-        self.debug('Warn to use helmet: %s' % self._hswarnhelmet)
-        self.debug('Warn after nr of hits in the head: %s' % self._hswarnhelmetnr)
-        self.debug('Warn to use kevlar: %s' % self._hswarnkevlar)
-        self.debug('Warn after nr of hits in the torso: %s' % self._hswarnkevlarnr)
-
     def loadRotationManager(self):
         """
         Setup the rotation manager
         """
-        try:
-            self._rmenable = self.config.getboolean('rotationmanager', 'rm_enable')
-        except b3.config.NoOptionError:
-            self.warning('could not find rotationmanager/rm_enable in config file, using default: %s' % self._rmenable)
-        except ValueError, e:
-            self.error('could not load rotationmanager/rm_enable config value: %s' % e)
-            self.debug('using default value (%s) for rotationmanager/rm_enable' % self._rmenable)
-
+        self._rmenable = self.getSetting('rotationmanager', 'rm_enable', b3.BOOL, self._rmenable)
         if self._rmenable:
-
-            try:
-                self._switchcount1 = self.config.getint('rotationmanager', 'switchcount1')
-            except b3.config.NoOptionError:
-                self.warning('could not find rotationmanager/switchcount1 in config file, using default: %s' %
-                             self._switchcount1)
-            except ValueError, e:
-                self.error('could not load rotationmanager/switchcount1 config value: %s' % e)
-                self.debug('using default value (%s) for rotationmanager/switchcount1' % self._switchcount1)
-
-            try:
-                self._switchcount2 = self.config.getint('rotationmanager', 'switchcount3')
-            except b3.config.NoOptionError:
-                self.warning('could not find rotationmanager/switchcount2 in config file, using default: %s' %
-                             self._switchcount2)
-            except ValueError, e:
-                self.error('could not load rotationmanager/switchcount2 config value: %s' % e)
-                self.debug('using default value (%s) for rotationmanager/switchcount2' % self._switchcount2)
-
-            try:
-                self._hysteresis = self.config.getint('rotationmanager', 'hysteresis')
-            except b3.config.NoOptionError:
-                self.warning('could not find rotationmanager/hysteresis in config file, using default: %s' %
-                             self._hysteresis)
-            except ValueError, e:
-                self.error('could not load rotationmanager/hysteresis config value: %s' % e)
-                self.debug('using default value (%s) for rotationmanager/hysteresis' % self._hysteresis)
-
-            try:
-                self._rotation_small = self.config.get('rotationmanager', 'smallrotation')
-            except b3.config.NoOptionError:
-                self.warning('could not find rotationmanager/smallrotation in config file')
-
-            try:
-                self._rotation_medium = self.config.get('rotationmanager', 'mediumrotation')
-            except b3.config.NoOptionError:
-                self.warning('could not find rotationmanager/mediumrotation in config file')
-
-            try:
-                self._rotation_large = self.config.get('rotationmanager', 'largerotation')
-            except b3.config.NoOptionError:
-                self.warning('could not find rotationmanager/largerotation in config file')
-
-            try:
-                self._gamepath = self.config.get('rotationmanager', 'gamepath')
-            except b3.config.NoOptionError:
-                self.warning('could not find rotationmanager/gamepath in config file')
-
-            self.debug('Rotation Manager is enabled')
-            self.debug('Switchcount 1: %s' % self._switchcount1)
-            self.debug('Switchcount 2: %s' % self._switchcount2)
-            self.debug('Hysteresis: %s' % self._hysteresis)
-            self.debug('Rotation small: %s' % self._rotation_small)
-            self.debug('Rotation medium: %s' % self._rotation_medium)
-            self.debug('Rotation large: %s' % self._rotation_large)
-            self.debug('Game path: %s' % self._gamepath)
+            self._switchcount1 = self.getSetting('rotationmanager', 'switchcount1', b3.INT, self._switchcount1)
+            self._switchcount2 = self.getSetting('rotationmanager', 'switchcount2', b3.INT, self._switchcount2)
+            self._hysteresis = self.getSetting('rotationmanager', 'hysteresis', b3.INT, self._hysteresis)
+            self._rotation_small = self.getSetting('rotationmanager', 'smallrotation', b3.STR, self._rotation_small)
+            self._rotation_medium = self.getSetting('rotationmanager', 'mediumrotation', b3.STR, self._rotation_medium)
+            self._rotation_large = self.getSetting('rotationmanager', 'largerotation', b3.STR, self._rotation_large)
+            self._gamepath = self.getSetting('rotationmanager', 'gamepath', b3.STR, self._gamepath)
         else:
             self.debug('Rotation Manager is disabled')
 
@@ -896,23 +441,8 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         Setup special configs
         """
-        try:
-            self._slapSafeLevel = self.config.getint('special', 'slap_safe_level')
-        except b3.config.NoOptionError:
-            self.warning('could not find special/slap_safe_level in config file, using default: %s' %
-                         self._slapSafeLevel)
-        except ValueError, e:
-            self.error('could not load special/slap_safe_level config value: %s' % e)
-            self.debug('using default value (%s) for special/slap_safe_level' % self._slapSafeLevel)
-
-        try:
-            self._full_ident_level = self.config.getint('special', 'paident_full_level')
-        except b3.config.NoOptionError:
-            self.warning('could not find special/paident_full_level in config file, using default: %s' %
-                         self._full_ident_level)
-        except ValueError, e:
-            self.error('could not load special/paident_full_level config value: %s' % e)
-            self.debug('using default value (%s) for special/paident_full_level' % self._full_ident_level)
+        self._slapSafeLevel = self.getSetting('special', 'slap_safe_level', b3.LEVEL, self._slapSafeLevel)
+        self._full_ident_level = self.getSetting('special', 'paident_full_level', b3.LEVEL, self._full_ident_level)
 
     def installCrontabs(self):
         """

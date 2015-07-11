@@ -72,7 +72,7 @@ enable: f00
 mute_duration: 0
         """)
         self.assertFalse(self.p._rsp_enable)
-        self.assertEqual(2, self.p._rsp_mute_duration)
+        self.assertEqual(1, self.p._rsp_mute_duration)
 
 
 
