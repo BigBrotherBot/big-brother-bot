@@ -17,7 +17,6 @@
 
 import re
 import b3.plugin
-import ConfigParser
 
 from .iourt41 import Poweradminurt41Plugin
 
@@ -388,7 +387,7 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
             return
 
         if client1.team == client2.team:
-            client.message("%s and %s are on the same team! - Swapped them anyway :p" % (client1.name, client2.name))
+            client.message("%s and %s are on the same team!" % (client1.name, client2.name))
             return
 
         # /rcon swap <clientA> <clientB>
@@ -475,7 +474,7 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
             gearstr = self.console.getCvar('g_gear').getString()
 
         lines = []
-        for key in self._weapons.keys():
+        for key in self._weapons:
             lines.append('%s:%s' % (key, '^2ON' if self._weapons[key] not in gearstr else '^1OFF'))
 
         cmd.sayLoudOrPM(client, '^3current gear: ^7%s' % '^7, '.join(lines))
@@ -489,14 +488,14 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         try its best to guess the weapon code given a name.
         If name is a group name, then return multiple weapon codes as a string
         """
-        if name in self._weapon_groups.keys():
+        if name in self._weapon_groups:
             return self._weapon_groups[name]
         name_tries = [name[:length] for length in (5, 4, 3, 2)]
         for _name in name_tries:
-            if _name in self._weapons.keys():
+            if _name in self._weapons:
                 return self._weapons[_name]
         for _name in name_tries:
-            if _name in self._weapon_aliases.keys():
+            if _name in self._weapon_aliases:
                 key = self._weapon_aliases[_name]
                 return self._weapons[key]
 

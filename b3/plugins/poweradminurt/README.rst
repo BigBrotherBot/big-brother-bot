@@ -524,6 +524,9 @@ Changelog
   - split event handler hooks into multiple functions
   - delay teambalancing to round end in round based gametypes
   - delay skillbalancing to round end in round based gametypes
+1.26 - 2015/07/12 - Fenix
+  - make use of Plugin.getSetting to load configuration file values
+  - minor optimizations
 
 Credit
 ------
