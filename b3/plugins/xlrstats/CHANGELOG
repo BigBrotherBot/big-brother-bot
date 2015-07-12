@@ -40,3 +40,6 @@ CHANGELOG (see xlrstats-v2-changelog.txt for v1 and v2 history and credits)
                                             - automatically generate missing database tables
                                             - added command !xlrinit: initialize database schema (meant to replace the
                                               recreate-xlrstats.sql script)
+12-07-2015 - 3.0.0-beta.16 - Fenix          - makke use of Plugin.getSetting to load configuration file values
+                                            - removed backticks from SQL queries for SQLite and PostgreSQL compatibility
+                                            - make use of positional parameter string substitution in logging methods

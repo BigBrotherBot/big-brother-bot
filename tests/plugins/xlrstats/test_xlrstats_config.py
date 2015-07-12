@@ -393,7 +393,7 @@ class Test_conf_settings_minPlayers(Conf_settings_test_case):
         # WHEN
         self.init('minplayers: -5')
         # THEN
-        self.assertEqual(self.DEFAULT_VALUE, self.p.min_players)
+        self.assertEqual(0, self.p.min_players)
 
     def test_0(self):
         # WHEN
@@ -680,7 +680,7 @@ class Test_conf_settings_minlevel(Conf_settings_test_case):
         # WHEN
         self.init('minlevel: 8')
         # THEN
-        self.assertEqual(8, self.p.minlevel)
+        self.assertEqual(0, self.p.minlevel)
 
     def test_float(self):
         # WHEN
