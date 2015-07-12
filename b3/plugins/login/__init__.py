@@ -24,7 +24,7 @@ from b3.clients import Client
 from ConfigParser import NoOptionError
 
 __author__ = 'Tim ter Laak'
-__version__ = '1.3'
+__version__ = '1.4'
 
 
 class LoginPlugin(b3.plugin.Plugin):
@@ -45,23 +45,8 @@ class LoginPlugin(b3.plugin.Plugin):
         """
         Load plugin configuration.
         """
-        try:
-            self._threshold = self.config.getint('settings', 'thresholdlevel')
-            self.debug('loaded settings/thresholdlevel: %s' % self._threshold)
-        except NoOptionError:
-            self.warning('could not find settings/thresholdlevel in config file, using default: %s' % self._threshold)
-        except ValueError, e:
-            self.error('could not load settings/thresholdlevel config value: %s' % e)
-            self.debug('using default value (%s) for settings/thresholdlevel' % self._threshold)
-
-        try:
-            self._passwdlevel = self.config.getint('settings', 'passwdlevel')
-            self.debug('loaded settings/passwdlevel: %s' % self._passwdlevel)
-        except NoOptionError:
-            self.warning('could not find settings/passwdlevel in config file, using default: %s' % self._passwdlevel)
-        except ValueError, e:
-            self.error('could not load settings/passwdlevel config value: %s' % e)
-            self.debug('using default value (%s) for settings/passwdlevel' % self._passwdlevel)
+        self._threshold = self.getSetting('settings', 'thresholdlevel', b3.INT, self._threshold)
+        self._passwdlevel = self.getSetting('settings', 'passwdlevel', b3.LEVEL, self._passwdlevel)
 
     def onStartup(self):
         """

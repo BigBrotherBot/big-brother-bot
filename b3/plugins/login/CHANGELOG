@@ -6,3 +6,4 @@
 1.2   - 06/04/2014 - Fenix     - PEP8 coding standards
                                - improved plugin startup and configuration file loading
 1.3   - 31/08/2014 - Fenix     - syntax cleanup
+1.4   - 12/07/2015 - Fenix     - make use of Plugin.getSetting to load configuration values
