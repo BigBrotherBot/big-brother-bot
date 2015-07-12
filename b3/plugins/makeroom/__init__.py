@@ -87,8 +87,8 @@ class MakeroomPlugin(Plugin):
             if self._retain_free_duration < 0:
                 self.warning("global_settings/retain_free_duration cannot be less than 0")
                 self._retain_free_duration = 0
-            if self._retain_free_duration >= 30:
-                self.warning("global_settings/retain_free_duration must be higher than 30s")
+            if self._retain_free_duration > 30:
+                self.warning("global_settings/retain_free_duration cannot be higher than 30s")
                 self._retain_free_duration = 30
 
         try:
