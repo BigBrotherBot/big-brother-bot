@@ -29,6 +29,7 @@ import random
 import string
 
 from b3.functions import getCmd
+from b3.functions import clamp
 from . import __version__
 from . import __author__
 
@@ -264,19 +265,19 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         Setup the name checker
         """
-        self._ninterval = self.getSetting('namechecker', 'ninterval', b3.INT, self._ninterval, lambda x: int(min(x, 59)))
+        self._ninterval = self.getSetting('namechecker', 'ninterval', b3.INT, self._ninterval, lambda x: clamp(x, maxv=59))
         self._checkdupes = self.getSetting('namechecker', 'checkdupes', b3.BOOL, self._checkdupes)
         self._checkunknown = self.getSetting('namechecker', 'checkunknown', b3.BOOL, self._checkunknown)
         self._checkbadnames = self.getSetting('namechecker', 'checkbadnames', b3.BOOL, self._checkbadnames)
         self._checkchanges = self.getSetting('namechecker', 'checkchanges', b3.BOOL, self._checkchanges)
-        self._checkallowedchanges = self.getSetting('namechecker', 'checkallowedchanges', b3.INT, self._checkallowedchanges, lambda x: int(max(x, 1)))
+        self._checkallowedchanges = self.getSetting('namechecker', 'checkallowedchanges', b3.INT, self._checkallowedchanges, lambda x: clamp(x, minv=1))
 
     def loadTeamBalancer(self):
         """
         Setup the teambalancer
         """
-        self._tinterval = self.getSetting('teambalancer', 'tinterval', b3.INT, self._tinterval, lambda x: int(min(x, 59)))
-        self._teamdiff = self.getSetting('teambalancer', 'teamdifference', b3.INT, self._teamdiff, lambda x: int(min(9, max(1, x))))
+        self._tinterval = self.getSetting('teambalancer', 'tinterval', b3.INT, self._tinterval, lambda x: clamp(x, maxv=59))
+        self._teamdiff = self.getSetting('teambalancer', 'teamdifference', b3.INT, self._teamdiff, lambda x: clamp(x, minv=1, maxv=9))
         self._tmaxlevel = self.getSetting('teambalancer', 'maxlevel', b3.LEVEL, self._tmaxlevel)
         self._announce = self.getSetting('teambalancer', 'announce', b3.INT, self._announce)
         # 10/21/2008 - 1.4.0b9 - mindriot
@@ -291,8 +292,8 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         Setup the skill balancer
         """
-        self._skinterval = self.getSetting('skillbalancer', 'interval', b3.INT, self._skinterval, lambda x: int(min(x, 59)))
-        self._skilldiff = self.getSetting('skillbalancer', 'difference', b3.FLOAT, self._skilldiff, lambda x: float(min(9.0, max(0.1, x))))
+        self._skinterval = self.getSetting('skillbalancer', 'interval', b3.INT, self._skinterval, lambda x: clamp(x, maxv=59))
+        self._skilldiff = self.getSetting('skillbalancer', 'difference', b3.FLOAT, self._skilldiff, lambda x: clamp(x, minv=0.1, maxv=9.0))
         self._skill_balance_mode = self.getSetting('skillbalancer', 'mode', b3.INT, self._skill_balance_mode)
         self._minbalinterval = self.getSetting('skillbalancer', 'min_bal_interval', b3.INT, self._minbalinterval)
 
@@ -314,7 +315,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         Setup the spec checker
         """
-        self._sinterval = self.getSetting('speccheck', 'sinterval', b3.INT, self._sinterval, lambda x: int(min(x, 59)))
+        self._sinterval = self.getSetting('speccheck', 'sinterval', b3.INT, self._sinterval, lambda x: clamp(x, maxv=59))
         self._smaxspectime = self.getSetting('speccheck', 'maxspectime', b3.INT, self._smaxspectime)
         self._smaxlevel = self.getSetting('speccheck', 'maxlevel', b3.LEVEL, self._smaxlevel)
         maxclients = self.console.getCvar('sv_maxclients').getInt()
@@ -383,8 +384,8 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         Setup the bot support
         """
         self._botenable = self.getSetting('botsupport', 'bot_enable', b3.BOOL, self._botenable)
-        self._botskill = self.getSetting('botsupport', 'bot_skill', b3.INT, self._botskill, lambda x: int(min(5, max(1, x))))
-        self._botminplayers = self.getSetting('botsupport', 'bot_minplayers', b3.INT, self._botminplayers, lambda x: int(min(16, max(0, x))))
+        self._botskill = self.getSetting('botsupport', 'bot_skill', b3.INT, self._botskill, lambda x: clamp(x, minv=1, maxv=5))
+        self._botminplayers = self.getSetting('botsupport', 'bot_minplayers', b3.INT, self._botminplayers, lambda x: clamp(x, minv=0, maxv=16))
         self._botmaps = self.getSetting('botsupport', 'bot_maps', b3.LIST, [])
 
         if self._botenable:

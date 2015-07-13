@@ -21,7 +21,7 @@ import b3.plugin
 import re
 
 from b3.functions import getCmd
-from ConfigParser import NoOptionError
+from b3.functions import clamp
 
 __author__ = 'ThorN, Courgette'
 __version__ = '1.4.4'
@@ -45,7 +45,7 @@ class SpamcontrolPlugin(b3.plugin.Plugin):
         """
         Load plugin configuration
         """
-        self._maxSpamins = self.getSetting('settings', 'max_spamins', b3.INTEGER, self._maxSpamins, lambda x: int(max(x, 0)))
+        self._maxSpamins = self.getSetting('settings', 'max_spamins', b3.INTEGER, self._maxSpamins, lambda x: clamp(x, minv=0))
         self._modLevel = self.getSetting('settings', 'mod_level', b3.LEVEL, self._modLevel)
         self._falloffRate = self.getSetting('settings', 'falloff_rate', b3.FLOAT, self._falloffRate)
 

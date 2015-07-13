@@ -19,6 +19,7 @@ import re
 import b3.plugin
 
 from .iourt41 import Poweradminurt41Plugin
+from b3.functions import clamp
 
 
 class Poweradminurt42Plugin(Poweradminurt41Plugin):
@@ -91,7 +92,7 @@ class Poweradminurt42Plugin(Poweradminurt41Plugin):
         Setup the radio spam protection
         """
         self._rsp_enable = self.getSetting('radio_spam_protection', 'enable', b3.BOOL, self._rsp_enable)
-        self._rsp_mute_duration = self.getSetting('radio_spam_protection', 'mute_duration', b3.INT, self._rsp_mute_duration, lambda x: int(max(x, 1)))
+        self._rsp_mute_duration = self.getSetting('radio_spam_protection', 'mute_duration', b3.INT, self._rsp_mute_duration, lambda x: clamp(x, minv=1))
 
     ####################################################################################################################
     #                                                                                                                  #

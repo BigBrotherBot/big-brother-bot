@@ -26,6 +26,8 @@ import b3.plugin
 import os
 import thread
 
+from b3.functions import clamp
+
 class NickregPlugin(b3.plugin.Plugin):
 
     adminPlugin = None
@@ -48,7 +50,7 @@ class NickregPlugin(b3.plugin.Plugin):
         Load plugin configuration.
         """
         self.min_level = self.getSetting('settings', 'min_level', b3.LEVEL, 20)
-        self.min_level_global_manage = self.getSetting('settings', 'min_level_global_manage', b3.LEVEL, 100, lambda x: int(max(x, self.min_level)))
+        self.min_level_global_manage = self.getSetting('settings', 'min_level_global_manage', b3.LEVEL, 100, lambda x: clamp(x, minv=self.min_level))
         self.max_nicks = self.getSetting('settings', 'max_nicks', b3.INTEGER, 3)
         self.interval = self.getSetting('settings', 'interval', b3.INTEGER, 30)
 
