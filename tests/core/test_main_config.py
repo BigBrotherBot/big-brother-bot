@@ -74,18 +74,18 @@ class CommonDefaultTestMethodsMixin:
 
     def test_get_plugins(self):
         self.assertListEqual([
-            {'name': 'admin', 'conf': '@conf/plugin_admin.ini', 'disabled': False, 'path': None},
-            {'name': 'adv', 'conf': '@conf/plugin_adv.xml', 'disabled': False, 'path': None},
-            {'name': 'censor', 'conf': '@conf/plugin_censor.xml', 'disabled': False, 'path': None},
-            {'name': 'cmdmanager', 'conf': '@conf/plugin_cmdmanager.ini', 'disabled': False, 'path': None},
-            {'name': 'pingwatch', 'conf': '@conf/plugin_pingwatch.ini', 'disabled': False, 'path': None},
-            {'name': 'pluginmanager', 'conf': '@conf/plugin_pluginmanager.ini', 'disabled': False, 'path': None},
-            {'name': 'punkbuster', 'conf': '@conf/plugin_punkbuster.ini', 'disabled': False, 'path': None},
-            {'name': 'spamcontrol', 'conf': '@conf/plugin_spamcontrol.ini', 'disabled': False, 'path': None},
-            {'name': 'stats', 'conf': '@conf/plugin_stats.ini', 'disabled': False, 'path': None},
-            {'name': 'status', 'conf': '@conf/plugin_status.ini', 'disabled': False, 'path': None},
-            {'name': 'tk', 'conf': '@conf/plugin_tk.ini', 'disabled': False, 'path': None},
-            {'name': 'welcome', 'conf': '@conf/plugin_welcome.ini', 'disabled': False, 'path': None},
+            {'name': 'admin', 'conf': '@b3/conf/plugin_admin.ini', 'disabled': False, 'path': None},
+            {'name': 'adv', 'conf': '@b3/conf/plugin_adv.xml', 'disabled': False, 'path': None},
+            {'name': 'censor', 'conf': '@b3/conf/plugin_censor.xml', 'disabled': False, 'path': None},
+            {'name': 'cmdmanager', 'conf': '@b3/conf/plugin_cmdmanager.ini', 'disabled': False, 'path': None},
+            {'name': 'pingwatch', 'conf': '@b3/conf/plugin_pingwatch.ini', 'disabled': False, 'path': None},
+            {'name': 'pluginmanager', 'conf': '@b3/conf/plugin_pluginmanager.ini', 'disabled': False, 'path': None},
+            {'name': 'punkbuster', 'conf': '@b3/conf/plugin_punkbuster.ini', 'disabled': False, 'path': None},
+            {'name': 'spamcontrol', 'conf': '@b3/conf/plugin_spamcontrol.ini', 'disabled': False, 'path': None},
+            {'name': 'stats', 'conf': '@b3/conf/plugin_stats.ini', 'disabled': False, 'path': None},
+            {'name': 'status', 'conf': '@b3/conf/plugin_status.ini', 'disabled': False, 'path': None},
+            {'name': 'tk', 'conf': '@b3/conf/plugin_tk.ini', 'disabled': False, 'path': None},
+            {'name': 'welcome', 'conf': '@b3/conf/plugin_welcome.ini', 'disabled': False, 'path': None},
         ], self.conf.get_plugins())
 
 
@@ -195,11 +195,11 @@ class TestConfig(unittest.TestCase):
         conf_xml, conf_cfg = self.init(dedent(r"""
             <configuration>
                 <plugins>
-                    <plugin name="admin" config="@conf/plugin_admin.ini" />
-                    <plugin name="adv" config="@conf/plugin_adv.xml" disabled="yes" />
-                    <plugin name="censor" config="@conf/plugin_censor.xml" disabled="no" />
-                    <plugin name="cmdmanager" config="@conf/plugin_cmdmanager.ini" path="/somewhere/else" />
-                    <plugin name="tk" config="@conf/plugin_tk.ini" disabled="1" />
+                    <plugin name="admin" config="@b3/conf/plugin_admin.ini" />
+                    <plugin name="adv" config="@b3/conf/plugin_adv.xml" disabled="yes" />
+                    <plugin name="censor" config="@b3/conf/plugin_censor.xml" disabled="no" />
+                    <plugin name="cmdmanager" config="@b3/conf/plugin_cmdmanager.ini" path="/somewhere/else" />
+                    <plugin name="tk" config="@b3/conf/plugin_tk.ini" disabled="1" />
                 </plugins>
             </configuration>
         """), dedent(r"""
@@ -207,22 +207,22 @@ class TestConfig(unittest.TestCase):
             disabled_plugins: adv, tk
 
             [plugins]
-            admin: @conf/plugin_admin.ini
-            adv: @conf/plugin_adv.xml
-            censor: @conf/plugin_censor.xml
-            cmdmanager: @conf/plugin_cmdmanager.ini
-            tk: @conf/plugin_tk.ini
+            admin: @b3/conf/plugin_admin.ini
+            adv: @b3/conf/plugin_adv.xml
+            censor: @b3/conf/plugin_censor.xml
+            cmdmanager: @b3/conf/plugin_cmdmanager.ini
+            tk: @b3/conf/plugin_tk.ini
 
             [plugins_custom_path]
             cmdmanager: /somewhere/else
         """))
         # normalized path for empty string is the current directory ('.')
         expected_result = [
-            {'name': 'admin', 'conf': '@conf/plugin_admin.ini', 'disabled': False, 'path': None},
-            {'name': 'adv', 'conf': '@conf/plugin_adv.xml', 'disabled': True, 'path': None},
-            {'name': 'censor', 'conf': '@conf/plugin_censor.xml', 'disabled': False, 'path': None},
-            {'name': 'cmdmanager', 'conf': '@conf/plugin_cmdmanager.ini', 'disabled': False, 'path': '/somewhere/else'},
-            {'name': 'tk', 'conf': '@conf/plugin_tk.ini', 'disabled': True, 'path': None},
+            {'name': 'admin', 'conf': '@b3/conf/plugin_admin.ini', 'disabled': False, 'path': None},
+            {'name': 'adv', 'conf': '@b3/conf/plugin_adv.xml', 'disabled': True, 'path': None},
+            {'name': 'censor', 'conf': '@b3/conf/plugin_censor.xml', 'disabled': False, 'path': None},
+            {'name': 'cmdmanager', 'conf': '@b3/conf/plugin_cmdmanager.ini', 'disabled': False, 'path': '/somewhere/else'},
+            {'name': 'tk', 'conf': '@b3/conf/plugin_tk.ini', 'disabled': True, 'path': None},
         ]
         self.assertListEqual(expected_result, conf_xml.get_plugins())
         self.assertListEqual(expected_result, conf_cfg.get_plugins())

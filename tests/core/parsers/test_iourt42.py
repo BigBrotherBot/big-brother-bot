@@ -924,7 +924,7 @@ auth: id: 0 - name: ^7laCourge - login: courgette - notoriety: serious - level: 
 
     def test_message(self):
         self.console.message(self.player, "f00")
-        self.console.write.assert_has_calls(call('tell 4 ^8[pm]^7 f00'))
+        self.console.write.assert_has_calls([call('tell 4 ^8[pm]^7 f00')])
 
 
     def test_kick(self):

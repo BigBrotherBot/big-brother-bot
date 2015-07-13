@@ -46,7 +46,7 @@ class LoginPlugin(b3.plugin.Plugin):
         Load plugin configuration.
         """
         self._threshold = self.getSetting('settings', 'thresholdlevel', b3.INT, self._threshold)
-        self._passwdlevel = self.getSetting('settings', 'passwdlevel', b3.LEVEL, self._passwdlevel)
+        self._passwdlevel = self.getSetting('settings', 'passwdlevel', b3.INT, self._passwdlevel)
 
     def onStartup(self):
         """

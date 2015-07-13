@@ -176,7 +176,7 @@ class Test_cmd_iamgod(CommandTestCase):
         self.p.console.clients.lookupSuperAdmins = Mock(return_value=[Mock(spec=Client)])
 
         self.iamgod()
-        self.p.warning.assert_called()
+        self.assertTrue(self.p.warning.called)
         self.assertNotIn('iamgod', self.p._commands)
 
 
