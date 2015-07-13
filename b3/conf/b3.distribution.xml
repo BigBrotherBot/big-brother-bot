@@ -107,55 +107,55 @@
             You can load a plugin but having it disabled by default. This
             allows to later enabled it ingame with the !enable command. To do so use
             the following syntax :
-                <plugin name="adv" config="@conf/plugin_adv.xml" disabled="yes"/>
+                <plugin name="adv" config="@b3/conf/plugin_adv.xml" disabled="yes"/>
             
             You can override the plugin path (official plugins and extplugins folders) 
             by specifying the exact location of the plugin file with the 'path' attribute : 
-                <plugin name="adv" config="@conf/plugin_adv.xml" path="c:/somewhere/else/"/>
+                <plugin name="adv" config="@b3/conf/plugin_adv.xml" path="c:/somewhere/else/"/>
         -->
-        <plugin name="admin" config="@conf/plugin_admin.ini" />
-        <plugin name="adv" config="@conf/plugin_adv.xml" />
-        <plugin name="censor" config="@conf/plugin_censor.xml" />
-        <plugin name="cmdmanager" config="@conf/plugin_cmdmanager.ini" />
-        <plugin name="pingwatch" config="@conf/plugin_pingwatch.ini" />
-        <plugin name="pluginmanager" config="@conf/plugin_pluginmanager.ini" />
-        <plugin name="punkbuster" config="@conf/plugin_punkbuster.ini" />
-        <plugin name="spamcontrol" config="@conf/plugin_spamcontrol.ini" />
-        <plugin name="stats" config="@conf/plugin_stats.ini" />
-        <plugin name="status" config="@conf/plugin_status.ini" />
-        <plugin name="tk" config="@conf/plugin_tk.ini" />
-        <plugin name="welcome" config="@conf/plugin_welcome.ini" />
+        <plugin name="admin" config="@b3/conf/plugin_admin.ini" />
+        <plugin name="adv" config="@b3/conf/plugin_adv.xml" />
+        <plugin name="censor" config="@b3/conf/plugin_censor.xml" />
+        <plugin name="cmdmanager" config="@b3/conf/plugin_cmdmanager.ini" />
+        <plugin name="pingwatch" config="@b3/conf/plugin_pingwatch.ini" />
+        <plugin name="pluginmanager" config="@b3/conf/plugin_pluginmanager.ini" />
+        <plugin name="punkbuster" config="@b3/conf/plugin_punkbuster.ini" />
+        <plugin name="spamcontrol" config="@b3/conf/plugin_spamcontrol.ini" />
+        <plugin name="stats" config="@b3/conf/plugin_stats.ini" />
+        <plugin name="status" config="@b3/conf/plugin_status.ini" />
+        <plugin name="tk" config="@b3/conf/plugin_tk.ini" />
+        <plugin name="welcome" config="@b3/conf/plugin_welcome.ini" />
 
         <!-- The following plugins have been included recently in B3 as official plugins. They are disabled by
              default. You can enable them by removing the surrounding comment symbols. -->
 
-        <!-- <plugin name="afk" config="@conf/plugin_afk.ini" /> -->
-        <!-- <plugin name="banlist" config="@conf/plugin_banlist.xml" /> -->
-        <!-- <plugin name="callvote" config="@conf/plugin_callvote.ini" /> -->
-        <!-- <plugin name="censorurt" config="@conf/plugin_censorurt.xml" /> -->
-        <!-- <plugin name="chatlogger" config="@conf/plugin_chatlogger.ini" /> -->
-        <!-- <plugin name="countryfilter" config="@conf/plugin_countryfilter.ini" /> -->
-        <!-- <plugin name="customcommands" config="@conf/plugin_customcommands.ini" /> -->
+        <!-- <plugin name="afk" config="@b3/conf/plugin_afk.ini" /> -->
+        <!-- <plugin name="banlist" config="@b3/conf/plugin_banlist.xml" /> -->
+        <!-- <plugin name="callvote" config="@b3/conf/plugin_callvote.ini" /> -->
+        <!-- <plugin name="censorurt" config="@b3/conf/plugin_censorurt.xml" /> -->
+        <!-- <plugin name="chatlogger" config="@b3/conf/plugin_chatlogger.ini" /> -->
+        <!-- <plugin name="countryfilter" config="@b3/conf/plugin_countryfilter.ini" /> -->
+        <!-- <plugin name="customcommands" config="@b3/conf/plugin_customcommands.ini" /> -->
         <!-- <plugin name="duel" /> -->
-        <!-- <plugin name="firstkill" config="@conf/plugin_firstkill.ini" /> -->
-        <!-- <plugin name="geowelcome" config="@conf/plugin_geowelcome.ini" /> -->
-        <!-- <plugin name="ipban" config="@conf/plugin_ipban.ini" /> -->
-        <!-- <plugin name="jumper" config="@conf/plugin_jumper.ini" /> -->
-        <!-- <plugin name="location" config="@conf/plugin_location.ini" /> -->
-        <!-- <plugin name="makeroom" config="@conf/plugin_makeroom.ini" /> -->
-        <!-- <plugin name="netblocker" config="@conf/plugin_netblocker.ini" /> -->
-        <!-- <plugin name="nickreg" config="@conf/plugin_nickreg.ini" /> -->
-        <!-- <plugin name="poweradminbf3" config="@conf/plugin_poweradminbf3.ini" /> -->
-        <!-- <plugin name="poweradminbfbc2" config="@conf/plugin_poweradminbfbc2.ini" /> -->
-        <!-- <plugin name="poweradmincod7" config="@conf/plugin_poweradmincod7.xml" /> -->
-        <!-- <plugin name="poweradminhf" config="@conf/plugin_poweradminhf.ini" /> -->
-        <!-- <plugin name="poweradminmoh" config="@conf/plugin_poweradminmoh.xml" /> -->
-        <!-- <plugin name="poweradminurt" config="@conf/plugin_poweradminurt.ini" /> -->
-        <!-- <plugin name="spawnkill" config="@conf/plugin_spawnkill.ini" /> -->
-        <!-- <plugin name="spree" config="@conf/plugin_spree.ini" /> -->
-        <!-- <plugin name="translator" config="@conf/plugin_translator.ini" /> -->
-        <!-- <plugin name="urtserversidedemo" config="@conf/plugin_urtserversidedemo.ini" /> -->
-        <!-- <plugin name="xlrstats" config="@conf/plugin_xlrstats.ini" /> -->
+        <!-- <plugin name="firstkill" config="@b3/conf/plugin_firstkill.ini" /> -->
+        <!-- <plugin name="geowelcome" config="@b3/conf/plugin_geowelcome.ini" /> -->
+        <!-- <plugin name="ipban" config="@b3/conf/plugin_ipban.ini" /> -->
+        <!-- <plugin name="jumper" config="@b3/conf/plugin_jumper.ini" /> -->
+        <!-- <plugin name="location" config="@b3/conf/plugin_location.ini" /> -->
+        <!-- <plugin name="makeroom" config="@b3/conf/plugin_makeroom.ini" /> -->
+        <!-- <plugin name="netblocker" config="@b3/conf/plugin_netblocker.ini" /> -->
+        <!-- <plugin name="nickreg" config="@b3/conf/plugin_nickreg.ini" /> -->
+        <!-- <plugin name="poweradminbf3" config="@b3/conf/plugin_poweradminbf3.ini" /> -->
+        <!-- <plugin name="poweradminbfbc2" config="@b3/conf/plugin_poweradminbfbc2.ini" /> -->
+        <!-- <plugin name="poweradmincod7" config="@b3/conf/plugin_poweradmincod7.xml" /> -->
+        <!-- <plugin name="poweradminhf" config="@b3/conf/plugin_poweradminhf.ini" /> -->
+        <!-- <plugin name="poweradminmoh" config="@b3/conf/plugin_poweradminmoh.xml" /> -->
+        <!-- <plugin name="poweradminurt" config="@b3/conf/plugin_poweradminurt.ini" /> -->
+        <!-- <plugin name="spawnkill" config="@b3/conf/plugin_spawnkill.ini" /> -->
+        <!-- <plugin name="spree" config="@b3/conf/plugin_spree.ini" /> -->
+        <!-- <plugin name="translator" config="@b3/conf/plugin_translator.ini" /> -->
+        <!-- <plugin name="urtserversidedemo" config="@b3/conf/plugin_urtserversidedemo.ini" /> -->
+        <!-- <plugin name="xlrstats" config="@b3/conf/plugin_xlrstats.ini" /> -->
 
     </plugins>
 </configuration>
