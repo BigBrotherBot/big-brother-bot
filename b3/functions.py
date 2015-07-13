@@ -51,9 +51,10 @@
 # 23/05/2015 - 1.21  - Fenix          - added decode() function: decode a string using the system default encoding
 # 26/05/2015 - 1.22  - Fenix          - added console_exit function: terminate the current console application
 #                                     - moved clearscreen() function from b3.__init__
+# 13/07/2015 - 1.23  - Fenix          - added clamp function
 
 __author__    = 'ThorN, xlr8or, courgette'
-__version__   = '1.22'
+__version__   = '1.23'
 
 import collections
 import os
@@ -272,6 +273,21 @@ def decode(text):
     :return: string
     """
     return text.decode(sys.getfilesystemencoding())
+
+
+def clamp(value, minv=None, maxv=None):
+    """
+    Clamp a value so it's bounded within min and max
+    :param value: the value to be clamped
+    :param minv: the minimum value
+    :param maxv: the maximum value
+    :return: a value which fits between the imposed limits
+    """
+    if minv is not None:
+        value = max(value, minv)
+    if maxv is not None:
+        value = min(value, maxv)
+    return value
 
 
 def console_exit(message=''):
