@@ -873,7 +873,7 @@ class Client(object):
             alias = Alias(clientId=self.id, alias=name)
 
         alias.save(self.console)
-        self.console.bot('New alias for %s: %s', str(self.id), alias.alias)
+        self.console.bot('Created new alias for client @%s: %s', str(self.id), alias.alias)
 
     def makeIpAlias(self, ip):
         """
@@ -897,7 +897,7 @@ class Client(object):
             alias = IpAlias(clientId=self.id, ip=ip)
 
         alias.save(self.console)
-        self.console.bot('New alias for %s: %s', str(self.id), alias.ip)
+        self.console.bot('created new IP alias for client @%s: %s', str(self.id), alias.ip)
 
     def save(self, console=None):
         """
@@ -1178,8 +1178,7 @@ class Alias(Struct):
         return console.storage.setClientAlias(self)
 
     def __str__(self):
-        return "Alias(id=%s, alias=\"%s\", clientId=%s, numUsed=%s)" % (self.id, self.alias,
-                                                                          self.clientId, self.numUsed)
+        return "Alias(id=%s, alias=\"%s\", clientId=%s, numUsed=%s)" % (self.id, self.alias, self.clientId, self.numUsed)
 
 
 class IpAlias(Struct):
@@ -1309,7 +1308,7 @@ class Group(Struct):
     def __repr__(self):
         return "Group(%r)" % self.__dict__
 
-#-----------------------------------------------------------------------------------------------------------------------
+
 class Clients(dict):
 
     _authorizing = False
@@ -1368,8 +1367,7 @@ class Clients(dict):
         name = name.lower() + '^7'
         try:
             c = self[self._exactNameIndex[name]]
-            # self.console.debug('found client by exact name in index %s = %s : %s', name, c.exactName,
-            #                                                                        c.__class__.__name__)
+            # self.console.debug('found client by exact name in index %s = %s : %s', name, c.exactName, c.__class__.__name__)
             return c
         except Exception:
             for cid, c in self.items():
@@ -1621,7 +1619,7 @@ class Clients(dict):
         client = Client(console=self.console, cid=cid, timeAdd=self.console.time(), **kwargs)
         self[client.cid] = client
         self.resetIndex()
-        self.console.debug('client connected: [%s] %s - %s (%s)', self[client.cid].cid,
+        self.console.debug('Client connected: [%s] %s - %s (%s)', self[client.cid].cid,
                            self[client.cid].name, self[client.cid].guid, self[client.cid].data)
         self.console.queueEvent(self.console.getEvent('EVT_CLIENT_CONNECT', data=client, client=client))
     
