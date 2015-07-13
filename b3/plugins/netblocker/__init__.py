@@ -19,7 +19,7 @@
 # netblocker module provided by siebenmann: https://github.com/siebenmann/python-netblock
 
 
-__version__ = '1.0.1beta'
+__version__ = '1.0.2beta'
 __author__ = 'xlr8or'
 
 import b3
@@ -59,19 +59,8 @@ class NetblockerPlugin(b3.plugin.Plugin):
         """
         Load plugin configuration
         """
-        try:
-            self._blocks = [x.strip() for x in self.config.get('settings', 'netblock').split(',')]
-        except Exception, err:
-            self.error('could not parse settings::netblock from configuration file: %s' % err)
-
-        self.debug('blocked ip range(s): %s' % self._blocks)
-
-        try:
-            self._maxLevel = self.config.get('settings', 'maxlevel')
-        except Exception, err:
-            self.error('could not parse settings::maxlevel from configuration file: %s' % err)
-
-        self.debug('maximum level affected: %s' % self._maxLevel)
+        self._blocks = self.getSetting('settings', 'netblock', b3.LIST, [])
+        self._maxLevel = self.getSetting('settings', 'maxlevel', b3.LEVEL, self._maxLevel)
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -84,11 +73,11 @@ class NetblockerPlugin(b3.plugin.Plugin):
         Examine players ip address and allow/deny connection.
         """
         client = event.client
-        self.debug('checking client: %s, name: %s, ip: %s, level: %s' % (client.cid, client.name, client.ip, client.maxLevel))
+        self.debug('checking client: %s, name: %s, ip: %s, level: %s', client.cid, client.name, client.ip, client.maxLevel)
 
         # check the level of the connecting client before applying the filters
         if client.maxLevel > self._maxLevel:
-            self.debug('%s is a higher level user, and allowed to connect' % client.name)
+            self.debug('%s is a higher level user, and allowed to connect', client.name)
         else:
             # transform ip address
             ip = netblock.convert(client.ip)
@@ -99,6 +88,5 @@ class NetblockerPlugin(b3.plugin.Plugin):
                 # check if clients ip is in the disallowed range
                 if b[0] <= ip[0] <= b[1]:
                     # client not allowed to connect
-                    self.debug('client refused: %s (%s)' % (client.ip, client.name))
-                    message = "Netblocker: Client %s refused!" % client.name
-                    client.kick(message)
+                    self.debug('client refused: %s (%s)', client.ip, client.name)
+                    client.kick("Netblocker: Client %s refused!" % client.name)
