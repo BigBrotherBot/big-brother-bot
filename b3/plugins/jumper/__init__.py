@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'Fenix'
-__version__ = '2.29'
+__version__ = '2.30'
 
 import b3
 import b3.plugin
@@ -335,7 +335,7 @@ class JumperPlugin(b3.plugin.Plugin):
         """
         self._demo_record = self.getSetting('settings', 'demorecord', b3.BOOL, self._demo_record)
         self._skip_standard_maps = self.getSetting('settings', 'skipstandardmaps', b3.BOOL, self._skip_standard_maps)
-        self._min_level_delete = self.getSetting('minleveldelete', b3.LEVEL, self._min_level_delete)
+        self._min_level_delete = self.getSetting('settings', 'minleveldelete', b3.LEVEL, self._min_level_delete)
 
         self._default_messages = {
             'client_record_unknown': '''^7no record found for ^3$client ^7(^4@$id^7) on ^3$mapname''',
