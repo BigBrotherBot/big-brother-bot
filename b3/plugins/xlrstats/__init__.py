@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'xlr8or & ttlogic'
-__version__ = '3.0.0-beta.16'
+__version__ = '3.0.0-beta.17'
 
 import b3
 import b3.events
@@ -324,14 +324,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         Build the database schema checking if all the needed tables have been properly created.
         If not, it will attempt to create them automatically
         """
+        sql_path_main = os.path.join(b3.getAbsolutePath('@b3/plugins/xlrstats/sql'), self.console.storage.protocol)
         xlr_tables = {x: getattr(self, x) for x in dir(self) if x.endswith('_table')}
         current_tables = self.console.storage.getTables()
 
         for k, v in xlr_tables.items():
             if v not in current_tables:
                 sql_script_name = right_cut(k, '_table') + '.sql'
-                sql_path_main = b3.getAbsolutePath('@b3/plugins/xlrstats/sql')
-                sql_path = os.path.join(sql_path_main, self.console.storage.dsnDict['protocol'], sql_script_name)
+                sql_path = os.path.join(sql_path_main, sql_script_name)
                 if os.path.isfile(sql_path):
                     try:
                         with open(sql_path, 'r') as sqlfile:
@@ -343,6 +343,31 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                         self.info('created database table: %s' % v)
                 else:
                     self.error("could not create schema for database table '%s': missing SQL script '%s'", v, sql_path)
+
+        # EXECUTE SCHEMA UPDATE
+        if self.console.storage.protocol == 'mysql':
+            update = {
+                'history_monthly-update-3.0.0.sql': self.history_monthly_table,
+                'history_weekly-update-3.0.0.sql': self.history_weekly_table,
+                'playerstats-update-3.0.0.sql': self.playerstats_table,
+            }
+        elif self.console.storage.protocol == 'sqlite':
+            update = {
+                'playerstats-update-3.0.0.sql': self.playerstats_table,
+            }
+        else:
+            update = {}
+
+        if update:
+            for k, v in update.items():
+                sql_path = os.path.join(sql_path_main, k)
+                if os.path.isfile(sql_path):
+                    with open(sql_path, 'r') as sqlfile:
+                        for query in self.console.storage.getQueriesFromFile(sqlfile):
+                            try:
+                                self.console.storage.query(query % v)
+                            except Exception:
+                                pass
 
     def load_config_tables(self):
         """
