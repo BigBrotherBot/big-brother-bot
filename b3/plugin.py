@@ -61,9 +61,10 @@
 # 05/07/2015 - 1.11  - Fenix     - changed getSetting to accept a validate function to validate (and correct if needed
 #                                  the configuration value being loaded)
 # 11/07/2015 - 1.12  - Fenix     - changed getSetting to parse lists from configuration entries
+# 14/07/2015 - 1.13  - Fenix     - added isSetting method (shortcut to config.has_option)
 
 __author__ = 'ThorN, Courgette'
-__version__ = '1.12'
+__version__ = '1.13'
 
 
 import re
@@ -253,6 +254,16 @@ class Plugin(object):
         """
         self.bot('saving config %s', self.config.fileName)
         return self.config.save()
+
+    def isSetting(self, section, option):
+        """
+        Tests whether the given section/option combination is valid.
+        This is a shortcut to config.has_option method
+        :param section: the configuration file section
+        :param option: the configuration file option
+        :return: True if the section/option matches a an entry, False otherwise
+        """
+        return self.config.has_option(section, option)
 
     def getSetting(self, section, option, value_type=b3.STRING, default=None, validate=None):
         """
