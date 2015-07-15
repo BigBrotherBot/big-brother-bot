@@ -16,17 +16,15 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'Fenix'
-__version__ = '1.12'
+__version__ = '1.13'
 
 import b3
 import b3.plugin
 import b3.events
 import os
 import re
-import time
 
 from b3.functions import getCmd
-from ConfigParser import NoSectionError
 
 
 class CallvotePlugin(b3.plugin.Plugin):
@@ -50,8 +48,7 @@ class CallvotePlugin(b3.plugin.Plugin):
 
     sql = {
         'q1': """INSERT INTO callvote VALUES (NULL, '%s', '%s', '%s', '%d', '%d', '%d', '%d')""",
-        'q2': """SELECT c1.name, c2.* FROM callvote AS c2 INNER JOIN clients AS c1 ON c1.id = c2.client_id
-                 ORDER BY time_add DESC LIMIT 0, 1""",
+        'q2': """SELECT c1.name, c2.* FROM callvote AS c2 INNER JOIN clients AS c1 ON c1.id = c2.client_id ORDER BY time_add DESC LIMIT 0, 1""",
     }
 
     ####################################################################################################################
@@ -62,43 +59,19 @@ class CallvotePlugin(b3.plugin.Plugin):
 
     def onLoadConfig(self):
         """
-        Load plugin configuration
+        Load plugin configuration.
         """
-        try:
+        if self.config.has_section('callvoteminlevel'):
+            for o in self.config.options('callvoteminlevel'):
+                self.callvoteminlevel[o] = self.getSetting('callvoteminlevel', o, b3.LEVEL, self.callvoteminlevel[o])
 
-            for s in self.config.options('callvoteminlevel'):
-
-                try:
-                    self.callvoteminlevel[s] = self.console.getGroupLevel(self.config.get('callvoteminlevel', s))
-                    self.debug('minimum required level for %s set to: %d' % (s, self.callvoteminlevel[s]))
-                except KeyError, e:
-                    self.error('invalid group level in callvoteminlevel/%s config value: %s' % (s, e))
-                    self.debug('using default value (%s) for callvoteminlevel/%s' % (s, self.callvoteminlevel[s]))
-
-        except NoSectionError:
-            # all the callvote type can be issued by everyone
-            self.warning('section "callvoteminlevel" missing in configuration file')
-
-        try:
-
-            for s in self.config.options('callvotespecialmaplist'):
-
-                try:
-                    s = s.lower()  # lowercase the map name
-                    level = self.config.get('callvotespecialmaplist', s)
-                    self.callvotespecialmaplist[s] = self.console.getGroupLevel(level)
-                    self.debug('minimum required level to vote map %s set to: %d' % (s, self.callvotespecialmaplist[s]))
-                except KeyError, e:
-                    # can't load a default value here since the mapname is dynamic
-                    self.error('invalid group level in callvotespecialmaplist/%s config value: %s' % (s, e))
-
-        except NoSectionError:
-            # all the maps can be voted by everyone
-            self.warning('section "callvotespecialmaplist" missing in configuration file')
+        if self.config.has_section('callvotespecialmaplist'):
+            for o in self.config.options('callvotespecialmaplist'):
+                self.callvotespecialmaplist[o.lower()] = self.getSetting('callvotespecialmaplist', o.lower(), b3.LEVEL)
 
     def onStartup(self):
         """
-        Initialize plugin settings
+        Initialize plugin settings.
         """
         self.adminPlugin = self.console.getPlugin('admin')
 
@@ -107,6 +80,10 @@ class CallvotePlugin(b3.plugin.Plugin):
             sql_path_main = b3.getAbsolutePath('@b3/plugins/callvote/sql')
             sql_path = os.path.join(sql_path_main, self.console.storage.dsnDict['protocol'], 'callvote.sql')
             self.console.storage.queryFromFile(sql_path)
+
+        # unregister the veto command of the admin plugin
+        if self.console.getPlugin('poweradminurt'):
+            self.adminPlugin.unregisterCommand('paveto')
 
         # register our commands
         if 'commands' in self.config.sections():
@@ -141,7 +118,7 @@ class CallvotePlugin(b3.plugin.Plugin):
         r = re.compile(r'''^(?P<type>\w+)\s?(?P<args>.*)$''')
         m = r.match(event.data)
         if not m:
-            self.warning('could not parse callvote data: %s' % event.data)
+            self.warning('could not parse callvote data: %s', event.data)
             return
 
         self.callvote = {
@@ -166,7 +143,7 @@ class CallvotePlugin(b3.plugin.Plugin):
         # compute something on our side since there is a little bit of delay
         # between what is happening on the server and what is being parsed
         if not self.callvote['max_num'] > 1:
-            self.debug('could not perform checks on callvote (%s) : not enough active players' % tp)
+            self.debug('could not perform checks on callvote (%s) : not enough active players', tp)
             return
 
         try:
@@ -174,20 +151,19 @@ class CallvotePlugin(b3.plugin.Plugin):
             # checking required user level
             if cl.maxLevel < lv:
                 self.veto()
-                self.debug('aborting callvote (%s) : no sufficient level for client <@%s>' % (tp, cl.id))
+                self.debug('aborting callvote (%s) : no sufficient level for %s <@%s>', tp, cl.name, cl.id)
                 cl.message('^7You can\'t issue this callvote. Required level: ^1%s' % self.getLevel(lv))
                 return
 
-            # checking required user level
-            # for callvote map/nextmap to be higher
-            # then the one specified in the config file
+            # checking required user level for callvote map/nextmap to
+            # be higher then the one specified in the config file
             if tp == 'map' or tp == 'g_nextmap':
                 mapname = self.callvote['args'].lower()
-                if mapname in self.callvotespecialmaplist.keys():
+                if mapname in self.callvotespecialmaplist:
                     lv = self.callvotespecialmaplist[mapname]
                     if cl.maxLevel < lv:
                         self.veto()
-                        self.debug('aborting callvote (%s) : no sufficient level for client <@%s>' % (tp, cl.id))
+                        self.debug('aborting callvote (%s) : no sufficient level for %s <@%s>', tp, cl.name, cl.id)
                         cl.message('^7You can\'t issue this callvote. Required level: ^1%s' % self.getLevel(lv))
                         return
 
@@ -199,26 +175,26 @@ class CallvotePlugin(b3.plugin.Plugin):
 
         except KeyError, e:
             # unhandled callvote type
-            self.warning('could not handle callvote (%s) : %s' % (tp, e))
+            self.warning('could not handle callvote (%s) : %s', tp, e)
 
     def onCallvoteFinish(self, event):
         """
         Handle the end of a callvote
         """
         if not self.callvote:
-            self.debug('intercepted %s but there is no active callvote' % event.type.__str__())
+            self.debug('intercepted %s but there is no active callvote', event.type.__str__())
             return
 
         # check again to see if it's the callvote we are actually holding
         r = re.compile(r'''^(?P<type>\w+)\s?(?P<args>.*)$''')
         m = r.match(event.data['what'])
         if not m:
-            self.warning('could not parse %s data: %s' % (event.data, event.type.__str__()))
+            self.warning('could not parse %s data: %s', event.data, event.type.__str__())
             self.veto()
             return
 
         if self.callvote['type'] != m.group('type') or self.callvote['args'] != m.group('args'):
-            self.warning('intercepted %s but data doesn\'t match the currently stored callvote')
+            self.warning('intercepted %s but data don\'t match the currently stored callvote')
             self.veto()
             return
 
@@ -244,7 +220,7 @@ class CallvotePlugin(b3.plugin.Plugin):
     @staticmethod
     def xStr(s):
         """
-        Return a proper string representation of None, if None is given, otherwise the given string
+        Return a proper string representation of None, if None is given, otherwise the given string.
         """
         return s or 'N/A'
 
@@ -266,12 +242,11 @@ class CallvotePlugin(b3.plugin.Plugin):
         tm = round(tm / 3600)
         return '%d hour%s' % (tm, 's' if tm > 1 else '')
 
-    @staticmethod
-    def getTime():
+    def getTime(self):
         """
-        To ease automated tests
+        To ease automated tests.
         """
-        return time.time()
+        return self.console.time()
 
     def getLevel(self, level):
         """
@@ -296,7 +271,7 @@ class CallvotePlugin(b3.plugin.Plugin):
 
     def veto(self):
         """
-        Stop the current callvote
+        Stop the current callvote.
         """
         self.console.write('veto')
         self.callvote = None
@@ -309,7 +284,7 @@ class CallvotePlugin(b3.plugin.Plugin):
 
     def cmd_veto(self, data, client, cmd=None):
         """
-        Cancel the current callvote
+        Cancel the current callvote.
         """
         self.veto()
 
