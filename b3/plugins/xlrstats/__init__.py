@@ -324,50 +324,53 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         Build the database schema checking if all the needed tables have been properly created.
         If not, it will attempt to create them automatically
         """
-        sql_path_main = os.path.join(b3.getAbsolutePath('@b3/plugins/xlrstats/sql'), self.console.storage.protocol)
+        sql_main = os.path.join(b3.getAbsolutePath('@b3/plugins/xlrstats/sql'), self.console.storage.protocol)
         xlr_tables = {x: getattr(self, x) for x in dir(self) if x.endswith('_table')}
         current_tables = self.console.storage.getTables()
 
         for k, v in xlr_tables.items():
             if v not in current_tables:
-                sql_script_name = right_cut(k, '_table') + '.sql'
-                sql_path = os.path.join(sql_path_main, sql_script_name)
+                sql_name = right_cut(k, '_table') + '.sql'
+                sql_path = os.path.join(sql_main, sql_name)
                 if os.path.isfile(sql_path):
                     try:
-                        with open(sql_path, 'r') as sqlfile:
-                            query = self.console.storage.getQueriesFromFile(sqlfile)[0]
+                        with open(sql_path, 'r') as sql_file:
+                            query = self.console.storage.getQueriesFromFile(sql_file)[0]
                         self.console.storage.query(query % v)
                     except Exception, e:
                         self.error("could not create schema for database table '%s': %s", v, e)
                     else:
-                        self.info('created database table: %s' % v)
+                        self.info('created database table: %s', v)
                 else:
                     self.error("could not create schema for database table '%s': missing SQL script '%s'", v, sql_path)
 
         # EXECUTE SCHEMA UPDATE
-        if self.console.storage.protocol == 'mysql':
-            update = {
+        update_schema = {
+            'mysql': {
                 'history_monthly-update-3.0.0.sql': self.history_monthly_table,
                 'history_weekly-update-3.0.0.sql': self.history_weekly_table,
                 'playerstats-update-3.0.0.sql': self.playerstats_table,
-            }
-        elif self.console.storage.protocol == 'sqlite':
-            update = {
+            },
+            'sqlite': {
                 'playerstats-update-3.0.0.sql': self.playerstats_table,
+            },
+            'postgresql': {
+                # NO UPDATE NEEDED FOR THE MOMENT
             }
-        else:
-            update = {}
+        }
 
-        if update:
-            for k, v in update.items():
-                sql_path = os.path.join(sql_path_main, k)
-                if os.path.isfile(sql_path):
-                    with open(sql_path, 'r') as sqlfile:
-                        for query in self.console.storage.getQueriesFromFile(sqlfile):
-                            try:
-                                self.console.storage.query(query % v)
-                            except Exception:
-                                pass
+        for k, v in update_schema[self.console.storage.protocol].items():
+            sql_path = os.path.join(sql_main, k)
+            if os.path.isfile(sql_path):
+                with open(sql_path, 'r') as sql_file:
+                    # execute statements separately since we need to substitute the table name
+                    for q in self.console.storage.getQueriesFromFile(sql_file):
+                        try:
+                            self.console.storage.query(q % v)
+                        except Exception:
+                            # DONT LOG HERE!!! (schema might have already changed so executing the update query will
+                            # raise an exception without actually changing the database table structure (which is OK!)
+                            pass
 
     def load_config_tables(self):
         """
