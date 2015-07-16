@@ -87,7 +87,7 @@ class GeolocationPlugin(b3.plugin.Plugin):
                     self.debug('retrieved geolocation data for %s <@%s>: %r', client.name, client.id, client.location)
                     break # stop iterating if we collect valid data
                 except GeolocalizationError, e:
-                    self.warning('could not retrieve geolocation data %s(@%s): %s', client.name, client.id, e)
+                    self.warning('could not retrieve geolocation data %s <@%s>: %s', client.name, client.id, e)
                 except Exception, e:
                     self.error('client %s <@%s> geolocation terminated unexpectedtly when using %s service: %s',
                                client.name, client.id, geotool.__class__.__name__, e)
