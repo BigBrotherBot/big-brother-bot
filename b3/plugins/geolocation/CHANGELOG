@@ -5,3 +5,4 @@
                          - renamed Locator class (and all inherited ones) into Geolocator: updated module name
                          - moved GeoIP.dat file into lib/geoip/db folder
 2015/03/26 - 1.4 - Fenix - make use of EVT_PUNKBUSTER_NEW_CONNECTION if we are running a Frostbite based game
+2015/07/16 - 1.5 - Fenix - catch a more broad exception when performing geolocation task
