@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'Fenix'
-__version__ = '1.4'
+__version__ = '1.5'
 
 import b3
 import b3.clients
@@ -55,11 +55,8 @@ class GeolocationPlugin(b3.plugin.Plugin):
         """
         # register events needed
         if self.console.isFrostbiteGame():
-            # EVT_PUNKBUSTER_NEW_CONNECTION is raised when the parser fills in
-            # the ip attribute on a already initialized Client object instance
             self.registerEvent('EVT_PUNKBUSTER_NEW_CONNECTION', self.geolocate)
         else:
-            # don't use EVT_CLIENT_CONNECT since we need the client group for level exclusion
             self.registerEvent('EVT_CLIENT_AUTH', self.geolocate)
 
         self.registerEvent('EVT_CLIENT_UPDATE', self.geolocate)
@@ -85,12 +82,15 @@ class GeolocationPlugin(b3.plugin.Plugin):
             for geotool in self._geolocators:
 
                 try:
-                    self.debug('retrieving geolocation data for %s(@%s)...' % (client.name, client.id))
+                    self.debug('retrieving geolocation data for %s <@%s>...', client.name, client.id)
                     client.location = geotool.getLocation(client)
-                    self.debug('retrieved geolocation data for %s(@%s): %r' % (client.name, client.id, client.location))
+                    self.debug('retrieved geolocation data for %s <@%s>: %r', client.name, client.id, client.location)
                     break # stop iterating if we collect valid data
                 except GeolocalizationError, e:
-                    self.warning('could not retrieve geolocation data %s(@%s): %s' % (client.name, client.id, e))
+                    self.warning('could not retrieve geolocation data %s(@%s): %s', client.name, client.id, e)
+                except Exception, e:
+                    self.error('client %s <@%s> geolocation terminated unexpectedtly when using %s service: %s',
+                               client.name, client.id, geotool.__class__.__name__, e)
 
             if client.location is not None:
                 self.console.queueEvent(self.console.getEvent('EVT_CLIENT_GEOLOCATION_SUCCESS', client=client))
