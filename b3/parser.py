@@ -18,7 +18,8 @@
 #
 # CHANGELOG
 #
-# 2015/06/25 - 1.43.4 - Fenix           - correct handle Plugin attribute requiresVersion (branch rebase lost it???)
+# 2015/07/19 - 1.43.5 - Fenix           - restored self.critical to raise SystemExit and shutdown B3 (branch rebase lost it???)
+# 2015/06/25 - 1.43.4 - Fenix           - correctly handle Plugin attribute requiresVersion (branch rebase lost it???)
 # 2015/06/22 - 1.43.3 - Fenix           - added support for the new Plugin attribute: requiresStorage
 # 2015/06/17 - 1.43.2 - Fenix           - fixed some absolute path retrieval not decoding non-ascii characters
 # 2015/05/26 - 1.43.1 - Fenix           - added StubParser class: can be used when the storage module needs to be
@@ -79,7 +80,7 @@
 #                                       - make sure to have '>' prefix in getWrap method result (also when color codes
 #                                         are not being used by the parser) when the result line is not the first of the
 #                                         list
-# 2014/09/01 - 1.37.1 - 82ndab-Bravo17  - Add color code options for new getWrap method
+# 2014/09/01 - 1.37.1 - 82ndab-Bravo17  - add color code options for new getWrap method
 # 2014/07/27 - 1.37   - Fenix           - syntax cleanup
 #                                       - reformat changelog
 # 2014/07/18 - 1.36   - Fenix           - new getWrap implementation based on the textwrap.TextWrapper class: the
@@ -143,8 +144,7 @@
 # 2010/10/28 - 1.20.0 - Courgette       - support an new optional syntax for loading plugins in b3.xml which enable
 #                                         to specify a directory where to find the plugin with the 'path' attribute.
 #                                         this overrides the default and extplugins folders. Example :
-#                                         <plugin name="pluginname" config="@conf/plugin.xml" \
-#                                                                                        path="C:\Users\me\myPlugin\"/>
+#                                         <plugin name="name" config="@conf/plugin.xml" path="C:\Users\me\myPlugin\"/>
 # 2010/10/22 - 1.19.4 - xlr8or          - output option log2both writes to logfile AND stderr simultaneously
 # 2010/10/06 - 1.19.3 - xlr8or          - reintroduced rcontesting on startup, but for q3a based only
 # 2010/09/04 - 1.19.2 - GrosBedo        - fixed some typos
@@ -191,7 +191,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.43.4'
+__version__ = '1.43.5'
 
 
 import os
@@ -482,7 +482,7 @@ class Parser(object):
         except (AttributeError, ImportError), e:
             # exit if we don't manage to setup the storage module: B3 will stop working upon Admin
             # Plugin loading so it makes no sense to keep going with the console initialization
-            self.critical('Could not setup storage module: %s' % e)
+            self.critical('Could not setup storage module: %s', e)
 
         # establish a connection with the database
         self.storage.connect()
@@ -492,7 +492,7 @@ class Parser(object):
             game_log = self.config.get('server', 'game_log')
             if game_log[0:6] == 'ftp://' or game_log[0:7] == 'sftp://' or game_log[0:7] == 'http://':
                 self.remoteLog = True
-                self.bot('Working in remote-log mode: %s' % game_log)
+                self.bot('Working in remote-log mode: %s', game_log)
                 
                 if self.config.has_option('server', 'local_game_log'):
                     f = self.config.getpath('server', 'local_game_log')
@@ -547,17 +547,17 @@ class Parser(object):
         if self.config.has_option('server', 'rcon_timeout'):
             custom_socket_timeout = self.config.getfloat('server', 'rcon_timeout')
             self.output.socket_timeout = custom_socket_timeout
-            self.bot('Setting rcon socket timeout to: %0.3f sec' % custom_socket_timeout)
+            self.bot('Setting rcon socket timeout to: %0.3f sec', custom_socket_timeout)
 
         # allow configurable max line length
         if self.config.has_option('server', 'max_line_length'):
             self._line_length = self.config.getint('server', 'max_line_length')
-            self.bot('Setting line_length to: %s' % self._line_length)
+            self.bot('Setting line_length to: %s', self._line_length)
 
         # allow configurable line color prefix
         if self.config.has_option('server', 'line_color_prefix'):
             self._line_color_prefix = self.config.get('server', 'line_color_prefix')
-            self.bot('Setting line_color_prefix to: "%s"' % self._line_color_prefix)
+            self.bot('Setting line_color_prefix to: "%s"', self._line_color_prefix)
 
         # testing rcon
         if self.rconTest:
@@ -1494,10 +1494,11 @@ class Parser(object):
                 for k, plugin in self._plugins.items():
                     plugin.parseEvent(b3.events.Event(self.getEventID('EVT_STOP'), ''))
                 if self._cron:
+                    self.bot('Stopping cron')
                     self._cron.stop()
-
-                self.bot('Shutting down database connection')
-                self.storage.shutdown()
+                if self.storage:
+                    self.bot('Shutting down database connection')
+                    self.storage.shutdown()
         except Exception, e:
             self.error(e)
 
@@ -1530,7 +1531,7 @@ class Parser(object):
         if not text:
             return []
 
-        # Remove all color codes if not needed
+        # remove all color codes if not needed
         if not self._use_color_codes:
             text = self.stripColors(text)
 
@@ -1617,9 +1618,14 @@ class Parser(object):
 
     def critical(self, msg, *args, **kwargs):
         """
-        Log a CRITICAL message.
+        Log a CRITICAL message and shutdown B3.
         """
         self.log.critical(msg, *args, **kwargs)
+        self.shutdown()
+        self.finalize()
+        time.sleep(2)
+        self.exitcode = 220
+        raise SystemExit(self.exitcode)
 
     @staticmethod
     def time():
@@ -1640,6 +1646,11 @@ class Parser(object):
     cron = property(_get_cron)
 
     def stripColors(self, text):
+        """
+        Remove color codes from the given text.
+        :param text: the text to clean from color codes.
+        :return: str
+        """
         return re.sub(self._reColor, '', text).strip()
 
     def isFrostbiteGame(self, gamename=None):
