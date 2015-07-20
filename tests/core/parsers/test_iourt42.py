@@ -126,6 +126,7 @@ class Test_log_lines_parsing(Iourt42TestCase):
         Iourt42TestCase.setUp(self)
         self.console.startup()
         self.joe = FakeClient(self.console, name="Joe", guid="000000000000000")
+        self.bot = FakeClient(self.console, name="BOT", guid="BOT1", team=b3.TEAM_RED, bot=True)
 
     def test_Radio(self):
         self.joe.connects('0')
@@ -133,6 +134,14 @@ class Test_log_lines_parsing(Iourt42TestCase):
             event_type='EVT_CLIENT_RADIO',
             event_client=self.joe,
             event_data={'msg_group': '7', 'msg_id': '2', 'location': 'New Alley', 'text': "I'm going for the flag" })
+
+    def test_botStatusAfterInitRound(self):
+        self.bot.connects('0')
+        self.assertEqual(self.bot.team, b3.TEAM_RED)
+        self.assertTrue(self.bot.bot)
+        self.console.parseLine('''InitRound: \sv_allowdownload\0\g_matchmode\0\g_gametype\4\sv_maxclients\16\sv_floodprotect\1\g_warmup\5\capturelimit\0''')
+        self.assertEqual(self.bot.team, b3.TEAM_RED)
+        self.assertTrue(self.bot.bot)
 
     def test_Hotpotato(self):
         self.assertEvent(r'''Hotpotato:''', event_type='EVT_GAME_FLAG_HOTPOTATO')
