@@ -851,7 +851,7 @@ class Parser(object):
 
             if p['name'] in [plugins[i].name for i in plugins if plugins[i].name == p['name']]:
                 # do not load a plugin multiple times
-                self.warning('Plugin %s already loaded: avoid multiple entries of the same plugin' % p['name'])
+                self.warning('Plugin %s already loaded: avoid multiple entries of the same plugin', p['name'])
                 continue
 
             try:
@@ -859,6 +859,13 @@ class Parser(object):
                 clz = getattr(mod, '%sPlugin' % p['name'].title())
                 cfg = _get_plugin_config(p['name'], clz, p['conf'])
                 plugins[p['name']] = PluginData(name=p['name'], module=mod, clazz=clz, conf=cfg, disabled=p['disabled'])
+            except ImportError, err:
+                if 'No module named %s' % p['name'] in err.message:
+                    self.error('Plugin "%(name)s" has been specified in your B3 configuration file but it could not be loaded '
+                               'since it\'s not installed. To load the "%(name)s" plugin you need to place the plugin '
+                               'module into "%(extplugins)s" and reboot B3', name=p['name'], extplugins=extplugins_dir)
+                else:
+                    raise err
             except Exception, err:
                 self.error('Could not load plugin %s' % p['name'], exc_info=err)
 
