@@ -15,7 +15,7 @@ sudo apt-get install qt5-default qttools5-dev-tools
 sudo mkdir -p downloads && sudo chmod a+rw downloads && cd downloads
 
 # SIP
-wget http://sourceforge.net/projects/pyqt/files/sip/sip-4.16.7/sip-4.16.7.tar.gz
+wget http://downloads.sourceforge.net/project/pyqt/sip/sip-4.16.7/sip-4.16.7.tar.gz
 tar xzf sip-4.16.7.tar.gz --keep-newer-files && cd sip-4.16.7
 python configure.py
 make -j5
@@ -23,7 +23,7 @@ sudo make install
 cd ..
 
 # PyQt5
-wget http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.3/PyQt-gpl-5.3.tar.gz
+wget http://downloads.sourceforge.net/project/pyqt/PyQt5/PyQt-5.3/PyQt-gpl-5.3.tar.gz
 tar xzf PyQt-gpl-5.3.tar.gz --keep-newer-files && cd PyQt-gpl-5.3
 python configure.py -c --confirm-license --no-designer-plugin -e QtCore -e QtGui -e QtWidgets
 make -j5
