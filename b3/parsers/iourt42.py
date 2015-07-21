@@ -94,7 +94,8 @@
 # 30/06/2015 - 1.33   - Fenix     - get client auth login from Clientuserinfo line if available
 #                                 - removed notoriety attribute in Iourt42Client: useless in UrT4.2
 #                                 - improved logging
-
+# 21/07/2015 - 1.34   - Fenix     - added a patch which deny connection to clients whose nickname is longer than 32
+#                                   characters (read more: https://github.com/BigBrotherBot/big-brother-bot/issues/346)
 
 import b3
 import re
@@ -109,7 +110,7 @@ from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.33'
+__version__ = '1.34'
 
 
 class Iourt42Client(Client):
@@ -263,6 +264,7 @@ class Iourt42Parser(Iourt41Parser):
 
     _permban_with_frozensand = False
     _tempban_with_frozensand = False
+    _allow_userinfo_overflow = False
 
     _commands = {
         'broadcast': '%(message)s',
@@ -649,6 +651,7 @@ class Iourt42Parser(Iourt41Parser):
         self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
 
         self.load_conf_frozensand_ban_settings()
+        self.load_conf_userinfo_overflow()
 
     def pluginsStarted(self):
         """
@@ -705,10 +708,11 @@ class Iourt42Parser(Iourt41Parser):
         Load permban configuration from b3.xml.
         """
         self._permban_with_frozensand = False
-        try:
-            self._permban_with_frozensand = self.config.getboolean('server', 'permban_with_frozensand')
-        except Exception, err:
-            self.warning(err)
+        if self.config.has_option('server', 'permban_with_frozensand'):
+            try:
+                self._permban_with_frozensand = self.config.getboolean('server', 'permban_with_frozensand')
+            except ValueError, err:
+                self.warning(err)
 
         self.info("Send permbans to Frozen Sand : %s" % ('yes' if self._permban_with_frozensand else 'no'))
 
@@ -717,12 +721,35 @@ class Iourt42Parser(Iourt41Parser):
         Load tempban configuration from b3.xml.
         """
         self._tempban_with_frozensand = False
-        try:
-            self._tempban_with_frozensand = self.config.getboolean('server', 'tempban_with_frozensand')
-        except Exception, err:
-            self.warning(err)
+        if self.config.has_option('server', 'tempban_with_frozensand'):
+            try:
+                self._tempban_with_frozensand = self.config.getboolean('server', 'tempban_with_frozensand')
+            except ValueError, err:
+                self.warning(err)
 
         self.info("Send temporary bans to Frozen Sand : %s" % ('yes' if self._tempban_with_frozensand else 'no'))
+
+    def load_conf_userinfo_overflow(self):
+        """
+        Load userinfo overflow configuration settings.
+        """
+        self._allow_userinfo_overflow = False
+        if self.config.has_option('server', 'allow_userinfo_overflow'):
+            try:
+                self._allow_userinfo_overflow = self.config.getboolean('server', 'allow_userinfo_overflow')
+            except ValueError, err:
+                self.warning(err)
+
+        self.info("Allow userinfo string overflow : %s" % ('yes' if self._allow_userinfo_overflow else 'no'))
+
+        if self._allow_userinfo_overflow:
+            self.info("NOTE: due to a bug in UrT 4.2 gamecode it is possible to exploit the maximum client name length "
+                      "and generate a userinfo string longer than the imposed limits: clients connecting with nicknames "
+                      "longer than 32 characters will be automatically kicked by B3 in order to prevent any sort of error")
+        else:
+            self.info("NOTE: due to a bug in UrT 4.2 gamecode it is possible to exploit the maximum client name length "
+                      "and generate a userinfo string longer than the imposed limits: B3 will truncate nicknames of clients "
+                      "which are longer than 32 characters")
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -787,6 +814,19 @@ class Iourt42Parser(Iourt41Parser):
                 # v1.0.17 - mindriot - 02-Nov-2008
                 if 'name' not in bclient:
                     bclient['name'] = self._empty_name_default
+
+                # v 1.10.5 => https://github.com/BigBrotherBot/big-brother-bot/issues/346
+                if len(bclient['name']) > 32:
+                    self.debug("UrT4.2 bug spotted! %s [GUID: '%s'] [FSA: '%s'] has a too long "
+                               "nickname (%s characters)", bclient['name'], guid, fsa, len(bclient['name']))
+                    if self._allow_userinfo_overflow:
+                        x = bclient['name'][0:32]
+                        self.debug('Truncating %s (%s) nickname => %s (%s)', bclient['name'], len(bclient['name']), x, len(x))
+                        bclient['name'] = x
+                    else:
+                        self.debug("Connection denied to  %s [GUID: '%s'] [FSA: '%s']", bclient['name'], guid, fsa)
+                        self.write(self.getCommand('kick', cid=bclient['cid'], reason='userinfo string overflow protection'))
+                        return
 
                 if 'ip' not in bclient:
                     if guid == 'unknown':
