@@ -2,8 +2,8 @@
 
 # Big Brother Bot (B3) Management - http://www.bigbrotherbot.net
 # Maintainer: Daniele Pantaleone <fenix@bigbrotherbot.net>
-# App Version: 0.13
-# Last Edit: 04/07/2015
+# App Version: 0.14
+# Last Edit: 26/07/2015
 
 ### BEGIN INIT INFO
 # Provides:          b3
@@ -46,6 +46,9 @@
 #                                    - removed some LOG_EXT and PID_EXT variables: they are not needed
 #                                    - activate/deactivate autorestart mode using B3_AUTORESTART env variable
 #                                    - fixed b3_list matching also non configuration files while retrieving instances
+#  2015-07-26 - 0.14 - Fenix         - do not allow to use root at all when using this very script
+#                                    - create b3 home directory if it has not been created already
+
 
 ### SETUP
 AUTO_RESTART="${B3_AUTORESTART:-1}" # will run b3 in auto-restart mode if set to 1
@@ -428,7 +431,7 @@ B3_DIR="$(dirname ${SCRIPT_DIR})"
 # check that the script is not executed by super user to avoid permission problems
 # we will allow the B3 status check tho since the operation is totally harmless
 if [ ! "${DEVELOPER}" -eq 0 ]; then # allow developers to use root to start b3
-    if ([ ${UID} -eq 0 ] && [ -n "${1}" ] && [ "${1}" != "status" ]); then
+    if [ ${UID} -eq 0 ]; then
       p_out "^1ERROR^0: do not execute B3 as super user [root]"
       exit 1
     fi
@@ -458,6 +461,11 @@ fi
 # check for the PID directory to exists (user may have removed it)
 if [ ! -d "${SCRIPT_DIR}/${PID_DIR}" ]; then
     mkdir "${SCRIPT_DIR}/${PID_DIR}"
+fi
+
+# check for b3 home directory (maybe b3 didn't started yet so it didn't create it)
+if [ ! -d "${HOME}/${B3_HOME}" ]; then
+    mkdir "${HOME}/${B3_HOME}"
 fi
 
 case "${1}" in
