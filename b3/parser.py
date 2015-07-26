@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2015/07/26 - 1.43.6 - Fenix           - fixed loadPlugins crashing B3 owhen it could not load a 3rd party plugin
 # 2015/07/19 - 1.43.5 - Fenix           - restored self.critical to raise SystemExit and shutdown B3 (branch rebase lost it???)
 # 2015/06/25 - 1.43.4 - Fenix           - correctly handle Plugin attribute requiresVersion (branch rebase lost it???)
 # 2015/06/22 - 1.43.3 - Fenix           - added support for the new Plugin attribute: requiresStorage
@@ -191,7 +192,7 @@
 #                                       - added warning, info, exception, and critical log handlers
 
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
-__version__ = '1.43.5'
+__version__ = '1.43.6'
 
 
 import os
@@ -861,9 +862,9 @@ class Parser(object):
                 plugins[p['name']] = PluginData(name=p['name'], module=mod, clazz=clz, conf=cfg, disabled=p['disabled'])
             except ImportError, err:
                 if 'No module named %s' % p['name'] in err.message:
-                    self.error('Plugin "%(name)s" has been specified in your B3 configuration file but it could not be loaded '
-                               'since it\'s not installed. To load the "%(name)s" plugin you need to place the plugin '
-                               'module into "%(extplugins)s" and reboot B3', name=p['name'], extplugins=extplugins_dir)
+                    self.error('Plugin "%s" has been specified in your B3 configuration file but it could not be loaded '
+                               'since it\'s not installed. To load the "%s" plugin you need to place the plugin '
+                               'module into "%s" and reboot B3', p['name'], p['name'], extplugins_dir)
                 else:
                     raise err
             except Exception, err:
