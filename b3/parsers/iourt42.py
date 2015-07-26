@@ -96,6 +96,7 @@
 #                                 - improved logging
 # 21/07/2015 - 1.34   - Fenix     - added a patch which deny connection to clients whose nickname is longer than 32
 #                                   characters (read more: https://github.com/BigBrotherBot/big-brother-bot/issues/346)
+# 26/07/2015 - 1.35   - Fenix     - queue EVT_GAME_ROUND_END when survivor winner is triggered
 
 import b3
 import re
@@ -110,7 +111,7 @@ from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 
 __author__ = 'Courgette, Fenix'
-__version__ = '1.34'
+__version__ = '1.35'
 
 
 class Iourt42Client(Client):
@@ -1056,8 +1057,10 @@ class Iourt42Parser(Iourt41Parser):
         # SurvivorWinner: Blue
         # SurvivorWinner: Red
         # SurvivorWinner: 0
+        # queue round and in any case (backwards compatibility for plugins)
+        self.queueEvent(self.getEvent('EVT_GAME_ROUND_END'))
         if data in ('Blue', 'Red'):
-            return b3.events.Event(self.getEventID('EVT_SURVIVOR_WIN'), data)
+            return self.getEvent('EVT_SURVIVOR_WIN', data=data)
         else:
             client = self.getByCidOrJoinPlayer(data)
             if not client:
