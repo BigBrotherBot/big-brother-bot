@@ -150,10 +150,10 @@
 # 15/01/2015 - 1.25   - Fenix          - fixed another regression introduced in 1.22
 # 27/01/2015 - 1.26   - Thomas LEVEIL  - `fdir *.bsp` waits for a game server response for 15s
 # 15/06/2015 - 1.27   - Fenix          - fixed client userinfo parsing!
-
+# 26/07/2015 - 1.28   - Fenix          - queue EVT_GAME_ROUND_END when survivor winner is triggered
 
 __author__ = 'xlr8or, Courgette, Fenix'
-__version__ = '1.27'
+__version__ = '1.28'
 
 import b3
 import b3.events
@@ -933,6 +933,8 @@ class Iourt41Parser(AbstractParser):
         # SurvivorWinner: Blue
         # SurvivorWinner: Red
         # self.debug('EVENT: on_survivorwinner')
+        # queue round and in any case (backwards compatibility for plugins)
+        self.queueEvent(self.getEvent('EVT_GAME_ROUND_END'))
         return self.getEvent('EVT_SURVIVOR_WIN', data=data)
 
     def OnSay(self, action, data, match=None):

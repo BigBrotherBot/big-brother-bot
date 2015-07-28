@@ -287,11 +287,6 @@ class Iourt42Parser(Iourt41Parser):
         'kill': 'smite %(cid)s',
     }
 
-    _eventMap = {
-        #'warmup' : b3.events.EVT_GAME_HOTPOTATO,
-        #'shutdowngame' : b3.events.EVT_GAME_ROUND_END
-    }
-
     # remove the time off of the line
     _lineClear = re.compile(r'^(?:[0-9:]+\s?)?')
     _line_length = 90
@@ -648,7 +643,6 @@ class Iourt42Parser(Iourt41Parser):
         self.Events.createEvent('EVT_CLIENT_MELTED', 'Event client melted')
 
         self._eventMap['hotpotato'] = self.getEventID('EVT_GAME_FLAG_HOTPOTATO')
-        self._eventMap['shutdowngame'] = self.getEventID('EVT_GAME_ROUND_END')
         self._eventMap['warmup'] = self.getEventID('EVT_GAME_WARMUP')
 
         self.load_conf_frozensand_ban_settings()
