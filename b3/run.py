@@ -18,25 +18,26 @@
 #
 # CHANGELOG
 #
-# 2010/02/24 - 1.2   - Courgette - uniformize SystemExit and uncatched exception handling between bot running
-#                                  as a win32 standalone and running as a python script
-# 2010/03/20 - 1.3   - xlr8or    - finished options -s --setup and -n, --nosetup where setup launches setup
-#                                  procedure and nosetup prevents bot from entering setup procedure.
-# 2010/08/05 - 1.3.1 - xlr8or    - fixing broken --restart mode
-# 2010/10/22 - 1.3.3 - xlr8or    - restart counter
-# 2011/05/19 - 1.4.0 - xlr8or    - added --update -u arg
-# 2011/12/03 - 1.4.1 - Courgette - fix crash at bot start in restart mode when installed from egg
-# 2014/07/21 - 1.5   - Fenix     - syntax cleanup
-# 2014/12/15 - 1.5.1 - Fenix     - let the parser know if we are running B3 in auto-restart mode or not
-# 2015/02/02 - 1.5.2 - Fenix     - keep looking for xml configuration files if ini/cfg are not found
-# 2015/02/14 - 1.5.3 - Fenix     - removed _check_arg_configfile in favor of configuration file lookup
-# 2015/05/07 - 1.6   - Fenix     - add GUI startup
-# 2015/05/26 - 1.7   - Fenix     - reworked B3 startup routine
-#                                - removed B3 setup procedure: display B3 configuration generator webtool url instead
-# 2015/06/21 - 1.7.1 - Fenix     - fixed console startup not working properly
+# 2010/02/24 - 1.2   - Courgette     - uniformize SystemExit and uncatched exception handling between bot running
+#                                      as a win32 standalone and running as a python script
+# 2010/03/20 - 1.3   - xlr8or        - finished options -s --setup and -n, --nosetup where setup launches setup
+#                                      procedure and nosetup prevents bot from entering setup procedure.
+# 2010/08/05 - 1.3.1 - xlr8or        - fixing broken --restart mode
+# 2010/10/22 - 1.3.3 - xlr8or        - restart counter
+# 2011/05/19 - 1.4.0 - xlr8or        - added --update -u arg
+# 2011/12/03 - 1.4.1 - Courgette     - fix crash at bot start in restart mode when installed from egg
+# 2014/07/21 - 1.5   - Fenix         - syntax cleanup
+# 2014/12/15 - 1.5.1 - Fenix         - let the parser know if we are running B3 in auto-restart mode or not
+# 2015/02/02 - 1.5.2 - Fenix         - keep looking for xml configuration files if ini/cfg are not found
+# 2015/02/14 - 1.5.3 - Fenix         - removed _check_arg_configfile in favor of configuration file lookup
+# 2015/05/07 - 1.6   - Fenix         - add GUI startup
+# 2015/05/26 - 1.7   - Fenix         - reworked B3 startup routine
+#                                    - removed B3 setup procedure: display B3 configuration generator webtool url instead
+# 2015/06/21 - 1.7.1 - Fenix         - fixed console startup not working properly
+# 2015/07/29 - 1.8   - Thomas LEVEIL - by default, run in console mode and remove the --console option
 
 __author__  = 'ThorN'
-__version__ = '1.7.1'
+__version__ = '1.8'
 
 import b3
 import b3.config
@@ -74,9 +75,9 @@ def run_autorestart(args=None):
             script += 'c'
 
     if args:
-        script = '%s %s %s --console --autorestart' % (sys.executable, script, ' '.join(args))
+        script = '%s %s %s --autorestart' % (sys.executable, script, ' '.join(args))
     else:
-        script = '%s %s --console --autorestart' % (sys.executable, script)
+        script = '%s %s --autorestart' % (sys.executable, script)
 
     while True:
 
@@ -142,19 +143,15 @@ def run_update(config=None):
     update.run()
 
 
-def run_gui(options):
+def run_gui():
     """
     Run B3 graphical user interface.
-    Will raise an exception if the GUI cannot be initialized so we can fallback into console mode.
-    :param options: command line options
+    Will raise an exception if the GUI cannot be initialized.
     """
     from b3.gui import B3App
     from b3.gui.misc import SplashScreen
     from PyQt5.QtWidgets import QMessageBox
     from PyQt5.QtWidgets import QSpacerItem, QSizePolicy
-
-    if options.console:
-        raise EnvironmentError
 
     # initialize outside try/except so if PyQt5 is not avaiable or there is
     # no display adapter available, this will raise an exception and we can
@@ -256,7 +253,6 @@ def main():
     """
     p = argparse.ArgumentParser()
     p.add_argument('-c', '--config', dest='config', default=None, metavar='b3.ini', help='B3 config file. Example: -c b3.ini')
-    p.add_argument('-x', '--console', action='store_true', dest='console', default=False, help='Force B3 execution in console mode')
     p.add_argument('-r', '--restart', action='store_true', dest='restart', default=False, help='Auto-restart B3 on crash')
     p.add_argument('-s', '--setup',  action='store_true', dest='setup', default=False, help='Setup main b3.ini config file')
     p.add_argument('-u', '--update', action='store_true', dest='update', default=False, help='Update B3 database to latest version')
@@ -285,12 +281,7 @@ def main():
         else:
             run_autorestart([])
     else:
-        try:
-            run_gui(options)
-        except Exception:
-            # UNCOMMENT TO DEBUG
-            #traceback.print_exc()
-            run_console(options)
+        run_console(options)
 
 if __name__ == '__main__':
     main()

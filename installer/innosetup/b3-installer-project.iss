@@ -81,8 +81,10 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 
 [Icons]
-Name: "{commondesktop}\{cm:executable,b3_run}"; Filename: "{app}\b3_run.exe"; WorkingDir: "{app}"; Flags: dontcloseonexit; IconFilename: "{app}\b3.ico"; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}"
-Name: "{group}\{cm:executable,b3_run}"; Filename: "{app}\b3_run.exe"; WorkingDir: "{app}"; Flags: dontcloseonexit; IconFilename: "{app}\b3.ico"; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}"
+Name: "{commondesktop}\{cm:executable_console,b3_run}"; Filename: "{app}\b3_run.exe"; WorkingDir: "{app}"; Flags: dontcloseonexit; IconFilename: "{app}\b3.ico"; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}"
+Name: "{group}\{cm:executable_console,b3_run}"; Filename: "{app}\b3_run.exe"; WorkingDir: "{app}"; Flags: dontcloseonexit; IconFilename: "{app}\b3.ico"; Comment: "Run BigBrotherBot {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}"
+Name: "{commondesktop}\{cm:executable,b3}"; Filename: "{app}\b3.exe"; WorkingDir: "{app}"; Flags: dontcloseonexit; IconFilename: "{app}\b3.ico"; Comment: "Run BigBrotherBot GUI {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}"
+Name: "{group}\{cm:executable,b3}"; Filename: "{app}\b3.exe"; WorkingDir: "{app}"; Flags: dontcloseonexit; IconFilename: "{app}\b3.ico"; Comment: "Run BigBrotherBot GUI {#B3_VERSION_NUMBER}{#B3_VERSION_SUFFIX}"
 Name: "{group}\{cm:configWizard,Config wizard}"; Filename: "http://config.bigbrotherbot.net/"; Comment: "Run the B3 setup wizard"
 Name: "{group}\{cm:B3ConfDir,config}"; \
     Filename: "{app}\extplugins\"; \
@@ -109,6 +111,7 @@ Source: ../assets_common\readme-windows.txt; DestDir: {app}; DestName: readme.tx
 Source: ../assets_common\b3.ico; DestDir: {app}
 Source: ../assets_common\b3-plugins-icon.ico; DestDir: {app}
 Source: {#B3_BUILD_PATH}\b3_run.exe; DestDir: {app}
+Source: {#B3_BUILD_PATH}\b3.exe; DestDir: {app}
 Source: {#B3_BUILD_PATH}\PKG-INFO; DestDir: {app}
 Source: {#B3_BUILD_PATH}\README.md; DestDir: {app};
 Source: {#B3_BUILD_PATH}\*.dll; DestDir: {app}
@@ -141,6 +144,7 @@ Xlrstats=XLRstats
 B3configGenerator=B3 config generator
 sql=SQL folder
 docs=Docs folder
+executable_console=Run B3 (console)
 
 [Run]
 Filename: "{app}\readme.txt"; Flags: ShellExec SkipIfDoesntExist

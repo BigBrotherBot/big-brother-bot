@@ -39,9 +39,10 @@
 #                                    - changed build_exe zip file name on Linux when freezing 64 bit binary
 #                                    - include scripts directory when packaging frozen application
 # 2015/07/06 - 3.5   - Fenix         - added missing requests module to be included in the Frozen application
+# 2015/07/29 - 3.6   - Thomas LEVEIL - separate two entrypoints: GUI and console
 
 __author__ = 'ThorN, xlr8or, courgette, Fenix'
-__version__ = '3.5'
+__version__ = '3.6'
 
 import b3
 import re
@@ -64,19 +65,24 @@ DIST_DIR = os.path.join(PROJECT_DIR, 'dist')  # directory where all the final bu
 BUILD_DIR = os.path.join(PROJECT_DIR, 'build')  # directory where all work will be done
 BUILD_TIME = strftime('%Y%m%d')  # current build time (for distribution zip name)
 BUILD_PATH = os.path.join(BUILD_DIR, 'b3-%s-%s-%s%s' % (b3_version, BUILD_TIME, b3_version_info[1], b3_version_info[2]))  # frozen distribution path
-
 settings = {
     'nt': {
         'binary_name': 'b3_run.exe',
         'icon': os.path.join(PROJECT_DIR, 'installer/assets_common', 'b3.ico'),
+        'binary_name_gui': 'b3.exe',
+        'icon_gui': os.path.join(PROJECT_DIR, 'installer/assets_common', 'b3.ico'),
     },
     'darwin': {
         'binary_name': 'b3_run',
         'icon': os.path.join(PROJECT_DIR, 'installer/assets_common', 'b3.icns'),
+        'binary_name_gui': 'b3',
+        'icon_gui': os.path.join(PROJECT_DIR, 'installer/assets_common', 'b3.icns'),
     },
     'linux': {
         'binary_name': 'b3_run',
         'icon': None,
+        'binary_name_gui': 'b3',
+        'icon_gui': None,
     }
 }
 
@@ -475,20 +481,25 @@ else:
         cmdclass['bdist_mac'] = my_bdist_mac
         cmdclass['bdist_dmg'] = my_bdist_dmg
 
-    base = None
-    if b3.getPlatform() == 'nt':
-        base = 'Win32GUI'
-
     executables = [
         Executable(
             script='b3_run.py',
-            base=base,
+            base=None,
             compress=True,
             copyDependentFiles=True,
             targetName=settings[b3.getPlatform()]['binary_name'],
             icon=settings[b3.getPlatform()]['icon'],
+        ),
+        Executable(
+            script='b3_gui.py',
+            base='Win32GUI' if b3.getPlatform() == 'nt' else None,
+            compress=True,
+            copyDependentFiles=True,
+            targetName=settings[b3.getPlatform()]['binary_name_gui'],
+            icon=settings[b3.getPlatform()]['icon_gui'],
         )
     ]
+
 
 ########################################################################################################################
 #                                                                                                                      #
