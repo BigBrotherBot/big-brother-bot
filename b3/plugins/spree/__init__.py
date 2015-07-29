@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
 __author__ = 'Walker, ThorN'
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 import b3
 import b3.events
@@ -107,12 +107,18 @@ class SpreePlugin(b3.plugin.Plugin):
     def init_spreemessage_list(self):
         # get the spree messages from the config
         # split the start and end spree messages and save it in the dictionary
-        for kills, message  in self.config.items('killingspree_messages'):
-            messages = message.split('#')
-            self._killingspree_messages_dict[int(kills)] = [messages[0].strip(), messages[1].strip()]
+        for kills, message in self.config.items('killingspree_messages'):
+            if '#' in message:
+                start_message, stop_message = message.split('#')
+                self._killingspree_messages_dict[int(kills)] = [start_message.strip(), stop_message.strip()]
+            else:
+                self.warning("ignoring killingspree message %r due to missing '#'" % message)
         for deaths, message in self.config.items('loosingspree_messages'):
-            messages = message.split('#')
-            self._loosingspree_messages_dict[int(deaths)] = [messages[0].strip(), messages[1].strip()]
+            if '#' in message:
+                start_message, stop_message = message.split('#')
+                self._loosingspree_messages_dict[int(deaths)] = [start_message.strip(), stop_message.strip()]
+            else:
+                self.warning("ignoring killingspree message %r due to missing '#'" % message)
         self.verbose('spree-messages are loaded in memory')
 
     def init_spree_stats(self, client):
