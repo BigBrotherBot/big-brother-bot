@@ -52,9 +52,10 @@
 #        - reformat changelog
 # 1.14.1 - add color code options for new getWrap method
 # 1.14.2 - uniform class variables (dict -> variable)
+# 1.15   - fixed regression introduced in 1.14.2
 
 __author__ = 'Courgette'
-__version__ = '1.14.2'
+__version__ = '1.15'
 
 
 import re
@@ -1790,7 +1791,7 @@ def patch_b3_clients():
             if msg:
                 self.console.message(self, msg)
                 if self.connected:
-                    time.sleep(float(self.console._settings.get('message_delay', 1)))
+                    time.sleep(float(self.console._message_delay))
 
     ## override the Client.message() method at runtime
     def frostbiteClientMessageMethod(self, msg):
