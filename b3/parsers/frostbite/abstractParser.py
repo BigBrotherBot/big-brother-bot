@@ -47,11 +47,12 @@
 # 2014-08-27 - 1.8   - Fenix     - syntax cleanup
 #                                - major fixes in B3 parser interface methods
 # 19/03/2015 - 1.8.1 - Fenix     - raise NotImplementedError instead of NotImplemented
-# 16/04/201  - 1.8.2 - Fenix     - uniform class variables (dict -> variable)
+# 16/04/2015 - 1.8.2 - Fenix     - uniform class variables (dict -> variable)
 #                                - implement missing abstract class methods
+# 30/07/2015 - 1.9   - Fenix     - fixed regression introduced in 1.8.2
 
 __author__  = 'Courgette'
-__version__ = '1.8.2'
+__version__ = '1.9'
 
 
 import sys
@@ -1125,7 +1126,7 @@ def patch_b3_clients():
             msg = self.messagequeue.get()
             if msg:
                 self.console.message(self, msg)
-                time.sleep(float(self.console._settings.get('message_delay', 1)))
+                time.sleep(float(self.console._message_delay))
 
     ## override the Client.message() method at runtime
     def frostbiteClientMessageMethod(self, msg):
