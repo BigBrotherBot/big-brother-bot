@@ -1043,7 +1043,7 @@ class Test_cmd_help(Admin_functional_test):
         self.mike.message = Mock()
         self.mike.connects(0)
         self.mike.says('!help')
-        self.mike.message.assert_called_with('^7Available commands: help, iamgod, regtest, regulars, rules, time')
+        self.mike.message.assert_called_with('^7Available commands: help, iamgod, nextmap, regtest, regulars, rules, time')
 
     def test_joker(self):
         self.joe.says('!help *ban')
