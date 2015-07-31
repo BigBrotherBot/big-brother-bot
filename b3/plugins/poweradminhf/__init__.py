@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-__version__ = '0.3'
+__version__ = '0.4'
 __author__  = 'xlr8or, Courgette'
 
 import b3
@@ -120,7 +120,7 @@ class PoweradminhfPlugin(b3.plugin.Plugin):
         Load vote protector configuration.
         """
         try:
-            self._auto_unban_level = self.config.getint('voteprotector','auto_unban_level')
+            self._auto_unban_level = self.console.getGroupLevel(self.config.get('voteprotector', 'auto_unban_level'))
         except (NoOptionError, ValueError):
             self._auto_unban_level = 20
             self.debug('using default value (%s) for voteprotector::auto_unban_level', self._enableTeamBalancer)
