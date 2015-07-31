@@ -1,3 +1,4 @@
+2015/07/31 - 1.5     - Thomas LEVEIL  - config settings:levels now accpets group keywords
 07/08/2015 - 1.4.1   - Fenix          - removed interface with spawnkill plugin: needs a separate plugin
 07/05/2015 - 1.4     - Fenix          - make use of Plugin.getSettings to retrieve configuration file values
                                       - interface with spawnkill plugin

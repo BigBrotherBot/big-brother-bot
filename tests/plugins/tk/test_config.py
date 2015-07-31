@@ -178,6 +178,37 @@ class Test_get_config_for_levels(Test_Tk_plugin):
         }, levels)
         self.assertListEqual([], self.error_mock.mock_calls)
 
+    def test_nominal_many_levels_keywords(self):
+        # GIVEN
+        self.conf.loadFromString(dedent(r"""
+            [settings]
+            levels: guest,mod,senioradmin
+
+            [level_0]
+            kill_multiplier: 1.3
+            damage_multiplier: 1.1
+            ban_length: 3
+
+            [level_mod]
+            kill_multiplier: 1.8
+            damage_multiplier: 1.3
+            ban_length: 2
+
+            [level_80]
+            kill_multiplier: 1
+            damage_multiplier: 1
+            ban_length: 1
+        """))
+        # WHEN
+        levels = self.p.load_config_for_levels()
+        # THEN
+        self.assertDictEqual({
+            0: (1.3, 1.1, 3),
+            20: (1.8, 1.3, 2),
+            80: (1.0, 1.0, 1),
+        }, levels)
+        self.assertListEqual([], self.error_mock.mock_calls)
+
     def test_level_junk(self):
         # GIVEN
         self.conf.loadFromString(dedent(r"""
@@ -191,13 +222,13 @@ class Test_get_config_for_levels(Test_Tk_plugin):
         except ValueError:
             pass
         # THEN
-        self.assertListEqual([call("'f00' is not a valid level number")], self.error_mock.mock_calls)
+        self.assertListEqual([call("'f00' is not a valid level")], self.error_mock.mock_calls)
 
     def test_missing_section(self):
         # GIVEN
         self.conf.loadFromString(dedent(r"""
             [settings]
-            levels: 0,20,80
+            levels: 0,mod,80
 
             [level_0]
             kill_multiplier: 1.3
@@ -216,7 +247,7 @@ class Test_get_config_for_levels(Test_Tk_plugin):
         except ValueError:
             pass
         # THEN
-        self.assertListEqual([call("section 'level_20' is missing from the config file")], self.error_mock.mock_calls)
+        self.assertListEqual([call("section 'level_mod' is missing from the config file")], self.error_mock.mock_calls)
 
     def test_missing_kill_multiplier(self):
         # GIVEN

@@ -26,7 +26,7 @@ import time
 
 from ConfigParser import NoOptionError
 
-__version__ = '1.4.1'
+__version__ = '1.5'
 __author__ = 'ThorN, mindriot, Courgette, xlr8or, SGT, 82ndab-Bravo17, ozon, Fenix'
 
 
@@ -236,21 +236,34 @@ class TkPlugin(b3.plugin.Plugin):
         levels_data = {}
         is_valid = True
 
-        levels = self.config.get('settings', 'levels').split(',')
+        levels = []
+        raw_levels = self.config.get('settings', 'levels').split(',')
 
-        for lev in levels:
+        def getLevelSectionName(level):
+            """
+            find config level section based on level as a group keyword or level.
+
+            :return None if section not found, or the section name
+            """
+            if 'level_%s' % level in self.config.sections():
+                return 'level_%s' % level
+            elif 'level_%s' % self.console.getGroupLevel(level) in self.config.sections():
+                return 'level_%s' % self.console.getGroupLevel(level)
+
+        for lev in raw_levels:
             # check the level number is valid
             try:
-                level_number = int(lev)
-            except ValueError:
-                self.error("%r is not a valid level number" % lev)
+                level_number = int(self.console.getGroupLevel(lev))
+                levels.append(level_number)
+            except KeyError:
+                self.error("%r is not a valid level" % lev)
                 is_valid = False
                 continue
 
             # check if we have a config section named after this level
-            section_name = 'level_%s' % lev
-            if section_name not in self.config.sections():
-                self.error("section %r is missing from the config file" % section_name)
+            section_name = getLevelSectionName(lev)
+            if section_name is None:
+                self.error("section %r is missing from the config file" % ('level_%s' % lev))
                 is_valid = False
                 continue
 
