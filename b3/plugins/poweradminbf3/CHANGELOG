@@ -34,3 +34,4 @@
 1.5    - Command !setnextmap now accepts new optional parameters : <map> [, <gamemode> [, <rounds>]]
 1.6    - add command !gunmaster
 1.7    - adapted plugin for built-in release
+1.8    - config preferences:no_level_check_level and preferences:no_autoassign_level now accept group keywords

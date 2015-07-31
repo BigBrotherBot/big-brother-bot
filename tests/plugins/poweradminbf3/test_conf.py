@@ -17,6 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 import logging
+from textwrap import dedent
 from mock import Mock, call
 
 from b3.plugins.poweradminbf3 import Poweradminbf3Plugin, __file__ as poweradminbf3_file
@@ -218,3 +219,53 @@ gamemodes_blacklist: SquadRush0,SquadDeathMatch0 foo | Rush3 , bar ! Conquest4
 """)
         self.p._load_scrambler()
         self.assertEqual(['SquadRush0', 'SquadDeathMatch0', 'Rush3', 'Conquest4'], self.p._autoscramble_gamemode_blacklist)
+
+
+class Test_load_autobalance_settings__no_autoassign_level(Test_conf):
+
+    default_value = 20
+
+    def test_no_section(self):
+        self.conf.loadFromString("""[foo]""")
+        self.p._load_autobalance_settings()
+        self.assertEqual(self.default_value, self.p._no_autoassign_level)
+
+    def test_no_option(self):
+        self.conf.loadFromString(dedent("""
+            [preferences]
+        """))
+        self.p._load_autobalance_settings()
+        self.assertEqual(self.default_value, self.p._no_autoassign_level)
+
+    def test_nominal(self):
+        self.conf.loadFromString(dedent("""
+            [preferences]
+            no_autoassign_level: superadmin
+        """))
+        self.p._load_autobalance_settings()
+        self.assertEqual(100, self.p._no_autoassign_level)
+
+
+class Test_load_no_level_check_level(Test_conf):
+
+    default_value = 100
+
+    def test_no_section(self):
+        self.conf.loadFromString("""[foo]""")
+        self.p._load_no_level_check_level()
+        self.assertEqual(self.default_value, self.p.no_level_check_level)
+
+    def test_no_option(self):
+        self.conf.loadFromString(dedent("""
+            [preferences]
+        """))
+        self.p._load_no_level_check_level()
+        self.assertEqual(self.default_value, self.p.no_level_check_level)
+
+    def test_nominal(self):
+        self.conf.loadFromString(dedent("""
+            [preferences]
+            no_level_check_level: senioradmin
+        """))
+        self.p._load_no_level_check_level()
+        self.assertEqual(80, self.p.no_level_check_level)

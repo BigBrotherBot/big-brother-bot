@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-__version__ = '1.7'
+__version__ = '1.8'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
@@ -1193,27 +1193,11 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
             self.info("ConfigManager directory : %s" % self._configManager_configPath)
 
     def _load_no_level_check_level(self):
-        try:
-            self.no_level_check_level = self.config.getint('preferences', 'no_level_check_level')
-        except NoOptionError:
-            self.info('No config option \"preferences\\no_level_check_level\" found. Using default value : %s' % self.no_level_check_level)
-        except ValueError, err:
-            self.debug(err)
-            self.warning('Could not read level value from config option \"preferences\\no_level_check_level\". Using default value \"%s\" instead. (%s)' % (self.no_level_check_level, err))
-        except Exception, err:
-            self.error(err)
+        self.no_level_check_level = self.getSetting('preferences', 'no_level_check_level', b3.LEVEL, default=100)
         self.info('no_level_check_level is %s' % self.no_level_check_level)
 
     def _load_autobalance_settings(self):
-        try:
-            self._no_autoassign_level = self.config.getint('preferences', 'no_autoassign_level')
-        except NoOptionError:
-            self.info('No config option \"preferences\\no_autoassign_level\" found. Using default value : %s' % self._no_autoassign_level)
-        except ValueError, err:
-            self.debug(err)
-            self.warning('Could not read level value from config option \"preferences\\no_autoassign_level\". Using default value \"%s\" instead. (%s)' % (self._no_autoassign_level, err))
-        except Exception, err:
-            self.error(err)
+        self._no_autoassign_level = self.getSetting('preferences', 'no_autoassign_level', value_type=b3.LEVEL, default=20)
         self.info('no_autoassign_level is %s' % self._no_autoassign_level)
 
         try:
