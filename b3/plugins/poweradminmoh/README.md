@@ -72,3 +72,5 @@ Changelog
     * fix teambalancer which would swap the first instead of the last guy who changed teams
 * v1.2 - 2015/05/19 - Fenix
     * make poweradminmoh a built-in plugin
+* v1.3 - 2015/07/31 - Thomas LEVEIL
+    * convert config file to ini format, `matchmode` config section added

@@ -16,7 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-__version__ = '1.2'
+__version__ = '1.3'
 __author__  = 'Courgette'
 
 import b3
@@ -221,16 +221,16 @@ class PoweradminmohPlugin(b3.plugin.Plugin):
 
     def loadMatchMode(self):
         """
-        Load match mode configuration.
+        Setup the match mode
         """
-        self._match_plugin_disable = []
+        self._match_plugin_disable = self.getSetting('matchmode', 'plugins_disable', b3.LIST, [])
+
         try:
-            self.debug('match_plugins_disable/plugin : %s' %self.config.get('match_plugins_disable/plugin'))
-            for e in self.config.get('match_plugins_disable/plugin'):
-                self.debug('match_plugins_disable/plugin : %s' %e.text)
-                self._match_plugin_disable.append(e.text)
-        except Exception:
-            self.debug('can\'t setup match disable plugins because there is no plugins set in config')
+            # load all the configuration files into a dict
+            for key, value in self.config.items('matchmode_configs'):
+                self._gameconfig[key] = value
+        except (b3.config.NoSectionError, b3.config.NoOptionError, KeyError), e:
+            self.warning('could not read matchmode configs: %s' % e)
 
     def loadScrambler(self):
         """
