@@ -7,6 +7,7 @@ nosetests --where=tests.plugins.adv --verbosity=3 --with-cov --cov b3.plugins.ad
 nosetests --where=tests.plugins.banlist --verbosity=3 --with-cov --cov b3.plugins.banlist --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.callvote --verbosity=3 --with-cov --cov b3.plugins.callvote --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.censor --verbosity=3 --with-cov --cov b3.plugins.censor --cov-report term-missing --cov-config .coveragerc
+nosetests --where=tests.plugins.censorurt --verbosity=3 --with-cov --cov b3.plugins.censorurt --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.chatlogger --verbosity=3 --with-cov --cov b3.plugins.chatlogger --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.cmdmanager --verbosity=3 --with-cov --cov b3.plugins.cmdmanager --cov-report term-missing --cov-config .coveragerc
 nosetests --where=tests.plugins.countryfilter --verbosity=3 --with-cov --cov b3.plugins.countryfilter --cov-report term-missing --cov-config .coveragerc

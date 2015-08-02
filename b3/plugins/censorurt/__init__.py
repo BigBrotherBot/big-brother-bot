@@ -14,8 +14,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-__author__  = 'xlr8or & courgette'
-__version__ = '0.1.3'
+__author__ = 'xlr8or & courgette'
+__version__ = '0.2'
 
 import threading
 from b3.plugins.censor import CensorPlugin
@@ -32,6 +32,11 @@ class CensorurtPlugin(CensorPlugin):
 
     requiresParsers = ['iourt41', 'iourt42']
     loadAfterPlugins = ['chatlogger']
+
+    _default_messages = {
+        'mute_announcement': 'Muting $playername for $duration minutes',
+        'pm_unmuted': '^7unmuted. watch your mouth'
+    }
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -80,7 +85,7 @@ class CensorurtPlugin(CensorPlugin):
             CensorPlugin.penalizeClient(self, penalty, client, data='')
         else:
             if hasattr(client, 'langMuted') and client.langMuted:
-                self.debug('%s is already muted'%client.name)
+                self.debug('%s is already muted' % client.name)
             else:
                 if not hasattr(client, 'langWarnings'):
                     client.langWarnings = 1
@@ -89,7 +94,8 @@ class CensorurtPlugin(CensorPlugin):
                 if client.langWarnings == 1:
                     if self._muteduration1 != 0:
                         self.debug('Muting %s for %s minutes.' % (client.name, self._muteduration1))
-                        self.console.say('Muting %s for %s minutes.' % (client.name, self._muteduration1))
+                        self.console.say(self.getMessage('mute_announcement',
+                                                         {'playername': client.name, 'duration': self._muteduration1}))
                         self.console.write('mute %s' % client.cid)
                         client.langMuted = True
                         t = threading.Timer(self._muteduration1 * 60, self.unmutePlayer, (client,))
@@ -97,14 +103,16 @@ class CensorurtPlugin(CensorPlugin):
                 elif client.langWarnings == 2:
                     if self._muteduration2 != 0:
                         self.debug('Muting %s for %s minutes.' % (client.name, self._muteduration2))
-                        self.console.say('Muting %s for %s minutes.' % (client.name, self._muteduration2))
+                        self.console.say(self.getMessage('mute_announcement',
+                                                         {'playername': client.name, 'duration': self._muteduration2}))
                         self.console.write('mute %s' % client.cid)
                         client.langMuted = True
                         t = threading.Timer(self._muteduration2 * 60, self.unmutePlayer, (client,))
                         t.start()
                 else:
                     self.debug('Muting %s for %s minutes.' % (client.name, self._muteduration3))
-                    self.console.say('Muting %s for %s minutes.' % (client.name, self._muteduration3))
+                    self.console.say(self.getMessage('mute_announcement',
+                                                     {'playername': client.name, 'duration': self._muteduration3}))
                     self.console.write('mute %s' % client.cid)
                     client.langMuted = True
                     t = threading.Timer(self._muteduration3 * 60, self.unmutePlayer, (client,))
@@ -118,4 +126,4 @@ class CensorurtPlugin(CensorPlugin):
           client.langMuted = False
           # note: "/rcon mute <player> 0" ensures unmuting
           self.console.write('mute %s 0' % client.cid)
-          client.message('^7unmuted. watch your mouth')
+          client.message(self.getMessage('pm_unmuted'))

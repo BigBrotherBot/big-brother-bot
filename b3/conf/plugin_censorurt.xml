@@ -18,6 +18,13 @@
 		<set name="warn_after">2</set>
 	</settings>
 
+	<settings name="messages">
+		<!-- Message displayed to all when a player gets muted. The message MUST have placeholders: $playername and $duration. -->
+		<set name="mute_announcement">Muting $playername for $duration minutes</set>
+		<!-- Private message sent to the player who got unmutted -->
+		<set name="pm_unmuted">^7unmuted. watch your mouth</set>
+	</settings>
+
 	<badwords>
 		<penalty type="warning" reasonkeyword="cuss"/>
 		<!--
