@@ -57,7 +57,7 @@ from distutils import dir_util, log
 from setuptools.command.egg_info import egg_info as orig_egg_info
 from time import strftime
 
-b3_version = '1.10.6'
+b3_version = '1.10.7'
 b3_version_info = b3.getB3versionInfo()
 
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))  # directory where this file is in
