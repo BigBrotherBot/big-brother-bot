@@ -149,7 +149,7 @@
         <!-- <plugin name="poweradminbfbc2" config="@b3/conf/plugin_poweradminbfbc2.ini" /> -->
         <!-- <plugin name="poweradmincod7" config="@b3/conf/plugin_poweradmincod7.xml" /> -->
         <!-- <plugin name="poweradminhf" config="@b3/conf/plugin_poweradminhf.ini" /> -->
-        <!-- <plugin name="poweradminmoh" config="@b3/conf/plugin_poweradminmoh.xml" /> -->
+        <!-- <plugin name="poweradminmoh" config="@b3/conf/plugin_poweradminmoh.ini" /> -->
         <!-- <plugin name="poweradminurt" config="@b3/conf/plugin_poweradminurt.ini" /> -->
         <!-- <plugin name="spawnkill" config="@b3/conf/plugin_spawnkill.ini" /> -->
         <!-- <plugin name="spree" config="@b3/conf/plugin_spree.ini" /> -->
