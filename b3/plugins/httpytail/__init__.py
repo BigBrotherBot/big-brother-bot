@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'GrosBedo, 82ndab-Bravo17, Courgette'
-__version__ = '1.5'
+__version__ = '1.6'
 
 import b3
 import threading
@@ -197,7 +197,7 @@ class HttpytailPlugin(b3.plugin.Plugin):
                 # - file url
                 if self.httpconfig['port']:
                     logurl = self.httpconfig['protocol'] + '://' + self.httpconfig['host'] + ':' + \
-                             self.httpconfig['port'] + '/' + self.httpconfig['path']
+                             str(self.httpconfig['port']) + '/' + self.httpconfig['path']
                 else:
                     logurl = self.httpconfig['protocol'] + '://' + self.httpconfig['host'] + '/' + \
                              self.httpconfig['path']
