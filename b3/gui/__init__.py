@@ -514,10 +514,11 @@ class B3(QProcess):
                 program += ' --restart'
 
         else:
+            executables = {'nt': 'b3_run.exe', 'darwin': 'b3_run', 'linux':'b3_run'}
             if b3.getPlatform() == 'darwin':
-                program = '"%s" --config "%s" --console' % (sys.executable, self.config_path)
+                program = '"%s" --config "%s" --console' % (executables[b3.getPlatform()], self.config_path)
             else:
-                program = '%s --config %s --console' % (sys.executable, self.config_path)
+                program = '%s --config %s --console' % (executables[b3.getPlatform()], self.config_path)
 
         LOG.info('attempt to start %s process: %s', self.name, program)
 
