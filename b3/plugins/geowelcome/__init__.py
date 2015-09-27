@@ -22,13 +22,13 @@ import time
 import threading
 
 from b3.functions import getCmd
-from b3.plugins.welcome import WelcomePlugin
-from b3.plugins.welcome import F_FIRST
-from b3.plugins.welcome import F_NEWB
-from b3.plugins.welcome import F_USER
-from b3.plugins.welcome import F_ANNOUNCE_FIRST
-from b3.plugins.welcome import F_ANNOUNCE_USER
-from b3.plugins.welcome import F_CUSTOM_GREETING
+from ...plugins.welcome import WelcomePlugin
+from ...plugins.welcome import F_FIRST
+from ...plugins.welcome import F_NEWB
+from ...plugins.welcome import F_USER
+from ...plugins.welcome import F_ANNOUNCE_FIRST
+from ...plugins.welcome import F_ANNOUNCE_USER
+from ...plugins.welcome import F_CUSTOM_GREETING
 
 
 class GeowelcomePlugin(WelcomePlugin):
