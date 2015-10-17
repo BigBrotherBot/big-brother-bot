@@ -18,17 +18,17 @@
 #
 # CHANGELOG
 #
-# 31/01/2010 - 1.2.2 - xlr8or    - removed commandsdict, inherit from codparser
-# 18/04/2010 - 1.2.3 - xlr8or    - forcing g_logsync to make server write unbuffered gamelogs
-# 30/05/2010 - 1.2.4 - xlr8or    - setting exception for 31 char PBid in shortversion v1.2
-# 17/10/2010 - 1.2.5 - xlr8or    - don't let version exceptions be inherited by later parsers
-# 14/06/2011 - 1.3.0 - Courgette - remove cvar specifics as the cvar regexp and code is now working good on
-#                                  the q3a AbstractParser
-# 03/08/2014 - 1.4.0 - Fenix     - syntax cleanup
-
+# 31/01/2010 - 1.2.2 - xlr8or           - removed commandsdict, inherit from codparser
+# 18/04/2010 - 1.2.3 - xlr8or           - forcing g_logsync to make server write unbuffered gamelogs
+# 30/05/2010 - 1.2.4 - xlr8or           - setting exception for 31 char PBid in shortversion v1.2
+# 17/10/2010 - 1.2.5 - xlr8or           - don't let version exceptions be inherited by later parsers
+# 14/06/2011 - 1.3.0 - Courgette        - remove cvar specifics as the cvar regexp and code is now working good on
+#                                         the q3a AbstractParser
+# 03/08/2014 - 1.4.0 - Fenix            - syntax cleanup
+# 17/10/2015 - 1.4.1 - 82ndab-Bravo17   - Remove setting of _pbRegExp to None, since it breaks working with pb
 
 __author__ = 'ThorN, ttlogic, xlr8or'
-__version__ = '1.4.0'
+__version__ = '1.4.1'
 
 import b3.parsers.cod
 import re
@@ -40,7 +40,6 @@ class Cod2Parser(b3.parsers.cod.CodParser):
     IpsOnly = False
 
     _logSync = 1    # value for unbuffered game logging
-    _pbRegExp = None
 
     def setVersionExceptions(self):
         """
