@@ -2,6 +2,10 @@
 
 **********
 
+```
+This project is NO LONGER actively maintained! It is provided 'as is' in its current state!
+```
+
 Big Brother Bot (B3) is a complete and total server administration package for online games. It is the prefered ingame
 RCON Tool currently available. B3 is designed primarily to keep your server free from the derelicts of online gaming,
 but offers more, much more. With the stock configuration files, B3 will keep your server free from offensive language,
