@@ -40,11 +40,11 @@
 #                                    - include scripts directory when packaging frozen application
 # 2015/07/06 - 3.5   - Fenix         - added missing requests module to be included in the Frozen application
 # 2015/07/29 - 3.6   - Thomas LEVEIL - separate two entrypoints: GUI and console
+# 2016/02/16 - 3.7   - Thomas LEVEIL - fix b3 installation through pip
 
 __author__ = 'ThorN, xlr8or, courgette, Fenix'
-__version__ = '3.6'
+__version__ = '3.7'
 
-import b3
 import re
 import os
 import sys
@@ -52,13 +52,49 @@ import shutil
 import stat
 import zipfile
 import setuptools
+import platform
 
 from distutils import dir_util, log
 from setuptools.command.egg_info import egg_info as orig_egg_info
 from time import strftime
 
+
+def getPlatform():
+    """
+    Return the current platform name.
+    :return: nt || darwin || linux
+    """
+    if sys.platform in ('win32', 'win64'):
+        # Windows family
+        return 'nt'
+    elif sys.platform in ('darwin', 'mac'):
+        # OS X faimily
+        return 'darwin'
+    else:
+        # Fallback linux distro
+        return 'linux'
+        
+        
+def getB3versionInfo():
+    """
+    Returns a tuple with B3 version information.
+    :return: version, platform, architecture :type: tuple
+    """
+    def right_cut(text, cut):
+        """
+        Remove 'cut' from 'text' if found as ending suffix
+        :param text: The string we want to clean
+        :param cut: The suffix of the string
+        :return: A string with the given suffix removed
+        """
+        if text.endswith(cut):
+            return text[:-len(cut)]
+        return text
+    return __version__, getPlatform(), right_cut(platform.architecture()[0], 'bit')
+    
+    
 b3_version = '1.10.10'
-b3_version_info = b3.getB3versionInfo()
+b3_version_info = getB3versionInfo()
 
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))  # directory where this file is in
 DIST_DIR = os.path.join(PROJECT_DIR, 'dist')  # directory where all the final builds will be found
@@ -85,7 +121,6 @@ settings = {
         'icon_gui': None,
     }
 }
-
 
 class CleanCommand(setuptools.Command):
     """Custom clean command to tidy up the project root."""
@@ -202,7 +237,7 @@ else:
 
         def chmod_exec(self):
             """set +x flag on compiled binary if on Linux"""
-            if b3.getPlatform() == 'linux':
+            if getPlatform() == 'linux':
                 log.info(">>> chmod")
                 filename = os.path.join(self.build_exe, self.linux_binary_name)
                 st = os.stat(filename)
@@ -210,7 +245,7 @@ else:
 
         def unix2dos(self):
             """makes sure text files from directory have 'Windows style' end of lines"""
-            if b3.getPlatform() == 'nt':
+            if getPlatform() == 'nt':
                 log.info(">>> unix2dos")
                 for root, dirs, files in os.walk(self.build_exe):
                     for filename in files:
@@ -237,7 +272,7 @@ else:
 
         def make_innosetup(self, current_b3_version_part1, current_b3_version_part2):
             """create windows installer"""
-            if b3.getPlatform() == 'nt':
+            if getPlatform() == 'nt':
                 log.info(">>> InnoSetup")
                 import subprocess
                 import yaml
@@ -288,7 +323,7 @@ else:
 
     cmdclass['build_exe'] = my_build_exe
 
-    if b3.getPlatform() == 'darwin':
+    if getPlatform() == 'darwin':
         # those are available only on Mac OSX
         from cx_Freeze import bdist_mac
         from cx_Freeze import bdist_dmg
@@ -487,16 +522,16 @@ else:
             base=None,
             compress=True,
             copyDependentFiles=True,
-            targetName=settings[b3.getPlatform()]['binary_name'],
-            icon=settings[b3.getPlatform()]['icon'],
+            targetName=settings[getPlatform()]['binary_name'],
+            icon=settings[getPlatform()]['icon'],
         ),
         Executable(
             script='b3_gui.py',
-            base='Win32GUI' if b3.getPlatform() == 'nt' else None,
+            base='Win32GUI' if getPlatform() == 'nt' else None,
             compress=True,
             copyDependentFiles=True,
-            targetName=settings[b3.getPlatform()]['binary_name_gui'],
-            icon=settings[b3.getPlatform()]['icon_gui'],
+            targetName=settings[getPlatform()]['binary_name_gui'],
+            icon=settings[getPlatform()]['icon_gui'],
         )
     ]
 
@@ -584,7 +619,7 @@ setup(
             'dist_dir': DIST_DIR,
         },
         'bdist_mac': {
-            'iconfile': settings[b3.getPlatform()]['icon'],
+            'iconfile': settings[getPlatform()]['icon'],
             'bundle_name': 'BigBrotherBot (B3) %s' % b3_version,
         },
         'bdist_dmg': {
@@ -594,7 +629,7 @@ setup(
         },
         'build_exe': {
             'dist_dir': DIST_DIR,
-            'linux_binary_name': settings[b3.getPlatform()]['binary_name'],
+            'linux_binary_name': settings[getPlatform()]['binary_name'],
             'build_exe': BUILD_PATH,
             'silent': False,
             'optimize': 1,
