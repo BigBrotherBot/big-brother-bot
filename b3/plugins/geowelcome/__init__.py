@@ -15,20 +15,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-__version__ = '1.2'
+__version__ = '1.3.1'
 __author__  = 'SGT'
 
 import time
 import threading
 
 from b3.functions import getCmd
-from ...plugins.welcome import WelcomePlugin
-from ...plugins.welcome import F_FIRST
-from ...plugins.welcome import F_NEWB
-from ...plugins.welcome import F_USER
-from ...plugins.welcome import F_ANNOUNCE_FIRST
-from ...plugins.welcome import F_ANNOUNCE_USER
-from ...plugins.welcome import F_CUSTOM_GREETING
+from b3.plugins.welcome import WelcomePlugin
+from b3.plugins.welcome import F_FIRST
+from b3.plugins.welcome import F_NEWB
+from b3.plugins.welcome import F_USER
+from b3.plugins.welcome import F_ANNOUNCE_FIRST
+from b3.plugins.welcome import F_ANNOUNCE_USER
+from b3.plugins.welcome import F_CUSTOM_GREETING
 
 
 class GeowelcomePlugin(WelcomePlugin):

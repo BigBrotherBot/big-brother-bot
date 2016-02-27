@@ -14,3 +14,4 @@
 06-04-2015 - 1.2   - Fenix - made the plugin built-in
                            - add dependency with the geolocation plugin
 27-09-2015 - 1.3   - Fenix - use relative imports to import the Welcome plugin
+27-02-2016 - 1.3.1 - Fenix - fixed import paths
