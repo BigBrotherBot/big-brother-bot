@@ -2208,14 +2208,11 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         - list the next map in rotation
         """
-        if not self.aquireCmdLock(cmd, client, 60, True):
-            client.message('^7Do not spam commands')
+        mapname = self.console.getNextMap()
+        if mapname:
+            cmd.sayLoudOrPM(client, '^7Next Map: ^2%s' % mapname)
         else:
-            mapname = self.console.getNextMap()
-            if mapname:
-                cmd.sayLoudOrPM(client, '^7Next Map: ^2%s' % mapname)
-            else:
-                client.message('^7ERROR: could not get nextmap')
+            client.message('^7ERROR: could not get nextmap')
 
     def cmd_pause(self, data, client=None, cmd=None):
         """
