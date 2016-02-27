@@ -567,7 +567,6 @@ setup(
     license="GPL",
     url="http://www.bigbrotherbot.net",
     classifiers=[
-        'Development Status :: 4 - Beta',
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Intended Audience :: System Administrators',
