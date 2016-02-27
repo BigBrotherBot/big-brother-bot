@@ -1,0 +1,115 @@
+2016/01/27 - 1.35    - Fenix          - fixed invalid variable reference in cmd_rules
+                                      - remove acquireCmdLock from !nextmap command
+2015/06/26 - 1.34.4  - Fenix          - changed sayLoudOrPM to accept positional parameters for string substitution
+2015/03/01 - 1.34.2  - Fenix          - added unregisterCommand method
+2015/01/29 - 1.34.1  - Fenix          - fixed external plugin directory retrieval
+2015/01/09 - 1.34    - Fenix          - added past bans check cronjob
+                                      - adjusted b3.sql script path in debug message: make use of the correct protocol
+2014/12/15 - 1.33    - Fenix          - unregister !restart command if B3 is not running in auto-restart mode
+2014/11/15 - 1.32    - 82ndab-Bravo17 - added new command longlist that does a list with one player per line
+                                      - and cid first. Allows you to see players with clever unicode names that
+                                      - otherwise mess up the normal list command.
+2014/09/06 - 1.31.1  - Fenix          - updated cmd_pluginfo to work with the new b3.ini configuration file format
+2014/08/30 - 1.31    - Fenix          - syntax cleanup
+                                      - improved debug messages in plugin configuration file loading
+                                      - moved 'warn_command_abusers' config value loading into proper method
+                                      - moved 'long_tempban_max_duration' config value loading into proper method
+                                      - make use of cmd.sayLoudOrPM in cmd_enable and cmd_disable
+                                      - added missing %s placeholder in cmd_unban faliure notification
+2014/06/21 - 1.30    - Courgette      - fix spam command not considering the loud command prefix
+2014/05/16 - 1.29    - Courgette      - add an optional parameter to the !spam command to allow to send a message to
+                                        a given player in private
+2014/05/03 - 1.28.1  - Fenix          - tell player why he is not allowed to use a certain command (issue #183)
+2014/05/02 - 1.28    - Fenix          - make use of the new getCmd function from functions module
+                                      - minor syntax fixes
+2014/04/21 - 1.27    - 82ndab-Bravo17 - change default messages to new format
+2014/03/20 - 1.26    - Fenix          - make use of self._admins_level in acquireCmdLock() method instead of constant
+                                        value
+                                      - refactored plugin syntax: get close to PEP8
+                                      - let the plugin use the new event dispatcher
+2014/02/26 - 1.25.2  - Fenix          - changed findClientPrompt to return None instead of False when it finds multiple
+                                        matches
+                                      - correctly initialize superadmins list: fix code unpredictability
+2014/01/11 - 1.25.1  - Courgette      - fix maskLevel is set with group id while it should be group level
+2014/01/07 - 1.25    - Courgette      - removed the 'peeing in the gene pool' reason for tempbans with durations
+                                        between 5 and 10 min
+2013/11/16 - 1.24    - Fenix          - added command !pluginfo (display plugin information)
+2013/09/06 - 1.23.1  - Fenix          - make conf pm_global accept yes/no
+2013/03/02 - 1.23    - Courgette      - command !admins message when no admin is online can be customised in the config
+                                        file -> no_admins
+2013/02/17 - 1.22    - Courgette      - warn_command_abusers default value is no False
+                                      - suggest command spelling correction in aa many situations as we can
+                                      - refactor code for detecting fakeCommands and unprivileged access to commands
+                                      - recognize commands in all chat types (all, team, squad, private)
+2013/02/16 - 1.21.1  - Courgette      - add default messages
+2013/02/10 - 1.21    - Ozon           - add announce_registration option to config to (de)activate public announcement
+                                        of player using the !register command
+                                      - !register command feedback message is now configurable in config
+2013/02/10 - 1.20    - Ozon           - add spell corrector for commands
+2012/10/27 - 1.19    - Courgette      - change: !map command will give at most 5 suggestions
+2012/10/03 - 1.18    - Courgette      - add command !lastbans
+2012/09/29 - 1.17    - Courgette      - add command !regulars
+2012/08/11 - 1.16    - Courgette      - config file can refer to group levels by their group keyword
+2012/07/31 - 1.15.1  - Courgette      - fix command !maps when map rotation list is empty
+2012/07/28 - 1.15    - Courgette      - add command !unreg (danger89's idea)
+2012/07/14 - 1.14.1  - Courgette      - log more detail when failing to register a command
+2012/07/07 - 1.14    - Courgette      - better error log messages when registering a command with incorrect level or
+                                        group keyword
+2012/07/05 - 1.13    - Courgette      - provides default values for warn_reason keywords 'default' and 'generic' if
+                                        missing from config file
+                                      - refactors the loading and parsing of warn_reasons from the config file to
+                                        provide meaningful messages when
+                                      - errors are detected
+2012/07/02 - 1.12.2  - Courgette      - fix bug un cmd_mask when no player name was given
+2012/06/17 - 1.12.1  - Courgette      - syntax
+2012/04/15 - 1.12    - Courgette      - removes magic command shortcut that would transform the command '!1 blah'
+                                        into '!say blah'
+2011/11/15 - 1.11.4  - Courgette      - fix bug where command &rules was acting like !rules
+2011/11/15 - 1.11.3  - Courgette      - fix bug xlr8or/big-brother-bot#54 - Plugin Admin: parseUserCommand issue
+2011/11/15 - 1.11.2  - Courgette      - cmd_pause now uses console pause() and unpause() methods instead of sleep()
+2011/11/05 - 1.11.1  - Courgette      - do not tell "There was an error processing your command" to the player if
+                                        catch a SystemExit
+2011/05/31 - 1.11.0  - Courgette      - refactoring
+2011/04/30 - 1.10.3  - Courgette      - !help response won't include !register if already registered
+2011/02/26 - 1.10.2  - Courgette      - fix doc for !spam command
+2010/12/12 - 1.10.1  - Courgette      - registering a command can use group keywords instead of groups levels
+2010/11/25 - 1.9.1   - Courgette      - calling a command of a disabled plugin now sends a message back to the user
+2010/11/21 - 1.9     - Courgette      - cmd_map now suggests map names if provided by parser
+2010/10/28 - 1.8.2   - Courgette      - make sure to disable the !iamgod command when used while there is already
+                                        a superadmin in db
+2010/08/25 - 1.8.1   - Courgette      - do not fail if warn_command_abusers is missing in config
+2010/08/24 - 1.8     - Courgette      - add warn_command_abusers setting what defines if player should get warned
+                                        for trying to use non existing or privileged commands
+                                      - add documentation into the xml config file
+                                      - fix a few things with the config file
+2010/08/14 - 1.7.1   - Courgette      - fix _parseUserCmdRE regexp for cases where the player's name start with a digit
+2010/04/10 - 1.7     - Bakes          - new '&' command prefix can be used to say messages in the middle of the screen:
+                                        has the same settings as '@', this may change in the future
+2010/03/22 - 1.6.1   - Courgette      - resolve conflict regarding maprotate/rotateMap
+2010/03/21 - 1.6     - Courgette      - make this plugin game independant by delegating the work to the parser for
+                                        commands !map and !maprotate
+2010/03/21 - 1.5     - Courgette      - removed commands : greeting, about, groups, cmdlevel, newgroup,
+                                        delgroup, editgroup
+2010/03/21 - 1.4.7   - Bakes          - moved the !ci command to the pingwatch plugin
+                                      - moved part of cmd_maprotate to the parser
+2010/03/07 - 1.4.6   - Courgette      - fix crash on bot startup when loading a plugin which does not requires any config
+                                        file but still registers commands
+2010/01/27 - 1.4.5   - Courgette      - the iamgod check warns if the command is explicitly enabled by config file but
+                                        superadmins are found in database
+2010/01/27 - 1.4.4   - xlr8or         - added some verbose info to startup()
+2009/09/01 - 1.4.3   - xlr8or         - check database connection before checking groups
+2009/08/24 - 1.4.2   - Courgette      - warning messages are also sent by pm to the admin that give them
+2009/08/22 - 1.4.1   - Courgette      - warning messages are shown only to the warned player. This is to prevent the bot
+                                        from spaming the console
+2009/08/19 - 1.4.0   - Courgette      - penalizeClient() will try to delegate unknown penalty types to
+                                        inflictCustomPenalty() of the current parser: requires parser.py v1.10+
+2009/07/22 - 1.3.5   - xlr8or         - generate better documented error when groupstable is empty
+2008/10/05 - 1.3.4b0 - mindriot       - removed hard code of 1 day for long_tempban_level - now controlled with new
+                                        setting 'long_tempban_max_duration'
+2005/08/29 - 1.2.2   - ThorN          - moved pbss command to punkbuster plugin
+2005/08/13 - 1.2.1   - ThorN          - added penalizeClient()
+                                      - moved greeting to welcome plugin
+2005/07/23 - 1.1.0   - ThorN          - made it so registerCommand() will check a plugins config "commands" section
+                                        for command level overrides
+                                      - added ci command
+                                      - added data field to warnClient(), warnKick(), and checkWarnKick()

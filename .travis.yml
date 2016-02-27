@@ -1,9 +1,54 @@
 # TravisCI config file. See http://travis-ci.org
 language: python
+
 python:
-  - 2.6
   - 2.7
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install: pip install pysqlite MySQL-python unittest2 mockito nose-exclude --use-mirrors
-# command to run tests, e.g. python setup.py test
-script: nosetests --where=tests --exclude-dir=tests/storage/
+
+env:
+  matrix:
+    # jobs environment variables
+    - TEST=core
+    - TEST=plugins
+    - TEST=build
+  global:
+    # global environment variables
+    - MYSQL_TEST_HOST=127.0.0.1
+    - MYSQL_TEST_USER=travis MYSQL_TEST_PASSWORD=''
+    - MYSQL_TEST_DB=b3_test
+    - POSTGRESQL_TEST_HOST=127.0.0.1
+    - POSTGRESQL_TEST_USER=postgres
+    - POSTGRESQL_TEST_PASSWORD=''
+    - POSTGRESQL_TEST_DB=b3_test
+
+addons:
+  # select postgresql version
+  postgresql: "9.3"
+
+cache:
+  # cache pip installs across jobs
+  - pip
+
+install:
+  # install requirements
+  - ./scripts/install-deps-${TEST}.sh
+
+before_script:
+  # create postgresql database
+  - psql -c "CREATE DATABASE b3_test WITH OWNER = postgres ENCODING = 'UTF8';" -U postgres
+
+script:
+  # execute current job
+  - ./scripts/start-tests-${TEST}.sh
+
+after_success:
+  # report tests coverage if we are running tests
+  - if [ "${TEST}" != "build" ]; then pip install coveralls && coveralls; fi
+
+notifications:
+  # send notifications to gitter
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/489374443a557d989111
+    on_success: always  # options: [always|never|change] default: always
+    on_failure: always  # options: [always|never|change] default: always
+    on_start: never     # default: never

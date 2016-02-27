@@ -1,0 +1,43 @@
+30/11/2005 - 1.0.3  - ThorN     - use PluginCronTab instead of CronTab
+17/07/2008 - 1.1.6  - Courgette - add specific user-agent
+                                - url is now store in a property
+                                - add info: version, parserversion, database, plugins, os
+                                - cron job will trigger at a random minute time to avoid jamming
+18/07/2008 - 1.1.7  - Courgette - add parser version and plugins' versions
+07/07/2009 - 1.1.8  - xlr8or    - removed cvar check and critical stop
+14/07/2009 - 1.1.9  - Courgette - bot version sent is now only the version number
+10/05/2009 - 1.1.10 - xlr8or    - made the urllib not exit on error when connection to masterserver is impossible
+10/19/2009 - 1.1.11 - Courgette - add a timeout to the HTTP call (need urllib2 for that)
+                                - initial call is now threaded
+13/11/2009 - 1.1.12 - Courgette - minor severity of messages
+                                - do not send heartbeat when publicIP is obviously not public
+23/11/2009 - 1.2.0  - Courgette - publist plugin now also update B3 master on shutdown
+22/12/2009 - 1.3    - Courgette - bot version tells if the bot is built with py2exe
+10/03/2010 - 1.4    - Courgette - rconPort is sent
+21/03/2010 - 1.4.1  - Courgette - fix rconPort when update type of ping is sent
+17/04/2010 - 1.5    - Courgette - allow to send ping to an additionnal master (mostly used for debugging master code)
+                                - send the python version to the master
+29/10/2010 - 1.6    - Courgette - for BFBC2 and MoH send additional info : bannerUrl and serverDescription
+05/11/2010 - 1.7    - Courgette - delay initial heartbeat and do not sent shutdown heartbeat if initial heartbeat was
+                                  not already sent. This is to prevent spaming the B3 master with rogue bots that
+                                  keep restarting forever
+08/11/2010 - 1.8    - Courgette - initial delay can be changed in config file
+                                - if B3 master respond with "403 Forbidden" the plugin disables itself. This will
+                                  allow the B3 master to prevent a bot to send further pings (until that bot restarts)
+16/11/2010 - 1.9    - Courgette - "400 Bad Request" response prevents the plugin from sending further update hearbeats
+                                - when receiving "403 Forbidden", do not disable the plugin but remove the crontab
+                                  instead, so the bot can still send a shutdown fainting heartbeat http://goo.gl/4QHoq
+30/12/2010 - 1.9.1  - xlr8or    - change initial delay timer into one time cron tab
+13/04/2011 - 1.10.0 - Courgette - add default_encoding to sent info
+22/06/2011 - 1.10.1 - Courgette - fix error on B3 shutdown/restart
+12/08/2012 - 1.10.2 - Courgette - do not crash when failing to read a plugin version
+07/04/2014 - 1.11   - Fenix     - PEP8 coding standards
+                                - fixed variable initialization unpredicatability
+12/04/2014 - 1.11.1 - Courgette - fix plugin failing to load when no plugin config file is set in b3.xml
+                                - fix missing time import for time.strftime
+19/04/2014 - 1.11.2 - Courgette - fix regression preventing the plugin to load with games not based on the
+                                  Q3 game engine (i.e. Arma)
+30/08/2014 - 1.12   - Fenix     - syntax cleanup
+                                - make use of the new onStop() event handler
+15/01/2015 - 1.13   - Fenix     - removed outdated reference to Parser._pluginOrder
+08/07/2015 - 1.14   - Fenix     - changed b3 version info format

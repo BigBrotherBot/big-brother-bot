@@ -1,0 +1,37 @@
+0.1    - add command !kill
+0.2    - add commands !roundrestart and !roundnext
+0.3    - add commands !changeteam and !swap
+0.4    - commands !kill, !changeteam, !swap won't act on an admin of higher level
+0.5    - add commands !punkbuster and !setnextmap. Fix bug in 0.4
+0.6    - add command !loadconfig
+0.7    - add the swap_no_level_check config variable to allow one to !swap players without any level restriction
+0.8    - renamed 'swap_no_level_check' to 'no_level_check_level' and this option now also applies to the !changeteam command
+       - add commands !scramble, !scramblemode, !autoscramble
+0.8.1  - fix crash with 0.8
+0.8.2  - fix issue #17 with !loadconfig
+0.9    - add command !listconfig, !loadconfig can understand mis-spelt names and suggest config names
+0.10   - ported xlr8or's configmanager plugin for cod series. Automagically loads server config files based on maps/gamemodes
+0.11   - fix issue with configmanager examples' filenames
+0.12   - add command !unlockmode
+0.13   - fixes #22 : !swap reports everything went fine even when failing
+0.14   - add command !vehicles
+0.15   - add team balancing (82ndab-Bravo17)
+0.16   - add command !endround (ozon)
+0.16.1 - fix command !endround
+0.16.2 - fix !changeteam for SquadDeathMatch0
+0.16.3 - Only start autobalancing when teams are out of balance by team_swap_threshold or more
+0.17   - add command !idle (Mario)
+0.18   - add command !serverreboot and improve command !endround (Ozon)
+0.18.1 - Correct autobalance not restarting after 0.16.3 change
+0.19   - add commands !yell !yellplayer !yellteam !yellsquad (requires B3 1.8.1+)
+0.20   - add command !nuke
+1.0    - fixed !yell
+1.1    - fixed !yell after B3 1.8.0 changes
+1.2    - add config option scramber\gamemodes_blacklist to have the auto scrambler ignoring some gamemodes
+1.3    - Refactor autobalance logic flow, and add setting option team_swap_threshold_prop
+1.3.1  - fixed issue with command !setnextmap since B3 1.8.2
+1.4    - Adds commands !viplist, !vips, !vipadd, !vipremove, !vipclear, !vipload, !vipsave
+1.5    - Command !setnextmap now accepts new optional parameters : <map> [, <gamemode> [, <rounds>]]
+1.6    - add command !gunmaster
+1.7    - adapted plugin for built-in release
+1.8    - config preferences:no_level_check_level and preferences:no_autoassign_level now accept group keywords

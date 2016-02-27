@@ -1,0 +1,23 @@
+06/04/2010 - 0.1.2 - SpacepiG  - added: paset, paget, pamap, macyclemap, pamaprestart, pamapreload, payell, payellteam,
+                                 payellenemy, payellplayer, paversion, pasetnextmap, paident
+08/04/2010 - 0.1.3 - SpacepiG  - added: pakill, pachangeteam
+                               - removed: pamap, pacyclemap - exist in bfbc2 parser/admin
+                               - modified: payell, payellteam, payellenemy, payellplayer
+09/04/2010 - 0.1.4 - SpacepiG  - modified: payell
+11/04/2010 - 0.2   - Bakes     - rewrote many of the functions to be more efficient
+12/04/2010 - 0.2.1 - Bakes     - added: payellsquad
+12/04/2010 - 0.2.2 - Bakes     - modified: paserverinfo, paset, paident
+19/04/2010 - 0.3   - Courgette - add !pamatch command that allow teams to ready up and does a count down
+                               - teambalancer now move players to the other team instead of just warning them. It is
+                                 not scheduled yet but can be run with the !pateams command for instant balancing.
+                                 If this works well, we'll schedule it
+                               - fixes to !payellteam, !payellenemies, !payellplayer, !paset, !paget, !pasetnextmap,
+                                 !paident, !pakill, !pachangeteam, !paspectate
+19/04/2010 - 0.3.1 - Courgette - merge with Bakes
+25/04/2010 - 0.4   - Courgette - match mode now requires all players to type !ready
+                               - make sure to reset the ready state for all players when !match on
+                               - add tests for match mode
+                               - add !parush !paconquest !pasqdm !pasqrush commands to change mod
+26/04/2010 - 0.5 - Courgette   - move cmd_ready to the MatchManager class
+                               - a player cannot unready once the match countdown started
+02/07/2015 - 0.6 - Fenix       - made the plugin built in

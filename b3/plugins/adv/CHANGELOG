@@ -1,0 +1,20 @@
+06/04/2015 - 1.7   - Fenix      - fixed @nextmap being unreliable
+03/11/2014 - 1.6.1 - Fenix      - updated plugin to use a default rate vale of 2mins is not specified in the
+                                  plugin configuration file (previously plugin was not loading at all)
+31/08/2014 - 1.6   - Fenix      - syntax cleanup
+03/04/2014 - 1.5   - Fenix      - PEP8 coding standards
+29/09/2012 - 1.4   - Courgette  - new message keyword @regulars will run the Admin plugin !regulars command
+19/08/2012 - 1.3.3 - Courgette  - give user feedback on command misuse
+07/17/2011 - 1.3.2 - Freelander - prevent error if next map is not returned
+04/18/2011 - 1.3.1 - Courgette  - makes @admins show admins' level as well
+04/18/2011 - 1.3.0 - Courgette  - add the @admins keyword that displays the connected admins
+                                - when the ad is @topstats or @admins but no message is to be shown, then try next ad
+24/10/2010 - 1.2.2 - Courgette  - prevent crash when no feed is specified in config
+20/08/2010 - 1.2.1 - xlr8or     - add @topstats for xlrstats
+06/08/2010 - 1.2   - xlr8or     - add feedparser (@feed or @feed <nr>)
+06/08/2010 - 1.1.5 - xlr8or     - remove save() errors and !advsave when XML adds are used: this needs to be re-enabled
+                                  when saving to XML is supported
+22/11/2009 - 1.1.4 - Courgette  - fix bug when using external text ads file which is empty
+27/02/2009 - 1.1.3 - xlr8or     - added Anubis suggestion @nextmap to ads and also @time to show time.
+30/11/2005 - 1.1.2 - ThorN      - use PluginCronTab instead of CronTab
+29/08/2005 - 1.1.0 - ThorN      - converted to use XML config

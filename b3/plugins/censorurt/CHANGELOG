@@ -1,0 +1,7 @@
+21/10/2008 0.1.1 (courgette)    - extends Censor plugin v2.1.0
+                                - move added mute code from xlr8or to that new plugin
+                                - changed _muteonly to _warnafter, so after a defined number of mute, the client get warned
+22/10/2008 0.1.2 (xlr8or)       - added slap function
+25/03/2015 0.1.3 (Fenix)        - made censorurt a built-in plugin
+                                - fix indent
+03/08/2015 0.2    Thomas LEVEIL - add config for messages mute_announcement and pm_unmuted

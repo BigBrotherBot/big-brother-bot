@@ -1,0 +1,21 @@
+# Python modules needed for optional B3 features
+# If you want to install them with pip on Windows then you will need Microsofts Visual C++ Compiler for Python2.7
+# which can be obtained from here http://www.microsoft.com/en-us/download/details.aspx?id=44266
+# You can also use pre-compiled versions for windows.
+# A pre-compiled Windows version of psycopg2 v2.6 can be found here http://www.stickpeople.com/projects/python/win-psycopg/
+# A pre-compiled version of pycrypto that is needed for paramiko can be found here http://www.voidspace.org.uk/python/modules.shtml#pycrypto
+# That should be enough for you to install paramiko with pip, but if not a pre-compiled version of paramiko can be found here 
+# http://blog.victorjabur.com/2011/06/08/modules-python-library-compiled-for-windows-32-and-64-unofficial-windows-binaries-for-python/
+#
+# If you want to use the GUI you need to install PyQt5.
+# Windows compiled versions can be found here http://www.riverbankcomputing.com/software/pyqt/download5
+#
+#
+# If you want to use a PosgreSQL database
+psycopg2==2.6
+
+# If you need a secure connection (SFTP plugin)
+paramiko==1.15.2
+
+# Backport of the subprocess module from python 3 to python 2 (does not work on Windows)
+# subprocess32==3.2.6

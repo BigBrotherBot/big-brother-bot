@@ -1,0 +1,4 @@
+2014/05/10 - 1.11 - Fenix - added SQLite compatibility
+2015/03/24 - 1.12 - Fenix - adapted plugin for built-in release
+2015/07/15 - 1.13 - Fenix - make use of getSetting to load configuration file values
+                          - unregister the veto command of the poweradminurtplugin plugin in favor of our version

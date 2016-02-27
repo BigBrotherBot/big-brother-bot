@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS nicks (
+id INT(11) NOT NULL AUTO_INCREMENT,
+client_id INT(11) NOT NULL,
+name VARCHAR(32) NOT NULL,
+PRIMARY KEY (id),
+KEY client_id (client_id),
+UNIQUE KEY name (name)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;

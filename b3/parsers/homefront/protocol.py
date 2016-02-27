@@ -1,7 +1,8 @@
 # -*- coding: cp1252 -*-
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# 
+# Copyright (C) 2005 Michael "ThorN" Thornton
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -9,41 +10,35 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
 #
-# 2011/03/23 - Courgette 
-#    working so far : packet codec, login(), ping()
-#    todo : handle incoming data (split by homefront packet)
-# 2011/03/24 - 0.2 - Courgette 
-#    can maintain a connection, receive packets, send packets
-# 2011/03/31 - 0.3 - Courgette
-#    do not crash when send() raises a socket.error
-#
+# 2011/03/23 - 0.1 - Courgette - working so far : packet codec, login(), ping()
+# 2011/03/24 - 0.2 - Courgette - can maintain a connection, receive packets, send packets
+# 2011/03/31 - 0.3 - Courgette - do not crash when send() raises a socket.error
+# 2014/08/12 - 0.4 - Fenix     - syntax cleanup
 
 """
-module implementing the Homefront protocol. Provide the Client class which
+Module implementing the Homefront protocol. Provide the Client class which
 creates a connection to a Homefront gameserver
 """
 
-__author__  = 'Courgette'
-__version__ = '0.3'
+import asyncore
+import socket
+import time
 
-
-import asyncore, socket, time
 from struct import pack, unpack
 from hashlib import sha1
 
 
+class MessageType(object):
 
-class MessageType:
     CONNECT = 'CC'
     CLIENT_TRANSMISSION = 'CT'
     CLIENT_DISCONNECT = 'CD'
@@ -54,23 +49,25 @@ class MessageType:
     SERVER_TRANSMISSION = 'ST'
     
     @staticmethod
-    def type2str(type):
+    def type2str(t):
         names = {
-                 MessageType.CONNECT: "CONNECT",
-                 MessageType.CLIENT_TRANSMISSION: "CLIENT_TRANSMISSION",
-                 MessageType.CLIENT_DISCONNECT: "CLIENT_DISCONNECT",
-                 MessageType.CLIENT_PING: "CLIENT_PING",
-                 MessageType.SERVER_ANNOUNCE: "SERVER_ANNOUNCE",
-                 MessageType.SERVER_RESPONSE: "SERVER_RESPONSE",
-                 MessageType.SERVER_DISCONNECT: "SERVER_DISCONNECT",
-                 MessageType.SERVER_TRANSMISSION: "SERVER_TRANSMISSION",
-                 }
+            MessageType.CONNECT: "CONNECT",
+            MessageType.CLIENT_TRANSMISSION: "CLIENT_TRANSMISSION",
+            MessageType.CLIENT_DISCONNECT: "CLIENT_DISCONNECT",
+            MessageType.CLIENT_PING: "CLIENT_PING",
+            MessageType.SERVER_ANNOUNCE: "SERVER_ANNOUNCE",
+            MessageType.SERVER_RESPONSE: "SERVER_RESPONSE",
+            MessageType.SERVER_DISCONNECT: "SERVER_DISCONNECT",
+            MessageType.SERVER_TRANSMISSION: "SERVER_TRANSMISSION",
+        }
         try:
-            return names[type]
+            return names[t]
         except KeyError:
-            return "unkown(%s)" % type
+            return "unkown(%s)" % t
 
-class ChannelType:
+
+class ChannelType(object):
+
     BROADCAST = 0
     NORMAL = 1
     CHATTER = 2
@@ -78,22 +75,22 @@ class ChannelType:
     SERVER = 4
     
     @staticmethod
-    def type2str(type):
+    def type2str(t):
         names = {
-                 ChannelType.BROADCAST: "BROADCAST",
-                 ChannelType.NORMAL: "NORMAL",
-                 ChannelType.CHATTER: "CHATTER",
-                 ChannelType.GAMEPLAY: "GAMEPLAY",
-                 ChannelType.SERVER: "SERVER",
-                 }
+            ChannelType.BROADCAST: "BROADCAST",
+            ChannelType.NORMAL: "NORMAL",
+            ChannelType.CHATTER: "CHATTER",
+            ChannelType.GAMEPLAY: "GAMEPLAY",
+            ChannelType.SERVER: "SERVER",
+        }
         try:
-            return names[type]
+            return names[t]
         except KeyError:
-            return "unkown(%s)" % type
-
+            return "unkown(%s)" % t
 
 
 class Packet(object):
+
     message = None
     channel = None
     data = None
@@ -102,20 +99,20 @@ class Packet(object):
         ## Message Type
         ## type: 8-bit char[]
         ## byte length : 2
-        str = self.message[0:2]
+        s = self.message[0:2]
         ## Data length
         ## type: 32-bit signed int (big-endian)
         ## byte 4
-        str += pack('>i', len(self.data))
+        s += pack('>i', len(self.data))
         ## Data
         ## type: 8-bit char[N]
         ## byte length : N
-        str += self.data.encode('utf-8')
-        return str
+        s += self.data.encode('utf-8')
+        return s
     
     def decode(self, packet):
         if len(packet) <= 7:
-            raise ValueError, "too few data to extract a packet"
+            raise ValueError("too few data to extract a packet")
         
         ## Message Type
         ## type: 8-bit char[]
@@ -152,7 +149,6 @@ class Packet(object):
         return "[Message: %s], [Channel: %s], [Data: %s]" % (self.getMessageTypeAsStr(), self.getChannelTypeAsStr(), self.data)
 
 
-
 class Client(asyncore.dispatcher_with_send):
 
     def __init__(self, console, host, port, password, keepalive=False):
@@ -171,13 +167,13 @@ class Client(asyncore.dispatcher_with_send):
         self.connect( (self._host, self._port) )
         
     def handle_connect(self):
-        self.console.verbose('Now connected to Homefront gameserver')
+        self.console.verbose('now connected to Homefront gameserver')
         self.login()
         self.ping()
         pass
 
     def handle_close(self):
-        self.console.verbose('Connection to Homefront gameserver closed')
+        self.console.verbose('connection to Homefront gameserver closed')
         self.close()
         self.authed = False
         if self.keepalive:
@@ -205,28 +201,30 @@ class Client(asyncore.dispatcher_with_send):
         try:
             self._handlers.remove(handler)
         except:
-            raise ValueError("Handler is not handling this event, so cannot unhandle it.")
+            raise ValueError("handler is not handling this event, so cannot unhandle it")
         return self            
             
     def login(self):
-        """authenticate to the server
-        
+        """
+        Authenticate to the server
         Message Type: ClientTransmission
         Format : PASS: "[string: SHA1Hash]"
         SHA1Hash: A 60 byte ASCII string with a 40-bit SHA1 Hash converted to 
             uppercase hexadecimal text and spaces inserted between each pair.
         """
-        def twobytwo(str):
+        def twobytwo(s):
             i = 0
-            while i < len(str):
-                yield str[i:i+2]
-                i+=2
+            while i < len(s):
+                yield s[i:i + 2]
+                i += 2
         sha1_pass_bytes = sha1(self._password).hexdigest()
         self.command('PASS: "%s"' % ' '.join(twobytwo(sha1_pass_bytes.upper())))
 
     def ping(self):
-        """used to keep the connection alive. After 10 seconds of inactivity
-        the server will drop the connection"""
+        """
+        Used to keep the connection alive.
+        After 10 seconds of inactivity the server will drop the connection
+        """
         packet = Packet()
         packet.message = MessageType.CLIENT_PING
         packet.data = "PING"
@@ -237,7 +235,9 @@ class Client(asyncore.dispatcher_with_send):
             self.console.error(repr(e))
     
     def command(self, text):
-        """send command to server"""
+        """
+        Send command to server.
+        """
         packet = Packet()
         packet.message = MessageType.CLIENT_TRANSMISSION
         packet.data = text
@@ -264,50 +264,47 @@ class Client(asyncore.dispatcher_with_send):
         elif p.channel == ChannelType.SERVER and p.data.startswith("HELLO: "):
             self.server_version = p.data[7:]
             
-            
-            
-###################################################################################
-# Example program
-
-if __name__ == '__main__':
-    import sys, logging
-    from b3.output import OutputHandler
-    
-    if len(sys.argv) != 4:
-        host = raw_input('Enter game server host IP/name: ')
-        port = int(raw_input('Enter host port: '))
-        pw = raw_input('Enter password: ')
-    else:
-        host = sys.argv[1]
-        port = int(sys.argv[2])
-        pw = sys.argv[3]
-    
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(levelname)s\t%(message)s")
-    handler.setFormatter(formatter)
-    
-    myConsole = OutputHandler('console')
-    myConsole.addHandler(handler)
-    myConsole.setLevel(logging.NOTSET)
-    
-    
-    def packetListener(packet):
-        myConsole.console(">>> %s" % packet)    
-    
-    myConsole.info('start client')
-    hfclient = Client(myConsole, host, port, pw, keepalive=True)
-    hfclient.add_listener(packetListener)
-    
-    try:
-        while hfclient.connected or not hfclient.authed:
-            #print("\t%s" % (time.time() - hfclient.last_pong_time))
-            if time.time() - hfclient.last_pong_time > 6 and hfclient.last_ping_time < hfclient.last_pong_time:
-                hfclient.ping()
-                hfclient.command("RETRIEVE PLAYERLIST")
-            asyncore.loop(timeout=3, count=1)
-    except EOFError, KeyboardInterrupt:
-        hfclient.close()
-    
-    myConsole.info('end')
-    
-    
+########################################################################################################################
+# EXAMPLE PROGRAM                                                                                                      #
+########################################################################################################################
+#
+# if __name__ == '__main__':
+#     import sys, logging
+#     from b3.output import OutputHandler
+#
+#     if len(sys.argv) != 4:
+#         host = raw_input('Enter game server host IP/name: ')
+#         port = int(raw_input('Enter host port: '))
+#         pw = raw_input('Enter password: ')
+#     else:
+#         host = sys.argv[1]
+#         port = int(sys.argv[2])
+#         pw = sys.argv[3]
+#
+#     handler = logging.StreamHandler()
+#     formatter = logging.Formatter("%(levelname)s\t%(message)s")
+#     handler.setFormatter(formatter)
+#
+#     myConsole = OutputHandler('console')
+#     myConsole.addHandler(handler)
+#     myConsole.setLevel(logging.NOTSET)
+#
+#
+#     def packetListener(packet):
+#         myConsole.console(">>> %s" % packet)
+#
+#     myConsole.info('start client')
+#     hfclient = Client(myConsole, host, port, pw, keepalive=True)
+#     hfclient.add_listener(packetListener)
+#
+#     try:
+#         while hfclient.connected or not hfclient.authed:
+#             #print("\t%s" % (time.time() - hfclient.last_pong_time))
+#             if time.time() - hfclient.last_pong_time > 6 and hfclient.last_ping_time < hfclient.last_pong_time:
+#                 hfclient.ping()
+#                 hfclient.command("RETRIEVE PLAYERLIST")
+#             asyncore.loop(timeout=3, count=1)
+#     except EOFError, KeyboardInterrupt:
+#         hfclient.close()
+#
+#     myConsole.info('end')

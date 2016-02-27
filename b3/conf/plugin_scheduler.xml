@@ -1,0 +1,114 @@
+<configuration plugin="scheduler">
+
+    <!--
+    This config file is where you can schedule tasks you want B3 to execute.
+
+  Scheduling
+  ==========
+
+    Tasks can be one of : daily, hourly, restart, cron
+
+    Daily tasks will be executed every day. Optionally you can specify at 
+    which hour and minutes of each day it will be executed.
+
+    Hourly tasks will be executed every hours. Optionally you can specify at 
+    which minutes of each hour it will be executed.
+
+    Restart tasks will be executed when B3 starts or restarts. Optionally you
+    can specify a delay before the task is executed.
+
+    Cron tasks are the most powerful way to schedule tasks execution. It schedule
+    tasks as complicated as : every 7, 14 and 20 minute of each even hours on 
+    mondays and thursdays from the 1st to 15th of each month.
+    For more information on the Cron scheduling syntax, please refer to the crontab
+    manuals you can find on the Internet : http://www.google.com/search?q=man+crontab+5
+
+  Commands
+  ========
+
+    Each task is composed of at least one command of type :
+       rcon, frostbite, enable_plugin, disable_plugin
+
+    rcon and frostbite commands are commands you want B3 to send to your game
+    server. rcon commands are for games accepting classic rcon commands while
+    frostibe commands are for games based on the Frostibe game engine.
+
+    Let say you want to execute "yourCommand arg1 arg2"
+
+        If your game is based on Quake3 :
+            <rcon>yourCommand arg1 arg2</rcon>
+
+        If your game is based on Frostbite (BFBC2, MoH, etc) :
+            <frostbite command="yourCommand">
+                <arg>argument 1</arg>
+                <arg>argument 2</arg>
+            </frostbite>
+
+    Example :
+
+        If you want to run the punkbuster command 'pb_sv_update' every night at 3:30 am
+
+        for Quake3 like games :
+            <daily name="myDailyPBupdate" hour="3" minutes="30">
+                <rcon>pb_sv_update</rcon>
+            </daily>
+
+        for Frostbite like games :
+            <daily name="myDailyPBupdate" hour="3" minutes="30">
+                <frostbite command="punkBuster.pb_sv_command">
+                    <arg>pb_sv_update</arg>
+                </frostbite>
+            </daily>
+
+    enable_plugin and disable_plugin are commands that make B3 enable or disable
+    any plugin. Let say you want to enable the tk plugin only at night when no
+    admin is online, use the following tasks :
+       <daily name="turn OFF tk in the morning" hour="9">
+        <disable_plugin plugin="tk" />
+     </daily>
+       <daily name="turn ON tk at night" hour="22">
+        <enable_plugin plugin="tk" />
+     </daily>
+
+    -->
+
+    <daily name="daily1">
+        <rcon>bigtext "It's midnight, go to bed kids"</rcon>
+        <rcon>bigtext "seriously"</rcon>
+    </daily>
+
+    <daily name="daily1" hour="2" minutes="41">
+        <rcon>bigtext "hi from daily2"</rcon>
+    </daily>
+
+
+    <hourly name="hourly1">
+        <rcon>bigtext "hi from hourly1"</rcon>
+    </hourly>
+
+    <hourly name="hourly2" minutes="43">
+        <rcon>bigtext "hi from hourly2"</rcon>
+    </hourly>
+
+
+    <cron name="every3m" minutes="*/3" >
+        <rcon>say "^7every3m"</rcon>
+    </cron>
+
+    <cron name="every4h5m" minutes="5" hour="*/4" >
+        <rcon>say "^7every4h5m"</rcon>
+    </cron>
+
+    <cron name="every2day13h45m" minutes="45" hour="13" day="*/2" >
+        <rcon>say "^7every2day13h45m"</rcon>
+    </cron>  
+
+    <cron name="newYear" minutes="0" hour="0" day="1" month="1">
+        <rcon>bigtext "Happy new year !"</rcon>
+    </cron>  
+
+    <cron name="everyMondayMorningAt7am" minutes="0" hour="7" dow="1">
+        <rcon>bigtext "mondays, pfff...."</rcon>
+    </cron>
+
+</configuration>

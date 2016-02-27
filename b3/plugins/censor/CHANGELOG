@@ -1,0 +1,14 @@
+2014/08/31 - 3.3   - Fenix     - syntax cleanup
+                               - improved plugin configuration file loading
+2014/04/06 - 3.2   - Fenix     - PEP8 coding standards
+2012/07/03 - 3.1   - Courgette - fixes a bug wich prevented regular expression "\sd[i!1*]ck\s" to match for word "d!ck"
+2012/07/03 - 3.0.1 - Courgette - gives meaningful log messages when loading the config file
+2011/12/26 - 3.0   - Courgette - refactor and make the checks on raw text before checks on cleaned text. Add tests
+2011/12/02 - 2.2.2 - Bravo17   - fix for reason keyword not working
+2010/01/16 - 2.2.1 - xlr8or    - plugin can now be disabled with !disable censor
+2010/01/16 - 2.2.0 - xlr8or    - added ignore_length as an optional configurable option
+                               - started debugging the badname checker
+2005/08/13 - 2.0.0 - ThorN     - converted to use XML config
+                               - allow custom penalties for words and names
+2005/07/23 - 1.1.0 - ThorN     - added data column to penalties table
+                               - put censored message/name in the warning data

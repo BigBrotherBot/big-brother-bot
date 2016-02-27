@@ -1,7 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2011 Thomas LEVEIL
-# 
+# Copyright (C) 2011 Thomas LEVEIL <courgette@bigbrotherbot.net>
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -9,17 +9,19 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-
+# CHANGELOG
+#
+# 2014-08-12 - 1.2 - Fenix - syntax cleanup
 
 """
-dummy rcon module for Battleye to satisfy B3 parser. 
+Dummy rcon module for Battleye to satisfy B3 parser.
 
 Ideally, B3 parser should be changed to allow games to 
 not require a separated socket connection for rcon commands
@@ -27,13 +29,15 @@ not require a separated socket connection for rcon commands
 To use that Rcon class, instantiate and use the set_battleye_server() method. 
 Then you can expect this class to work like the other Rcon classes
 """
-from b3.parsers.battleye.protocol import CommandError, CommandTimeoutError
+from b3.parsers.battleye.protocol import CommandError
+from b3.parsers.battleye.protocol import CommandTimeoutError
 
-__author__  = 'Courgette'
-__version__ = '1.1'
+__author__ = 'Courgette'
+__version__ = '1.2'
 
-#--------------------------------------------------------------------------------------------------
-class Rcon:
+
+class Rcon(object):
+
     def __init__(self, console, *args):
         self.console = console
         self.battleye_server = None

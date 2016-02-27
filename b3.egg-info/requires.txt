@@ -1,4 +1,0 @@
-
-
-[mysql]
-MySQL-python

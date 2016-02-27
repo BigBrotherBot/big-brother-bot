@@ -1,9 +1,0 @@
-MySQL-python
-pysqlite
-unittest2
-mockito
-nose
-nosexcover
-nose-exclude
-mock>=0.8
-pylint

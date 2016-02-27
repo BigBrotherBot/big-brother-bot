@@ -1,0 +1,4 @@
+23/02/2015 - 1.0 - Fenix - initial release
+10/03/2015 - 1.1 - Fenix - added plugin dependency loading
+25/26/2015 - 1.2 - Fenix - fixed bad string substitution
+                         - correctly handle Plugin attributes: requiresParsers, requiresStorage, requiresVersion

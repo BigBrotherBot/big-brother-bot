@@ -1,7 +1,7 @@
 #
 # BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-# 
+# Copyright (C) 2010 Courgette <courgette@bigbrotherbot.net>
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -9,33 +9,32 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-# --------------------------------------------------------------------------
+# CHANGELOG
 #
-# CHANGELOG :
-# 1.1 - 2010/11/03 - Courgette
-#    * add __repr__
-#    * fix minor bug in BanlistContent
-#    * add automated tests
+# 2010/11/03 - 1.1 - Courgette - add __repr__
+#                              - fix minor bug in BanlistContent
+#                              - add automated tests
+# 2014/08/05 - 1.2 - Fenix     - syntax cleanup
 
-"""\
+"""
 This module provides different utilities specific to the Frostbite engine
 """
- 
-__author__  = 'Courgette'
-__version__ = '1.1'
+
+__author__ = 'Courgette'
+__version__ = '1.2'
 
 
 
-class BanlistContent:
+class BanlistContent(object):
     """
-    help extract banlist info from a frostbite banList.list response
+    Help extract banlist info from a frostbite banList.list response
     
     usage :
         words = [2, 
@@ -53,7 +52,8 @@ class BanlistContent:
     bansData = []
     
     def __init__(self, data):
-        """Represent a frostbite banList.list response
+        """
+        Represent a frostbite banList.list response
         Request: banList.list 
         Response: OK <player ban entries> 
         Response: InvalidArguments 
@@ -68,7 +68,9 @@ class BanlistContent:
         return int(self.numOfBans)
     
     def __getitem__(self, key):
-        """Returns the ban data, for provided key (int or slice)"""
+        """
+        Returns the ban data, for provided key (int or slice).
+        """
         if isinstance(key, slice):
             indices = key.indices(len(self))
             return [self.getData(i) for i in range(*indices) ]
@@ -76,15 +78,19 @@ class BanlistContent:
             return self.getData(key)
 
     def getData(self, index):
+        """
+        Returns the ban data for the provided index.
+        :param index: The index of the ban data
+        """
         if index >= self.numOfBans:
             raise IndexError
         tmp = self.bansData[index*5:(index+1)*5]
         return {
-            'idType': tmp[0], # name | ip | guid
+            'idType': tmp[0],  # name | ip | guid
             'id': tmp[1],
             'banType': tmp[2], # perm | round | seconds
             'time': tmp[3],
-            'reason': tmp[4], # 80 chars max
+            'reason': tmp[4],  # 80 chars max
         }
 
     def __repr__(self):
@@ -94,11 +100,10 @@ class BanlistContent:
         txt += "]"
         return txt        
         
-        
-        
-class PlayerInfoBlock:
+
+class PlayerInfoBlock(object):
     """
-    help extract player info from a frostbite Player Info Block which we obtain
+    Help extract player info from a frostbite Player Info Block which we obtain
     from admin.listPlayers
     
     usage :
@@ -120,7 +125,8 @@ class PlayerInfoBlock:
     parameterTypes = []
     
     def __init__(self, data):
-        """Represent a frostbite Player info block
+        """
+        Represent a frostbite Player info block
         The standard set of info for a group of players contains a lot of different 
         fields. To reduce the risk of having to do backwards-incompatible changes to
         the protocol, the player info block includes some formatting information.
@@ -150,7 +156,9 @@ class PlayerInfoBlock:
         return self.numOfPlayers
     
     def __getitem__(self, key):
-        """Returns the player data, for provided key (int or slice)"""
+        """
+        Returns the player data, for provided key (int or slice).
+        """
         if isinstance(key, slice):
             indices = key.indices(len(self))
             return [self.getPlayerData(i) for i in range(*indices) ]
@@ -158,6 +166,10 @@ class PlayerInfoBlock:
             return self.getPlayerData(key)
 
     def getPlayerData(self, index):
+        """
+        Returns the player data for the provided index.
+        :param index: The index of the player data
+        """
         if index >= self.numOfPlayers:
             raise IndexError
         data = {}
@@ -172,4 +184,3 @@ class PlayerInfoBlock:
             txt += "%r" % p
         txt += "]"
         return txt
-    
