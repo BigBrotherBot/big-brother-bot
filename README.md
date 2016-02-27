@@ -40,10 +40,10 @@ _[ThorN], [xlr8or], ttlogic, [Courgette], [Bakes], [spacepig], [Durzo], eire.32,
 [Just a baka], [Fenix], [Ozon]_ and a big thanks to you, who has offered us snippets of code and improvements on an 
 incidental basis. Without you B3 wouldn't be this intelligent!
 
-[![Build Status](https://travis-ci.org/BigBrotherBot/big-brother-bot.svg?branch=release-1.10)](https://travis-ci.org/BigBrotherBot/big-brother-bot) 
-[![Requirements Status](https://requires.io/github/BigBrotherBot/big-brother-bot/requirements.svg?branch=release-1.10)](https://requires.io/github/BigBrotherBot/big-brother-bot/requirements/?branch=release-1.10)
-[![Code Health](https://landscape.io/github/BigBrotherBot/big-brother-bot/release-1.10/landscape.svg?style=flat)](https://landscape.io/github/BigBrotherBot/big-brother-bot/release-1.10)
-[![Coverage Status](https://coveralls.io/repos/BigBrotherBot/big-brother-bot/badge.svg?branch=release-1.10)](https://coveralls.io/r/BigBrotherBot/big-brother-bot?branch=release-1.10)
+[![Build Status](https://travis-ci.org/BigBrotherBot/big-brother-bot.svg?branch=master)](https://travis-ci.org/BigBrotherBot/big-brother-bot) 
+[![Requirements Status](https://requires.io/github/BigBrotherBot/big-brother-bot/requirements.svg?branch=master)](https://requires.io/github/BigBrotherBot/big-brother-bot/requirements/?branch=master)
+[![Code Health](https://landscape.io/github/BigBrotherBot/big-brother-bot/master/landscape.svg?style=flat)](https://landscape.io/github/BigBrotherBot/big-brother-bot/master)
+[![Coverage Status](https://coveralls.io/repos/BigBrotherBot/big-brother-bot/badge.svg?branch=master)](https://coveralls.io/r/BigBrotherBot/big-brother-bot?branch=master)
 
 [ThorN]: https://github.com/six8
 [xlr8or]: https://github.com/markweirath
