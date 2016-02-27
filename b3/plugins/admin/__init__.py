@@ -2263,23 +2263,22 @@ class AdminPlugin(b3.plugin.Plugin):
         if not self.aquireCmdLock(cmd, client, 60, True):
             client.message('^7Do not spam commands')
         else:
-            m = self.parseUserCmd(data)
-            if m:
+            if data:
                 if client.maxLevel >= self._admins_level:
-                    sclient = self.findClientPrompt(m[0], client)
+                    sclient = self.findClientPrompt(data, client)
                     if sclient:
                         if sclient.maxLevel >= client.maxLevel:
                             client.message('%s ^7already knows the rules' % sclient.exactName)
                         else:
                             client.message('^7Sir, Yes Sir!, spamming rules to %s' % sclient.exactName)
+                            thread.start_new_thread(self._sendRules, (), {'sclient': sclient})
                 else:
                     client.message('^7Stop trying to spam other players')
-            elif cmd.loud or cmd.big:
-                thread.start_new_thread(self._sendRules, (), {'sclient': None, 'big': cmd.big})
             else:
-                sclient = client
-
-            thread.start_new_thread(self._sendRules, (), {'sclient': sclient})
+                if cmd.loud or cmd.big:
+                    thread.start_new_thread(self._sendRules, (), {'sclient': None, 'big': cmd.big})
+                else:
+                    thread.start_new_thread(self._sendRules, (), {'sclient': client})
 
     def cmd_spams(self, data, client=None, cmd=None):
         """

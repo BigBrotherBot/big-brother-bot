@@ -1,3 +1,4 @@
+2016/01/27 - 1.35    - Fenix          - fixed invalid variable reference in cmd_rules
 2015/06/26 - 1.34.4  - Fenix          - changed sayLoudOrPM to accept positional parameters for string substitution
 2015/03/01 - 1.34.2  - Fenix          - added unregisterCommand method
 2015/01/29 - 1.34.1  - Fenix          - fixed external plugin directory retrieval
