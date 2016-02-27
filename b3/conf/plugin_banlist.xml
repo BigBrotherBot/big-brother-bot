@@ -1,0 +1,119 @@
+<configuration plugin="banlist">
+
+    <settings name="global_settings">
+        <!-- level from which players won't be checked, thus never be kicked. (default: 100) -->
+        <set name="immunity_level">100</set>
+        <!-- do you want to update banlists that provide an URL automatically every hour ? (default: yes) -->
+        <set name="auto_update">yes</set>
+    </settings>
+
+    <settings name="commands">
+        <!--
+            #
+            # Groups are (keyword / level : description)
+            # ==============================================
+            # superadmin / 100 : Super admin (server owner)
+            # senioradmin / 80 : Senior admins
+            # fulladmin / 60   : Full admins
+            # admin / 40       : Admins
+            # mod / 20         : Moderators
+            # reg / 2          : Regular players (VIP)
+            # user / 1         : Registered players (those who typed !register)
+            # guest / 0        : Unregistered players
+        -->
+        <!-- Command to list all loaded lists -->
+        <set name="banlistinfo-blinfo">superadmin</set>
+        <!-- Command to update all lists from their URL (if any) -->
+        <set name="banlistupdate-blupdate">superadmin</set>
+        <!-- Command to force checking of connected players -->
+        <set name="banlistcheck-blcheck">superadmin</set>
+    </settings>
+    
+    <!--
+    You can define as many banlist files as you want. 
+    Banlists can be of 4 types : ip banlist, ip whitelist, guid banlist or guid whitelist
+    Each banlist definition contains the following information :
+    * name : the name of the banlist, will be used as a reason for the kick (useful to find them in Echelon)
+    * file : the path to the banlist file.
+        - ip banlist : a file containing ip to ban, compatible with quake3 banlist format. If an ip ends with ".0", the full range will be banned. Lines stating with "//" will be ignored.
+        - guid banlist : a file containing guid to ban. Lines stating with "//" or "#" will be ignored.
+        - pbid banlist : a file containing Punkbuster ids to ban. Lines stating with "//" or "#"  will be ignored.
+        - rules_of_combat : a special banlist that support the banlist format for http://www.rulesofcombat.com
+    * message : an optional message that will be displayed in game. Keywords that can be used : $id, $ip, $guid, $pbid, $name
+        - NOTE:  the ban message is only visible to other players. The banned player WILL NOT SEE that message as it is kicked before having a chance to load the map.
+    * url : an optional url from where the banlist file will be updated hourly
+    * force_ip_range : yes/no. If yes all IPs will be read as if they were ending with '.0'
+    -->
+    
+    <ip_banlist>
+        <name>banlist 1</name>
+        <file>@conf/banlist.txt</file>
+        <force_ip_range>no</force_ip_range>
+        <message>^4$name^7 is ^1BANNED^7 (BANLIST 1)</message>
+    </ip_banlist>
+    
+    <ip_banlist>
+        <name>banlist 2</name>
+        <file>@conf/banlist2.txt</file>
+        <force_ip_range>yes</force_ip_range>
+        <message>^4$name^7 is ^1BANNED^7 (BANLIST 2)</message>
+        <url><![CDATA[http://somewhere.com/banlist.txt]]></url>
+    </ip_banlist>
+    
+    <ip_banlist>
+        <name>banlist 3</name>
+        <file>@conf/banlist3.txt</file>
+        <force_ip_range>no</force_ip_range>
+        <message>^4$ip^7 is ^1BANNED^7 (BANLIST 3)</message>
+        <url><![CDATA[ftp://user:pass@somewhere.tld/banlist.txt]]></url>
+    </ip_banlist>
+    
+    <guid_banlist>
+        <name>guid banlist</name>
+        <file>@conf/guidbanlist.txt</file>
+        <message>^4$guid^7 is ^1BANNED^7 (GUID 1)</message>
+    </guid_banlist>
+    
+    <guid_banlist>
+        <name>guid banlist 2</name>
+        <file>@conf/guidbanlist2.txt</file>
+        <message>^4$id^7 is ^1BANNED^7 (GUID 2)</message>
+    </guid_banlist>
+
+    <pbid_banlist>
+        <name>PBid banlist 1</name>
+        <file>@conf/pbid_banlist.txt</file>
+        <message>^4$name^7 is ^1BANNED^7 (PBID $pbid)</message>
+    </pbid_banlist>
+
+  <rules_of_combat>
+    <name>Rules of Combant</name>
+    <file>@conf/rules_of_combat.txt</file>
+    <message>$id is BANNED (RoC)</message>
+    <url><![CDATA[http://www.rulesofcombat.com/gbl/GlobalBans.php]]></url>
+    </rules_of_combat>
+    
+    <!--///////////////////// W H I T E    L I S T S    Examples  /////////////////////////-->
+    
+    <ip_whitelist>
+        <name>friends</name>
+        <file>/home/urt/ipwhitelist1.txt</file>
+        <force_ip_range>yes</force_ip_range>
+        <message>^4$@id^7 found in friends list</message>
+    </ip_whitelist>
+    
+    <guid_whitelist>
+        <name>guid whitelist 1</name>
+        <file>/home/urt/guidwhitelist1.txt</file>
+        <message>^4$name^7 found in (^4WHITELIST 1^7)</message>
+        <url><![CDATA[http://somewhere.com/whitelist.txt]]></url>
+    </guid_whitelist>
+    
+    <pbid_whitelist>
+        <name>PBid whitelist 1</name>
+        <file>/home/urt/pbid_whitelist1.txt</file>
+        <message>^4$name^7 found in (^4PBid WHITELIST 1^7)</message>
+        <url><![CDATA[http://somewhere.com/pbid_whitelist.txt]]></url>
+    </pbid_whitelist>
+
+</configuration>

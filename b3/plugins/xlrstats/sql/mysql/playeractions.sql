@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS `%s` (
+  `id` MEDIUMINT(8) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `action_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '0',
+  `player_id` SMALLINT(5) UNSIGNED NOT NULL DEFAULT '0',
+  `count` MEDIUMINT(8) UNSIGNED NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `action_id` (`action_id`),
+  KEY `player_id` (`player_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;

@@ -1,0 +1,4 @@
+1.2   - committed built-in release
+1.2.1 - allow to specify a parameter in !spree command
+1.2.2 - make use of Plugin.getSettings() to load configuration values
+1.2.3 - ignore messages missing '#' from config sections `killingspree_messages` and `loosingspree_messages`

@@ -1,0 +1,14 @@
+02/05/2014 - 1.0   - Fenix - committed first built-in release
+30/08/2014 - 1.1   - Fenix - syntax cleanup
+18/09/2014 - 1.2   - Fenix - added command !cmdgrant: allow the execution of a command to a specific client
+                           - added command !cmdrevoke: revoke a previously given command grant
+                           - added command !cmduse: check whether a client can execute the given command
+20/12/2014 - 1.3   - Fenix - fixed invalid placeholder in mysql related SQL statements
+                           - use client auth event instead of client connect: in client connect, client.id is not set
+                             and so we can't load command grants from the storage
+24/12/2014 - 1.3.1 - Fenix - use only EVT_CLIENT_AUTH: this event is fired in all the parser and behaves exactly in
+                             the same way no matter the game we are running
+31/12/2014 - 1.3.2 - Fenix - moved hardcoded SQL code for creating tables in B3 sql scripts
+                           - make use of QueryBuilder to generate SQL queries
+11/04/2015 - 1.3.3 - Fenix - moved SQL dedicated code into plugin folder
+26/06/2015 - 1.4   - Fenix - improved logging

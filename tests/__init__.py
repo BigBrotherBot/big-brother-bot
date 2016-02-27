@@ -19,14 +19,18 @@
 import logging
 import threading
 import sys
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
+from b3.config import MainConfig
+from contextlib import contextmanager
+logging.raiseExceptions = False  # get rid of 'No handlers could be found for logger output' message
 import b3.output # do not remove, needed because the module alters some defaults of the logging module
 log = logging.getLogger('output')
 log.setLevel(logging.WARNING)
 
-from mock import Mock
+from mock import Mock, patch
 import time
 import unittest2 as unittest
+from b3.events import Event
 
 
 testcase_lock = threading.Lock()  # together with flush_console_streams, helps getting logging output related to the
@@ -69,8 +73,8 @@ class B3TestCase(unittest.TestCase):
         flush_console_streams()
 
         # create a FakeConsole parser
-        self.parser_conf = XmlConfigParser()
-        self.parser_conf.loadFromString(r"""<configuration/>""")
+        self.parser_conf = MainConfig(CfgConfigParser(allow_no_value=True))
+        self.parser_conf.loadFromString(r"""""")
         with logging_disabled():
             from b3.fake import FakeConsole
             self.console = FakeConsole(self.parser_conf)
@@ -88,3 +92,71 @@ class B3TestCase(unittest.TestCase):
     def tearDown(self):
         flush_console_streams()
         testcase_lock.release()
+
+    @contextmanager
+    def assertRaiseEvent(self, event_type, event_client=None, event_data=None, event_target=None):
+        """
+        USAGE:
+            def test_team_change(self):
+            # GIVEN
+            self.client._team = TEAM_RED
+            # THEN
+            with self.assertRaiseEvent(
+                event_type='EVT_CLIENT_TEAM_CHANGE',
+                event_data=24,
+                event_client=self.client,
+                event_target=None):
+                # WHEN
+                self.client.team = 24
+        """
+        if type(event_type) is basestring:
+            event_type_name = event_type
+        else:
+            event_type_name = self.console.getEventName(event_type)
+            self.assertIsNotNone(event_type_name, "could not find event with name '%s'" % event_type)
+
+        with patch.object(self.console, 'queueEvent') as queueEvent:
+            yield
+            if event_type is None:
+                assert not queueEvent.called
+                return
+            assert queueEvent.called, "No event was fired"
+
+        def assertEvent(queueEvent_call_args):
+            eventraised = queueEvent_call_args[0][0]
+            return type(eventraised) == Event \
+                and self.console.getEventName(eventraised.type) == event_type_name \
+                and eventraised.data == event_data \
+                and eventraised.target == event_target \
+                and eventraised.client == event_client
+
+        if not any(map(assertEvent, queueEvent.call_args_list)):
+            raise AssertionError("Event %s(%r) not fired" % (self.console.getEventName(event_type), {
+                'event_client': event_client,
+                'event_data': event_data,
+                'event_target': event_target
+            }))
+
+
+## Makes a way to patch threading.Timer so it behave synchronously and instantly
+## Usage:
+##
+## @patch('threading.Timer', new_callable=lambda: InstantTimer)
+## def test_my_code_using_threading_Timer(instant_timer):
+##     t = threading.Timer(30, print, args=['hi'])
+##     t.start()  # prints 'hi' instantly and in the same thread
+##
+class InstantTimer(object):
+    def __init__(self, interval, function, args=[], kwargs={}):
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+
+    def cancel(self):
+        pass
+
+    def start(self):
+        self.run()
+
+    def run(self):
+        self.function(*self.args, **self.kwargs)

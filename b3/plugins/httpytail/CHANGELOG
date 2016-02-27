@@ -1,0 +1,15 @@
+2010-09-04 - 0.1   - GrosBedo       - initial release, with htaccess authentication support.
+2011-03-17 - 0.2   - Courgette      - make sure that maxGapBytes is never exceeded
+2011-04-27 - 0.2.1 - 82ndab-Bravo17 - auto assign of unique local games_mp log file
+2011-05-26 - 0.2.2 - 82ndab-Bravo17 - append to local log implemented
+2012-05-22 - 0.2.3 - Courgette      - local_game_log config option can now use the @conf and @b3 shortcuts
+2013-02-19 - 1.0   - Courgette      - fix issue when public_ip and rcon_ip are different in b3.xml or when a domain
+                                      name is used in place of an IP
+2013-02-02 - 1.1   - Courgette      - minor change to make the plugin behave nicely when B3 sends the EXIT or STOP event
+2014-08-31 - 1.2   - Fenix          - syntax cleanup
+                                    - improved plugin configuration file loading
+                                    - fixed unresolved reference self.webFile: need to reference a local variable
+06/03/2015 - 1.3   - Thomas LEVEIL  - check Python version to be minimum 2.7
+19/03/2015 - 1.3.1 - Fenix          - fixed exception catching order (IOError before Exception)
+05/06/2015 - 1.5   - Fenix          - removed python 2.7 version check (B3 does not support python version prior than 2.7)
+17/08/2015 - 1.6   - Fenix          - fixed str/int concatenation (see issue #350)

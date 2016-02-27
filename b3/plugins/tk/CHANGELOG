@@ -1,0 +1,32 @@
+2015/07/31 - 1.5     - Thomas LEVEIL  - config settings:levels now accpets group keywords
+07/08/2015 - 1.4.1   - Fenix          - removed interface with spawnkill plugin: needs a separate plugin
+07/05/2015 - 1.4     - Fenix          - make use of Plugin.getSettings to retrieve configuration file values
+                                      - interface with spawnkill plugin
+06/30/2015 - 1.3.5   - Fenix          - fixed grudge_level retrieval from configuration file
+08/30/2014 - 1.3.4   - Fenix          - syntax cleanup
+                                      - highly improved plugin configuration file loading
+04/15/2014 - 1.3.3   - Fenix          - PEP8 coding standards
+01/15/2014 - 1.3.2   - Fenix          - add 'lms' to ffa gametype: skip teamkill detection for Last Man Standing on
+                                        Urban Terror 4.2
+10/23/2013 - 1.3.1   - Courgette      - the plugin falls back on default values even with an empty config file
+                                      - fix bug with _round_end_games
+10/22/2013 - 1.3.0   - ozon           - allow configurable warning reason
+04/04/2012 - 1.2.8   - 82ndab-Bravo17 - remove logfile errors
+01/29/2012 - 1.2.7   - 82ndab-Bravo17 - check for ROUND_END event to halve TK points for BF3
+                                      - add configurable TK point 'half-life' to halve TK points at intervals in long rounds
+                                      - add configurable duration for auto TK warning
+01/06/2012 - 1.2.6   - 82ndab-Bravo17 - add configurable values for sending damage messages
+03/30/2011 - 1.2.5   - SGT            - introduction of grudge level
+11/22/2009 - 1.2.4   - Courgette      - also send a msg to victim with instructions on how to forgive
+                                      - add tests
+10/30/2009 - 1.2.3   - xlr8or         - added a few ffa gametypes for bypassing tk handling
+08/22/2009 - 1.2.2   - Courgette      - fix bug in cmd_forgiveall
+08/22/2009 - 1.2.1   - Courgette      - fix bug in cmd_forgiveall
+08/22/2009 - 1.2.0b  - Courgette      - setting to choose if the bot should broadcast or send private messages
+                                        (default send private)
+10/20/2008 - 1.1.6b1 - mindriot       - indentation fix
+10/20/2008 - 1.1.6b0 - mindriot       - in clientDamage, kill and damage mutlipliers were reversed - changed if
+                                        killed: to [0] and else: to [1]
+                                      - added grudge_enable to control grudge command registration
+08/29/2005 - 1.1.0   - ThorN          - converted to use new event handlers
+07/23/2005 - 1.0.2   - ThorN          - changed temp ban duration to be based on ban_length times the number of victims

@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS %s (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(26) NOT NULL DEFAULT '',
+  count INTEGER NOT NULL DEFAULT '0',
+  CONSTRAINT xlr_actionstats_name UNIQUE (name)
+);

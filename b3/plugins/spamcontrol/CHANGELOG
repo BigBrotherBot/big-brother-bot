@@ -1,0 +1,13 @@
+2005/08/29 - 1.1.0 - ThorN     - converted to use new event handlers
+2012/08/11 - 1.2   - Courgette - Can define group for using the !spamins command different than mod_level
+                               - can define an alias for the !spamins command
+                               - fix bug where the !spamins command would not accept uppercase argument
+                               - refactor the plugin to allow game specific behavior to be injected at runtime
+2012/08/11 - 1.3   - Courgette - improve behavior when a spammer received a warning but continues to spam
+2012/12/18 - 1.3.1 - Courgette - fix regression that prevented the !spamins command to be registered since v1.2
+2014/04/07 - 1.4   - Fenix     - PEP8 coding style guide
+                               - improved plugin startup and configuration file loading
+2014/05/02 - 1.4.1 - Fenix     - make use of the new getCmd function from functions module
+2014/07/23 - 1.4.2 - Fenix     - let the plugin react on EVT_CLIENT_PRIVATE_SAY
+2014/08/31 - 1.4.3 - Fenix     - syntax cleanup
+2015/07/10 - 1.4.4 - Fenix     - make use of Plugin.getSettings() to load configuration values

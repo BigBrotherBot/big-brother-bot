@@ -1,0 +1,17 @@
+11/12/2009 - 1.0.0 - SGT   - initial version
+11/28/2009 - 1.0.1 - SGT   - fix enconding issues
+12/02/2009 - 1.0.2 - SGT   - add broadcast
+01/15/2010 - 1.0.3 - SGT   - do not broadcast disconnected clients
+02/01/2010 - 1.0.4 - SGT   - add message format
+04-22-2010 - 1.0.5 - SGT   - add cmd_greeting removed from the admin plugin since b3 1.3
+                           - indent to 4 spaces
+04-28-2010 - 1.1.0 - SGT   - move whereis command from locator plugin
+                           - add country filter from countryfilter plugin
+             1.1.1 - SGT   - fix minor error in !wis
+08-24-2010 - 1.1.2 - SGT   - change in broadcast for cod servers
+                           - added some more debug logs
+11-16-2010 - 1.1.3 - SGT   - if we can't get location allow all clients to connect
+06-04-2015 - 1.2   - Fenix - made the plugin built-in
+                           - add dependency with the geolocation plugin
+27-09-2015 - 1.3   - Fenix - use relative imports to import the Welcome plugin
+27-02-2016 - 1.3.1 - Fenix - fixed import paths

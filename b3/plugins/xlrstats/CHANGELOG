@@ -1,0 +1,46 @@
+CHANGELOG (see xlrstats-v2-changelog.txt for v1 and v2 history and credits)
+
+22-11-2012 - 3.0.0b1       - Mark Weirath   - preparations for version 3.0 of XLRstats
+11-08-2013 - 3.0.0b2       - Mark Weirath   - purging of the history tables added, compatibility fixes for v2-v3, draft
+                                              of BattleLog subPlugin, comment headers
+16-02-2014 - 3.0.0-beta.3  - Mark Weirath -   moved min_players checking to XLRstats plugin, obsoleted the subPlugin:
+                                              XLRstatsControllerPlugin
+                                            - switched to semantic versioning (http://semver.org/)
+23-02-2014 - 3.0.0-beta.4  - Mark Weirath   - added provisional ranking, auto correction of stat pool and auto purge
+                                              ability
+                                            - added cmd_xlrstatus
+02-03-2014 - 3.0.0-beta.5  - Mark Weirath   - protect world client in auto correction, minor improvements
+21-04-2014 - 3.0.0-beta.6  - 82ndab-Bravo17 - change default messages to new format
+31-05-2014 - 3.0.0-beta.7  - Mark Weirath   - fix provisional ranking when both players are below threshold
+10-08-2014 - 3.0.0-beta.8  - Thomas LEVEIL  - fix gh-201 - unkown column 'None' in where clause on player join
+31-08-2014 - 3.0.0-beta.9  - Fenix          - syntax cleanup
+                                            - make use of the new getCmd function defined in b3.functions
+                                            - make use of self.getEventID() to retrieve events ids
+                                            - make use of the new event handler system in XLRstatsPlugin
+                                            - make use of the new event handler system in CtimePlugin
+                                            - make use of the new event handler system in BattlestatsPlugin
+                                            - added debug information on plugin configuration file loading
+                                            - correctly declare Kfactor attribute in PlayerStats class
+                                            - replaced variables names using python built-in keywords
+                                            - match also 'yes' and 'no' keywords in !xlrhide command
+                                            - added missing call to super constructor in XlrstatshistoryPlugin
+                                            - added missing call to super constructor in CtimePlugin
+                                            - added missing call to super constructor in BattlestatsPlugin
+04-09-2014 - 3.0.0-beta.10 - Fenix          - make use of data binding in SQL queries: fix issue #151
+                                            - make use of the client 'bot' attribute to identify BOT clients: do not
+                                              mess with GUIDs since that's already done in parsers (where it should be)
+23-11-2014 - 3.0.0-beta.11 - Fenix          - added requiresConfigFile = False attribute to Ctime and XlrstatsHistory subplugins
+08-02-2014 - 3.0.0-beta.12 - Fenix          - fixed SQL queries quote escaping
+17-03-2015 - 3.0.0-beta.13 - Fenix          - replaced deprecated startup() with onStartup()
+19-03-2015 - 3.0.0-beta.14 - Fenix          - fixed test for membership using 'if not X in Y' (now use 'if X not in Y')
+                                            - fixed instance check using type() instead of isinstance()
+                                            - removed deprecated usage of dict.has_key (us 'in dict' instead)
+                                            - remove several unused variables
+11-04-2015 - 3.0.0-beta.15 - Fenix          - moved SQL dedicated code into plugin directory
+                                            - automatically generate missing database tables
+                                            - added command !xlrinit: initialize database schema (meant to replace the
+                                              recreate-xlrstats.sql script)
+12-07-2015 - 3.0.0-beta.16 - Fenix          - make use of Plugin.getSetting to load configuration file values
+                                            - removed backticks from SQL queries for SQLite and PostgreSQL compatibility
+                                            - make use of positional parameter string substitution in logging methods
+14-07-2015 - 3.0.0-beta.17 - Fenix          - added automatic database schema update

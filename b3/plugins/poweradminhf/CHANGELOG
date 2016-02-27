@@ -1,0 +1,6 @@
+2011-05-22 - 0.2   - Courgette     - add call vote protector for teaching noobs not to call kick/ban agains admins
+2011-05-22 - 0.2.1 - Courgette     - fix vote retaliation system for ban
+                                   - do not tempban ppl calling votes against superadmin but just issue a warning
+2011-05-24 - 0.2.2 - Courgette     - reflect rcon command changes (use of SteamID instead of player name)
+2015-06-04 - 0.3   - Fenix         - made the plugin built-in
+2015-07-31 - 0.4   - Thomas LEVEIL - config voteprotector:auto_unban_level can now be a group keyword

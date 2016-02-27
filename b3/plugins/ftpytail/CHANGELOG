@@ -1,0 +1,40 @@
+01/06/2015 - 1.10  - Fenix          - stop B3 if no FTP connection can be established
+06/03/2015 - 1.8   - Thomas LEVEIL  - check Python version to be minimum 2.7
+18/01/2015 - 1.7.4 - 82ndab.Bravo17 - move windows 2008 fix config settings back to B3 xml file
+30/08/2014 - 1.7.3 - Fenix          - syntax cleanup
+                                    - highly improved plugin configuration file loading
+16/04/2014 - 1.7.2 - Courgette      - fix regression from 1.7.1
+14/04/2014 - 1.7.1 - Fenix          - PEP8 coding standards
+03/01/2014 - 1.7   - 82ndab.Bravo17 - allow plugin to optionally perform a dummy read of the log file
+                                      in order to update the filesize in Windows Server 2008
+27/11/2012 - 1.6   - Courgette      - remove the first '/' from the url-path to respect RFC 1738
+                                    - fix issue when public_ip and rcon_ip are different in b3.xml
+22/05/2012 - 1.5.8 - Courgette      - local_game_log config option can now use the @conf and @b3 shortcuts
+11/05/2011 - 1.5.7 - 82ndab-Bravo17 - append to local log implemented
+27/04/2011 - 1.5.6 - 82ndab-Bravo17 - auto assign of unique local games_mp log file
+29/10/2010 - 1.5.5 - Courgette      - do not stop thread on FTP permanent error (2nd trial)
+                                    - add 3 new settings in optional config file : short_delay, long_delay,
+                                      max_consecutive_failures to tune how aggressive is B3 at retrying to connect
+                                    - update config file example in test section at the bottom of this file
+29/10/2010 - 1.5.4 - Courgette      - do not stop thread on FTP permanent error
+04/10/2010 - 1.5.3 - Courgette      - stop thread on FTP permanent error
+                                    - can activate FTP debug messages with _ftplib_debug_level
+                                    - display exact error message whenever the ftp connection fails
+04/09/2010 - 1.5.2 - GrosBedo       - b3/delay option now specify the delay between each ftp log fetching
+                                    - b3/local_game_log option to specify the temporary local log name (permits
+                                      to manage remotely several servers at once)
+02/09/2010 - 1.5.1 - Courgette      - fix bug in 1.5. Dectect FTP permanent error and give up in such cases
+02/09/2010 - 1.5   - Courgette      - allow to connect on non standard FTP port
+06/02/2010 - 1.4   - Courgette      - force FTP binary mode
+13/12/2009 - 1.3   - Courgette      - default timeout is 30 secondes (as I had a user reporting the FTP server he uses
+                                      lags 15 sec before accepting connections).
+                                    - can optionnaly read a config file to customize timeout and max allowed gap
+                                      between remote and local gamelog
+                                    - add a test to validate config reading
+12/12/2009 - 1.2   - Courgette      - does not download huge amount of log in case local file is too far behind
+                                      remote file (prevents memory errors)
+                                    - in case of connection failure, try to reconnect every second for the first 30s
+12/12/2009 - 1.1.1 - Courgette      - gracefully stop thread when B3 is shutting down
+                                    - add tests
+28/08/2009 - 1.1 - Bakes            - connects with parser.py to provide real remote b3.
+17/06/2009 - 1.0 - Bakes            - initial Plugin, basic functionality.

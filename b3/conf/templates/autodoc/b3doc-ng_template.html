@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>B3 commands documentation</title>
+  <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="http://cdn.datatables.net/plug-ins/28e7751dbec/integration/bootstrap/3/dataTables.bootstrap.css">
+  <style>
+    html,
+    body {
+      height: 100%;
+      /* The html and body elements cannot have any padding or margin. */
+    }
+
+    /* Wrapper for page content to push down footer */
+    #wrap {
+      min-height: 100%;
+      height: auto;
+      /* Negative indent footer by its height */
+      margin: 0 auto -60px;
+      /* Pad bottom by footer height */
+      padding: 0 0 60px;
+    }
+
+    /* Set the fixed height of the footer here */
+    #footer {
+      height: 60px;
+      background-color: #f5f5f5;
+    }
+
+    .container .text-muted {
+      margin: 20px 0;
+    }
+
+    #level_popover {
+      min-width: 180px;
+      position: absolute;
+      display: none;
+      max-width: 240px;
+      padding: 5px;
+      margin: 2px 0 0;
+      top: 100%;
+      left: 0;
+      text-align: center;
+      white-space: normal;
+      z-index: 1000;
+      float: left;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border: 1px solid rgba(0, 0, 0, .15);
+      border-radius: 4px;
+      -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, .175);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, .175);
+      background-clip: padding-box;
+
+    }
+
+    #b3doc-search_btn {
+      cursor: pointer; cursor: hand;
+    }
+
+    table.dataTable thead > tr > th {
+     padding-left: 8px;
+     padding-right: 8px;
+    }
+
+  </style>
+</head>
+<body>
+<div id="wrap">
+  <div class="container">
+    <h1>BigBrotherBot
+      <small>commands documentation</small>
+    </h1>
+    <div class="row">
+      <div class="col-xs-7">
+      </div>
+      <div class="col-xs-3" style="padding-right: 0;">
+        <div class="btn-group pull-right">
+
+          <div id="b3doc-filter-plugins" class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+              <span class="glyphicon glyphicon-cog"></span> Plugins <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" role="menu">
+              <li class="active" role="presentation">
+              </li>
+            </ul>
+          </div>
+
+          <div id="b3doc-filter-levels" class="btn-group btn-group-sm">
+            <button id="filter_level_dropdown_btn" type="button" class="btn btn-default dropdown-toggle" data-toggle="button">
+              <span class="glyphicon glyphicon-user"></span> Level <span class="caret"></span>
+            </button>
+            <div id="level_popover" class="fade in">
+              <span class="text-muted small">Show Commands for Level</span>
+              <select id="filter_min_level" class="form-control input-sm"></select>
+              <span class="text-muted small">to</span>
+              <select id="filter_max_level" class="form-control input-sm"></select>
+            </div>
+            <!--<ul class="dropdown-menu" role="menu"></ul>-->
+          </div>
+
+        </div>
+      </div>
+      <div class="col-xs-2">
+        <div class="input-group input-group-sm">
+          <input id="b3doc-search" type="search" class="form-control" placeholder="Search command ...">
+          <span id="b3doc-search_btn" class="input-group-addon"><span class="glyphicon glyphicon-search"></span></span>
+        </div>
+      </div>
+    </div>
+
+
+    <table id="b3doc" cellpadding="0" cellspacing="0" class="table table-striped table-hover table-bordered">
+      <thead>
+      <tr>
+      <th style="width: 98px;">Plugin</th>
+      <th style="width: 88px;">Min Level</th>
+      <th style="width: 88px;">Max Level</th>
+      <th style="width: 100px;">Command</th>
+      <th style="width: 54px;">Alias</th>
+      <th>Description</th>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+<div id="footer">
+  <div class="container">
+    <p class="text-muted small pull-right"></p>
+  </div>
+</div>
+<script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
+<script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<script src="http:////cdn.datatables.net/1.10.0/js/jquery.dataTables.min.js"></script>
+<script src="http://cdn.datatables.net/plug-ins/28e7751dbec/integration/bootstrap/3/dataTables.bootstrap.js"></script>
+<script type="text/javascript" charset="utf-8">
+  $(document).ready(function () {
+    var b3doc_data = ${json_data};
+    var f_min = 0;
+    var f_max = 100;
+
+    var table = $('#b3doc').DataTable({
+      data: b3doc_data.commands,
+      sDom: "t<'row'<'col-xs-6'l><'col-xs-6'p>>",
+      info: false,
+      stateSave: true,
+      stateLoadParams: function (settings, data) {
+        data.oSearch.sSearch = "";
+        f_min = data.f_min;
+        f_max = data.f_max;
+      },
+      stateSaveParams: function (settings, data) {
+        data.f_min = f_min;
+        data.f_max = f_max;
+      },
+      order: [
+        [ 1, "asc" ]
+      ],
+      lengthMenu: [
+        [15, 25, 50, -1],
+        [15, 25, 50, "All"]
+      ],
+      columns: [
+        {data: "plugin", targets: [ 1 ]},
+        {data: "minlevel", targets: [ 2 ]},
+        {data: "maxlevel", targets: [ 3 ], visible: false},
+        {data: "name", targets: [ 4 ]},
+        {data: "alias", targets: [ 5 ]},
+        {data: "description", targets: [ 6 ], sortable: false}
+      ],
+      deferRender: true,
+      createdRow: function (row, data, index) {
+        $('td', row).eq(1).html(b3doc_data.level_info[data['minlevel']].name);
+      },
+      language: {
+        sLengthMenu: '_MENU_ <span style="vertical-align: bottom;" class="text-muted">commands per page</span>'
+      }
+    });
+
+    // get plugins from data and add entry for all
+    var m_items = [{ 'name': 'All', 'value': ''}];
+    table.column(0).data().unique().each(function (d) {
+      m_items.push({ 'name': d, 'value': d})
+    });
+    // add items to filter plugins menu
+    var $filter_plugins_menu_container = $('#b3doc-filter-plugins');
+    $.each(m_items, function (d, j) {
+      // set class=active for first entry
+      var class_active = '';
+      if ( j.value == table.column(0).search()[0] ) {
+        class_active = 'active';
+      }
+      $('<li role="presentation" class="' + class_active + '"/>')
+          .append($('<a href="#" data-column="0" data-value="' + j.value + '">' + j.name + '</a>')
+              .on('click', function (e) {
+                e.preventDefault();
+                table.column($(this).data('column'))
+                    .search($(this).data('value'), false, false, false)
+                    .draw();
+                $filter_plugins_menu_container.find('li.active').removeClass();
+                $(this).closest('li').addClass('active');
+              })
+          )
+          .appendTo($filter_plugins_menu_container.find('ul'));
+    });
+
+    // handle min level filter
+    $('#filter_min_level').on('change', function () {
+      f_min = parseInt($('#filter_min_level').val())
+      $('#filter_max_level option').each(function () {
+        if (f_min > parseInt($(this).val())) {
+          $(this).prop('disabled', true);
+        } else {
+          $(this).prop('disabled', false);
+        }
+      });
+      if (f_min > parseInt($('#filter_max_level option:selected').val())) {
+        $('#filter_max_level').val(f_min);
+      }
+      table.draw();
+    });
+
+    // handle max level filter
+    $('#filter_max_level').on('change', function () {
+      f_max = parseInt($('#filter_max_level').val());
+      $('#filter_min_level option').each(function () {
+        if (f_max < parseInt($(this).val())) {
+          $(this).prop('disabled', true);
+        } else {
+          $(this).prop('disabled', false);
+        }
+      });
+      if (f_max < parseInt($('#filter_min_level option:selected').val())) {
+        $('#filter_min_level').val(f_min);
+      }
+      table.draw();
+    });
+
+
+    // add options to level_filter
+    $.each(b3doc_data.level_info, function (d, level) {
+      $('#filter_min_level').append('<option value="' + d + '">' + d + ' - ' + level.name + '</option>');
+      $('#filter_max_level').append('<option value="' + d + '">' + d + ' - ' + level.name + '</option>');
+    });
+
+    $('#filter_min_level').val(f_min).change();
+    $('#filter_max_level').val(f_max).change();
+
+
+
+    // add range filter for levels
+    $.fn.dataTableExt.afnFiltering.push(
+        function (settings, data, dataIndex) {
+          var min = f_min + 100;
+          var max = f_max + 100;
+          var level = parseFloat(data[1]) + 100 || 0;
+          if (( min == '' && max == '' ) ||
+              ( min == '' && level <= max ) ||
+              ( min <= level && '' == max ) ||
+              ( min <= level && level <= max )) {
+            return true;
+          }
+          return false;
+        }
+    );
+
+    // handle search form
+    $('#b3doc-search').on('keyup change', function () {
+      if ( $('#b3doc-search').val() && $('#b3doc-search_btn').children().hasClass('glyphicon-search') ) {
+        $('#b3doc-search_btn').children().removeClass('glyphicon-search').addClass('glyphicon-remove');
+      } else if ( !$('#b3doc-search').val() && $('#b3doc-search_btn').children().hasClass('glyphicon-remove') ) {
+        $('#b3doc-search_btn').children().removeClass('glyphicon-remove').addClass('glyphicon-search');
+      }
+      $('#b3doc').dataTable().fnFilter($(this).val());
+    });
+
+    $('#b3doc-search_btn').on('click', function () {
+      if ( $('#b3doc-search').val() ) {
+        $('#b3doc-search').val('');
+        $('#b3doc').dataTable().fnFilter('');
+        $('#b3doc-search_btn').children().removeClass('glyphicon-remove').addClass('glyphicon-search');
+      }
+    });
+
+    $('#filter_level_dropdown_btn').on('click', function () {
+      $('#level_popover').toggle();
+    });
+
+    $('#footer p').html('updated on ' + new Date(b3doc_data.updated).toUTCString());
+  });
+</script>
+</body>
+</html>
