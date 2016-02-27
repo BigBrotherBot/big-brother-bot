@@ -1354,6 +1354,7 @@ class Test_getClientOrCreate(CsgoTestCase):
         # THEN no more player is in the list of connected clients
         self.assertListEqual([], map(lambda x: x.name, self.parser.clients.getList()))
 
+
 class Test_functional(CsgoTestCase):
 
     def test_banned_player_reconnects(self):
@@ -1365,10 +1366,10 @@ class Test_functional(CsgoTestCase):
         self.assertEqual(1, player.numBans)
         player.disconnects()
         # WHEN
-        with patch.object(player, "ban") as ban_mock:
+        with patch.object(player, "reBan") as ban_mock:
             player.connects("3")
         # THEN
-        ban_mock.assert_was_called_once()
+        self.assertTrue(ban_mock.called)
 
 
     def test_clantag_and_say_with_weird_line(self):
