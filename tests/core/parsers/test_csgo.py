@@ -997,7 +997,7 @@ L 08/28/2012 - 01:16:28: rcon from "11.222.111.222:4107": command "listmaps"
         # THEN
         write_mock.assert_has_calls([call('sm_hsay Changing to next map : the_next_map'),
                                      call('map the_next_map')])
-        sleep_mock.assert_was_called_once_with(1)
+        sleep_mock.assert_called_once_with(1)
 
 
     def test_changeMap(self):
