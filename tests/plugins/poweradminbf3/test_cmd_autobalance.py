@@ -68,7 +68,7 @@ autobalance: mod
         self.moderator.connects("moderator")
         self.moderator.message_history = []
         self.moderator.says("!autobalance now")
-        self.p.run_autobalance.assert_called_once()
+        self.assertTrue(self.p.run_autobalance.called)
 
 
     def test_with_argument_on_while_currently_off_and_autoassign_off(self):
