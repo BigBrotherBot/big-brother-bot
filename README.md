@@ -2,6 +2,8 @@
 
 **********
 
+![status: inactive](https://img.shields.io/badge/status-inactive-red.svg)
+
 ```
 This project is NO LONGER actively maintained! It is provided 'as is' in its current state!
 ```
