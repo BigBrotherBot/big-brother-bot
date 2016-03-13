@@ -546,13 +546,15 @@ setup(
     cmdclass=cmdclass,
     name="b3",
     version=b3_version,
-    author='Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette)',
+    author='Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette), Daniele Pantaleone (Fenix)',
     author_email="info@bigbrotherbot.net",
     description="BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. "
                 "Features in-game administration of game servers, multiple user access levels, and database storage. "
-                "Currently include parsers for Call of Duty 1 to 8, Urban Terror (ioUrT 4.1 and 4.2), BF3, Arma II, "
-                "CS:GO, Red Orchestra 2, BFBC2, MOH 2010, World of Padman, ETpro, Smokin' Guns, HomeFront, Open Arena, "
-                "Altitude.",
+                "Currently include parsers for Altitude, Arma II, Arma III, Battlefield 3, Battlefield 4, Battlefield "
+                "Bad Company 2, Battlefield Hardline, Chivalry Medieval Warfare, Call of Duty 1 to 8, Counter-Strike: "
+                "Global Offensive, Ennemy Territory, Ennemy Territory Pro, Insurgency,  Urban Terror (ioUrT 4.1 and "
+                "4.2), Medal of Honor 2010, Medal of Honor Warfighter, Open Arena, Red Orchestra 2, Smokin' Guns, "
+                "Soldier of Fortune 2, World of Padman.",
     long_description="Big Brother Bot B3 is a complete and total server administration package for online games. "
                      "B3 is designed primarily to keep your server free from the derelicts of online gaming, but offers "
                      "more, much more. With the stock configuration files, B3 will will keep your server free from "

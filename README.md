@@ -12,12 +12,49 @@ but offers more, much more. With the stock configuration files, B3 will keep you
 and team killers alike. A completely automated and customizable warning system will warn the offending players that this
 type of behavior is not allowed on your server, and ultimately kick, and or ban them for a predetermined time limit.
 
+Game servers supported: 
+
+- Altitude
+- Arma II
+- Arma III
+- Battlefield 3
+- Battlefield 4
+- Battlefield Bad Company 2
+- Battlefield Hardline
+- Chivalry Medieval Warfare
+- Call of Duty 1
+- Call of Duty 2
+- Call of Duty 4: Mordern Warfare
+- Call of Duty 4 GameRanger
+- Call of Duty 5: World at War
+- Call of Duty 6: Mordern Warfare 2
+- Call of Duty 7: Black Ops
+- Call of Duty 8: Mordern Warfare 3
+- Counter-Strike: Global Offensive
+- Ennemy Territory
+- Ennemy Territory Pro
+- Insurgency
+- Urban Terror 4.1 (ioUrT)
+- Urban Terror 4.2
+- Medal of Honor 2010
+- Medal of Honor Warfighter
+- Open Arena
+- Red Orchestra 2
+- Smokin' Guns
+- Soldier of Fortune 2
+- World of Padman
+
 ## Links to our online presence
 
 * [Official website](http://www.bigbrotherbot.net)
 * [Forums](http://forum.bigbrotherbot.net)
 * [Documentation](http://wiki.bigbrotherbot.net/)
-* [Wikipedia](http://en.wikipedia.org/wiki/Big_Brother_Bot)
+
+
+## Installation, configuration and usage
+
+Please refer to our documentation wiki as linked above for a full manual.
+
 
 ## For developers
 
@@ -30,9 +67,6 @@ or alternatively you can join our chat on gitter:
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/BigBrotherBot/big-brother-bot?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-## Installation, configuration and usage
-
-Please refer to our documentation wiki as linked above for a full manual.
 
 ## Previous and Current Developers (Hall of Fame)
 
