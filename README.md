@@ -51,6 +51,12 @@ Game servers supported:
 * [Documentation](http://wiki.bigbrotherbot.net/)
 * [Wikipedia](http://en.wikipedia.org/wiki/Big_Brother_Bot)
 
+
+## Installation, configuration and usage
+
+Please refer to our documentation wiki as linked above for a full manual.
+
+
 ## For developers
 
 B3 is an extremely extensible software. Support for new online games can be added quite easily by creating new parsers
@@ -62,9 +68,6 @@ or alternatively you can join our chat on gitter:
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/BigBrotherBot/big-brother-bot?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-## Installation, configuration and usage
-
-Please refer to our documentation wiki as linked above for a full manual.
 
 ## Previous and Current Developers (Hall of Fame)
 
