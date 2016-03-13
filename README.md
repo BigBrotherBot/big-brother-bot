@@ -49,7 +49,6 @@ Game servers supported:
 * [Official website](http://www.bigbrotherbot.net)
 * [Forums](http://forum.bigbrotherbot.net)
 * [Documentation](http://wiki.bigbrotherbot.net/)
-* [Wikipedia](http://en.wikipedia.org/wiki/Big_Brother_Bot)
 
 
 ## Installation, configuration and usage
