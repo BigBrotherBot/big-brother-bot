@@ -546,7 +546,7 @@ setup(
     cmdclass=cmdclass,
     name="b3",
     version=b3_version,
-    author='Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette)',
+    author='Michael Thornton (ThorN), Tim ter Laak (ttlogic), Mark Weirath (xlr8or), Thomas Leveil (Courgette), Daniele Pantaleone (Fenix)',
     author_email="info@bigbrotherbot.net",
     description="BigBrotherBot (B3) is a cross-platform, cross-game game administration bot. "
                 "Features in-game administration of game servers, multiple user access levels, and database storage. "
