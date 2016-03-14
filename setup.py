@@ -93,7 +93,7 @@ def getB3versionInfo():
     return __version__, getPlatform(), right_cut(platform.architecture()[0], 'bit')
     
     
-b3_version = '1.10.10'
+b3_version = '1.10.11'
 b3_version_info = getB3versionInfo()
 
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))  # directory where this file is in
