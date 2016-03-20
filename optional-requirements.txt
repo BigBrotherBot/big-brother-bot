@@ -12,7 +12,7 @@
 #
 #
 # If you want to use a PosgreSQL database
-psycopg2==2.6.1
+psycopg2>=2.6.1,<2.7
 
 # If you need a secure connection (SFTP plugin)
 paramiko==1.15.2
