@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'GrosBedo, 82ndab-Bravo17, Courgette'
-__version__ = '1.6'
+__version__ = '1.6.1'
 
 import b3
 import threading
@@ -94,25 +94,27 @@ class HttpytailPlugin(b3.plugin.Plugin):
         """
         Load plugin configuration.
         """
-        try:
-            self._connectionTimeout = self.config.getint('settings', 'timeout')
-            self.debug('loaded settings/timeout: %s' % self._connectionTimeout)
-        except NoOptionError:
-            self.warning('could not find settings/timeout in config file, '
-                         'using default: %s' % self._connectionTimeout)
-        except ValueError, e:
-            self.error('could not load settings/timeout config value: %s' % e)
-            self.debug('using default value (%s) for settings/timeout' % self._connectionTimeout)
-
-        try:
-            self._maxGap = self.config.getint('settings', 'maxGapBytes')
-            self.debug('loaded settings/maxGapBytes: %s' % self._maxGap)
-        except NoOptionError:
-            self.warning('could not find settings/maxGapBytes in config file, '
-                         'using default: %s' % self._maxGap)
-        except ValueError, e:
-            self.error('could not load settings/maxGapBytes config value: %s' % e)
-            self.debug('using default value (%s) for settings/maxGapBytes' % self._maxGap)
+        if self.config:
+            
+            try:
+                self._connectionTimeout = self.config.getint('settings', 'timeout')
+                self.debug('loaded settings/timeout: %s' % self._connectionTimeout)
+            except NoOptionError:
+                self.warning('could not find settings/timeout in config file, '
+                             'using default: %s' % self._connectionTimeout)
+            except ValueError, e:
+                self.error('could not load settings/timeout config value: %s' % e)
+                self.debug('using default value (%s) for settings/timeout' % self._connectionTimeout)
+    
+            try:
+                self._maxGap = self.config.getint('settings', 'maxGapBytes')
+                self.debug('loaded settings/maxGapBytes: %s' % self._maxGap)
+            except NoOptionError:
+                self.warning('could not find settings/maxGapBytes in config file, '
+                             'using default: %s' % self._maxGap)
+            except ValueError, e:
+                self.error('could not load settings/maxGapBytes config value: %s' % e)
+                self.debug('using default value (%s) for settings/maxGapBytes' % self._maxGap)
 
     def initThread(self, httpfileDSN):
         self.httpconfig = functions.splitDSN(httpfileDSN)
