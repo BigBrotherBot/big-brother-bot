@@ -28,7 +28,7 @@ from b3.functions import getCmd
 class SpawnkillPlugin(b3.plugin.Plugin):
 
     adminPlugin = None
-    requiresParsers = ['iourt42']
+    requiresParsers = ['iourt42','iourt43']
 
     penalties = {}
 
