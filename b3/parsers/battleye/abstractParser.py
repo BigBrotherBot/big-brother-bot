@@ -59,6 +59,7 @@
 #                     - correct capitalization in _use_color_codes
 # 16/04/2015 - 1.3.3  - uniform class variables (dict -> variable)
 #                     - implement missing abstract class methods
+# 01/31/2016 - 1.3.4  - Added lock and unlock commands
 
 import b3.cron
 import b3.cvar
@@ -83,7 +84,7 @@ from b3.clients import Clients
 from logging import Formatter
 
 __author__  = '82ndab-Bravo17, Courgette'
-__version__ = '1.3.3'
+__version__ = '1.3.4'
 
 
 # disable the authorizing timer that come by default with the b3.clients.Clients class
@@ -143,7 +144,9 @@ class AbstractParser(b3.parser.Parser):
         'reassignroles': ('#reassign', ),
         'servermonitor': ('#monitor', '%(onoff)s'),
         'listmissions': ('missions', ),
-        'serverdebug': ('#debug', '%(cmd)s', '%(interval)d')
+        'serverdebug': ('#debug', '%(cmd)s', '%(interval)d'),
+        'unlockserver': ('#unlock',),
+        'lockserver': ('#lock',)
         }
         
     _eventMap = {}
