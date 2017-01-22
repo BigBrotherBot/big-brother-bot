@@ -33,7 +33,7 @@ class PoweradminurtPlugin(object):
     requiresPlugins = []
     loadAfterPlugins = []
     requiresVersion = b3_version
-    requiresParsers = ['iourt41', 'iourt42']
+    requiresParsers = ['iourt41', 'iourt42', 'iourt43']
     requiresStorage = []
 
     def __new__(cls, *args, **kwargs):
@@ -44,5 +44,8 @@ class PoweradminurtPlugin(object):
         elif console.gameName == 'iourt42':
             from .iourt42 import Poweradminurt42Plugin
             return Poweradminurt42Plugin(*args, **kwargs)
+        elif console.gameName == 'iourt43':
+            from .iourt43 import Poweradminurt43Plugin
+            return Poweradminurt43Plugin(*args, **kwargs)
         else:
-            raise AssertionError("poweradminurt plugin can only work with Urban Terror 4.1 or 4.2")
+            raise AssertionError("poweradminurt plugin can only work with Urban Terror 4.1 or 4.2 or 4.3")

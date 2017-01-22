@@ -31,7 +31,7 @@ __author__ = 'Courgette'
 
 class UrtserversidedemoPlugin(Plugin):
 
-    requiresParsers = ['iourt41', 'iourt42']
+    requiresParsers = ['iourt41', 'iourt42', 'iourt43']
     loadAfterPlugins = ['follow', 'haxbusterurt']
     demo_manager = None
 
