@@ -1076,7 +1076,7 @@ class Iourt43Parser(Iourt41Parser):
             self.debug('No attacker')
             return None
 
-        return self.getEvent(self.EVT_ASSIST, client=client, target=victim, data=attacker)
+        return self.getEvent('EVT_ASSIST', client=client, target=victim, data=attacker)
 
     ####################################################################################################################
     #                                                                                                                  #
