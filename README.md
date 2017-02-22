@@ -42,6 +42,7 @@ Game servers supported:
 - Insurgency
 - Urban Terror 4.1 (ioUrT)
 - Urban Terror 4.2
+- Urban Terror 4.3
 - Medal of Honor 2010
 - Medal of Honor Warfighter
 - Open Arena
