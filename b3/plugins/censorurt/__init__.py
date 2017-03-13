@@ -30,7 +30,7 @@ class CensorurtPlugin(CensorPlugin):
     _muteduration3 = 0
     _warnafter = 0
 
-    requiresParsers = ['iourt41', 'iourt42']
+    requiresParsers = ['iourt41', 'iourt42', 'iourt43']
     loadAfterPlugins = ['chatlogger']
 
     _default_messages = {

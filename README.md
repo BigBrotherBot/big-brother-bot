@@ -2,10 +2,14 @@
 
 **********
 
-![status: inactive](https://img.shields.io/badge/status-inactive-red.svg)
+![status: seeking maintainer](https://img.shields.io/badge/status-seeking%20maintainer-yellow.svg)
 
 ```
-This project is NO LONGER actively maintained! It is provided 'as is' in its current state!
+This project is NO LONGER actively maintained. It is provided 'as is' in its current state! 
+If you wish to apply as project maintainer please contact B3 development team by opening a 
+topic on the B3 forums.
+
+B3 Development Team
 ```
 
 Big Brother Bot (B3) is a complete and total server administration package for online games. It is the prefered ingame
@@ -38,6 +42,7 @@ Game servers supported:
 - Insurgency
 - Urban Terror 4.1 (ioUrT)
 - Urban Terror 4.2
+- Urban Terror 4.3
 - Medal of Honor 2010
 - Medal of Honor Warfighter
 - Open Arena

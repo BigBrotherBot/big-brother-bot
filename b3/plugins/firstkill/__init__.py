@@ -57,7 +57,7 @@ class FirstkillPlugin(b3.plugin.Plugin):
         """
         self._firstkill = self.getSetting('settings', 'firstkill', b3.BOOL, self._firstkill)
         self._firsttk = self.getSetting('settings', 'firsttk', b3.BOOL, self._firsttk)
-        if self.console.gameName in ('iourt41', 'iourt42'):
+        if self.console.gameName in ('iourt41', 'iourt42', 'iourt43'):
             self._firsths = self.getSetting('settings', 'firsths', b3.BOOL, self._firsths)
 
     def onStartup(self):
@@ -81,7 +81,7 @@ class FirstkillPlugin(b3.plugin.Plugin):
                 if func:
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
-        if self.console.gameName not in ('iourt41', 'iourt42'):
+        if self.console.gameName not in ('iourt41', 'iourt42', 'iourt43'):
             self.info('NOTE: !firsths command is available only in UrbanTerror 4.x game serie')
             self._adminPlugin.unregisterCommand('firsths')
 
@@ -113,7 +113,7 @@ class FirstkillPlugin(b3.plugin.Plugin):
             client = event.client
             target = event.target
             if self._firsths and \
-                self.console.gameName in ('iourt41', 'iourt42') and \
+                self.console.gameName in ('iourt41', 'iourt42', 'iourt43') and \
                     event.data[2] in (self.console.HL_HEAD, self.console.HL_HELMET) and \
                         event.data[1] not in (self.console.UT_MOD_BLED, self.console.UT_MOD_HEGRENADE):
                 self._hs += 1
@@ -143,7 +143,7 @@ class FirstkillPlugin(b3.plugin.Plugin):
         Announce something by printing it on the screen
         :param message: the message to be printed
         """
-        if self.console.gameName in ('iourt41', 'iourt42'):
+        if self.console.gameName in ('iourt41', 'iourt42', 'iourt43'):
             self.console.write('bigtext "%s"' % message)
         elif self.console.gameName[:3] == 'cod':
             self.console.say(message)
