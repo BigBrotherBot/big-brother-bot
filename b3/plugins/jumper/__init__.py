@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 __author__ = 'Fenix'
-__version__ = '2.30'
+__version__ = '2.31'
 
 import b3
 import b3.plugin
@@ -272,7 +272,7 @@ class JumperPlugin(b3.plugin.Plugin):
     powerAdminUrtPlugin = None
     serverSideDemoPlugin = None
 
-    requiresParsers = ['iourt42']
+    requiresParsers = ['iourt42', 'iourt43']
     loadAfterPlugins = ['poweradminurt', 'urtserversidedemo']
 
     _maps_data_from_api = {}
