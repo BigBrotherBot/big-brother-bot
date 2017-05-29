@@ -66,9 +66,12 @@
 #                                   created attributes (does nothing new but removes several warnings)
 # 29/08/2014 - 0.13   - Fenix     - syntax cleanup
 # 16/04/2015 - 0.14   - Fenix     - uniform class variables (dict -> variable)
+# 29/05/2017 - 0.15   - GrosBedo     - fix parseUserInfo when missing \ as first character
+#                                                 - guid detection
+#                                                 - ExcessivePlus mod compatibility
 
-__author__ = 'Courgette, GrosBedo'
-__version__ = '0.14'
+__author__ = 'Courgette, GrosBedo, Fenix'
+__version__ = '0.15'
 
 import b3
 import b3.clients
@@ -164,12 +167,14 @@ class Oa081Parser(AbstractParser):
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+):\s*(?P<text>.*))$', re.IGNORECASE),
         re.compile(r'^(?P<action>[a-z]+):\s*(?P<data>(?P<cid>[0-9]+)\s(?P<text>.*))$', re.IGNORECASE),
 
-        # 81:16 tell: grosbedo to courgette: !help
         # 81:16 say: grosbedo: !help
-        re.compile(r'^(?P<action>tell):\s(?P<data>(?P<name>.+) to (?P<aname>.+): (?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>say):\s(?P<data>(?P<name>.+): (?P<text>.*?))(?P<eplusnb>\d+)?$', re.IGNORECASE),
+
+        # 81:16 tell: grosbedo to courgette: !help
+        re.compile(r'^(?P<action>tell):\s(?P<data>(?P<name>.+) to (?P<aname>.+): (?P<text>.*?))(?P<eplusnb>\d+)?$', re.IGNORECASE),
 
         # 19:33 sayteam: UnnamedPlayer: ahahaha
-        re.compile(r'^(?P<action>sayteam):\s(?P<data>(?P<name>.+): (?P<text>.*))$', re.IGNORECASE),
+        re.compile(r'^(?P<action>sayteam):\s(?P<data>(?P<name>.+): (?P<text>.*?))(?P<eplusnb>\d+)?$', re.IGNORECASE),
 
         # 46:37 Item: 4 team_CTF_redflag
         # 54:52 Item: 2 weapon_plasmagun
@@ -360,8 +365,9 @@ class Oa081Parser(AbstractParser):
         :param info: The infostring to be parsed.
         """
         player_id, info = string.split(info, ' ', 1)
+        # If userinfo not starting with \ character, prepend it to avoid breaking regex
         if info[:1] != '\\':
-            info += '\\'
+            info = '\\' + info
 
         options = re.findall(r'\\([^\\]+)\\([^\\]+)', info)
         data = dict()
