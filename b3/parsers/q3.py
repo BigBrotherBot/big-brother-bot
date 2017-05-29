@@ -67,8 +67,9 @@
 # 29/08/2014 - 0.13   - Fenix     - syntax cleanup
 # 16/04/2015 - 0.14   - Fenix     - uniform class variables (dict -> variable)
 # 29/05/2017 - 0.15   - GrosBedo     - fix parseUserInfo when missing \ as first character
-#                                                 - guid detection
-# 29/05/2017 - 0.16   - GrosBedo     - support for quake 3 arena + e+ support
+#                                                 - ExcessivePlus mod compatibility
+# 29/05/2017 - 0.16   - GrosBedo     - fix guid detection (at clientconnect instead of userinfochanged)
+#                                                 - adapted to quake 3 arena
 
 __author__ = 'Courgette, GrosBedo, Fenix'
 __version__ = '0.16'
