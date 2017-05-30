@@ -159,7 +159,7 @@ def getConfPath(decode=False, conf=None):
         else:
             raise TypeError('invalid configuration type specified: expected str|XmlConfigParser|CfgConfigParser|MainConfig, got %s instead' % type(conf))
     else:
-        path = confdir or os.path.dirname(console.config.fileName)
+        path = confdir
 
     if not decode:
         return path
