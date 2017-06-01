@@ -18,6 +18,7 @@
 #
 # CHANGELOG
 #
+# 2017/05/31 - 1.43.7 - GrosBedo   - configurable linebreak strip (allow multiline messages)
 # 2015/07/26 - 1.43.6 - Fenix           - fixed loadPlugins crashing B3 owhen it could not load a 3rd party plugin
 # 2015/07/19 - 1.43.5 - Fenix           - restored self.critical to raise SystemExit and shutdown B3 (branch rebase lost it???)
 # 2015/06/25 - 1.43.4 - Fenix           - correctly handle Plugin attribute requiresVersion (branch rebase lost it???)
@@ -259,6 +260,8 @@ class Parser(object):
     _line_length = 80  # max wrap length
     _messages = {}  # message template cache
     _message_delay = 0  # delay between consequent sent say messages (apply also to private messages)
+    _multiline = False # whether linebreaks \n can be manually used in messages
+    _multiline_noprefix = False # whether B3 adds > to multiline messages
     _paused = False  # set to True when B3 is paused
     _pauseNotice = False  # whether to notice B3 being paused
     _plugins = OrderedDict()  # plugin instances
@@ -559,6 +562,16 @@ class Parser(object):
         if self.config.has_option('server', 'line_color_prefix'):
             self._line_color_prefix = self.config.get('server', 'line_color_prefix')
             self.bot('Setting line_color_prefix to: "%s"', self._line_color_prefix)
+
+        # allow configurable multiline (manual line breaks)
+        if self.config.has_option('server', 'multiline'):
+            self._multiline = self.config.getboolean('server', 'multiline')
+            self.bot('Setting multiline to: %s', self._multiline)
+
+        # allow configurable multiline (manual line breaks)
+        if self.config.has_option('server', 'multiline_noprefix'):
+            self._multiline_noprefix = self.config.getboolean('server', 'multiline_noprefix')
+            self.bot('Setting multiline_noprefix to: %s', self._multiline_noprefix)
 
         # testing rcon
         if self.rconTest:
@@ -1527,6 +1540,7 @@ class Parser(object):
     def getWrap(self, text):
         """
         Returns a sequence of lines for text that fits within the limits.
+        And wrap if \n character encountered.
         :param text: The text that needs to be splitted.
         """
         if not text:
@@ -1541,12 +1555,21 @@ class Parser(object):
             self.wrapper = TextWrapper(width=self._line_length, drop_whitespace=True,
                                        break_long_words=True, break_on_hyphens=False)
 
-        wrapped_text = self.wrapper.wrap(text)
+        # Apply wrap + manual linebreak
+        if self._multiline:
+            wrapped_text = []
+            for line in text.split(r'\n'):
+                if line.strip() != '':
+                    wrapped_text.extend( self.wrapper.wrap(line) )
+        # Apply only wrap
+        else:
+            wrapped_text = self.wrapper.wrap(line)
+
         if self._use_color_codes:
             lines = []
             color = self._line_color_prefix
             for line in wrapped_text:
-                if not lines:
+                if not lines or self._multiline_noprefix:
                     lines.append('%s%s' % (color, line))
                 else:
                     lines.append('^3>%s%s' % (color, line))
@@ -1555,12 +1578,15 @@ class Parser(object):
                     color = match[-1]
             return lines
         else:
-            # we still need to add the > prefix w/o color codes
-            # to all the lines except the first one
-            lines = [wrapped_text[0]]
-            if len(wrapped_text) > 1:
-                for line in wrapped_text[1:]:
-                    lines.append('>%s' % line)
+            if self._multiline_noprefix:
+                lines = wrapped_text
+            else:
+                # we still need to add the > prefix w/o color codes
+                # to all the lines except the first one
+                lines = [wrapped_text[0]]
+                if len(wrapped_text) > 1:
+                    for line in wrapped_text[1:]:
+                        lines.append('>%s' % line)
             return lines
 
     def error(self, msg, *args, **kwargs):
