@@ -70,9 +70,10 @@
 #                                                 - ExcessivePlus mod compatibility
 # 29/05/2017 - 0.16   - GrosBedo     - fix guid detection (at clientconnect instead of userinfochanged)
 #                                                 - adapted to quake 3 arena
+# 02/06/2017 - 0.17   - GrosBedo     - fix /tell message command (works only on ioq3 or e+ mod, but anyway most servers are running these)
 
 __author__ = 'Courgette, GrosBedo, Fenix'
-__version__ = '0.16'
+__version__ = '0.17'
 
 import b3
 import b3.clients
@@ -96,7 +97,7 @@ class Q3Parser(AbstractParser):
     _line_color_prefix = ''
 
     _commands = {
-        'message': 'say %(message)s',
+        'message': 'tell %(cid)s %(message)s',
         'say': 'say %(message)s',
         'set': 'set %(name)s "%(value)s"',
         'kick': 'clientkick %(cid)s',
