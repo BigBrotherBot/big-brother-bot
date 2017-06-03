@@ -6,3 +6,7 @@
 2015/02/07 - 2.8  - Fenix - new plugin module structure
 2015/03/24 - 2.9  - Fenix - adapted plugin for built-in release
 2015/07/10 - 2.10 - Fenix - make use of Plugin.getSettings() to load configuration values
+2017/05/31 - 3.0 - GrosBedo & Lotabout - new interface to google via web scraping
+                                                                         - add min_time_between to limit number of requests
+2017/06/02 - 3.1 - GrosBedo - add always_loud setting to display translation to every players
+2017/06/02 - 3.2 - GrosBedo - add exclude_language setting to skip messages in a given language from !translast
