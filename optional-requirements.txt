@@ -19,3 +19,6 @@ paramiko==1.15.2
 
 # Backport of the subprocess module from python 3 to python 2 (does not work on Windows)
 # subprocess32==3.2.6
+
+# Port of Google's langdetect, for translator plugin to exclude languages
+# langdetect
