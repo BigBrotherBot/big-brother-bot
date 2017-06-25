@@ -1563,7 +1563,7 @@ class Parser(object):
                     wrapped_text.extend( self.wrapper.wrap(line) )
         # Apply only wrap
         else:
-            wrapped_text = self.wrapper.wrap(line)
+            wrapped_text = self.wrapper.wrap(text)
 
         if self._use_color_codes:
             lines = []
