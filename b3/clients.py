@@ -19,6 +19,8 @@
 #
 # CHANGELOG
 #
+# 2017/09/09 - 1.10.11 - Supiri     - add a countermeasure against sql injections
+#
 # 2015/06/25 - 1.8.1  - Fenix       - changed client.message to accept positional parameter for string substitution
 # 2015/03/19 - 1.8    - Fenix       - actually catch Exception class in try-except
 #                                   - removed deprecated usage of dict.has_key (us 'in dict' instead)
@@ -80,7 +82,7 @@ import sys
 import threading
 import time
 import traceback
-
+from MySQLdb import escape_string as thwart
 
 class ClientVar(object):
 
@@ -909,7 +911,7 @@ class Client(object):
             return False
         else:
             # fix missing pbid. Workaround a bug in the database layer that would insert the string "None"
-            # in db if pbid is None :/ The empty string being the default value for that db column!! ÙO
+            # in db if pbid is None :/ The empty string being the default value for that db column!! √¥O
             if self.pbid is None:
                 self.pbid = ''
             if console:
@@ -1542,7 +1544,9 @@ class Clients(dict):
         c = self.getClientLikeName(name)
         if c and not c.hide:
             return [c]
-
+        
+        name = thwart(name)
+        
         sclient = self.console.storage.getClientsMatching({'%name%': name})
 
         if not sclient:
