@@ -19,6 +19,7 @@
 #
 # CHANGELOG
 #
+# 2017/10/05 - 1.10.1 - Supiri     - add a countermeasure against sql injections
 # 2015/06/25 - 1.8.1  - Fenix       - changed client.message to accept positional parameter for string substitution
 # 2015/03/19 - 1.8    - Fenix       - actually catch Exception class in try-except
 #                                   - removed deprecated usage of dict.has_key (us 'in dict' instead)
@@ -909,7 +910,7 @@ class Client(object):
             return False
         else:
             # fix missing pbid. Workaround a bug in the database layer that would insert the string "None"
-            # in db if pbid is None :/ The empty string being the default value for that db column!! ÙO
+            # in db if pbid is None :/ The empty string being the default value for that db column!! √¥O
             if self.pbid is None:
                 self.pbid = ''
             if console:
@@ -1532,6 +1533,20 @@ class Clients(dict):
                 return None
         return None
 
+    def escape_string(value, mapping=None):
+        if isinstance(value, unicode):
+            return _escape_unicode(value)
+        assert isinstance(value, (bytes, bytearray))
+        value = value.replace('\\', '\\\\')
+        value = value.replace('\0', '\\0')
+        value = value.replace('\n', '\\n')
+        value = value.replace('\r', '\\r')
+        value = value.replace('\032', '\\Z')
+        value = value.replace("'", "\\'")
+        value = value.replace('"', '\\"')
+        return value
+
+    
     def lookupByName(self, name):
         """
         Return a lst of clients matching the given name.
@@ -1543,6 +1558,8 @@ class Clients(dict):
         if c and not c.hide:
             return [c]
 
+        name = escape_string(name)
+        
         sclient = self.console.storage.getClientsMatching({'%name%': name})
 
         if not sclient:
