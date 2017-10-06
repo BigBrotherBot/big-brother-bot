@@ -19,7 +19,8 @@
 #
 # CHANGELOG
 #
-# 2017/10/05 - 1.10.1 - Supiri     - add a countermeasure against sql injections
+# 2017/09/09 - 1.10.11 - Supiri     - add a countermeasure against sql injections
+#
 # 2015/06/25 - 1.8.1  - Fenix       - changed client.message to accept positional parameter for string substitution
 # 2015/03/19 - 1.8    - Fenix       - actually catch Exception class in try-except
 #                                   - removed deprecated usage of dict.has_key (us 'in dict' instead)
@@ -81,7 +82,6 @@ import sys
 import threading
 import time
 import traceback
-
 
 class ClientVar(object):
 
@@ -1320,15 +1320,24 @@ class Clients(dict):
     console = None
 
     def __init__(self, console):
-        """
-        Object constructor.
-        :param console: The console implementation
-        """
-        super(Clients, self).__init__()
-        self.console = console
-        self._exactNameIndex = {}
-        self._guidIndex = {}
-        self._nameIndex = {}
+		"""
+		Object constructor.
+		:param console: The console implementation
+		"""
+		super(Clients, self).__init__()
+		self.console = console
+		self._exactNameIndex = {}
+		self._guidIndex = {}
+		self._nameIndex = {}
+
+		self.escape_table = [unichr(x) for x in range(128)]
+		self.escape_table[0] = u'\\0'
+		self.escape_table[ord('\\')] = u'\\\\'
+		self.escape_table[ord('\n')] = u'\\n'
+		self.escape_table[ord('\r')] = u'\\r'
+		self.escape_table[ord('\032')] = u'\\Z'
+		self.escape_table[ord('"')] = u'\\"'
+		self.escape_table[ord("'")] = u"\\'"
 
     def find(self, handle, maxres=None):
         """
@@ -1532,10 +1541,16 @@ class Clients(dict):
             else: 
                 return None
         return None
+		
 
-    def escape_string(value, mapping=None):
+    def escape_string(self, value, mapping=None):
+        """
+        escape_string escapes *value* but not surround it with quotes.
+        Value should be bytes or unicode.
+        Source - https://github.com/PyMySQL/PyMySQL/blob/40f6a706144a9b65baa123e6d5d89d23558646ac/pymysql/converters.py
+        """
         if isinstance(value, unicode):
-            return _escape_unicode(value)
+            return value.translate(self.escape_table)
         assert isinstance(value, (bytes, bytearray))
         value = value.replace('\\', '\\\\')
         value = value.replace('\0', '\\0')
@@ -1545,7 +1560,6 @@ class Clients(dict):
         value = value.replace("'", "\\'")
         value = value.replace('"', '\\"')
         return value
-
     
     def lookupByName(self, name):
         """
@@ -1557,8 +1571,8 @@ class Clients(dict):
         c = self.getClientLikeName(name)
         if c and not c.hide:
             return [c]
-
-        name = escape_string(name)
+        
+        name = self.escape_string(name)
         
         sclient = self.console.storage.getClientsMatching({'%name%': name})
 
