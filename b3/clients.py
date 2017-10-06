@@ -1551,14 +1551,14 @@ class Clients(dict):
         """
         if isinstance(value, unicode):
             return value.translate(self.escape_table)
-        assert isinstance(value, (bytes, bytearray))
-        value = value.replace('\\', '\\\\')
-        value = value.replace('\0', '\\0')
-        value = value.replace('\n', '\\n')
-        value = value.replace('\r', '\\r')
-        value = value.replace('\032', '\\Z')
-        value = value.replace("'", "\\'")
-        value = value.replace('"', '\\"')
+        if isinstance(value, (bytes, bytearray)):
+            value = value.replace('\\', '\\\\')
+            value = value.replace('\0', '\\0')
+            value = value.replace('\n', '\\n')
+            value = value.replace('\r', '\\r')
+            value = value.replace('\032', '\\Z')
+            value = value.replace("'", "\\'")
+            value = value.replace('"', '\\"')
         return value
     
     def lookupByName(self, name):
