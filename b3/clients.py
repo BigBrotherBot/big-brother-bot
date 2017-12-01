@@ -1270,24 +1270,24 @@ class Clients(dict):
     console = None
 
     def __init__(self, console):
-		"""
-		Object constructor.
-		:param console: The console implementation
-		"""
-		super(Clients, self).__init__()
-		self.console = console
-		self._exactNameIndex = {}
-		self._guidIndex = {}
-		self._nameIndex = {}
+        """
+        Object constructor.
+        :param console: The console implementation
+        """
+        super(Clients, self).__init__()
+        self.console = console
+        self._exactNameIndex = {}
+        self._guidIndex = {}
+        self._nameIndex = {}
 
-		self.escape_table = [unichr(x) for x in range(128)]
-		self.escape_table[0] = u'\\0'
-		self.escape_table[ord('\\')] = u'\\\\'
-		self.escape_table[ord('\n')] = u'\\n'
-		self.escape_table[ord('\r')] = u'\\r'
-		self.escape_table[ord('\032')] = u'\\Z'
-		self.escape_table[ord('"')] = u'\\"'
-		self.escape_table[ord("'")] = u"\\'"
+        self.escape_table = [unichr(x) for x in range(128)]
+        self.escape_table[0] = u'\\0'
+        self.escape_table[ord('\\')] = u'\\\\'
+        self.escape_table[ord('\n')] = u'\\n'
+        self.escape_table[ord('\r')] = u'\\r'
+        self.escape_table[ord('\032')] = u'\\Z'
+        self.escape_table[ord('"')] = u'\\"'
+        self.escape_table[ord("'")] = u"\\'"
 
     def find(self, handle, maxres=None):
         """
