@@ -129,46 +129,9 @@ def run_update(config=None):
     update.run()
 
 
-def run_gui():
+def run(options):
     """
-    Run B3 graphical user interface.
-    Will raise an exception if the GUI cannot be initialized.
-    """
-    from b3.gui import B3App
-    from b3.gui.misc import SplashScreen
-    from PyQt5.QtWidgets import QMessageBox
-    from PyQt5.QtWidgets import QSpacerItem, QSizePolicy
-
-    # initialize outside try/except so if PyQt5 is not avaiable or there is
-    # no display adapter available, this will raise an exception and we can
-    # fallback into console mode
-    app = B3App.Instance(sys.argv)
-
-    try:
-        with SplashScreen(min_splash_time=2):
-            mainwindow = app.init()
-    except Exception, e:
-        box = QMessageBox()
-        box.setIcon(QMessageBox.Critical)
-        box.setWindowTitle('CRITICAL')
-        box.setText('CRITICAL: B3 FAILED TO START!')
-        box.setInformativeText('ERROR: %s' % e)
-        box.setDetailedText(traceback.format_exc())
-        box.setStandardButtons(QMessageBox.Ok)
-
-        # this will trick Qt and resize a bit the QMessageBox to the exception stack trace is printed nice
-        box.layout().addItem(QSpacerItem(400, 0, QSizePolicy.Minimum, QSizePolicy.Expanding),
-                             box.layout().rowCount(), 0, 1, box.layout().columnCount())
-        box.exec_()
-        sys.exit(127)
-    else:
-        mainwindow.make_visible()
-        sys.exit(app.exec_())
-
-
-def run_console(options):
-    """
-    Run B3 in console mode.
+    Run B3 in console.
     :param options: command line options
     """
     analysis = None     # main config analysis result
@@ -267,7 +230,7 @@ def main():
         else:
             run_autorestart([])
     else:
-        run_console(options)
+        run(options)
 
 if __name__ == '__main__':
     main()

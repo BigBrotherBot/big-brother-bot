@@ -2,8 +2,8 @@
 
 # Big Brother Bot (B3) Management - http://www.bigbrotherbot.net
 # Maintainer: Daniele Pantaleone <fenix@bigbrotherbot.net>
-# App Version: 0.2
-# Last Edit: 04/07/2015
+# App Version: 0.14
+# Last Edit: 26/07/2015
 
 ### BEGIN INIT INFO
 # Provides:          b3
@@ -21,9 +21,34 @@
 #
 # ----------------------------------------------------------------------------------------------------------------------
 #
-#  2015-07-04 - 0.1 - Fenix - initial version
-#  2015-07-26 - 0.2 - Fenix - do not allow to use root at all when using this very script
-#                           - create b3 home directory if it has not been created already
+#  2014-11-09 - 0.1  - Fenix         - initial version
+#  2014-11-30 - 0.2  - Fenix         - changed some file paths used for PID storage and B3 autodiscover
+#  2014-12-13 - 0.3  - Fenix         - added support for auto-restart mode
+#  2014-12-14 - 0.4  - Fenix         - correctly match number of subprocess in b3_is_running when auto-restart mode is
+#                                      being used auto-restart mode uses 4 processes (the screen, the main loop in
+#                                      b3/run.py, a new shell used by subprocess, and the command to actually start the
+#                                      B3 instance inside this new shell), while a normal B3 startup uses only 2
+#                                      processes (screen and B3 process running inside the screen)
+#  2014-12-20 - 0.5  - Fenix         - fixed b3_clean not restarting all previously running B3 instances
+#  2015-02-08 - 0.6  - Fenix         - fixed change to current directory not working when using an alias to execute b3.sh
+#  2015-02-09 - 0.7  - Fenix         - fixed logging not being written to disk
+#  2015-02-09 - 0.8  - Fenix         - set ${SCRIPT_DIR} variable upon execution
+#                                    - set ${B3_DIR} variable upon execution
+#                                    - remove all the readlink commands in favor of ${SCRIPT_DIR} and ${B3_DIR}
+#  2015-02-10 - 0.9  - Thomas LEVEIL - fixed infinite loop between p_out and p_log
+#                                    - simplify colors stripping
+#                                    - temporarily activate logging using B3_LOG environment variable
+#                                    - fix log failure detection and in case of errors, display the reason why it failed
+#  2015-03-06 - 0.10 - Fenix         - removed python 2.6 support
+#  2015-03-17 - 0.11 - Fenix         - added developer mode, temporarily activable with B3_DEV environment variable
+#  2015-05-16 - 0.12 - Fenix         - use the --console parameter when starting B3 (otherwise GUI startup is triggered)
+#  2015-07-04 - 0.13 - Fenix         - renamed B3_LOG_ENABLED into B3_LOG
+#                                    - removed some LOG_EXT and PID_EXT variables: they are not needed
+#                                    - activate/deactivate autorestart mode using B3_AUTORESTART env variable
+#                                    - fixed b3_list matching also non configuration files while retrieving instances
+#  2015-07-26 - 0.14 - Fenix         - do not allow to use root at all when using this very script
+#                                    - create b3 home directory if it has not been created already
+
 
 ### SETUP
 AUTO_RESTART="${B3_AUTORESTART:-1}" # will run b3 in auto-restart mode if set to 1
@@ -33,11 +58,11 @@ DEVELOPER="${B3_DEV:-0}"            # if set to 1, will activate developer mode
 USE_COLORS="1"                      # if set to 1, will make use of bash color codes in the console output
 
 ### DO NOT MODIFY!!!
-B3_DIR=""                   # will be set to the directory containing b3 source code
-B3_RUN="b3_run"             # python executable which starts b3
+B3_DIR=""                   # will be set to the directory containing b3 source code (where we can find b3_run.py)
+B3_RUN="b3_run.py"          # python executable which starts b3
 B3_HOME=".b3"               # the name of the B3 home directory (located inside $HOME)
 COMMON_PREFIX="b3_"         # a common prefix b3 configuration files must have to beparsed by this script
-CONFIG_DIR="conf"           # directory containing b3 configuration files (will be appended to ${B3_DIR}
+CONFIG_DIR="b3/conf"        # directory containing b3 configuration files (will be appended to ${B3_DIR}
 CONFIG_EXT=(".ini" ".xml")  # list of b3 configuration file extensions
 LOG_DIR="log"               # the name of the directory containing the log file (will be appended to ${SCRIPT_DIR})
 PID_DIR="pid"               # the name of the directory containing the b3 pid file (will be appended to ${SCRIPT_DIR})
@@ -239,9 +264,9 @@ function b3_start() {
     local PID_FILE="${SCRIPT_DIR}/${PID_DIR}/${COMMON_PREFIX}${B3}.pid"
 
     if [ ${AUTO_RESTART} -eq 1 ]; then
-        screen -DmS "${SCREEN}" "${PROCESS}" --restart --console --config "${CONFIG_FILE}" &
+        screen -DmS "${SCREEN}" python "${PROCESS}" --restart --console --config "${CONFIG_FILE}" &
     else
-        screen -DmS "${SCREEN}" "${PROCESS}" --console --config "${CONFIG_FILE}" &
+        screen -DmS "${SCREEN}" python "${PROCESS}" --console --config "${CONFIG_FILE}" &
     fi
 
     echo "${!}" > "${PID_FILE}"
@@ -348,15 +373,47 @@ function b3_status() {
     return 0
 }
 
+# @name b3_clean
+# @description Clean B3 directories by removing all python compiled files. It will stop all 
+#              the running B3 instances and restart them after the cleaning has been performed.
+function b3_clean() {
+    local B3_RUNNING=()
+    local B3_LIST=$(b3_list)
+    for i in ${B3_LIST}; do
+        # check if B3 is running and if so stop it
+        b3_is_running "${i}" "$(b3_conf_path ${i})"
+        local RTN="${?}"
+        if [ ${RTN} -eq 0 ]; then
+            b3_stop "${i}"
+            B3_RUNNING+=("${i}")
+        fi
+    done
+
+    local B3_RUNNING_LIST=$(join ' ' "${B3_RUNNING[@]}")
+    find "${B3_DIR}" -type f \( -name "*.pyc" -o -name "*.pid" \) \
+                                -exec rm {} \; \
+                                -exec printf "." \; \
+
+    echo " DONE!"
+
+    # restart all the B3 which were running 
+    for i in ${B3_RUNNING_LIST}; do
+        b3_start "${i}"
+    done
+
+    return 0
+}
+
 # @name do_usage
 # @description Print the main help text
 function b3_usage() {
     # do not  use p_out here otherwise it gets logged
     echo "
-    -usage: b3-linux.sh  start   [<name>] - start B3
-                         stop    [<name>] - stop B3
-                         restart [<name>] - restart B3
-                         status  [<name>] - display current B3 status
+    -usage: b3.sh  start   [<name>] - start B3
+                                stop    [<name>] - stop B3
+                                restart [<name>] - restart B3
+                                status  [<name>] - display current B3 status
+                                clean            - clean B3 directory
 
     Copyright (C) 2014 Daniele Pantaleone <fenix@bigbrotherbot.net>
     Support: http://forum.bigbrotherbot.net
@@ -378,6 +435,27 @@ if [ ! "${DEVELOPER}" -eq 0 ]; then # allow developers to use root to start b3
       p_out "^1ERROR^0: do not execute B3 as super user [root]"
       exit 1
     fi
+fi
+
+# check for python to be installed in the system
+if [ -z $(which python) ]; then
+    p_out "^1ERROR^0: The Python interpreter seems to be missing on your system"
+    p_out "You need to install Python ^22.7 ^0to run B3"
+    exit 1
+fi
+
+# check for correct python version to be installed on the system
+VERSION=($(python -c 'import sys; print("%s %s" % (sys.version_info.major, sys.version_info.minor));'))
+if [ ${VERSION[0]} -eq 3 ]; then
+    p_out "^1ERROR^0: B3 is not yet compatible with Python ^33^0"
+    p_out "You need to install Python ^22.7 ^0to run B3"
+    exit 1
+fi
+
+if [ ${VERSION[1]} -lt 7 ]; then
+    p_out "^1ERROR^0: B3 can't run under Python ^3${VERSION[0]}.${VERSION[1]}^0"
+    p_out "You need to install Python ^22.7 ^0to run B3"
+    exit 1
 fi
 
 # check for the PID directory to exists (user may have removed it)
@@ -467,6 +545,17 @@ case "${1}" in
         fi
         ;;
 
+    "clean")
+        p_out "^3WARNING^0: all running B3 will be restarted"
+        echo -n "Do you want to continue [y/N]? "
+        read ANSWER
+        if ([ "${ANSWER:0:1}" == "y" ] || [ "${ANSWER:0:1}" == "Y" ]); then
+            b3_clean
+        else
+            p_out "... Aborted!"
+            exit 1
+        fi
+        ;;
     *)
         b3_usage
         ;;

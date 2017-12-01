@@ -9,7 +9,6 @@ env:
     # jobs environment variables
     - TEST=core
     - TEST=plugins
-    - TEST=build
   global:
     # global environment variables
     - MYSQL_TEST_HOST=127.0.0.1

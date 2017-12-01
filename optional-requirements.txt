@@ -7,10 +7,6 @@
 # That should be enough for you to install paramiko with pip, but if not a pre-compiled version of paramiko can be found here 
 # http://blog.victorjabur.com/2011/06/08/modules-python-library-compiled-for-windows-32-and-64-unofficial-windows-binaries-for-python/
 #
-# If you want to use the GUI you need to install PyQt5.
-# Windows compiled versions can be found here http://www.riverbankcomputing.com/software/pyqt/download5
-#
-#
 # If you want to use a PosgreSQL database
 psycopg2>=2.6.1,<2.7
 
