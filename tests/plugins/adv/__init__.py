@@ -71,6 +71,11 @@ class AdvTestCase(B3TestCase):
 
         B3TestCase.setUp(self)
 
+        global ADV_CONFIG_CONTENT, ADV_CONFIG_FILE, ADMIN_CONFIG_FILE, timer_patcher
+        if os.path.exists(ADV_CONFIG_FILE):
+            with open(ADV_CONFIG_FILE, 'r') as f:
+                ADV_CONFIG_CONTENT = f.read()
+
         self.adminPluginConf = CfgConfigParser()
         self.adminPluginConf.load(ADMIN_CONFIG_FILE)
         self.adminPlugin = AdminPlugin(self.console, self.adminPluginConf)
@@ -81,11 +86,6 @@ class AdvTestCase(B3TestCase):
 
         self.console.startup()
         self.log.propagate = True
-
-        global ADV_CONFIG_CONTENT, ADV_CONFIG_FILE, ADMIN_CONFIG_FILE, timer_patcher
-        if os.path.exists(ADV_CONFIG_FILE):
-            with open(ADV_CONFIG_FILE, 'r') as f:
-                ADV_CONFIG_CONTENT = f.read()
 
         timer_patcher = patch('threading.Timer')
         timer_patcher.start()
