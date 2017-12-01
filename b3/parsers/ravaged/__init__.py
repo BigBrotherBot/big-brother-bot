@@ -1,43 +1,26 @@
-# coding: UTF-8
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2012 Thomas LEVEIL
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 1.0  - 2012-10-19 - feature complete - need live testing with real gameplay
-# 1.1  - 2012-10-19 - recognize a new type of game event when a player dies by crashing a vehicule
-#                   - add getNextMap()
-#                   - fix changeMap()
-#                   - improve getMapsSoundingLike()
-# 1.2  - 2012-10-20 - fix: wasn't saving player names to database
-#                   - change: reduce maximum line length in chat (or it would be truncated by the server)
-# 1.3  - 2012-10-22 - fix: kill events so stats and xlrstats plugin can do their job
-#                   - change: make getMap() crash proof
-# 1.4  - 2012-10-26 - new: recognize game type from map names
-# 1.5  - 2012-11-14 - new: get the game server hostname by querying the game server on its Source Query port
-# 1.6  - 2014-05-02 - rewrote import statements
-#                   - correctly declare getPlayerPings() method to match the one in Parser class
-#                   - removed some warnings
-#                   - fixed client retrieval in kick, ban and tempban function
-# 1.7  - 2014-07-18 - updated parser to comply with the new getWrap implementation
-# 1.8  - 2014-08-15 - produce EVT_CLIENT_KICK when a player gets kicked from the server
-# 1.9  - 2014-08-29 - syntax cleanup
-# 1.10 - 2015-04-16 - uniform class variables (dict -> variable)
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 import logging
 import re

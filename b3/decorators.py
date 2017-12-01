@@ -1,27 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2012 Thomas Leveil
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 19/07/2014 - 1.2   - Fenix - added @deprecated decorator: mark a callable as deprecated
-# 30/08/2014 - 1.2.1 - Fenix - removed @deprecated decorator since it's not compatible with python 2.6
-# 03/05/2015 - 1.3   - Fenix - added @Singleton decorator class
-#                            - renamed @memoize to @Memoize according to PEP8
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__ = 'Courgette, Fenix'
 __version__ = '1.3'

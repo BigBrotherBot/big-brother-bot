@@ -1,19 +1,26 @@
-# PowerAdmin Plugin for BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2012 Thomas LEVEIL <courgette@bigbrotherbot.net)
-# 
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 import re
 import b3.plugin
@@ -25,10 +32,11 @@ class Poweradminurt43Plugin(Poweradminurt41Plugin):
 
     requiresParsers = ['iourt43']
 
-    _gears = dict(none='FGHIJKLMNZacefghigklOQRSTUVWX', all='', reset='')
-    _weapons = dict(ber='F', de='G', glo='f', colt='g', spas='H', mp5='I', ump='J', mac='h', hk='K',
-                    lr='L', g36='M', psg='N', sr8='Z', ak='a', neg='c', m4='e', he='O', smo='Q',
-                    vest='R', hel='W', sil='U', las='V', med='T', nvg='S', ammo='X', frf1='i', ben='j', fnp='k', mag='l')
+    _gears = {'none': 'FGHIJKLMNZacefghigklOQRSTUVWX', 'all': '', 'reset': ''}
+    _weapons = {'ber': 'F', 'de': 'G', 'glo': 'f', 'colt': 'g', 'spas': 'H', 'mp5': 'I', 'ump': 'J', 'mac': 'h',
+                'hk': 'K', 'lr': 'L', 'g36': 'M', 'psg': 'N', 'sr8': 'Z', 'ak': 'a', 'neg': 'c', 'm4': 'e', 'he': 'O',
+                'smo': 'Q', 'vest': 'R', 'hel': 'W', 'sil': 'U', 'las': 'V', 'med': 'T', 'nvg': 'S', 'ammo': 'X',
+                'frf1': 'i', 'ben': 'j', 'fnp': 'k', 'mag': 'l'}
 
     # less likely weapon names to check if we fail
     # to recognize a weapon with the _weapon lists

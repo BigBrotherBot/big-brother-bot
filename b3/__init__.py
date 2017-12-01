@@ -1,48 +1,26 @@
-# coding=utf-8
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2010/02/20            - Courgette - user friendly handling of parser import error: prints a detailed message and exits
-# 2010/02/24            - Courgette - user friendly message on missing config file option
-# 2010/03/20 - 1.1.0    - xl8or     - ability to disable automatic setup procedure when option -n, --nosetup is passed
-# 2010/09/16 - 1.1.1    - GrosBedo  - can now run in a thread (functions profiler mode)
-# 2010/10/20 - 1.1.2    - GrosBedo  - added TEAM_FREE for non team based gametypes (eg: deathmatch)
-# 2014/07/20 - 1.2      - Fenix     - syntax cleanup
-# 2014/09/07 - 1.2.1    - Courgette - fix getAbsolutePath @b3 and @conf expansion on path using windows style separators
-# 2014/12/14 - 1.3      - Fenix     - let the parser know if we are running B3 in auto-restart mode or not
-# 2015/05/04 - 1.4      - Fenix     - added getPlatform() function: return the current platform name
-#                                   - better update data printing in stdout
-#                                   - added getWritableFilePath function: return a valid writable filepath
-# 2015/05/22 - 1.5      - Fenix     - allow system filepaths to be decoded using default filesystem encoding
-# 2015/05/23 - 1.5.1    - Fenix     - moved decoding feature into b3.functions
-#                                   - added getShortPath function: convert back an absolute path in its short form by
-#                                     adding back replaced tokens such as @b3, @conf, ~ (mainly used for clean logging)
-# 2015/05/26 - 1.6      - Fenix     - rearrange constants and functions declarations to solve some import issues
-# 2015/06/07 - 1.7      - Fenix     - added optional 'conf' parameter to getAbsolutePath and getConfPath: allow the retrieval
-#                                     of @conf by passing a specific configuration file (path or instance) to the function
-#                                     instead of using the globally definied confdir variable (fix @conf retrieval from GUI)
-# 2015/06/17 - 1.8      - Fenix     - changed getAbsolutePath to resolve @home token
-# 2015/07/03 - 1.9      - Fenix     - added getHomePath() function: return the b3 HOME path creating it if it doesn't exists
-# 2015/07/04 - 1.10     - Fenix     - correctly retrieve @home token in getShortPath() function
-# 2015/07/08 - 1.11     - Fenix     - added getB3versionInfo function: return a tuple with B3 version information
-#                                   - changed getPlatform to return 'nt' instead of 'win32'
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 
 import os

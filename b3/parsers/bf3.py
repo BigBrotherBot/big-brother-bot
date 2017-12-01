@@ -1,41 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2010 Thomas LEVEIL <courgette@bigbrotherbot.net>
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 0.1    - functional parser but BF3 admin protocol is not fully implemented on the BF3 side. See TODOs
-# 1.0    - update parser for BF3 R20
-# 1.1    - reflects changes in AbstractParser and refactor the class by moving some of the code to AbstractParser
-# 1.2    - reflects changes in AbstractParser due to BF3 server R21 release
-# 1.3    - BF3 server R24 changes
-# 1.4    - add available gamemodes by map
-#        - check minimum required BF3 server version on startup
-#        - fix issue from 1.3 that made impossible to use commands related to Close Quarter maps
-# 1.5    - add new maps and gamemode from DLC "Armored Kill"
-# 1.7    - add new maps and gamemode from DLC "Aftermath"
-# 1.8    - add GUNMASTER_WEAPONS_PRESET_BY_INDEX and GUNMASTER_WEAPONS_PRESET_BY_NAME constants
-# 1.8.1  - add new maps and gamemodes from DLC "End Game"
-#        - implement get_player_pings
-# 1.10.1 - fix the list of gamemodes available for map Talah Market
-# 1.10.2 - syntax changes
-#        - correctly initialize class attributes
-# 1.11   - syntax cleanup
-# 1.12   - make use of dict comprehension to generate map/gamemode dictionaries
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 import b3
 import b3.clients

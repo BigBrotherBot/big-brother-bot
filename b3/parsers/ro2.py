@@ -1,56 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2011-03-30 - 0.1  - first alpha test
-# 2011-09-28 - 0.2  - first commit to repo
-# 2011-09-29 - 0.3  - added !maps, found !map functionality broken in Web Admin
-# 2011-09-30 - 0.4  - made webconnect a method and added comments to new methods
-# 2011-10-03 - 0.5  - seperate out Team and Global chat - squad chat is totally missing from log and web admin
-#                   - make sure IP's get logged
-#                   - remove rcon references and rcon.py
-# 2011-10-06 - 0.6  - kick client if on server when banned
-#                   - keep running on map change
-#                   - allow for username in xml file
-# 2011-10-08 - 0.7  - correct error in ban-kick
-#                   - rewrite player names logic for extended characters
-# 2011-10-16 - 0.8  - !map working
-#                   - player with funny accented i character now show in !list
-# 2011-11-01 - 1.0  - some re-writes and corrections
-#                   - implement !nextmap
-# 2011-11-02 - 1.1  - allow use of # instead of @ for client id nos (@ brings up console on some keyboard layouts
-#                     and cannot go into chat)
-# 2011-12-19 - 1.2  - don't process B3 messages as chat
-#                   - auth client if not already authed when chat used
-# 2011-12-28 - 1.3  - allow Q3 Color Codes in names, since game doesn't filter them out
-# 2012-01-27 - 1.4  - track team changes for eg teamspeak plugin
-# 2012-12-01 - 1.41 - incorporate chat changes for server/game v 1.1.0.8
-# 2014-04-25 - 1.42 - allow for empty chat messages
-# 2014-07-16 - 1.43 - added admin key in EVT_CLIENT_KICK data dict when available
-# 2014-07-18 - 1.44 - updated parser to comply with the new get_wrap implementation
-#                   - fixed _commands['message'] pattern: was missing %(uid)s placeholder
-# 2014-08-12 - 1.45 - syntax cleanup
-#                   - fixed undefined reference in handle_chat()
-# 2015-03-19 - 1.46 - removed deprecated usage of dict.has_key (us 'in dict' instead)
-#                   - removed several unused variables
-# 2015-04-16 - 1.47 - uniform class variables (dict -> variable)
-#                   - implement missing abstract class methods
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 import b3
 import b3.cron
@@ -74,7 +44,7 @@ __author__ = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
 __version__ = '1.47'
 
 
-class Ro2Parser(b3.parser.Parser):
+class Ro2Parser(Parser):
     """
     The Red Orchestra 2 B3 parser class.
     """

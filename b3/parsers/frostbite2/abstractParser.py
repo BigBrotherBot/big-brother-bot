@@ -1,58 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2011 Thomas LEVEIL <courgette@bigbrotherbot.net>
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 1.0    - update parser for BF3 R20
-# 1.1    - add event EVT_GAMESERVER_CONNECT which is triggered every time B3 connects to the game server
-# 1.1.1  - fix and refactor admin.yell
-# 1.2    - introduce new setting 'big_b3_private_responses'
-# 1.3    - introduce new setting 'big_msg_duration'
-#        - refactor the code that reads the config file
-# 1.4    - commands can now start with just the '/' character if the user wants to hide the command from
-#          other players instead of having to type '/!'
-# 1.4.1  - add a space between the bot name and the message in saybig()
-# 1.4.2  - fixes bug regarding round count on round change events
-# 1.4.3  - 1.4.5 - improves handling of commands prefixed only with '/' instead of usual command prefixes. Leading '/'
-#          is removed if followed by an existing command name or if followed by a command prefix.
-# 1.5    - parser can now create EVT_CLIENT_TEAM_SAY events (requires BF3 server R21)
-# 1.5.1  - fixes issue with BF3 failing to provide EA_GUID https://github.com/courgette/big-brother-bot/issues/69
-# 1.5.2  - fixes issue that made B3 fail to ban/tempban a client with empty guid
-# 1.6    - replace admin plugin !map command with a Frostbite2 specific implementation. Now can
-#          call !map <map>, <gamemode>
-#        - refactor get_maps_sounding_like
-#        - add get_gamemode_sounding_like
-# 1.7    - replace admin plugin !map command with a Frostbite2 specific implementation. Now can call
-#          !map <map>[, <gamemode>[, <num of rounds>]] when returning map info, provide : map name (gamemode) # rounds
-# 1.8    - isolate the patching code in a module function
-# 1.8.1  - improve punkbuster event parsing
-# 1.9    - fix never ending thread sayqueuelistener_worker (would make B3 process hang on keyboard interrupt)
-# 1.10   - fix bug in code patching the admin plugin cmd_map function that would break the command if a map
-#          was loaded for an incompatible gamemode
-# 1.11   - rewrote import statements
-#        - replaced variable names using python built-in names
-# 1.12   - added admin key in EVT_CLIENT_KICK data dict when available
-# 1.13   - updated abstract parser to comply with the new get_wrap implementation
-# 1.14   - syntax cleanup
-#        - reformat changelog
-# 1.14.1 - add color code options for new getWrap method
-# 1.14.2 - uniform class variables (dict -> variable)
-# 1.15   - fixed regression introduced in 1.14.2
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__ = 'Courgette'
 __version__ = '1.15'

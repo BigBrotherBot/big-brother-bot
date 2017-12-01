@@ -1,46 +1,26 @@
 # -*- coding: utf-8 -*-
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2014/09/01 - 2.6   - Fenix         - syntax cleanup
-# 2014/12/20 - 2.7   - Thomas LEVEIL - add the `scripts` directory to the builds
-# 2015/02/01 - 2.8   - Thomas LEVEIL - fix py2exe failling to find the plugin modules since 533a2d5d2101f0c9a228cc1e20d3b2683770c9fb
-# 2015/02/07 - 2.9   - Thomas LEVEIL - fix py2exe builds missing mysql files and postgresql files
-# 2015/02/07 - 2.9.1 - Fenix         - fix v2.9 not copying SQL files in py2exe build
-#                                    - fixed xlrstats plugin not being included in py2exe build
-# 2015/02/13 - 3.0   - Fenix         - switched to cx_Freeze + setuptools for multiplatform compilation
-# 2015/02/15 - 3.1   - Thomas LEVEIL - refactor code for generating the InnoSetup Installer and the sources zip file
-#                                      as a distutils Command extension
-#                                    - add a 'clean' command to clear up the mess
-#                                    - create the 'installer' directory to isolate InnoSetup files from build directory
-# 2015/02/15 - 3.1.1 - Fenix         - removed some print calls in favor of logging
-#                                    - removed some warnings
-# 2015/02/18 - 3.1.2 - Fenix         - fix cx_Freeze stripping out function documentations
-# 2015/03/08 - 3.2   - Thomas LEVEIL - build up the list of requirement by reading the requirements.txt file
-# 2015/04/19 - 3.3   - Fenix         - implement bdist_mac and bdist_dmg commands
-# 2015/07/04 - 3.4   - Fenix         - renamed Linux binary into 'b3_run'
-#                                    - changed build_exe zip file name on Linux when freezing 64 bit binary
-#                                    - include scripts directory when packaging frozen application
-# 2015/07/06 - 3.5   - Fenix         - added missing requests module to be included in the Frozen application
-# 2015/07/29 - 3.6   - Thomas LEVEIL - separate two entrypoints: GUI and console
-# 2016/02/16 - 3.7   - Thomas LEVEIL - fix b3 installation through pip
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__ = 'ThorN, xlr8or, courgette, Fenix'
 __version__ = '3.7'

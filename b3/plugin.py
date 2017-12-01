@@ -1,67 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 11/29/2005 - 1.3.0 - ThorN     - added warning, info, exception, and critical log handlers
-# 14/11/2009 - 1.3.1 - Courgette - display a user friendly error message when a plugin config file as broken XML
-# 29/11/2009 - 1.4.0 - Courgette - constructor now also accepts an instance of Config in place of a config file name
-# 29/11/2009 - 1.4.1 - Courgette - the onLoadConfig callback is now always called after loadConfig() is called.
-#                                  this aims to make sure on_load_config is called after the user use the !reconfig
-#                                  command
-# 16/02/2013 - 1.5   - Courgette - add plugin property _default_messages to store default plugin messages
-#                                - add user friendly warning and error to the log when a messaged cannot be formatted
-# 2013/10/23 - 1.6   - Courgette - on_load_config hook is now called by the parser instead of at plugin instantiation
-# 2013/11/30 - 1.7   - Courgette - add two plugin hooks: onEnable and onDisable
-# 12/08/2013 - 1.8   - Fenix     - adjust syntax to match PEP8 + fixed some typos
-#                                - optionally map a specific event onto a specific plugin method: needs to
-#                                  be specified during event registration
-# 15/04/2014 - 1.8.1 - Fenix     - use self.console.getEventID to retrieve event ids: remove some warnings
-# 21/05/2014 - 1.8.2 - Fenix     - minor syntax cleanup
-#                                - moved event mapping function into Parser class
-# 02/06/2014 - 1.8.3 - Fenix     - moved back event mapping logic into Plugin class: Parser should be aware only of
-#                                  Plugins listening for incoming events and not how to dispatch them: for more info
-#                                  see https://github.com/BigBrotherBot/big-brother-bot/pull/193
-#                                - added possibility to register multiple event hooks for the same event inside a plugin
-# 28/07/2014 - 1.9   - Fenix     - syntax cleanup
-#                                - added default event mapping hooks for EVT_EXIT and EVT_STOP
-# 08/01/2015 - 1.9.1 - Fenix     - make sure not to load 'None' object as configuration file
-# 08/03/2015 - 1.9.2 - Fenix     - added requiresPlugins attribute in Plugin class
-#                                - added PluginData class
-#                                - produce EVT_PLUGIN_ENABLED ands EVT_PLUGIN_DISABLED
-# 17/02/2015 - 1.9.3 - Fenix     - allow plugins to register events using both event key and event id: this allows
-#                                  plugin developers to write less code
-# 21/03/2015 - 1.9.4 - Fenix     - added requiresParsers attribute in Plugin class: customizable with a list of game
-#                                  names the plugin will work on (will reduce the amount of code needed to filter out
-#                                  unsupported games inside plugins)
-# 25/03/2015 - 1.9.5 - Fenix     - added loadAfterPlugins attribute: specify a list of plugins which needs to be loaded
-#                                  before the current one
-# 06/04/2015 - 1.9.6 - Fenix     - inherit from object class (new-style-class format to support super() in methods call)
-# 21/05/2015 - 1.9.8 - Fenix     - added requiresVersion attribute in plugin class: declares the minimum required
-#                                  B3 version needed to run the current plugin (if nothing is specified then the plugin
-#                                  will be loaded no matter the version of B3 currently running)
-#                                - added Plugin class documentation
-# 22/06/2015 - 1.9.9 - Fenix     - added requiresStorage attribute: list the storage protocols supported by a plugin
-# 01/07/2015 - 1.10  - Fenix     - added getSetting method: safely return a configuration file setting value
-# 05/07/2015 - 1.11  - Fenix     - changed getSetting to accept a validate function to validate (and correct if needed
-#                                  the configuration value being loaded)
-# 11/07/2015 - 1.12  - Fenix     - changed getSetting to parse lists from configuration entries
-# 14/07/2015 - 1.13  - Fenix     - added isSetting method (shortcut to config.has_option)
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__ = 'ThorN, Courgette'
 __version__ = '1.13'

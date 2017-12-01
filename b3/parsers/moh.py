@@ -1,56 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2010 James 'Bakes' Baker (bakes@bigbrotherbot.net)
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2010/11/07 - 0.10  - Courgette - add new maps info
-# 2010/11/08 - 0.9.2 - GrosBedo  - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-# 2010/10/27 - 0.9.1 - GrosBedo  - messages now support named $variables instead of %s
-# 2010/10/27 - 0.9   - Courgette - when banning, also kick to take over MoH engine failure to enforce bans.
-#                                  this will need more test to determine how to make the MoH engine enforce temp bans
-# 2010/10/24 - 0.8   - Courgette - fix OnServerRoundover and OnServerRoundoverplayers
-# 2010/10/24 - 0.7   - Courgette - add missing get_team() method
-# 2010/10/24 - 0.6   - Courgette - minor fixes
-# 2010/10/23 - 0.5   - Courgette - create specific events : EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES
-#                                - now fires native B3 event EVT_GAME_ROUND_END
-#                                - manage team changed event correctly
-# 2010/10/23 - 0.4   - Courgette - refactor inheriting from frostbite AbstratParser
-#                                - change available server var list
-# 2010/10/10 - 0.3   - Bakes     - get_easy_name is now implemented and working, get_hard_name is implemented
-#                                  but not working
-# 2010/10/07 - 0.2   - Courgette - add gamename property. Fix SAY_LINE_MAX_LENGTH
-# 2010/09/25 - 0.1   - Bakes     - initial version of MoH parser - hasn't been tested with on_kill events yet
-#                                  but basic commands seem to work.
-# 2010-11-21 - 1.0   - Courgette - add rotate_map and change_map to fix !maprotate and !map#
-# 2011-02-01 - 1.1   - xlr8or    - adapted to server R9 version 615937: fixed onPlayerSpawn and vars.noCrosshairs errors
-# 2011-03-05 - 1.2   - xlr8or    - admin.kickPlayer after ban now in try/except to avoid error msg when player is
-#                                  already gone
-# 2011-04-09 - 1.2.1 - Courgette - import missing time module
-# 2011-05-22 - 1.2.2 - Courgette - move events EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES to abstract
-#                                  Frostbite parser as they also exist in BFBC2
-# 2011-06-04 - 1.3.0 - Courgette - makes use of the new plugins_started parser hook
-# 2011-06-05 - 1.4.0 - Courgette - change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
-# 2012-10-06 - 1.5   - Courgette - reflect changes in abstract parser 1.6
-# 2014-05-02 - 1.5.1 - Fenix     - replace attribute names using python built-in ones
-# 2014-08-06 - 1.6   - Fenix     - removed line length configuration loading: it's built-in in the parser module now
-#                                - make use of self.getEvent when creating events
-# 2014-09-02 - 1.8   - Fenix     - syntax cleanup
-# 2015-04-16 - 1.9   - Fenix     - implement missing abstract class methods
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__ = 'Bakes, Courgette'
 __version__ = '1.9'

@@ -1,48 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2011-04-04 - 1.1.0 - Courgette - remove inheritence from WopParser
-#                                - made changes introduced with Wop 1.5.2 beta
-#                                - auth() players at parser startup, making use of the dumpuser command
-# 2011-04-07 - 1.2.0 - Courgette - change rcon ban command to 'banaddr'
-#                                - remove attacker fixes for special death
-#                                - add EVT_CLIENT_PRIVATE_SAY
-#                                - ENTITYNUM_WORLD : now a known 'client' in B3
-#                                - don't fire teamkills/teamdamage events in gametypes with no teams,
-#                                  see TEAM_BASED_GAMETYPES
-#                                - add a DEBUG_EVENT flag
-#                                - do not provides fake guid for bot, so they won't autheticate and won't
-#                                  make it to database
-# 2011-04-07 - 1.2.1 - Courgette - fix TEAM_BASED_GAMETYPES
-# 2011-04-07 - 1.2.2 - Courgette - fix Tell regexp when cid is -1
-#                                - reflect that cid are not converted to int anymore in the clients module
-#                                - do not try to fix attacket in on_kill
-#                                - fix MOD_SHOTGUN -> MOD_PUMPER
-# 2011-04-10 - 1.2.3 - Courgette - fix commands that should use quotation marks
-# 2014-01-15 - 1.3   - Fenix     - PEP8 coding standards
-#                                - correctly set client bot flag upon new client connection
-# 2014-07-17 - 1.4   - Fenix     - updated abstract parser to comply with the new get_wrap implementation
-#                                - updated rcon command patterns
-# 2014-08-11 - 1.5   - Fenix     - syntax cleanup
-# 2015-04-16 - 1.6   - Fenix     - uniform class variables (dict -> variable)
-#                                - implement missing abstract class methods
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__ = 'xlr8or, Courgette'
 __version__ = '1.6'

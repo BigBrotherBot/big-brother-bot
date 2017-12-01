@@ -1,41 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 27/06/2009 - 1.1.1 - xlr8or       - added CLIENT_ACTION event
-# 11/11/2009 - 1.1.2 - Courgette    - minor transparent changes to the code
-# 30/03/2011 - 1.1.3 - SGT          - add EVT_CLIENT_UNBAN
-# 06/06/2011 - 1.1.4 - Courgette    - add EventsStats class
-# 26/03/2011 - 1.2   - Courgette    - add event EVT_GAME_MAP_CHANGE
-# 27/08/2012 - 1.3   - Courgette    - add getKey(event_id) method
-# 19/02/2013 - 1.4   - Courgette    - fix EventsStats.dumpStats which would fail if called before any event was seen
-#                                   - make EventsStats.dumpStats computations abort if B3 log level lower than required
-#                                     to display the results
-# 15/07/2013 - 1.5   - Courgette    - add events EVT_CLIENT_WARN and EVT_CLIENT_NOTICE
-# 15/04/2014 - 1.5.1 - Fenix        - PEP8 coding standards
-# 21/07/2014 - 1.6   - Fenix        - syntax cleanup
-# 09/08/2014 - 1.7   - Courgette    - define new event EVT_CLIENT_TEAM_CHANGE2
-# 09/03/2014 - 1.8   - Fenix        - added EVT_PLUGIN_ENABLED, EVT_PLUGIN_DISABLED, EVT_PLUGIN_LOADED,
-#                                     EVT_PLUGIN_UNLOADED
-# 19/03/2015 - 1.8.1 - Fenix        - fixed test for membership using 'if not X in Y' (now use 'if X not in Y')
-# 04/05/2015 - 1.8.2 - Fenix        - removed reference to global variable b3.console on b3.console.time(): using
-#                                     time.time() instead (changed after reply mode removal)
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__ = 'ThorN, xlr8or, Courgette'
 __version__ = '1.8.2'

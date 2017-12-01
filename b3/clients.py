@@ -1,77 +1,26 @@
-# coding: latin-1
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2017/09/09 - 1.10.11 - Supiri     - add a countermeasure against sql injections
-#
-# 2015/06/25 - 1.8.1  - Fenix       - changed client.message to accept positional parameter for string substitution
-# 2015/03/19 - 1.8    - Fenix       - actually catch Exception class in try-except
-#                                   - removed deprecated usage of dict.has_key (us 'in dict' instead)
-# 2014/08/09 - 1.7.1  - Courgette   - fire new event EVT_CLIENT_TEAM_CHANGE2
-# 2014/07/26 - 1.7    - Fenix       - syntax cleanup
-#                                   - reformat changelog
-# 2014/05/09 - 1.6.5  - Fenix       - changed kick.time_expire = 0 -> kick.time_expire = -1: fix inability to
-#                                     retrieve kick penalties from the storage
-# 2014/05/05 - 1.6.4  - Fenix       - fixed None comparison performed with equality operators
-#                                   - removed class attributes duplicate declaration
-#                                   - added missing super constructor to Clients class
-#                                   - simplified some chained comparisons
-# 2014/02/22 - 1.6.3  - Courgette   - fix issue #162 - 'None' string get written to the database 'clients.pbid'
-#                                     column when Client.pbid is None
-# 2014/01/11 - 1.6.2  - Courgette   - fix mask_level is set with group id while it should be group level
-# 07/08/2013 - 1.6.1  - Courgette   - getting a client by its db id will return the existing client object if
-#                                     found in the list of connected clients
-# 15/07/2013 - 1.6    - Courgette   - fire EVT_CLIENT_WARN and EVT_CLIENT_NOTICE events
-# 26/11/2012 - 1.5    - Courgette   - add database columns 'login' and 'password' to the Client model
-# 27/08/2012 - 1.4.1  - Courgette   - fix bug in get_by_magic when parameter is a cid which is not in use: was
-#                                     returning [None] instead of []
-# 28/10/2012 - 1.4.0  - Courgette   - Client.save() now raises a EVT_CLIENT_UPDATE event
-# 16/07/2011 - 1.3.6  - xlr8or      - Client.bot added - ability to identify a bot
-# 08/04/2011 - 1.3.5  - Courgette   - make sure Clients.empty() does not delete hidden clients
-# 08/04/2011 - 1.3.4  - Courgette   - changes to allow cid to be a unicode string
-# 30/03/2011 - 1.3.3  - Courgette   - new_client() now returns the created client object
-# 26/03/2011 - 1.3.2  - Courgette   - fix bug on Client.__init__()
-# 12/11/2010 - 1.3.1  - Courgette   - harden _set_name for cases where console is not set
-# 01/11/2010 - 1.3.0  - Courgette   - Clients::get_clients_by_name() now ignores blank characters from names
-#                                   - add automated tests for Clients::get_clients_by_name()
-# 15/08/2010 - 1.2.13 - xlr8or      - minor addition for bfbc2 in alias checking
-# 21/05/2010 - 1.2.12 - xlr8or      - catch ValueError in clients.get_by_cid to allow names as CID's, but still
-#                                   - fix the previous exploit in q3a based games
-# 11/05/2010 - 1.2.11 - Courgette   - fix exploit by using player cid prefixed with '0' for commands making use
-#                                     of clients.get_by_cid
-# 08/01/2010 - 1.2.10 - xlr8or      - disabled adding aliasses for world
-# 01/01/2010 - 1.2.9  - Courgette   - clients get* methods' code is now more meaningful as :
-#                                         b = weakref.ref(a)()
-#                                         b = a
-#                                     are strictly identical
-# 01/01/2010 - 1.2.8  - Courgette   - fix bug in Clients.get_by_name()
-# 14/12/2009 - 1.2.7  - Courgette   - change the way client.name and client.exactname are set and when the
-#                                     client name changed event is triggered
-#                                   - a new alias is given the default num_used 1 (was 0)
-# 26/02/2009 - 1.2.6  - xlr8or      - changed last_visit to a global client variable
-# 05/06/2008 - 1.2.5  - xlr8or      - client object now saves the current IP in auth function
-# 29/10/2005 - 1.2.0  - ThorN       - removed direct references to PunkBuster. Authorization is now proxied
-#                                     through the console.
-# 07/23/2005 - 1.1.0  - ThorN       - added data field to Penalty
-#                                   - added data parameter to Client.warn()
-#                                   - added data parameter to Client.tempban()
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 import b3
 import b3.events
@@ -82,6 +31,7 @@ import sys
 import threading
 import time
 import traceback
+
 
 class ClientVar(object):
 
@@ -910,7 +860,7 @@ class Client(object):
             return False
         else:
             # fix missing pbid. Workaround a bug in the database layer that would insert the string "None"
-            # in db if pbid is None :/ The empty string being the default value for that db column!! ôO
+            # in db if pbid is None :/ The empty string being the default value for that db column!! Ã´O
             if self.pbid is None:
                 self.pbid = ''
             if console:
@@ -1541,7 +1491,7 @@ class Clients(dict):
             else: 
                 return None
         return None
-		
+
 
     def escape_string(self, value, mapping=None):
         """
@@ -1560,7 +1510,7 @@ class Clients(dict):
             value = value.replace("'", "\\'")
             value = value.replace('"', '\\"')
         return value
-    
+
     def lookupByName(self, name):
         """
         Return a lst of clients matching the given name.
@@ -1571,9 +1521,9 @@ class Clients(dict):
         c = self.getClientLikeName(name)
         if c and not c.hide:
             return [c]
-        
+
         name = self.escape_string(name)
-        
+
         sclient = self.console.storage.getClientsMatching({'%name%': name})
 
         if not sclient:

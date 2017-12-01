@@ -1,31 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 17/11/2009 - 1.4.0 - Courgette - add an option to create an instance of the logger that will write to stderr instead
-# 22/10/2010 - 1.5.0 - xlr8or    - add an option to write to both logfile and stderr
-# 08/04/2011 - 1.6.0 - Courgette - make the console logger write to stdout and repeat errors on stderr
-# 20/04/2011 - 1.6.1 - Courgette - should get rid of UnicodeDecodeError
-# 20/04/2011 - 1.6.2 - Courgette - again getting rid of UnicodeDecodeError
-# 21/07/2014 - 1.7   - Fenix     - syntax cleanup
-# 04/02/2015 - 1.7.1 - Fenix     - getInstance() now accepts an optional 'logsize' parameter (amount of bytes of the log file)
-# 04/07/2015 - 1.7.2 - Fenix     - changed log formatter to keep the same width for log levels
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__  = 'ThorN'
 __version__ = '1.7.2'

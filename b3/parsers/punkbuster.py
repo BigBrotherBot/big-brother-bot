@@ -1,33 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 18/10/2011 - 1.0.3 - Bravo17   - check slot number go up in order in getplayerlist to weed out data errors
-# 22/12/2012 - 1.1   - Courgette - fix regex for parsing PB_SV_PList results for cases where a player has no power
-# 23/12/2012 - 1.2   - Courgette - get_player_list now only returns info cid, pbid, guid and ip for each connected
-#                                  player. PB is infamously known for missing a character randomly in its PB_SV_PList
-#                                  response, we should succeed if that missing char is in an unimportant part of the
-#                                  response.
-# 25/12/2012 - 1.2.1 - Courgette - improve reliability of the regular expression for parsing PB_SV_PList response
-# 20/01/2013 - 1.2.3 - Courgette - improve punkbuster event parsing by accepting whatever punkbuster prefix from the
-#                                  pb responses
-# 02/08/2014 - 1.3   - Fenix     - syntax cleanup
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__  = 'ThorN'
 __version__ = '1.3'
