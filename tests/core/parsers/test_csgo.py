@@ -175,11 +175,9 @@ class CsgoTestCase(unittest.TestCase):
         """Used to override parser self.output.write method so we can control the response given to the 'status'
         rcon command"""
         if len(args) and args[0] == "status":
-            if self.status_response is not None:
+            if hasattr(self, 'status_response') and self.status_response is not None:
                 return self.status_response
-            else:
-                return STATUS_RESPONSE
-
+            return STATUS_RESPONSE
 
 
 class Test_gamelog_parsing(CsgoTestCase):
@@ -841,7 +839,7 @@ class Test_parser_API(CsgoTestCase):
         self.conf.loadFromString("""<configuration></configuration>""")
         self.parser = CsgoParser(self.conf)
         self.parser.output = Mock()
-        when(self.parser.output).write("status").thenReturn(STATUS_RESPONSE)
+        self.parser.output.write = Mock(wraps=self.output_write)
         when(self.parser).is_sourcemod_installed().thenReturn(True)
         self.parser.startup()
 
