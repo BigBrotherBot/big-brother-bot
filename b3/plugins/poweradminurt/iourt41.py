@@ -151,7 +151,7 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
         """
         # get the admin plugin so we can register commands
         self._adminPlugin = self.console.getPlugin('admin')
-        
+
         try:
             self._hitlocations['HL_HEAD'] = self.console.HL_HEAD
         except AttributeError, e:
@@ -1496,7 +1496,8 @@ class Poweradminurt41Plugin(b3.plugin.Plugin):
                 # we can exit here and the user will retry with a more specific player
                 return
         else:
-            client.message('^7Invalid data, try !help pamute')
+            # IF not args, mute the player who execute the command
+            self.console.write('mute %s' % (client.cid))
             return
 
         if sclient.maxLevel > client.maxLevel:
