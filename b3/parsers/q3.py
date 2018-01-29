@@ -1,29 +1,79 @@
-# -*- coding: utf-8 -*-
-
-# ################################################################### #
-#                                                                     #
-#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
-#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
-#                                                                     #
-#  This program is free software; you can redistribute it and/or      #
-#  modify it under the terms of the GNU General Public License        #
-#  as published by the Free Software Foundation; either version 2     #
-#  of the License, or (at your option) any later version.             #
-#                                                                     #
-#  This program is distributed in the hope that it will be useful,    #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
-#  GNU General Public License for more details.                       #
-#                                                                     #
-#  You should have received a copy of the GNU General Public License  #
-#  along with this program; if not, write to the Free Software        #
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
-#  02110-1301, USA.                                                   #
-#                                                                     #
-# ################################################################### #
+#
+# BigBrotherBot(B3) (www.bigbrotherbot.net)
+# Copyright (C) 2005 Michael "ThorN" Thornton
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# CHANGELOG
+#
+# 08/08/2010 - 0.1    - Courgette - creation based on smg11 parser
+# 09/08/2010 - 0.2    - Courgette - implement rotatemap()
+# 09/08/2010 - 0.3    - GrosBedo  - bot now recognize /tell commands correctly
+# 10/08/2010 - 0.4    - Courgette - recognizes MOD_SUICIDE as suicide
+#                                 - get rid of PunkBuster related code
+#                                 - should /rcon dumpuser in cases the ClientUserInfoChanged line does not have
+#                                   guid while player is not a bot. (untested, cannot reproduce)
+# 11/08/2010 - 0.5    - GrosBedo  - minor fix for the /rcon dumpuser when no guid
+#                                 - added !nextmap (with recursive detection !)
+# 11/08/2010 - 0.6    - GrosBedo  - fixed the permanent ban command (banClient -> banaddr)
+# 12/08/2010 - 0.7    - GrosBedo  - added weapons and means of death. Define what means of death are suicides
+# 17/08/2010 - 0.7.1  - GrosBedo  - added say_team recognition
+# 20/08/2010 - 0.7.5  - GrosBedo  - added many more regexp to detect ctf events, cvars and awards
+#                                 - implement permban by ip and unbanbyip
+#                                 - implement team recognition
+# 20/08/2010 - 0.8    - Courgette - clean regexp (Item, CTF, Award, fallback)
+#                                 - clean on_item
+#                                 - remove OnDamage
+#                                 - add OnCtf and OnAward
+# 27/08/2010 - 0.8.1  - GrosBedo  - fixed findnextmap underscore bug (maps and vstr cvars with an underscore are
+#                                   now correctly parsed)
+# 28/08/2010 - 0.8.2  - Courgette - fix another findnextmap underscore bug
+# 28/08/2010 - 0.8.3  - Courgette - fix issue with the regexp that match 'Award:' lines
+# 04/09/2010 - 0.8.4  - GrosBedo  - fix issue with CTF flag capture events
+# 17/09/2010 - 0.8.5  - GrosBedo  - fix crash issue when a player has disconnected at the very time the bot check
+#                                   for the list of players
+# 20/10/2010 - 0.9    - GrosBedo  - fix a BIG issue when detecting teams (were always unknown)
+# 20/10/2010 - 0.9.1  - GrosBedo  - fix tk issue with DM and other team free gametypes
+# 20/10/2010 - 0.9.2  - GrosBedo  - added EVT_GAME_FLAG_RETURNED (move it to q3a or a generic ioquake3 parser?)
+# 23/10/2010 - 0.9.3  - GrosBedo  - detect gametype and modname at startup
+#                                 - added flag_taken action
+#                                 - fix a small bug when triggering the flag return event
+# 07/11/2010 - 0.9.4  - GrosBedo  - ban and unban messages are now more generic and can be configured from b3.xml
+#                                 - messages now support named $variables instead of %s
+# 08/11/2010 - 0.9.5  - GrosBedo  - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
+# 09/04/2011 - 0.9.6  - Courgette - reflect that cid are not converted to int anymore in the clients module
+# 06/06/2011 - 0.10.0 - Courgette - change data format for EVT_CLIENT_BAN events
+# 14/06/2011 - 0.11.0 - Courgette - cvar code moved to q3a AbstractParser
+# 13/01/2014 - 0.11.1 - Fenix     - PEP8 coding standards
+#                                 - changed bots guid to match other q3a parsers (BOT<slot>)
+#                                 - correctly set client bot flag upon new client connection
+# 02/05/2014 - 0.11.2 - Fenix     - fixed get_player_pings method declaration not matching the method in Parser class
+# 11/08/2014 - 0.12   - Fenix     - reformat changelog
+#                                 - fixes for the new getWrap implementation
+#                                 - make use of self.getEvent() when creating events instead of referencing dynamically
+#                                   created attributes (does nothing new but removes several warnings)
+# 29/08/2014 - 0.13   - Fenix     - syntax cleanup
+# 16/04/2015 - 0.14   - Fenix     - uniform class variables (dict -> variable)
+# 29/05/2017 - 0.15   - GrosBedo     - fix parseUserInfo when missing \ as first character
+#                                                 - ExcessivePlus mod compatibility
+# 29/05/2017 - 0.16   - GrosBedo     - fix guid detection (at clientconnect instead of userinfochanged)
+#                                                 - adapted to quake 3 arena
+# 02/06/2017 - 0.17   - GrosBedo     - fix /tell message command (works only on ioq3 or e+ mod, but anyway most servers are running these)
 
 __author__ = 'Courgette, GrosBedo, Fenix'
-__version__ = '0.15'
+__version__ = '0.17'
 
 import b3
 import b3.clients
@@ -34,9 +84,9 @@ import string
 from b3.parsers.q3a.abstractParser import AbstractParser
 
 
-class Oa081Parser(AbstractParser):
+class Q3Parser(AbstractParser):
 
-    gameName = 'oa081'
+    gameName = 'q3a'
     PunkBuster = None
 
     _connectingSlots = []
@@ -47,7 +97,7 @@ class Oa081Parser(AbstractParser):
     _line_color_prefix = ''
 
     _commands = {
-        'message': 'say %(message)s',
+        'message': 'tell %(cid)s %(message)s',
         'say': 'say %(message)s',
         'set': 'set %(name)s "%(value)s"',
         'kick': 'clientkick %(cid)s',
@@ -241,7 +291,7 @@ class Oa081Parser(AbstractParser):
             # get gamepaths/vars
             fs_game = self.getCvar('fs_game').getString()
             if fs_game == '':
-                fs_game = 'baseoa'
+                fs_game = 'baseq3'
             self.game.fs_game = fs_game
             self.game.modName = fs_game
             self.debug('fs_game: %s' % self.game.fs_game)
@@ -356,6 +406,7 @@ class Oa081Parser(AbstractParser):
     def OnClientconnect(self, action, data, match=None):
         client = self.clients.getByCID(data)
         self.debug('OnClientConnect: %s, %s' % (data, client))
+        self.OnClientuserinfochanged(action, data, match)
         return self.getEvent('EVT_CLIENT_JOIN', client=client)
 
     def OnClientuserinfochanged(self, action, data, match=None):
@@ -381,10 +432,13 @@ class Oa081Parser(AbstractParser):
                 # update existing client
                 for k, v in bclient.iteritems():
                     setattr(client, k, v)
+                # use the full client as reference now
+                bclient = client
             else:
                 if not 'name' in bclient:
                     bclient['name'] = self._empty_name_default
 
+                guid = None
                 if 'guid' in bclient:
                     guid = bclient['guid']
                 else:
@@ -395,12 +449,12 @@ class Oa081Parser(AbstractParser):
                                                guid=guid, data={'guid': guid}, team=bclient['team'], bot=True, money=20)
                         self._connectingSlots.remove(cid)
                         return None
-                    else:
-                        self.info('We are missing the guid but this is not a bot either, dumpuser')
-                        self._connectingSlots.remove(cid)
-                        self.OnClientuserinfochanged(None, self.queryClientUserInfoByCid(cid))
-                        return
-                
+                    #else:
+                        #self.info('We are missing the guid but this is not a bot either, dumpuser')
+                        #self._connectingSlots.remove(cid)
+                        #self.OnClientuserinfochanged(None, self.queryClientUserInfoByCid(cid))
+                        #return
+
                 if not 'ip' in bclient:
                     infoclient = self.parseUserInfo(self.queryClientUserInfoByCid(cid))
                     if 'ip' in infoclient:
