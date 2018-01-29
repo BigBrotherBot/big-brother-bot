@@ -1,156 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2008 Mark Weirath (xlr8or@xlr8or.com)
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-#              1.0.3  - Courgette      - added support for banlist.txt
-#                       xlr8or         - added parsing Damage (on_hit)
-#              1.0.4  - xlr8or         - added EVT_CLIENT_TEAM_CHANGE in on_kill
-#              1.0.5  - xlr8or         - added hitloc and damageType info to accomodate XLRstats
-#              1.0.6  - xlr8or         - fixed a bug where the parser wouldn't parse the shutdowngame and warmup functions
-#              1.0.7  - xlr8or         - better synchronizing and identification of connecting players and zombies
-#              1.0.8  - xlr8or         - better Zombie handling (Zombies being a result of: sv_zombietime (default 2
-#                                        seconds)). (Zombie time is the time after a disconnect that the slot cannot be
-#                                        used and thus is in Zombie state)
-#                                      - dded functionality to use ip's only, not using the guid at all (experimental)
-#              1.0.9  - xlr8or         - try to get the map name at start
-#                                      - provide get_player_scores method
-#              1.0.10 - Courgette      - modified _recolor so name sanitation is the same as UrT
-#                                        here it does more than just remove color
-#              1.0.11 - Courgette      - Add get_scores  # NOTE: this won't work properly if the server has private slots.
-#              1.0.12 - Courgette      - Fix regex that failed to parse chat lines when player's name ends with ':'
-#              1.0.13 - xlr8or         - support for !maps and !nextmap command
-#              1.0.14 - xlr8or         - better understanding of mapcycle.txt
-#              1.0.15 - mindriot       - client with empty name ("") resulted in error and B3 not registering
-#                                        client - now given _empty_name_default
-#              1.0.16 - xlr8or         - added ipcombi. Setting True will replace the last part of the guid with two
-#                                        segments of the ip: increases security on admins who have cl_guidServerUniq set
-#                                        to 0 in client config (No cloning).
-#              1.0.17 - mindriot       - empty_name_default now only given upon client connect, due to possibility of no
-#                                        name specified in ClientUserinfo at any time
-#              1.0.19 - xlr8or         - disabled PunkBuster default settings due to recent supportrequests in the forums
-#                                        with missing PB line in b3.xml
-#              1.1.0  - xlr8or         - added action mechanism (event) for B3 v1.1.5+
-#              1.1.1  - Courgette      - debugged Action Mechanism (event) for B3 v1.1.5+
-# 19/08/2009 - 1.2.0  - Courgette      - adds slap, nuke, mute new custom penalty types (can be used in censor or
-#                                        admin plugin)
-#                                      - requires admin plugin v1.4+ and parser.py v1.10+
-# 20/10/2009 - 1.3.0  - Courgette      - upon bot start, already connected players are correctly recognized
-# 26/10/2009 - 1.4.0  - Courgette      - when no client is found by cid, try to join the player using /rcon dumpuser <cid>
-# 11/11/2009 - 1.5.0  - Courgette      - create a new event: EVT_GAME_FLAG_RETURNED which is fired when the flag
-#                                        return because of time code refactoring
-# 17/11/2009 - 1.5.1  - Courgette      - harden get_nextmap by :
-#                                        * wrapping initial getcvar queries with try:except bloc
-#                                        * requerying required cvar if missing
-#                                        * forcing map list refresh on server reload or round end
-# 26/11/2009 - 1.5.2  - Courgette      - fix a bug that prevented kills by slap or nuke from firing kill events
-# 30/11/2009 - 1.6.1  - Courgette      - separate parsing of lines ClientUserInfo and ClientUserInfoChanged to better
-#                                        translate ClientUserInfoChanged data. Also OnClientUserInfoChanged does not create
-#                                        new client if cid is unknown
-# 05/12/2009 - 1.6.2  - Courgette      - fix _replayerscore regexp
-#                                      - on startup, also try to get players' team (which is not given by dumpuser)
-# 06/12/2009 - 1.6.3  - Courgette      - harden query_client_userinfo_by_cid making sure we got a positive response. (Never
-#                                        trust input data...)
-#                                      - fix _replayerscore regexp again
-# 06/12/2009 - 1.6.4  - Courgette      - sync() will retries to get player list up to 4 for times before giving up as
-#                                        sync() after map change too often fail 2 times.
-# 09/12/2009 - 1.6.5  - Courgette      - different handling of 'name' in OnClientuserinfo. Now log looks less worrying
-#                                      - prevent exception on the rare case where a say line shows no text after cid (hence
-#                                        no regexp match)
-# 21/12/2009 - 1.7    - Courgette      - add new UrT specific event : EVT_CLIENT_GEAR_CHANGE
-# 30/12/2009 - 1.7.1  - Courgette      - Say, Sayteam and Saytell lines do not trigger name change anymore and detect
-#                                        the UrT bug described in
-#                                        http://www.bigbrotherbot.net/forums/urt/b3-bot-sometimes-mix-up-client-id%27s/ .
-#                                        Hopefully this definitely fixes the wrong aliases issue
-# 30/12/2009 - 1.7.2  - Courgette      - improve say lines slot bug detection for cases where no player exists on slot 0
-#                                      - refactor detection code to follow the KISS rule (keep it simple and stupid)
-# 31/12/2009 - 1.7.3  - Courgette      - fix bug getting client by name when UrT slot 0 bug
-#                                      - requires clients.py 1.2.8+
-# 02/01/2010 - 1.7.4  - Courgette      - improve Urt slot bug workaround as it appears it can occur with slot num
-#                                        different than 0
-# 05/01/2010 - 1.7.5  - Courgette      - fix minor bug in saytell
-# 16/01/2010 - 1.7.6  - xlr8or         - removed max_retries=4 keyword from get_player_list()
-# 16/01/2010 - 1.7.7  - Courgette      - put back max_retries=4 keyword from get_player_list(). @xlr8or: make sure you have
-#                                        the latest q3a.py file (v1.3.1+) for max_retries to work.
-# 18/01/2010 - 1.7.8  - Courgette      - update get_player_list and sync so that connecting players (CNCT) are not ignored.
-#                                        This will allow to use commands like !ci or !kick on hanging players.
-# 26/01/2010 - 1.7.9  - xlr8or         - moved get_map() to q3a.py
-# 10/04/2010 - 1.7.10 - Bakes          - bigsay() function can be used by plugins.
-# 15/04/2010 - 1.7.11 - Courgette      - add debugging info for get_nextmap()
-# 28/05/2010 - 1.7.12 - xlr8or         - connect bots
-# 07/11/2010 - 1.7.13 - GrosBedo       - messages now support named $variables instead of %s
-# 08/11/2010 - 1.7.14 - GrosBedo       - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-# 21/12/2010 - 1.7.15 - SGT            - fix CNCT ping error in getPlayersPings
-#                                      - fix incorrect game type for ffa
-#                                      - move getMapList after game initialization
-# 09/04/2011 - 1.7.16 - Courgette      - reflect that cid are not converted to int anymore in the clients module
-# 03/05/2011 - 1.7.17 - Courgette      - reflect changes in inflict_custom_penalty method signature
-# 31/05/2011 - 1.8.0  - Courgette      - damage event now carry correct damage points
-#                                      - damage event weapon code is now the same as the one used for Kill events
-# 01/06/2011 - 1.8.1  - Courgette      - fix Damage points
-#                                      - when game log provides hit info, Kill event will use last dmg points instead of 100
-# 04/06/2011 - 1.9.0  - Courgette      - makes use of the new plugins_started parser hook
-# 05/06/2011 - 1.10.0 - Courgette      - change data format for EVT_CLIENT_BAN events
-# 14/06/2011 - 1.11.0 - Courgette      - cvar code moved to q3a AbstractParser
-# 12/09/2011 - 1.11.1 - Courgette      - EVT_CLIENT_JOIN event is now triggered when player actually join a team
-#                                      - the call to self.clients.sync() that was made each round is now made on game
-#                                        init and in its own thread
-# 29/09/2011 - 1.11.2 - Courgette      - fix MOD_TELEFRAG attacker on kill event to prevent people from being considered
-#                                        as tkers in such cases.
-# 15/10/2011 - 1.11.3 - Courgette      - better team recognition of existing players at B3 start
-# 15/11/2011 - 1.11.4 - Courgette      - players's team get refreshed after unpausing the bot (useful when used with FTP
-#                                        and B3 lose the connection for a while)
-# 03/03/2012 - 1.11.5 - SGT            - create Survivor Winner event
-#                                      - create Unban event
-#                                      - fix issue with on_say when something like this come and the match couldn't find
-#                                        the name group, say: 7 -crespino-
-# 08/04/2012 - 1.12   - Courgette      - fixes rotatemap() - thanks to Beber888
-#                                      - refactor unban()
-#                                      - change_map() can now provide suggestions
-# 05/05/2012 - 1.13   - Courgette      - fixes issue xlr8or/big-brother-bot#87 - missing ip when trying to auth a
-#                                        client crashes the bot
-# 19/05/2012 - 1.13.1 - Courgette      - fixes issue with kill events when killed by UT_MOD_SLAPPED,
-#                                        UT_MOD_NUKED, MOD_TELEFRAG
-# 07/07/2012 - 1.13.2 - Courgette      - ensures the config file has option 'game_log' in section 'server'
-# 12/08/2012 - 1.13.3 - Courgette      - fix !nextmap bug when the mapcycle file contains empty lines
-# 19/10/2012 - 1.14   - Courgette      - improve finding the exact map in get_maps_sounding_like. Also improves change_map()
-#                                        behavior as a consequence
-# 26/11/2012 - 1.15   - Courgette      - protect some of the Client object property
-# 08/04/2013 - 1.16   - Courgette      - add EVT_BOMB_EXPLODED event
-# 14/07/2013 - 1.17   - Courgette      - add hitlocation constants : HL_HEAD, HL_HELMET and HL_TORSO
-# 10/08/2013 - 1.18   - Fenix          - change get_nextmap to use CVARs only (no more mapcycle file parsing)
-# 13/01/2014 - 1.19   - Fenix          - PEP8 coding standards
-#                                          - correctly set the client bot flag upon new client connection
-# 14/04/2014 - 1.20   - Fenix          - rewritten regular expressions on multiline: respect PEP8 constraint
-#                                          - use get_event_id method to obtain event ids: remove some warnings
-# 02/06/2014 - 1.20.1 - Fenix          - fixed reColor regex stripping whitespaces between words
-# 18/07/2014 - 1.21   - Fenix          - updated parser to comply with the new get_wrap implementation
-#                                      - general parser cleanup
-#                                      - reformat changelog to it can actually be read :)
-#                                      - removed _settings dict re-declaration: was the same of the AbstractParser
-#                                      - updated rcon command patterns
-# 03/08/2014 - 1.22   - Fenix          - syntax cleanup
-# 13/09/2014 - 1.23   - Fenix          - added new event: EVT_SENTRY_KILL
-# 02/10/2014 - 1.24   - Fenix          - fixed regression introduced in 1.22
-# 15/01/2015 - 1.25   - Fenix          - fixed another regression introduced in 1.22
-# 27/01/2015 - 1.26   - Thomas LEVEIL  - `fdir *.bsp` waits for a game server response for 15s
-# 15/06/2015 - 1.27   - Fenix          - fixed client userinfo parsing!
-# 26/07/2015 - 1.28   - Fenix          - queue EVT_GAME_ROUND_END when survivor winner is triggered
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__ = 'xlr8or, Courgette, Fenix'
 __version__ = '1.28'

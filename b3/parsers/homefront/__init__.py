@@ -1,59 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2011-03-30 - 0.1   - first alpha test
-# 2011-03-31 - 0.2   - remove try: catch: around the asyncore loop
-# 2011-04-08 - 0.3   - do not create client without guid as name are not reliable alone
-# 2011-04-08 - 0.4   - refactor get_player_list() and retrieve_playerlist() with cron interval
-# 2011-04-08 - 0.5   - fix the "empty name in database bug" reported by Platanos
-# 2011-04-09 - 0.6   - unban using UID if available
-# 2011-04-16 - 0.6.1 - get_player_scores do not raise an exception when client has no kills attribute
-# 2011-04-17 - 0.7.0 - implements sync()
-#                    - fix bug with UID '0'
-# 2011-04-18 - 0.7.1 - clear clients list on HF connection loss
-# 2011-04-18 - 0.7.2 - remove color codes before sending each line in say, saybig and message
-# 2011-04-25 - 0.8.0 - read game server info through Source Query Protocol
-# 2011-05-03 - 0.9.0 - add custom penalty 'kill'
-# 2011-05-20 - 0.9.1 - changes to support dedicated server version 0.0.0.201105181447
-#                    - support [pm] using adminpm
-#                    - changed adminbigsay and adminsay
-# 2011-05-22 - 0.9.2 - do not rely on RETRIEVE BANLIST response to unban
-# 2011-05-22 - 1.0   - fix onServerVotestart
-# 2011-05-24 - 1.0.1 - "kill" penalty rcon command now uses SteamID instead of player name
-# 2011-05-27 - 1.0.2 - kill event correctly parsed with player names or player SteamID
-# 2011-06-05 - 1.1.0 - change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
-# 2011-07-14 - 1.1.1 - changes to support new dedicated server version 420003
-#                    - implemented get_player_pings()
-# 2011-08-27 - 1.1.2 - added DLC maps that come with patch 1.0.5
-# 2011-08-31 - 1.1.3 - fixed typo in mapname
-# 2011-11-05 - 1.1.4 - makes sure to release the self.exiting lock
-# 2014-05-02 - 1.1.5 - rewrote import statements
-#                    - remove class attribute duplicates
-#                    - rewrote dictionary creation as literal
-#                    - correctly initialize class attributes
-#                    - replaced variable names using python built-in names
-# 2014-07-16 - 1.1.6 - added admin key in EVT_CLIENT_KICK data dict when available
-# 2014-07-18 - 1.1.7 - updated parser to comply with the new get_wrap implementation
-#                    - updated rcon command patterns
-# 2014-08-12 - 1.1.8 - syntax cleanup
-# 2015-04-16 - 1.1.9 - fixed regression introduced in 1.1.7
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 
 import b3
@@ -83,7 +50,7 @@ __author__ = 'Courgette, xlr8or, Freelander, 82ndab-Bravo17'
 __version__ = '1.1.9'
 
 
-class HomefrontParser(b3.parser.Parser):
+class HomefrontParser(Parser):
     """
     The HomeFront B3 parser class
     """
@@ -592,7 +559,6 @@ class HomefrontParser(b3.parser.Parser):
         match = re.search(r"^(?P<name>.+) (\((?P<type>team|squad)\))?says: (?P<text>.*)$", data)
         if not match:
             self.error("Could not understand broadcast format [%s]" % data)
-            raise 
         else:
             typo = match.group('type')
             name = match.group('name')

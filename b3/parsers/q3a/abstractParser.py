@@ -1,70 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2015/05/18 - 1.8.2 - Fenix          - set g_logsync to continuous logging upon startup
-# 2015/04/16 - 1.8.1 - Fenix          - uniform class variables (dict -> variable)
-#                                     - implement missing abstract class methods
-# 2014/08/02 - 1.8   - Fenix          - syntax cleanup
-#                                     - reformat changelog
-#                                     - added missing documentation to Parser methods
-#                                     - make use of self.getEvent() when producing events
-# 2014/07/18 - 1.7.7 - Fenix          - updated abstract parser to comply with the new get_wrap implementation
-#                                     - updated rcon command patterns
-# 2014/07/16 - 1.7.6 - Fenix          - added admin key in EVT_CLIENT_KICK data dict when available
-# 2014/04/14 - 1.7.5 - Fenix          - PEP8 coding standards
-# 2013/03/07 - 1.7.4 - 82ndab-Bravo17 - add ability to do kick by full name of client not authed correctly
-# 2012/07/07 - 1.7.3 - Courgette      - ensures the config file has option 'game_log' in section 'server'
-# 2012/06/17 - 1.7.2 - Courgette      - syntax
-# 18/10/2011 - 1.7.1 - 82ndab-Bravo17 - check slot number go up in order in getplayerlist to weed out data errors
-# 14/06/2011 - 1.7.0 - Courgette      - cvar code changed to han
-# 2011/06/05 - 1.6.0 - Courgette      - change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
-# 2011/04/09 - 1.5.3 - Courgette      - reflect that cid are not converted to int anymore in the clients module
-# 2010/11/08 - 1.5.2 - GrosBedo       - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-# 2010/11/07 - 1.5.1 - GrosBedo       - added moveToTeam default command
-#                                     - fixed get_team (missed team_free and would crash with q3a and oa081 because of
-#                                       int conversion of strings)
-#                                     - messages now support named $variables instead of %s
-# 2010/11/01 - 1.5.0 - xlr8or         - refactored to an abstract parser class
-# 2010/10/06 - 1.4.4 - xlr8or         - reintroduced rcontesting on startup, but for q3a based only (rcon_test var)
-# 2010/08/08 - 1.4.3 - Courgette      - fix minor bug with saybig()
-# 2010/04/10 - 1.4.2 - Bakes          - saybig() function can now be used by plugins: since basic q3 games (such as CoD)
-#                                       cannot print to the center of the screen, it performs the same function as the
-#                                       scream command.
-# 2010/03/22 - 1.4.1 - Courgette      - fix conflict between 1.3.4 and 1.4.
-# 2010/03/21 - 1.4   - Courgette      - now implements methods maprotate and change_map
-# 21/03/2010 - 1.3.4 - Bakes          - rotate_map() function added to make the admin plugin more BFBC2-compatible.
-# 31/01/2010 - 1.3.3 - xlr8or         - fixed a few typos
-# 26/01/2010 - 1.3.2 - xlr8or         - added max_retries=4 to authorize_clients()
-#                                     - get_map() was moved from iourt to q3a
-# 12/06/2009 - 1.3.1 - Courgette      - get_player_list can be called with a custom max_retries value. This can be
-#                                       useful when a map just changed and the gameserver hangs for a while
-# 11/11/2009 - 1.3.0 - Courgette      - new feature: allow action names to contain spaces. In that case the action
-#                                       method is built following a CamelCase syntax. IE: action "Flag return" will
-#                                       call the method named "OnFlagReturn"
-# 27/02/2009 - 1.2.3 - xlr8or         - removed error message for get_player_list(), get_player_pings() and
-#                                       get_player_scores()
-# 06/05/2008 - 1.2.2 - Anubis         - added on_shutdowngame()
-# 06/05/2008 - 1.2.1 - xlr8or         - modified _recolor to strip Ascii > 127 also
-# 02/12/2005 - 1.1.0 - ThorN          - fixed getCvar() regular expression
-# 29/11/2005 - 1.1.0 - ThorN          - added setCvar() and fixed getCvar()
-# 23/07/2005 - 1.0.1 - ThorN          - added log message for when ban() decides to do a tempban
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__ = 'ThorN, xlr8or'
 __version__ = '1.8.1'

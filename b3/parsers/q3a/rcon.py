@@ -1,46 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2009/12/06 - 1.3.5  - Courgette       - make default socketTimeout 800 ms
-#                                       - custom socketTimeout and maxRetries can be specified on a per call basis
-# 2009/12/11 - 1.3.6  - Courgette       - make errors warnings until maxRetries is not reached
-# 2011/02/01 - 1.3.7  - Bravo17         - added variables for rcon & qserver send & reply strings
-# 2011/04/02 - 1.3.8  - Just a baka     - quit command should never be retried
-# 2011/04/13 - 1.3.9  - Courgette       - hopefully filter out non ascii characters
-# 2011/04/13 - 1.3.10 - Courgette       - should get rid of UnicodeDecodeError
-# 2011/04/20 - 1.4    - Courgette       - now sent data is encoded as UTF-8
-# 2011/10/30 - 1.5    - xlr8or, Bravo17 - add encoding to QSERVER and RCON snd methods
-# 2012/04/04 - 1.5.1  - Courgette       - remove 2 confusing debug msg
-# 2012/06/17 - 1.6    - Courgette       - rewrite method writelines so it does not lock until all lines have been
-#                                         sent: this allows other commands made by another thread to be sent in
-#                                         between commands sent via writelines (and B3 won't appear to be unresponsive)
-# 2012/07/18 - 1.6.1  - Courgette       - fix the 'RCON: too much tries' error message when using commands sending
-#                                         multiple lines of text
-# 2012/11/27 - 1.7    - Courgette       - rollback changes made in 1.6 as it does not solve much (at least with UrT) and
-#                                         break some rcon commands with at least cod6
-# 2012/12/22 - 1.8    - Courgette       - do not strip data in game server responses
-# 2014/04/14 - 1.8.1  - Fenix           - PEP8 coding standards
-# 2014/08/02 - 1.9    - Fenix           - syntax cleanup
-#                                       - uniform log message format
-# 2015/01/27 - 1.10   - Thomas LEVEIL   - fix `write` not making any use of its `socketTimeout` optional parameter
-# 2015/03/07 - 1.11   - 82ndab.Bravo17  - replace beaker status caching with built-in caching
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 #
 __author__ = 'ThorN'
 __version__ = '1.11'

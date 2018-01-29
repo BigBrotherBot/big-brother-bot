@@ -1,59 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 22/02/2009 - 1.2.1 - Courgette - fix the compatibility issue with ElementTree  and display an explicit
-#                                  error message to avoid noobish questions on B3 forums :P
-# 14/11/2009 - 1.2.2 - Courgette - detect xml parsing errors and raise a specific exception in that case
-# 22/11/2009 - 1.2.3 - Courgette - fix bug with resolution of @conf on linux
-# 29/11/2009 - 1.3.0 - Courgette - XmlConfigParser can also be parsed from string
-# 20/12/2009 - 1.3.1 - Courgette - fix bug in resolving @b3 which was failing for the win32 standalone release
-# 03/12/2011 - 1.3.2 - Courgette - fixes xlr8or/big-brother-bot#18 : @conf in XML only works when b3_run.py config
-#                                  parameter contains path component
-# 31/03/2012 - 1.3.3 - Courgette - change behavior of XmlConfigParser methods getboolean, getint, getfloat when
-#                                  config value is an empty string
-# 11/04/2012 - 1.4   - Courgette - CfgConfigParser now implements methods getDuration, getboolean,
-#                                  getpath, load_from_string
-# 10/04/2013 - 1.4.1 - Courgette - fix ConfigFileNotFound and ConfigFileNotValid __str__ method
-# 19/07/2014 - 1.5   - Fenix     - syntax cleanup
-#                                - declared get method in B3ConfigParserMixin for design consistency
-#                                - added stub constructor in XmlConfigParser
-# 06/09/2014 - 1.5.1 - Courgette - remove duplicated code by using b3.getAbsolutePath
-# 07/09/2014 - 1.6   - Fenix     - added 'allow_no_value' keyword to CfgConfigParser constructor so we can load
-#                                  plugins which don't specify a configuration file
-# 07/09/2014 - 1.7   - Courgette - added MainConfig class to parser B3 main configuration file from .xml and .ini format
-# 07/09/2014 - 1.7.1 - Fenix     - patch the RawConfigParser class when python 2.6 is used to run b3: this allows
-#                                  python 2.6 to make use of the new feature of the RawConfigParser class that load
-#                                  keys from configuration files with non specified values
-#                                - return empty string instead of None in get() method: this fixes possible failures in
-#                                  string replacements when we retrieve empty option from a .ini configuration file
-# 15/01/2015 - 1.7.2 - Fenix     - Make sure users can't load 'admin', 'publist', 'ftpytail', 'sftpytail', 'httpytail'
-#                                  as disabled from main B3 configuration file
-# 22/01/2015 - 1.7.3 - Fenix     - added add_comment method to CfgConfigParser and overridden write() method
-#                                  to properly write comments in a newly generated configuration file
-# 03/03/2015 - 1.7.4 - Fenix     - removed python 2.6 support
-# 03/03/2015 - 1.7.5 - Fenix     - moved exception classes in a separate module
-# 19/03/2015 - 1.7.6 - Fenix     - raise NotImplementedError instead of NotImplemented
-# 22/04/2015 - 1.7.7 - Fenix     - raise ConfigFileNotValid in ConfigParser.readfp for consistency with XmlConfigParser
-#                                - added 'analyze()' method in MainConfig
-# 26/05/2015 - 1.7.8 - Fenix     - changed analyze() to validate also storage protocol
-# 17/06/2015 - 1.7.9 - Fenix     - fixed bad indent which was causing analyze() to generate false positives on admin plugin
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__  = 'ThorN, Courgette, Fenix'
 __version__ = '1.7.9'

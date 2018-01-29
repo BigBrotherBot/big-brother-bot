@@ -1,57 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 27/03/2010 - 1.2.1 - xlr8or         - set default port for mysql
-# 11/04/2010 - 1.2.2 - Courgette      - make splitDSN support usernames containing '@'
-# 01/09/2010 - 1.3   - Courgette      - make splitDSN add default ftp and sftp port
-# 08/11/2010 - 1.3.1 - GrosBedo       - vars2printf is now more robust against empty strings
-# 01/12/2010 - 1.3.2 - Courgette      - check_update now uses a custom short timeout to
-#                                       prevent blocking the bot when the B3 server is hanging
-# 17/04/2011 - 1.3.3 - Courgette      - make sanitizeMe unicode compliant
-# 06/06/2011 - 1.4.0 - Courgette      - add meanstdv()
-# 07/06/2011 - 1.4.1 - Courgette      - fix meanstdv()
-# 17/06/2012 - 1.5   - Courgette      - add getStuffSoundingLike()
-# 19/10/2012 - 1.6   - Courgette      - improve getStuffSoundingLike() so it discards non letter/digit characters
-# 20/10/2012 - 1.7   - Courgette      - fix soundex() error when input string is unicode
-# 26/11/2012 - 1.8   - Courgette      - add hash_password()
-# 18/08/2013 - 1.9   - Courgette      - add support for empty or no MySQL password
-# 21/02/2014 - 1.10  - Courgette      - fix getStuffSoundingLike that would return non unique suggest ons or would not
-#                                       return suggestions in the same order for the same input values if ordered
-#                                       differently and if having multiple same levenshtein distance
-# 21/04/2014 - 1.11  - 82ndab_Bravo17 - allow _ char in vars2printf replacements
-# 02/05/2014 - 1.12  - Fenix          - added getCmd method: return a command reference given the name and the plugin
-# 19/07/2014 - 1.13  - Fenix          - syntax cleanup
-# 12/12/2014 - 1.14  - Fenix          - added some file system utilities
-#                                     - added left_cut function: remove the given prefix from a string
-#                                     - added right_cut function: remove the given suffix from a string
-#                                     - added hash_file function: calculate the MD5 digest of the given file
-# 20/12/2014 - 1.15  - Fenix          - fixed hash_file returning None
-# 27/12/2014 - 1.16  - Fenix          - adapted splitDSN to support postgresql databases
-# 04/02/2015 - 1.17  - Fenix          - added getBytes function
-# 08/02/2015 - 1.18  - Fenix          - added escape function
-# 14/02/2015 - 1.19  - Fenix          - changed main_is_frozen() to work with cx_Freeze instead of py2exe
-# 09/03/2015 - 1.20  - Fenix          - added topological_sort() function: topological sort implementation
-# 23/05/2015 - 1.21  - Fenix          - added decode() function: decode a string using the system default encoding
-# 26/05/2015 - 1.22  - Fenix          - added console_exit function: terminate the current console application
-#                                     - moved clearscreen() function from b3.__init__
-# 13/07/2015 - 1.23  - Fenix          - added clamp function
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__    = 'ThorN, xlr8or, courgette'
 __version__   = '1.23'

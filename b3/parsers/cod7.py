@@ -1,49 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 15/01/2011 - 1.0.0 - Freelander, Courgette - initial release
-# 22/01/2011 - 1.0.1 - Freelander            - do not try to authenticate [3arc]democlient
-#                                            - inherits from cod5 parser now to handle actions
-# 01/02/2011 - 1.0.2 - Freelander            - force g_logsync to 1 on every round start as it may be lost after a
-#                                              server restart/crash
-# 01/02/2011 - 1.0.3 - Just a baka           - pre-Match Logic
-# 08/02/2011 - 1.0.4 - Just a baka           - reworked Pre-Match logic to reflect latest changes to cod7http
-# 02/03/2011 - 1.0.5 - Bravo17               - added test to make sure cod7http still running
-#                                            - tidied up startup console output
-# 02/04/2011 - 1.0.6 - Freelander            - onK: Fix for suicide events to be handled correctly by XLRstats
-#                                            - set playercount to 4 in pre-match logic
-# 09/04/2011 - 1.0.7 - Courgette             - reflect that cid are not converted to int anymore in the clients module
-# 14/04/2011 - 1.0.8 - Freelander            - fixed rcon set command that was changed as setadmindvar in CoD7
-# 25/05/2011 - 1.1   - Courgette             - kick commands now sends reason
-# 30/12/2011 - 1.2   - Bravo17               - new client will now join Auth queue if slot shows as 'Disconnected'
-#                                              in Auth queue
-# 25/07/2012 - 1.2.1 - Courgette             - make sure the cod7http plugin is loaded
-# 10/05/2013 - 1.2.2 - 82ndab.Bravo17        - do not apply cod5 alterations to admin plugin
-# 02/05/2014 - 1.2.3 - Fenix                 - rewrote dictionary creation as literal
-#                                            - replace attribute names using python built-in ones
-#                                            - correctly use self._prematch instead of self.preMatch in if-else clause
-#                                            - include Cod7Rcon class declaration in cod7.py module
-# 30/07/2014 - 1.2.4 - Fenix                 - fixes for the new getWrap implementation
-# 04/08/2014 - 1.3   - Fenix                 - syntax cleanup
-# 15/01/2015 - 1.3.1 - Fenix                 - unload httpytail plugin only if it was actually loaded
-# 15/01/2015 - 1.3.2 - Fenix                 - removed outdated reference to Parser._pluginOrder
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 
 __author__ = 'Freelander, Courgette, Just a baka, Bravo17'

@@ -1,52 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-#              1.1.2 - xlr8or         - alternate approach on the <32 character guid issue
-#              1.1.3 - xlr8or         - improved approach for non PB servers
-#                                     - tighter regexp for playernames. _recolor strips ascii <33, 47 and >127
-#                                     - this includes spaces and also the / is removed.
-#              1.1.4 - xlr8or         - removed bug for non PB servers
-#              1.1.5 - Bakes          - improved suicide code, now works with weapon suicides, not falling.
-#              1.1.6 - xlr8or         - minor bugfix regarding unassigned pbid on non pb servers.
-#              1.2.0 - xlr8or         - big CoD4 MakeOver
-#
-# 17/01/2010 - 1.2.1 - xlr8or         - moved on_initgame and OnExitlevel to codparser!
-# 25/01/2010 - 1.3.0 - xlr8or         - refactored cod parser series
-# 27/01/2010 - 1.3.1 - xlr8or         - added authorize_clients() for ipsonly
-#                                     - minor bugfix in sync() for ipsonly
-# 31/01/2010 - 1.3.2 - xlr8or         - modified unban to remove bans from game's ban list
-# 01/05/2010 - 1.3.2 - xlr8or         - delegate guid length checking to cod parser
-# 07/11/2010 - 1.3.3 - GrosBedo       - messages now support named $variables instead of %s
-# 08/11/2010 - 1.3.4 - GrosBedo       - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-# 22/01/2012 - 1.3.5 - 82ndab-Bravo17 - add JT method for some COD4 mods
-# 07/03/2012 - 1.3.6 - 82ndab-Bravo17 - change Client Auth method so it updates empty pbids
-# 18/11/2012 - 1.3.7 - Courgette      - fix: player not authenticated (without punkbuster) when qport or port is a
-#                                       negative number
-# 02/01/2013 - 1.3.8 - Courgette      - improve parsing rcon status status responses that are missing characters
-# 12/01/2013 - 1.3.9 - Courgette      - fix bug when cod4_client_auth_method handles an unexpected error
-# 10/05/2013 - 1.4.0 - 82ndab-Bravo17 - allow kicking by full name, even if not authed by B3
-# 02/05/2014 - 1.4.1 - Fenix          - rewrote dictionary creation as literal
-# 30/07/2014 - 1.4.2 - Fenix          - fixes for the new getWrap implementation
-# 03/08/2014 - 1.5   - Fenix          - syntax cleanup
-# 19/03/2015 - 1.5.1 - Fenix          - removed unused import statemnet (from b3 import functions)
-#                                     - removed deprecated usage of dict.has_key (us 'in dict' instead)
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__ = 'ThorN, xlr8or'
 __version__ = '1.5.1'

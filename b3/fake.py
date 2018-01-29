@@ -1,45 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 1.3               - add FakeConsole.saybig(msg)
-#                   - FakeConsole.write() do not fail when arg is not a string
-# 1.4  - 2010/11/01 - improve FakeStorage implementation
-# 1.5  - 2010/11/21 - FakeConsole event mechanism does not involve a Queue anymore as this class is meant to test one
-#                     plugin at a time there is no need for producer/consumer pattern. This speeds up tests and
-#                     simplifies the use of a debugger. Also tests do not neet time.sleep() to make sure the events
-#                     were handled before checking results and moving on (unittest friendly)
-# 1.6  - 2010/11/21 - remove more time.sleep()
-#                   - add message_history for FakeClient which allow to test if a client was sent a message afterward
-# 1.7  - 2011/06/04 - replace FakeStorage with DatabaseStorage("sqlite://:memory:")
-# 1.8  - 2011/06/06 - add ban()
-#                   - change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
-# 1.9  - 2011/06/09 - FakeConsole now uses the logging module
-# 1.10 - 2011/12/29 - fix issue with plugins' registered events when importing fakeconsole in different TestSuites
-# 1.11 - 2012/04/15 - fix issue with message_history of FakeClient which was shared between instances
-# 1.12 - 2014/07/16 - added admin key in EVT_CLIENT_KICK data dict when available
-# 1.13 - 2014/08/05 - syntax cleanup
-# 1.14 - 2014/09/06 - adapted FakeConsole to work with the new b3.ini configuration file format
-# 1.15 - 2014/12/27 - new storage module initialization
-# 1.16 - 2015/01/29 - make use of the new b3.config.MainConfig class
-# 1.17 - 2015/02/07 - update write method to accept a socketTimeout=None parameter
-# 1.18 - 2015/03/19 - removed deprecated usage of dict.has_key (us 'in dict' instead)
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 """
 This module make plugin testing simple. It provides you

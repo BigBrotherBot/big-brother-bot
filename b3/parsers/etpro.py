@@ -1,40 +1,27 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 05/04/2009 - 0.0.1              - updating so that it works for etpro
-# 31/01/2010 - 0.0.2  - Courgette - get_map() is now inherited from q3a
-# 09/04/2011 - 0.0.3  - Courgette - reflect that cid are not converted to int anymore in the clients module
-# 02/05/2014 - 0.0.4  - Fenix     - rewrote dictionary creation as literal
-#                                 - removed some warnings
-#                                 - minor syntax changes
-#                                 - replaced variable named using python built-in names
-# 18/07/2014 - 0.0.5  - Fenix     - updated parser to comply with the new get_wrap implementation
-#                                 - removed _settings dict re-declaration: was the same of the AbstractParser
-#                                 - updated rcon command patterns
-# 30/07/2014 - 0.0.6  - Fenix     - fixes for the new getWrap implementation
-# 04/08/2014 - 0.0.7  - Fenix     - make use of self.getEvent when registering events: removes warnings
-# 29/08/2014 - 0.0.8  - Fenix     - syntax cleanup
-# 14/02/2015 - 0.0.9  - Courgette - display a tip in b3.log at bot start regarding the correct use of b_privatemessages
-# 14/02/2015 - 0.0.10 - Courgette - check the value of b_privatemessages at startup
-# 19/03/2015 - 0.0.11 - Fenix     - removed deprecated usage of dict.has_key (us 'in dict' instead)
-#
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
+
 # CREDITS
 # Based on the version 0.0.1, thanks ThorN.
 # Copied alot from wop.py, thanks xlr8or.

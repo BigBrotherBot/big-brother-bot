@@ -1,48 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2010/03/09 - 0.5    - Courgette - open a TCP connection to a BFBC2 server, auth with provided password
-#                                 - can either be used to send commands or enter the listening mode
-# 2010/03/14 - 0.6    - Courgette - raise a FrostbiteNetworkException whenever something goes wrong on the
-#                                   network while using send_request()
-# 2010/03/16 - 0.7    - Courgette - FrostbiteCommandFailedError now also contains the BFBC2 response
-# 2010/03/19 - 0.8    - Courgette - fix bug listening to event when we have an incomplete packet
-# 2010/03/23 - 0.9    - Courgette - bugfix: when start listening and only a partial packet is available
-# 2010/03/25 - 0.10   - Courgette - updated to use latest protocol.py
-#                                 - send_request and read_event now detect a lost connection and reconnect in such cases
-# 2010/03/25 - 0.10.1 - Courgette - Exception message more explicit
-#                                 - fix the socket time out message when listening to events
-# 2010/03/30 - 0.11   - Courgette - use console to print messages
-#                                 - when listening to event, do not set the socket into blocking mode. This should
-#                                   make the bot recover from a connection loss
-# 2010/04/11 - 1.0    - Courgette - fix a bug which occurred in the rare case we receive from the server a packet from
-#                                   another sequence
-#                                 - make this version 1.0 as it seems to be stable enough now
-# 2010/04/18 - 1.1    - Courgette - harden read_event in cases where a network error occurs while replying OK to an
-#                                   event (Thanks to Merph's report)
-# 2010/04/18 - 1.2    - Courgette - try to make sure read_event does not hang on a dead connection
-# 2010/04/20 - 1.2.1  - Courgette - harden 1.2
-# 2010/10/11 - 1.2.2  - xlr8or    - output to log changed: BFBC2 -> Frostbite (cosmetic only!)
-# 2010/10/23 - 2.0    - Courgette - refactor to make this module generic for all frostbite games
-# 2014/08/05 - 2.1    - Fenix     - syntax cleanup
-#                                 - do not raise FrostbiteConnection since it's not an exception class
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__  = 'Courgette'
 __version__ = '2.1'

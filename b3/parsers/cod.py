@@ -1,78 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 07/23/2005 - 1.1.0                     - added damage type to Damage and Kill event data
-# 27/06/2009 - 1.3.1    - xlr8or         - added action mechanism (event) for version 1.1.5
-# 28/08/2009 - 1.3.2    - Bakes          - added regexp for CoD4 suicides
-# 17/01/2010 - 1.3.3    - xlr8or         - moved sync to InitGame (30 second delay)
-# 25/01/2010 - 1.4.0    - xlr8or         - refactored cod parser series
-# 26/01/2010 - 1.4.1    - xlr8or         - added authorize_clients() for ipsonly
-#                                        - minor bugfixes after initial tests
-# 26/01/2010 - 1.4.2    - xlr8or         - added mapEnd() on Exitlevel
-# 27/01/2010 - 1.4.3    - xlr8or         - minor bugfix in sync() for ipsonly
-# 28/01/2010 - 1.4.4    - xlr8or         - make sure cid is entering Authentication queue only once.
-# 29/01/2010 - 1.4.5    - xlr8or         - minor rewrite of Auth queue check
-# 31/01/2010 - 1.4.6    - xlr8or         - added unban for non pb servers
-#                                        - fixed bug: rcon command banid replaced by banclient
-# 28/03/2010 - 1.4.7    - xlr8or         - added PunkBuster activity check on startup
-# 18/04/2010 - 1.4.8    - xlr8or         - trying to prevent key errors in new_player()
-# 18/04/2010 - 1.4.9    - xlr8or         - forcing g_logsync to make server write unbuffered gamelogs
-# 01/05/2010 - 1.4.10   - xlr8or         - delegate guid length checking to cod parser
-# 24/05/2010 - 1.4.11   - xlr8or         - check if guids match on existing client objects when joining after
-#                                          a mapchange
-# 30/05/2010 - 1.4.12   - xlr8or         - adding dummy set_version_exceptions() to enable overriding of variables based
-#                                          on the shortversion
-# 10/08/2010 - 1.4.13   - xlr8or         - fixed a bug where clients would be disconnected after mapchange.
-# 10/09/2010 - 1.4.14   - xlr8or         - don't save client.name on say and sayteam when name is the same (sanitization
-#                                          problem)
-# 24/10/2010 - 1.4.15   - xlr8or         - some documentation on line formats
-# 07/11/2010 - 1.4.16   - GrosBedo       - messages now support named $variables instead of %s
-# 08/11/2010 - 1.4.17   - GrosBedo       - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-# 02/02/2011 - 1.4.18   - xlr8or         - add cod7 suicide _lineformat
-# 16/03/2011 - 1.4.19   - xlr8or         - improve PunkBuster check
-# 28/03/2011 - 1.4.20   - Bravo17        - CoD5 JT regexp fix
-# 09/04/2011 - 1.4.21   - Courgette      - reflect that cid are not converted to int anymore in the clients module
-# 16/07/2011 - 1.4.22   - Freelander     - minor bugfix to flag disconnecting client properly if found in authentication
-#                                          queue
-# 03/07/2011 - 1.4.23   - 82ndab.Bravo17 - adjust sync() timing for high slot count servers and login plugin.
-#                                          sync now occurs 60 seconds after ExitLevel (map change) rather than 30
-#                                          seconds after every round start
-# 11/09/2011 - 1.4.24   - 82ndab.Bravo17 - new client will now join Auth queue if slot shows as 'Disconnected' in
-#                                          auth queue
-# 10/30/2011 - 1.4.25   - xlr8or         - add decoding to data in say, sayTeam and Tell methods
-# 01/28/2012 - 1.4.26   - 82ndab.Bravo17 - add special case COD7 suicide regex where attacker team and name appear to be
-#                                          swapped in the console output
-# 10/03/2012 - 1.4.27   - 82ndab.Bravo17 - pbid now empty string instead of None if pb disabled
-# 07/07/2012 - 1.4.28   - Courgette      - ensures the config file has option 'game_log' in section 'server'
-# 12/31/2012 - 1.4.29   - Courgette      - accepts rcon status responses having negative port numbers
-# 01/02/2013 - 1.4.30   - Courgette      - improve parsing rcon status status responses that are missing characters
-# 05/02/2014 - 1.4.31   - Fenix          - fixed empty group in regular expression
-#                                        - rewrote dictionary creation as literal
-#                                        - correctly initialize variables before usage
-# 30/07/2014 - 1.4.32   - Fenix          - fixes for the new getWrap implementation
-# 03/08/2014 - 1.5      - Fenix          - syntax cleanup
-# 15/10/2014 - 1.5.1    - 82ndab.Bravo17 - show current minimum guid length if one that is too short is found
-# 19/03/2015 - 1.5.2    - Fenix          - removed deprecated usage of dict.has_key (us 'in dict' instead)
-# 16/04/2015 - 1.5.3    - Fenix          - uniform class variables (dict -> variable)
-#                                        - fixed some regression instroduced in 1.5
-# 28/04/2015 - 1.5.4    - Fenix          - fixed _line_length being declared as a tuple
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__ = 'ThorN, xlr8or'
 __version__ = '1.5.3'

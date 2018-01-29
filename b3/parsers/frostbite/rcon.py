@@ -1,39 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2010 Courgette <courgette@bigbrotherbot.net>
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2010/03/09 - 0.1   - Courgette - alpha, need test server to validate
-# 2010/03/09 - 0.2   - Courgette - tested, seems to work for most cases
-# 2010/03/14 - 0.3   - Courgette - write() can retry in case of failure
-# 2010/03/27 - 0.3.1 - Courgette - fix max_retries limitation
-#                                - make this class thread safe
-# 2010/04/03 - 0.3.2 - Courgette - fix import FrostbiteException
-# 2010/04/11 - 1.0   - Courgette - just make it v1.0 as it is now part of a public release and works rather good
-# 2010/04/15 - 1.0.1 - Bakes     - if the response of the rcon command does not start with 'OK', trigger
-#                                  FrostbiteCommandFailedError
-# 2010/07/29 - 1.0.2 - xlr8or    - the response may also be "NotFound" ie. when a guid or ip address is not found in
-#                                  the banslist.
-#                                - added need_confirmation var to write() so we can use the confirmationtype
-#                                  ("OK", "NotFound") to test on.
-# 2010/10/23 - 2.0   - Courgette - refactor BFBC2 -> frostbite
-# 2014/08/05 - 2.1   - Fenix     - syntax cleanup
-#                                - fixed some typos in debug messages
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
  
 __author__ = 'Courgette'
 __version__ = '2.1'

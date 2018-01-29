@@ -1,42 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2010 Grosbedo
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2014-09-01 - v0.8   - Fenix     - syntax cleanup
-# 2010-10-02 - v0.7   - Courgette - separated b3_run.py from b3_debug.py. To use the debug stuff, start B3 
-#                                   using python b3_debug.py instead of python b3_run.py
-# 2010-09-17 - v0.6.1 - GrosBedo  - fixed import bug
-# 2010-09-16 - v0.6   - GrosBedo  - fixed function profiler, it now works with threads
-# 2010-09-16 - v0.5.5 - GrosBedo  - fixed a few more bugs with diagnostic mode
-# 2010-09-16 - v0.5.4 - GrosBedo  - fixed some bugs with diagnostic mode and removed one list (smaller memory footprint)
-# 2010-09-15 - v0.5.3 - GrosBedo  - added --diagload to load human readable stats files and merge the results
-# 2010-09-15 - v0.5.2 - GrosBedo  - fixed a few bugs again in log diagnostic mode
-# 2010-09-14 - v0.5.1 - GrosBedo  - fixed a few bugs in log diagnostic mode
-# 2010-09-13 - v0.5   - GrosBedo  - reworked the diagnostic switchs, now can save a raw merged matrix from loaded raw
-#                                   matrix and should be more efficient at memory management
-# 2010-09-09 - v0.4.2 - GrosBedo  - more memory efficient when loading huge datas matrixes
-# 2010-09-09 - v0.4.1 - GrosBedo  - fixed some bugs when loading several files at once
-# 2010-09-09 - v0.4   - GrosBedo  - added diagnostic tool switchs
-# 2010-09-08 - v0.3   - GrosBedo  - added the debug subparser
-#                                 - does not conflict with standard b3 switchs anymore (--help show the b3 help)
-# 2010-09-07 - v0.2   - GrosBedo  - added the special debug switchs, like debug, profile save and load.
-# 2010-09-06 - v0.1   - GrosBedo  - nitial version.
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 
 __author__  = 'GrosBedo'

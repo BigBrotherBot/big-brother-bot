@@ -1,38 +1,26 @@
-# encoding: utf-8
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2011 Thomas LEVEIL <courgette@bigbrotherbot.net>
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2011-05-01 - 1.0 - Courgette - first release. Need work regarding teams and teamkills
-# 2011-05-01 - 1.1 - Courgette - fix unban
-#                              - add 3 new B3 events : EVT_CLIENT_CONSOLE_COMMAND, EVT_CLIENT_CALL_VOTE
-#                                and EVT_CLIENT_VOTE
-#                              - try to fight back when ppl call kick vote against admins
-#                              - unban admins who got kicked to pass by the default 2m tempban on kicks
-#                              - more team ID found. Still need to figure out the game mod that are team
-#                                based to properly assign B3 team IDs
-# 2011-06-05 - 1.2 - Courgette - change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
-# 2014-05-02 - 1.3 - Fenix     - minor syntax changes
-#                              - fixed get_player_pings method declaration not matching the method in Parser class
-# 2014-07-16 - 1.4 - Fenix     - added admin key in EVT_CLIENT_KICK data dict when available
-# 2014-08-12 - 1.5 - Fenix     - syntax cleanup
-# 2015-04-06 - 1.6 - Fenix     - implement missing abstract class methods
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 import b3
 import b3.clients

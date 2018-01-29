@@ -1,38 +1,26 @@
-# coding=UTF-8
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2011 Thomas LEVEIL <courgette@bigbrotherbot.net>
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 1.0.x - 82ndab-Bravo17 - implement BattlEye network protocol
-#                        - fully functional module that can connects to a BattlEye server, send commands,
-#                          receive packets
-#                        - external function can subscribe to get notified of received packets (event, command
-#                          full response or commands response parts)
-# 1.1   - Courgette      - make sending command synchronous (does not block receiving events though)
-#                        - external functions subscribing will only be notified of BattlEye events
-#                          (and won't receive command response packets)
-#                        - CommandTimeoutError will be raised if a command does not get any response in a timely
-#                          manner
-# 1.1.1 - 82ndab-Bravo17 - correct race condition
-# 1.1.2 - 82ndab-Bravo17 - improve UDP reads to avoid dropped packets
-# 1.2   - Fenix          - syntax cleanup
-# 1.2.1 - Fenix          - removed deprecated usage of dict.has_key (us 'in dict' instead)
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 import binascii
 import logging

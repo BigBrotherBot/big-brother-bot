@@ -1,40 +1,26 @@
 # -*- coding: utf-8 -*-
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2010/02/20 - 1.1   - Courgette - fix convertion from level to group name for unexpected level numbers
-#                                - cosmetics to the html export
-#                                - add maxlevel setting to hide commands reserved to high levels
-# 2010/02/23 - 1.2   - Courgette - make the html export validate the W3C test
-#                                - hide the maxLevel column on the html export
-# 2010/02/25 - 1.2.1 - Courgette - fix Internet Explorer issues with logo in html export
-#                                - remove any use the sets module
-# 2010/02/26 - 1.2.2 - Courgette - fix bug making commands with alias appear twice in the results
-# 2010/03/07 - 1.2.3 - Courgette - make the html export pass the W3C tests
-# 2010/08/25 - 1.2.4 - Courgette - do not fail if 'destination' is found in config but empty
-# 2011/05/11 - 1.2.5 - Courgette - update B3 website URL
-# 2014/01/20 - 1.2.6 - ozon      - add json output
-# 2014/05/25 - 1.2.7 - Courgette - fix crash when command description is an empty string
-# 2014/08/31 - 1.2.8 - Fenix     - syntax cleanup
-# 2014/11/30 - 1.2.9 - xlr8or    - fix template checking in load_html_template()
-# 2015/07/06 - 1.3.0 - Fenix     - make sure to have a writable filepath when locally saving user documentation
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 
 """ 

@@ -1,55 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2010-10-23 - 1.1   - Courgette - remove bfbc2 names
-# 2010-11-07 - 1.1.1 - GrosBedo  - messages now support named $variables instead of %s
-# 2010-11-08 - 1.1.2 - GrosBedo  - messages can now be empty (no message broadcasted on kick/tempban/ban/unban)
-# 2010-11-02 - 1.2   - Courgette - call get_easy_name() in OnServerLoadinglevel
-#                                - fix get_supported_maps()
-#                                - OnServerLoadinglevel() now fills game.rounds and game.sv_maxrounds
-# 2010-11-21 - 1.3   - Courgette - remove rotate_map and change_map as their implementation differs for MoH
-# 2011-05-22 - 1.4   - Courgette - create specific events : EVT_GAME_ROUND_PLAYER_SCORES and EVT_GAME_ROUND_TEAM_SCORES
-#                                - handle Frostbite events : OnServerRoundover, OnServerRoundoverplayers and
-#                                  OnServerRoundoverteamscores
-# 2011-05-24 - 1.4.1 - Courgette - fix get_supported_maps() so it uses the maplist set for the next round
-#                                  instead of current
-# 2011-05-25 - 1.4.2 - Courgette - fix bug introduced in 1.4.1
-# 2011-06-05 - 1.5.0 - Courgette - change data format for EVT_CLIENT_BAN_TEMP and EVT_CLIENT_BAN events
-# 2011-11-05 - 1.5.1 - Courgette - make sure to release the self.exiting lock
-# 2012-10-06 - 1.6   - Courgette - isolate the patching code in a module function
-# 2013-01-20 - 1.6.1 - Courgette - improve punkbuster event parsing
-# 2013-02-17 - 1.7   - Courgette - add support for B3 event EVT_CLIENT_SQUAD_SAY
-# 2014-05-02 - 1.7.1 - Fenix     - rewrote import statements
-#                                - rewrote dictionary creation as literals
-#                                - renamed sayqueuelistener() method in sayqueuelistenerworker(): was
-#                                  overwriting an attribute
-#                                - correctly initialize variables before usage
-# 2014-07-18 - 1.7.2 - Fenix     - updated abstract parser to comply with the new get_wrap implementation
-# 2014-08-05 - 1.7.3 - Fenix     - make use of self.getEvent when registering events: removes warnings
-#                                - added getEasyName method declaration
-# 2014-08-27 - 1.8   - Fenix     - syntax cleanup
-#                                - major fixes in B3 parser interface methods
-# 19/03/2015 - 1.8.1 - Fenix     - raise NotImplementedError instead of NotImplemented
-# 16/04/2015 - 1.8.2 - Fenix     - uniform class variables (dict -> variable)
-#                                - implement missing abstract class methods
-# 30/07/2015 - 1.9   - Fenix     - fixed regression introduced in 1.8.2
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__  = 'Courgette'
 __version__ = '1.9'

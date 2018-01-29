@@ -1,33 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2005 Michael "ThorN" Thornton
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 04/08/2014 - 0.7   - Fenix          - syntax cleanup
-#                                     - fixed client retrieval in OnA()
-# 30/07/2014 - 0.6.2 - Fenix          - fixes for the new getWrap implementation
-# 10/05/2013 - 0.6.1 - 82ndab.Bravo17 - do not apply cod4 alterations to admin plugin
-# 25/04/2011 - 0.6   - xlr8or         - action logging - get client by name
-# 24/04/2011 - 0.5   - xlr8or         - disable action logging - game engine bug
-# 18/03/2011 - 0.4   - Freelander     - fixed a typo causing permanent bans fail
-# 24/01/2010 - 0.3   - xlr8or         - replaced _commands dict to fix broken ban command
-# 09/10/2010 - 0.2   - jerbob92       - set sv_hostname at statup
-# 02/10/2010 - 0.1   - NTAuthority    - parser created
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__ = 'NTAuthority'
 __version__ = '0.7'

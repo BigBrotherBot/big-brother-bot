@@ -1,53 +1,26 @@
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2010 Thomas LEVEIL <courgette@bigbrotherbot.net>
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 31/01/2010 - 0.1   - Courgette - use the new /cp command to send private messages (requires SmokinGuns v1.1)
-# 31/01/2010 - 0.1.1 - Courgette - get_map() is now inherited from q3a
-# 01/02/2010 - 0.2   - Courgette - fix _regplayer regex for SGv1.1b4
-#                                - discover clients at bot start
-#                                - make use of dumpuser to get a player's ip
-#                                - don't lower() guid
-# 06/02/2010 - 0.3   - Courgette - enable private messaging with the new /tell command
-#                                - fix ban command
-# 06/02/2010 - 0.4   - Courgette - parser recognizes damage lines (when enabled in config with : set g_debugDamage "1")
-# 04/03/2010 - 0.5   - Courgette - on_clientuserinfo -> on_clientuserinfochanged
-# 06/03/2010 - 0.6   - Courgette - make sure bots are bots on client connection
-#                                - auth client by making use of dumpuser whenever needed
-#                                - add custom handling of OnItem action
-#                                - add the money property to clients that holds the amount of money a player has
-# 07/03/2010 - 0.7   - Courgette - when players buy stuff or pickup money, EVT_CLIENT_ITEM_PICKUP events are replaced by
-#                                  two SG specific new events : EVT_CLIENT_GAIN_MONEY and EVT_CLIENT_SPEND_MONEY
-#                                  Those events help keeping track of money flows and should give plugin developers.
-#                                  a lot of freedom
-# 07/03/2010 - 0.8   - Courgette - fix bug introduced in 0.6 which messed up clients cid as soon as they are chatting...
-# 08/03/2010 - 0.9   - Courgette - should fix the bot's team issue
-# 15/09/2010 - 0.9.1 - GrosBedo  - added !nextmap and !maps support
-# 13/01/2014 - 0.9.2 - Fenix     - PEP8 coding standards
-#                                - changed bots guid syntax to match other q3a parsers (BOT<slot>)
-#                                - correctly set client bot flag upon new client connection
-# 30/07/2014 - 0.9.3 - Fenix     - fixes for the new getWrap implementation
-# 11/08/2014 - 0.9.4 - Fenix     - syntax cleanup
-#                                - make use of self.getEvent() when producing events
-#                                - fixed current mapname retrieval
-# 19/03/2015 - 0.9.5 - Fenix     - removed deprecated usage of dict.has_key (us 'in dict' instead)
-# 16/04/2015 - 0.9.6 - Fenix     - uniform class variables (dict -> variable)
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 __author__ = 'xlr8or, Courgette'
 __version__ = '0.9.6'

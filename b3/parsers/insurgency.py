@@ -1,73 +1,26 @@
-# coding=UTF-8
-#
-# BigBrotherBot(B3) (www.bigbrotherbot.net)
-# Copyright (C) 2014 Courgette <courgette@bigbrotherbot.net>
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-#
-# CHANGELOG
-#
-# 2014-04-01 - 0.1   - Courgette      - copied from csgo
-# 2014-05-02 - 0.2   - Fenix          - rewrote import statements
-#                                     - initialize missing class attributes
-#                                     - fixed get_player_pings method declaration not matching the method in Parser class
-#                                     - fixed client retrieval in kick, ban and tempban function
-# 2014-07-16 - 0.3   - Fenix          - added admin key in EVT_CLIENT_KICK data dict when available
-# 2014/07/18 - 0.4   - Fenix          - updated abstract parser to comply with the new get_wrap implementation
-# 2014/08/29 - 0.5   - 82ndab.Bravo17 - remove color codes from all messages since Insurgency doesn't use them
-# 2014/08/30 - 0.6   - Fenix          - syntax cleanup
-#                                     - let getcvar() method make use of the Cvar class
-# 2014/09/01 - 0.6.1 - 82ndab-Bravo17 - Add color code options for new getWrap method
-# 2014/09/02 - 0.7   - 82ndab-Bravo17 - Changed getMaps to get the name and gametypes from the mapcycle file for !maps
-#                                     - Get available maps now retrieves the map list from the GAME_MODES_FOR_MAP dict,
-#                                       to which non-stock maps can be added in the xml as well as
-#                                       the maps * command to provide crash resistant changing to map/gametype pairings
-#                                     - Changed map so that it accepts gametype as a required argument, and won't try
-#                                       and rotate to an invalid map/gametype combo unless the optional -force parameter
-#                                       is used to override the check. Also adds _coop or _hunt to the mapname if it has
-#                                       been omitted and is needed.
-#                                     - Sourcemod nextmap plugin breaks the default in-game map-voting, which is superior
-#                                       to the SM version, so disabled !nextmap unless sm nextmap is loaded
-# 2014/10/12 - 0.7.1 - Fenix          - removed unused imports
-#                                     - respect PEP8 line length constraints
-#                                     - fixed changeMap method declaration so it respect Parser's method inheritence
-#                                     - fixed suggestion list not being printed when !map command is not able to select
-#                                       a valid mapname through getMapsSoundingLike
-# 2014/12/11 - 0.7.2 - 82ndab-Bravo17 - Changed handling of coop and hunt map names to allow for non-standardized ones -
-#                                     - eg mapname_coop_v2
-#                                     - use suggested map name when only one suggestion is given on map change
-#                                     - show map and gametype being changed to for 5 seconds before change
-#                                     - don't show BOTs in !list for coop games
-# 2014/12/17 - 0.7.3 - 82ndab-Bravo17 - Updated map/gametype list
-# 2014/12/23 - 0.8.0 - 82ndab-Bravo17 - Removed map/gametype pair checking, since game no longer seems to lockup if
-#                                       invalid.
-#                                     - Remove auto adding of _hunt and _coop, since mapmakers are not sticking to this
-#                                       format.
-# 2015/02/05 - 0.9.0 - Fenix          - correctly initialize Server client
-# 2015/02/08 - 0.10  - Thomas LEVEIL  - recognize more log lines + fire events related to rounds
-# 2015/02/14 - 0.11  - Thomas LEVEIL  - fix spectator team recognition
-#                                     - in the clients manager, identify players by their steamid instead of cid
-# 2015/02/19 - 0.12  - Fenix          - fixed EVT_CLIENT_DISCONNECT not being fired
-# 2015/02/14 - 0.13  - 82ndab-Bravo17 - check both cid and guid when finding clients to avoid duplicate clients or
-#                                     - clients in wrong slots
-#                                     - revert to using cid instead of steamid to id players
-# 2015/13/01 - 0.14  - 82ndab-Bravo17 - don't authorize Console when it says something in game
-#                                     - bots should now stay authed if still on server during sync
-# 2015/03/07 - 0.15  - Thomas LEVEIL  - disconnect client after kicking them
-# 2015/13/03 - 0.16  - 82ndab-Bravo17 - get map name from host_map cvar since it is no longer returned by status
-# 2015-04-16 - 0.17  - Fenix          - uniform class variables (dict -> variable)
+# -*- coding: utf-8 -*-
+
+# ################################################################### #
+#                                                                     #
+#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
+#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#                                                                     #
+#  This program is free software; you can redistribute it and/or      #
+#  modify it under the terms of the GNU General Public License        #
+#  as published by the Free Software Foundation; either version 2     #
+#  of the License, or (at your option) any later version.             #
+#                                                                     #
+#  This program is distributed in the hope that it will be useful,    #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the       #
+#  GNU General Public License for more details.                       #
+#                                                                     #
+#  You should have received a copy of the GNU General Public License  #
+#  along with this program; if not, write to the Free Software        #
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA      #
+#  02110-1301, USA.                                                   #
+#                                                                     #
+# ################################################################### #
 
 import re
 import time
