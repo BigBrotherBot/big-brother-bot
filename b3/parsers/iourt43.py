@@ -380,14 +380,10 @@ class Iourt43Parser(Iourt41Parser):
     #   2     0   19 ^1XLR^78^8^9or        0 145.99.135.227:27960  41893  8000  # player with a live ping
     #   4     0 CNCT Dz!k^7              450 83.175.191.27:64459   50308 20000  # connecting player
     #   9     0 ZMBI ^7                 1900 81.178.80.68:27960    10801  8000  # zombies (need to be disconnected!)
-    _regPlayer = re.compile(r'^(?P<slot>[0-9]+)\s+'
-                            r'(?P<score>[0-9-]+)\s+'
-                            r'(?P<ping>[0-9]+|CNCT|ZMBI)\s+'
-                            r'(?P<name>.*?)\s+'
-                            r'(?P<last>[0-9]+)\s+'
-                            r'(?P<ip>[0-9.]+):(?P<port>[0-9-]+)\s+'
-                            r'(?P<qport>[0-9]+)\s+'
-                            r'(?P<rate>[0-9]+)$', re.IGNORECASE)
+    _regPlayer = re.compile(r'^\s*(?P<slot>[0-9]+)\s+(?P<score>[0-9-]+)\s+'
+                            r'(?P<ping>[0-9]+|CNCT|ZMBI)\s+(?P<name>.*?)\s+'
+                            r'(?P<last>[0-9]+)\s+(?P<ip>.*)\s+'
+                            r'(?P<qport>[0-9]+)\s+(?P<rate>[0-9]+)$', re.IGNORECASE)
 
     _reColor = re.compile(r'(\^\d)')
 
@@ -782,8 +778,13 @@ class Iourt43Parser(Iourt41Parser):
                             # see issue xlr8or/big-brother-bot#87 - ip can be missing
                             self.debug("Missing ip: trying to get ip with 'status'")
                             plist = self.getPlayerList()
-                            client_data = plist[bclient['cid']]
-                            bclient['ip'] = client_data['ip']
+                            data = plist[bclient['cid']]
+                            ip = data['ip']
+                            if ip in {'loopback', 'localhost'}:
+                                ip = '127.0.0.1'
+                            elif ':' in ip:
+                                ip = ip.split(':')[0]
+                            bclient['ip'] = ip
                         except Exception, err:
                             bclient['ip'] = ''
                             self.warning("Failed to get client %s ip address" % bclient['cid'], err)
