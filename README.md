@@ -77,11 +77,10 @@ or alternatively you can join our chat on gitter:
 
 ## Previous and Current Developers (Hall of Fame)
 
-_[ThorN], [xlr8or], ttlogic, [Courgette], [Bakes], [spacepig], [Durzo], eire.32, [grosbedo], [Freelander], [82ndAB.Bravo17], 
-[Just a baka], [Fenix], [Ozon]_ and a big thanks to you, who has offered us snippets of code and improvements on an 
+_[ThorN], [xlr8or], ttlogic, [Courgette], [Fenix], [Bakes], [spacepig], [Durzo], eire.32, [grosbedo], [Freelander], [82ndAB.Bravo17], 
+[Just a baka], [Ozon]_ and a big thanks to you, who has offered us snippets of code and improvements on an 
 incidental basis. Without you B3 wouldn't be this intelligent!
 
-[![Build Status](https://travis-ci.org/BigBrotherBot/big-brother-bot.svg?branch=master)](https://travis-ci.org/BigBrotherBot/big-brother-bot) 
 [![Requirements Status](https://requires.io/github/BigBrotherBot/big-brother-bot/requirements.svg?branch=master)](https://requires.io/github/BigBrotherBot/big-brother-bot/requirements/?branch=master)
 [![Code Health](https://landscape.io/github/BigBrotherBot/big-brother-bot/master/landscape.svg?style=flat)](https://landscape.io/github/BigBrotherBot/big-brother-bot/master)
 [![Coverage Status](https://coveralls.io/repos/BigBrotherBot/big-brother-bot/badge.svg?branch=master)](https://coveralls.io/r/BigBrotherBot/big-brother-bot?branch=master)
