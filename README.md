@@ -53,26 +53,13 @@ Game servers supported:
 
 ## Links to our online presence
 
-* [Official website](http://www.bigbrotherbot.net)
-* [Forums](http://forum.bigbrotherbot.net)
+* [Bug tracker](https://github.com/BigBrotherBot/big-brother-bot/issues)
 * [Documentation](http://wiki.bigbrotherbot.net/)
 
 
 ## Installation, configuration and usage
 
 Please refer to our documentation wiki as linked above for a full manual.
-
-
-## For developers
-
-B3 is an extremely extensible software. Support for new online games can be added quite easily by creating new parsers
-(if the game server meets the necessary requirements), and B3 functionalities can be enhanced by means of plugins. You 
-can browse B3 code reference [here](http://doc.bigbrotherbot.net/): it will give you a general idea on the structure of B3 
-core and B3 plugins. You can also find some plugins and parsers examples in the _example_ directory. If you need some 
-help in developing your plugins or creating new parsers you can make use of our  [forums](http://forum.bigbrotherbot.net) 
-or alternatively you can join our chat on gitter:
-
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/BigBrotherBot/big-brother-bot?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 
 ## Previous and Current Developers (Hall of Fame)
