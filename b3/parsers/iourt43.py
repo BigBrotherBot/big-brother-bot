@@ -35,7 +35,7 @@ from b3.plugins.spamcontrol import SpamcontrolPlugin
 
 
 __author__ = 'Courgette, Fenix, ptitbigorneau'
-__version__ = '0.01'
+__version__ = '0.2'
 
     
 class Iourt43Client(Client):
@@ -400,11 +400,13 @@ class Iourt43Parser(Iourt41Parser):
                                r'R:(?P<RedScore>.+)\s+'
                                r'B:(?P<BlueScore>.+)$', re.IGNORECASE)
 
-    _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+): '
-                                r'(?P<name>.*) '
-                                r'(?P<team>RED|BLUE|SPECTATOR|FREE) '
-                                r'k:(?P<kill>[0-9]+) d:(?P<death>[0-9]+) ping:(?P<ping>[0-9]+|CNCT|ZMBI)( '
-                                r'(?P<ip>[0-9.]+):(?P<port>[0-9-]+))?$', re.IGNORECASE)
+    _rePlayerScore = re.compile(r'^(?P<slot>[0-9]+):(?P<name>.*)\s+'
+                                r'TEAM:(?P<team>RED|BLUE|SPECTATOR|FREE)\s+'
+                                r'KILLS:(?P<kill>[0-9]+)\s+'
+                                r'DEATHS:(?P<death>[0-9]+)\s+'
+                                r'ASSISTS:(?P<assist>[0-9]+)\s+'
+                                r'PING:(?P<ping>[0-9]+|CNCT|ZMBI)\s+'
+                                r'AUTH:(?P<auth>.*)\s+IP:(?P<ip>.*)$', re.IGNORECASE)
 
     # /rcon auth-whois replies patterns
     # 'auth: id: 0 - name: ^7Courgette - login: courgette - notoriety: serious - level: -1  \n'
@@ -1269,32 +1271,20 @@ class Iourt43Parser(Iourt41Parser):
     #   OTHER METHODS                                                                                                  #
     #                                                                                                                  #
     ####################################################################################################################
-    
+
     def getTeam(self, team):
         """
         Return a B3 team given the team value.
         :param team: The team value
         """
-        if str(team).lower() == 'red' or str(team).lower() == 'r':
-            team = 1
-        elif str(team).lower() == 'blue' or str(team).lower() == 'b':
-            team = 2
-        elif str(team).lower() == 'spectator' or str(team).lower() == 's':
-            team = 3
-        elif str(team).lower() == 'free' or str(team).lower() == 'f':
-            team = -1  # will fall back to b3.TEAM_UNKNOWN
-
-        team = int(team)
-        if team == 1:
-            result = b3.TEAM_RED
-        elif team == 2:
-            result = b3.TEAM_BLUE
-        elif team == 3:
-            result = b3.TEAM_SPEC
-        else:
-            result = b3.TEAM_UNKNOWN
-
-        return result
+        match = str(team).lower()
+        if match in {'red', 'r'}:
+            return b3.TEAM_RED
+        if match in {'blue', 'b'}:
+            return b3.TEAM_BLUE
+        if match in {'spectator', 's'}:
+            return b3.TEAM_SPEC
+        return b3.TEAM_UNKNOWN
 
     def queryClientFrozenSandAccount(self, cid):
         """
