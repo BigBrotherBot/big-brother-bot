@@ -73,7 +73,7 @@ def getB3versionInfo():
     return __version__, getPlatform(), right_cut(platform.architecture()[0], 'bit')
     
     
-b3_version = '1.11'
+b3_version = '1.12'
 b3_version_info = getB3versionInfo()
 
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))  # directory where this file is in
@@ -301,7 +301,7 @@ else:
     executables = [
         Executable(
             script='b3_run.py',
-            base='Win32GUI' if getPlatform() == 'nt' else None,
+            base='console' if getPlatform() == 'nt' else None,
             compress=True,
             copyDependentFiles=True,
             targetName=settings[getPlatform()]['binary_name'],
@@ -413,7 +413,6 @@ setup(
             'append_script_to_exe': True,
             'packages': [
                 'b3.lib',
-                'b3.gui',
                 'b3.parsers',
                 'b3.tools',
             ],
@@ -441,7 +440,6 @@ setup(
                 ('b3/conf/templates', 'conf/templates'),
                 ('b3/conf/templates/autodoc', 'conf/templates/autodoc'),
                 ('b3/extplugins/', 'extplugins'),
-                ('b3/gui/assets', 'gui/assets'),
                 ('b3/plugins/', 'plugins/'),
                 ('b3/sql', 'sql'),
                 ('b3/sql/mysql', 'sql/mysql'),
