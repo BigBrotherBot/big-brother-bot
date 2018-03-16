@@ -1,4 +1,4 @@
-[![BigBrotherBot](http://www.bigbrotherbot.net/images/b3-logo-light-text.png)]
+![BigBrotherBot](https://github.com/BigBrotherBot/ArtWork/blob/master/layered-png/logo.png)
 
 **********
 
