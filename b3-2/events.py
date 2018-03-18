@@ -98,7 +98,7 @@ class EventManager(LoggerMixin, object):
         self._event_queue_size = config.getint('b3', 'event_queue_size', fallback=50)
         self._event_queue_expire_time = config.getint('b3', 'event_queue_expire_time', fallback=10)
         self._handlers:typing.Dict[EventType, typing.List[Plugin]] = {}
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self.debug("Creating the event queue with size %s", self._event_queue_size)
         self.queue = queue.Queue(self._event_queue_size)
 

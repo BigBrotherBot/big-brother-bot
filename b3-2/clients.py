@@ -274,7 +274,7 @@ class ClientManager(object):
     def __init__(self):
         super(ClientManager, self).__init__()
         self._clients : typing.List[Client] = []
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
 
     def add(self, client:Client):
         """Add a client to the index"""
