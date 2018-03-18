@@ -284,6 +284,11 @@ class ClientManager(object):
                 self._clients.append(client)
                 self._clients.sort(key=lambda arg:arg.cid)
 
+    def clear(self):
+        """Clear the client index"""
+        with self._lock:
+            self._clients.clear()
+
     def count(self) -> int:
         """Returns the number of clients stored in the index"""
         with self._lock:
