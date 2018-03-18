@@ -45,13 +45,14 @@ else:
     ROOT = os.path.join(MODULE, '..')
 
 HOME = os.path.normpath(os.path.expanduser('~/.b3'))
-CONF = os.path.join(ROOT, 'conf')
+CONF = os.path.join(HOME, 'conf')
 PLUGINS = os.path.join(ROOT, 'plugins')
 EXTPLUGINS = os.path.join(HOME, 'plugins')
 
 if not os.path.isdir(HOME):
     os.mkdir(HOME)
-
+if not os.path.isdir(CONF):
+    os.mkdir(CONF)
 if not os.path.isdir(EXTPLUGINS):
     os.mkdir(EXTPLUGINS)
 
