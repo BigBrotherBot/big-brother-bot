@@ -65,7 +65,7 @@ if not os.path.isdir(EXTPLUGINS):
 class FileManager(LoggerMixin, object):
     """Manager to deal with the underlying file system"""
 
-    def cpdir(self, src:str, dst:str):
+    def copy(self, src:str, dst:str):
         """Copy a file or a directory"""
         src = self.expand(src)
         dst = self.expand(dst)
