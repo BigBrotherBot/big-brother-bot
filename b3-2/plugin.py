@@ -23,5 +23,15 @@
 # ################################################################### #
 
 
+from .events import Event
+
+
 class Plugin(object):
-    pass
+
+    def isEnabled(self) -> bool:
+        """Returns True if the plugin is enabled, False otherwise"""
+        pass
+
+    def onEvent(self, event:Event):
+        """Executed when an event is received by the plugin"""
+        pass
