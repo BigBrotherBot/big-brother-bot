@@ -23,10 +23,13 @@
 # ################################################################### #
 
 
+import copy
 import enum
+import re
+import threading
 import typing
 
-from plugin import Plugin
+from .plugin import Plugin
 
 
 @enum.unique
@@ -171,21 +174,41 @@ class Client(object):
         self.pbid : str = None
         self.state : State = State.UNKNOWN
         self.team : Team = Team.UNKNOWN
-        self.timeAdd : float = 0
-        self.timeEdit : float = 0
+        self.firstseen : float = 0
+        self.lastseen : float = 0
+
+    def update(self, other:'Client'):
+        """Update client information according with the provided data"""
+        self.authed = other.authed
+        self.authorizing = other.authorizing
+        self.bot = other.bot
+        self.cid = other.cid
+        self.data = other.data
+        self.exactName = other.exactName
+        self.group = other.group
+        self.guid = other.guid
+        self.id = other.id
+        self.ip = other.ip
+        self.name = other.name
+        self.maskGroup = other.maskGroup
+        self.pbid = other.pbid
+        self.state = other.state
+        self.team = other.team
+        self.firstseen = other.firstseen
+        self.lastseen = other.lastseen
 
     # #########################################################################
-    # CLIENT DYNAMIC VARIABLE MANAGEMENT
+    # DYNAMIC VARIABLE MANAGEMENT
     # #########################################################################
 
-    def delVar(self, plugin: Plugin, key: str):
+    def delVar(self, plugin:Plugin, key:str):
         """Delete the ClientVar stored for the given plugin/key combination"""
         try:
             del self.data[hash(plugin)][key]
         except KeyError:
             pass
 
-    def isVar(self, plugin: Plugin, key: str):
+    def isVar(self, plugin:Plugin, key:str) -> bool:
         """Checks whether the client stores a ClientVar for the given plugin/key combination"""
         try:
             # noinspection PyStatementEffect
@@ -194,7 +217,7 @@ class Client(object):
         except KeyError:
             return False
 
-    def setVar(self, plugin: Plugin, key: str, value=None) -> ClientVar:
+    def setVar(self, plugin:Plugin, key:str, value=None) -> ClientVar:
         """Store a new ClientVar for the given plugin/key combination"""
         try:
             self.data[hash(plugin)]
@@ -206,7 +229,7 @@ class Client(object):
             self.data[hash(plugin)][key] = ClientVar(value)
         return self.data[hash(plugin)][key]
 
-    def var(self, plugin, key, default=None) -> ClientVar:
+    def var(self, plugin:Plugin, key:str, default=None) -> ClientVar:
         """Returns a previously stored ClientVar for the given plugin/key combination"""
         try:
             return self.data[hash(plugin)][key]
@@ -240,6 +263,139 @@ class Client(object):
         client.pbid = self.pbid
         client.state = self.state
         client.team = self.team
-        client.timeAdd = self.timeAdd
-        client.timeEdit = self.timeEdit
+        client.firstseen = self.firstseen
+        client.lastseen = self.lastseen
         return client
+
+
+class ClientManager(object):
+    """B3 client manager implementation"""
+
+    def __init__(self):
+        super(ClientManager, self).__init__()
+        self._clients : typing.List[Client] = []
+        self._lock = threading.Lock()
+
+    def add(self, client:Client):
+        """Add a client to the index"""
+        with self._lock:
+            index = next((i for i, x in enumerate(self._clients) if x.id == client.id), -1)
+            if index == -1:
+                self._clients.append(client)
+                self._clients.sort(key=lambda arg:arg.cid)
+
+    def count(self) -> int:
+        """Returns the number of clients stored in the index"""
+        with self._lock:
+            return len(self._clients)
+
+    def remove(self, client:Client) -> typing.Optional[Client]:
+        """Remove a client from the index"""
+        with self._lock:
+            index = next((i for i, x in enumerate(self._clients) if x.id == client.id), -1)
+            if index != -1:
+                try:
+                    return self._clients.pop(index)
+                except IndexError:
+                    return None
+
+    def save(self, client:Client):
+        """Save client data in the index (either adding or updating)"""
+        with self._lock:
+            index = next((i for i, x in enumerate(self._clients) if x.id == client.id), -1)
+            if index == -1:
+                self._clients.append(client)
+                self._clients.sort(key=lambda arg: arg.cid)
+            else:
+                saved = self._clients[index]
+                saved.update(client)
+
+    # #########################################################################
+    # SEARCH
+    # #########################################################################
+
+    def getByCID(self, cid:int) -> typing.Optional[Client]:
+        """Returns the client matching the given slot number"""
+        with self._lock:
+            for client in self._clients:
+                if client.cid == cid:
+                    return copy.deepcopy(client)
+        return None
+
+    def getByGroup(self, group:Group, mask:bool=False) -> typing.List[Client]:
+        """Returns a list of clients matching the given group"""
+        collection = []
+        with self._lock:
+            for client in self._clients:
+                if mask and client.maskGroup:
+                    if client.maskGroup is group:
+                        collection += copy.deepcopy(client)
+                elif client.group is group:
+                    collection += copy.deepcopy(client)
+        return collection
+
+    def getByGUID(self, guid:str) -> typing.Optional[Client]:
+        """Returns the client matching the given GUID"""
+        guid = guid.upper()
+        with self._lock:
+            for client in self._clients:
+                if client.guid == guid:
+                    return copy.deepcopy(client)
+        return None
+
+    def getById(self, id:int) -> typing.Optional[Client]:
+        """Returns the client matching the given id"""
+        with self._lock:
+            for client in self._clients:
+                if client.id == id:
+                    return copy.deepcopy(client)
+        return None
+
+    def getByMagic(self, handle:typing.Union[str, int]) -> typing.List[Client]:
+        """Returns the client matching the given handle"""
+        handle = str(handle)
+        handle = handle.strip()
+        if re.match(r'^[0-9]+$', handle):
+            client = self.getByCID(int(handle))
+            if client:
+                return [client]
+            return []
+        if re.match(r'^@([0-9]+)$', handle):
+            client = self.getById(int(handle[1:]))
+            if client:
+                return [client]
+            return []
+        return self.getByName(handle)
+
+    def getByName(self, name) -> typing.List[Client]:
+        """Returns a list of clients matching the given name"""
+        collection = []
+        name = name.lower()
+        with self._lock:
+            for client in self._clients:
+                if name in client.name.lower():
+                    collection += copy.deepcopy(client)
+        return collection
+
+    def getByState(self, state:State) -> typing.List[Client]:
+        """Returns a list of clients matching the given state"""
+        collection = []
+        with self._lock:
+            for client in self._clients:
+                if client.state is state:
+                    collection += copy.deepcopy(client)
+        return collection
+
+    def getByTeam(self, team:Team) -> typing.List[Client]:
+        """Returns a list of clients matching the given team"""
+        collection = []
+        with self._lock:
+            for client in self._clients:
+                if client.team is team:
+                    collection += copy.deepcopy(client)
+        return collection
+
+    def getList(self) -> typing.List[Client]:
+        """Returns the list of connected clients"""
+        with self._lock:
+            return copy.deepcopy(self._clients)
