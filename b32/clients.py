@@ -44,14 +44,17 @@ class Group(enum.Enum):
     SENIORADMIN = (80, 'senioradmin', 'Senior Admin')
     SUPERADMIN = (100, 'superadmin', 'Super Admin')
 
+    @property
     def level(self) -> int:
         """Returns the group level"""
         return self.value[0]
 
+    @property
     def keyword(self) -> str:
         """Returns the group keyword"""
         return self.value[1]
 
+    @property
     def name(self) -> str:
         """Returns the group name"""
         return self.value[2]
@@ -319,11 +322,11 @@ class ClientManager(object):
     # SEARCH
     # #########################################################################
 
-    def getByCID(self, cid:int) -> typing.Optional[Client]:
+    def getByCID(self, cid:typing.Union[str, int]) -> typing.Optional[Client]:
         """Returns the client matching the given slot number"""
         with self._lock:
             for client in self._clients:
-                if client.cid == cid:
+                if client.cid == int(cid):
                     return copy.deepcopy(client)
         return None
 
@@ -348,11 +351,11 @@ class ClientManager(object):
                     return copy.deepcopy(client)
         return None
 
-    def getById(self, id:int) -> typing.Optional[Client]:
+    def getById(self, id:typing.Union[str, int]) -> typing.Optional[Client]:
         """Returns the client matching the given id"""
         with self._lock:
             for client in self._clients:
-                if client.id == id:
+                if client.id == int(id):
                     return copy.deepcopy(client)
         return None
 
