@@ -2,8 +2,8 @@
 
 # ################################################################### #
 #                                                                     #
-#  BigBrotherBot(B3) (www.bigbrotherbot.net)                          #
-#  Copyright (C) 2005 Michael "ThorN" Thornton                        #
+#  BigBrotherBot (B3) (www.bigbrotherbot.net)                         #
+#  Copyright (C) 2018 Daniele Pantaleone <danielepantaleone@me.com>   #
 #                                                                     #
 #  This program is free software; you can redistribute it and/or      #
 #  modify it under the terms of the GNU General Public License        #
@@ -22,166 +22,119 @@
 #                                                                     #
 # ################################################################### #
 
-__author__  = 'ThorN'
-__version__ = '1.7.2'
 
 import sys
 import logging
 
 from logging import handlers
-from logging import CRITICAL, ERROR, INFO, WARNING, DEBUG
+from logging import CRITICAL, ERROR, WARNING, INFO, DEBUG
 
-CONSOLE = 22
-BOT = 21
+
 VERBOSE = 9
-VERBOSE2 = 8
+
 
 logging.addLevelName(CRITICAL, 'CRITICAL')
 logging.addLevelName(ERROR,    'ERROR   ')
 logging.addLevelName(INFO,     'INFO    ')
 logging.addLevelName(WARNING,  'WARNING ')
 logging.addLevelName(DEBUG,    'DEBUG   ')
-logging.addLevelName(CONSOLE,  'CONSOLE ')
-logging.addLevelName(BOT,      'BOT     ')
 logging.addLevelName(VERBOSE,  'VERBOSE ')
-logging.addLevelName(VERBOSE2, 'VERBOS2 ')
-
-# this has to be done to prevent callstack checking in the logging
-# has been causing problems with threaded applications logging
-logging._srcfile = None
-
-# logger object instance
-__output = None
 
 
 class OutputHandler(logging.Logger):
+    """Custom logging output handler class"""
 
-    def __init__(self, name, level=logging.NOTSET):
-        """
-        Object constructor.
-        :param name: The logger name
-        :param level: The default logging level
-        """
-        logging.Logger.__init__(self, name, level)
-
-    def critical(self, msg, *args, **kwargs):
-        """
-        Log 'msg % args' with severity 'CRITICAL' and exit.
-        """
-        kwargs['exc_info'] = True
-        logging.Logger.critical(self, msg, *args, **kwargs)
-        sys.exit(220)
-
-    def console(self, msg, *args, **kwargs):
-        """
-        Log 'msg % args' with severity 'CONSOLE'.
-        """
-        self.log(CONSOLE, msg, *args, **kwargs) 
-
-    def bot(self, msg, *args, **kwargs):
-        """
-        Log 'msg % args' with severity 'BOT'.
-        """
-        self.log(BOT, msg, *args, **kwargs) 
-
-    def verbose(self, msg, *args, **kwargs):
-        """
-        Log 'msg % args' with severity 'VERBOSE'.
-        """
-        self.log(VERBOSE, msg, *args, **kwargs) 
-
-    def verbose2(self, msg, *args, **kwargs):
-        """
-        Log 'msg % args' with severity 'VERBOSE2'.
-        """
-        self.log(VERBOSE2, msg, *args, **kwargs) 
-
-    def raiseError(self, raiseError, msg, *args, **kwargs):
-        """
-        Log 'msg % args' with severity 'ERROR'.
-        And raises the exception.
-        """
-        self.log(logging.ERROR, msg, *args, **kwargs) 
-        raise raiseError, msg % args
+    def verbose(self, msg:str, *args, **kwargs):
+        """Log 'msg % args' with severity VERBOSE"""
+        self.log(VERBOSE, msg, *args, **kwargs)
 
 
-class STDOutLogger:
-    """
-    A class to redirect STDOut messages to the logger.
-    """
+class STDOutLogger(object):
+    """A class to redirect STDOut messages to the logger"""
+
     def __init__(self, logger):
-        """
-        Object constructor.
-        :param logger: The logger object instance
-        """
         self.logger = logger
 
-    def write(self, msg):
-        """
-        Write a message in the logger with severity 'INFO'
-        :param msg: The message to write
-        """
+    def write(self, msg:str):
+        """Write a message in the logger with severity INFO"""
         self.logger.info('STDOUT %r' % msg)
 
 
-class STDErrLogger:
-    """
-    A class to redirect STDErr messages to the logger.
-    """
+class STDErrLogger(object):
+    """A class to redirect STDErr messages to the logger"""
+
     def __init__(self, logger):
-        """
-        Object constructor.
-        :param logger: The logger object instance
-        """
         self.logger = logger
 
-    def write(self, msg):
-        """
-        Write a message in the logger with severity 'ERROR'
-        :param msg: The message to write
-        """
+    def write(self, msg:str):
+        """Write a message in the logger with severity ERROR"""
         self.logger.error('STDERR %r' % msg)
 
 
 logging.setLoggerClass(OutputHandler)
 
 
-def getInstance(logfile='b3.log', loglevel=21, logsize=10485760, log2console=False):
-    """
-    Return a Logger instance.
-    :param logfile: The logfile name.
-    :param loglevel: The logging level.
-    :param logsize: The size of the log file (in bytes)
-    :param log2console: Whether or not to extend logging to the console.
-    """
+__output = None
+
+
+def getLogger(name:str='b3.log', level:int=WARNING, size:int=10485760, console=False):
+    """Returns an instance of the logger"""
     global __output
 
     if __output is None:
 
-        __output = logging.getLogger('output')
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s', '%Y/%m/%d %H:%M:%S')
 
         # FILE HANDLER
-        file_formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)r', '%y%m%d %H:%M:%S')
-        handler = handlers.RotatingFileHandler(logfile, maxBytes=logsize, backupCount=5, encoding="UTF-8")
+        handler = logging.handlers.RotatingFileHandler(name, maxBytes=size, backupCount=10, encoding="UTF-8")
         handler.doRollover()
-        handler.setFormatter(file_formatter)
+        handler.setFormatter(formatter)
+        logger = logging.getLogger('output')
+        logger.addHandler(handler)
+        logger.setLevel(level)
 
-        __output.addHandler(handler)
+        # CONSOLE HANDLER
+        if console:
+            stdout = logging.StreamHandler(sys.stdout)
+            stdout.setFormatter(formatter)
+            stderr = logging.StreamHandler(sys.stderr)
+            stderr.setFormatter(formatter)
+            stderr.setLevel(logging.ERROR)
+            logger.addHandler(stdout)
+            logger.addHandler(stderr)
 
-        if log2console:
-            # CONSOLE HANDLER
-            console_formatter = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)r', '%M:%S')
-            handler2 = logging.StreamHandler(sys.stdout)
-            handler2.setFormatter(console_formatter)
-
-            __output.addHandler(handler2)
-
-            handler_error = logging.StreamHandler(sys.stderr)
-            handler_error.setFormatter(console_formatter)
-            handler_error.setLevel(logging.ERROR)
-
-            __output.addHandler(handler_error)
-
-        __output.setLevel(loglevel)
+        __output = logger
 
     return __output
+
+
+class LoggerMixin(object):
+    """Mixin implementation to feature logging capabilities"""
+
+    def __init__(self, *args, **kwargs):
+        self.logger = getLogger()
+
+    def critical(self, msg, *args, **kwargs):
+        """Log a CRITICAL message and exit"""
+        self.logger.critical(msg, *args, **kwargs)
+        raise SystemExit(220)
+
+    def debug(self, msg:str, *args, **kwargs):
+        """Log a DEBUG message"""
+        self.logger.debug(msg, *args, **kwargs)
+
+    def error(self, msg:str, *args, **kwargs):
+        """Log a ERROR message"""
+        self.logger.error(msg, *args, **kwargs)
+
+    def info(self, msg:str, *args, **kwargs):
+        """Log a INFO message"""
+        self.logger.info(msg, *args, **kwargs)
+
+    def verbose(self, msg:str, *args, **kwargs):
+        """Log a VERBOSE message"""
+        self.logger.verbose(msg, *args, **kwargs)
+
+    def warning(self, msg:str, *args, **kwargs):
+        """Log a WARNING message"""
+        self.logger.warning(msg, *args, **kwargs)
