@@ -84,6 +84,10 @@ class FileManager(LoggerMixin, object):
         """Returns True if the given path identifies a regular file, False otherwise"""
         return os.path.isfile(self.expand(path))
 
+    def join(self, path:str, *args):
+        """Join the provided arguments into a filesystem path"""
+        return os.path.join(self.expand(path), *args)
+
     def mkdir(self, path:str):
         """Create the directory identified by the given path if it doesn't exists"""
         path = self.expand(path)
