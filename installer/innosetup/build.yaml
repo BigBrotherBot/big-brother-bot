@@ -1,7 +1,0 @@
-# list of InnoSetup script to compile
-innosetup_scripts:
- - b3-installer-project.iss
-
-# where to find the InnoSetup compiler
-# you can override this value setting the environment variable ISCC_EXE
-iscc:  C:\Program Files (x86)\Inno Setup 5\ISCC.exe

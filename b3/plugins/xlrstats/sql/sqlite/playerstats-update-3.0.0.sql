@@ -1,1 +1,0 @@
-ALTER TABLE `%s` ADD `id_token` VARCHAR(10) NOT NULL DEFAULT '';

@@ -1,6 +1,0 @@
-[run]
-omit =
-	tests/*
-	b3/lib/*
-	b3/tools/*
-	b3/fake

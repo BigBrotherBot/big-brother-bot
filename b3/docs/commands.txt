@@ -1,2 +1,0 @@
-For a complete list of commands in your server see the autodoc feature in b3.xml.
-This feature will generate a commandlist at bot startup.
