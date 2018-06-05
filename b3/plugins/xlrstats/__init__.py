@@ -1820,7 +1820,12 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         """
         - initialize XLRstats database schema (!!!will remove all the collected stats!!!)
         """
-        xlr_tables = [getattr(self, x) for x in dir(self) if x.endswith('_table')]
+        xlr_tables = []
+        for attr in dir(self):
+            attr_val = getattr(self, attr)
+            if attr.endswith('_table') and attr_val.startswith('xlr_'):
+                xlr_tables.append(attr_val)
+                
         current_tables = self.console.storage.getTables()
 
         # truncate database tables
