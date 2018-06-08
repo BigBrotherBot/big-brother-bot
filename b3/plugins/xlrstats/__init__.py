@@ -135,10 +135,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     # default tablenames for the Battlestats subplugin
     # battlestats_table = 'xlr_battlestats'
     # playerbattles_table = 'xlr_playerbattles'
-    
-    # the 'xlrinit' command will truncate all of the above tables, unless included here
-    exclude_from_xlrinit = [ "clients", "penalties" ]
-        
+
     _defaultTableNames = True
     _default_messages = {
         'cmd_xlrstats': '^3XLR Stats: ^7$name ^7: K ^2$kills ^7D ^3$deaths ^7TK ^1$teamkills ^7Ratio ^5$ratio ^7Skill ^3$skill',
@@ -1826,7 +1823,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         xlr_tables = []
         for attr in dir(self):
             attr_val = getattr(self, attr)
-            if attr.endswith('_table') and attr_val not in self.exclude_from_xlrinit:
+            if attr.endswith('_table') and attr_val not in {'clients', 'penalties'}:
                 xlr_tables.append(attr_val)
                 
         current_tables = self.console.storage.getTables()
