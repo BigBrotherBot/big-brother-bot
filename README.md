@@ -30,15 +30,15 @@ Game servers supported:
 - Chivalry Medieval Warfare
 - Call of Duty 1
 - Call of Duty 2
-- Call of Duty 4: Mordern Warfare
-- Call of Duty 4 GameRanger
+- Call of Duty 4: Modern Warfare (iw3)
+- Call of Duty 4: GameRanger
 - Call of Duty 5: World at War
-- Call of Duty 6: Mordern Warfare 2
-- Call of Duty 7: Black Ops
-- Call of Duty 8: Mordern Warfare 3
+- Call of Duty 6: Modern Warfare 2 (iw5)
+- Call of Duty 7: Black Ops        (t6)
+- Call of Duty 8: Modern Warfare 3 (iw5)
 - Counter-Strike: Global Offensive
-- Ennemy Territory
-- Ennemy Territory Pro
+- Enemy Territory
+- Enemy Territory Pro
 - Insurgency
 - Urban Terror 4.1 (ioUrT)
 - Urban Terror 4.2
