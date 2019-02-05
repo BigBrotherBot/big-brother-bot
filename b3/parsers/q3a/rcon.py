@@ -64,7 +64,7 @@ class Rcon(LoggerMixin, object):
                 self._condition.wait(self._rcon_delay - delay)
             self.verbose('RCON: sending (%s:%s) %r', self._rcon_ip, self._rcon_port, data)
             self._socket.settimeout(self._rcon_timeout)
-            self._socket.send('\xFF\xFF\xFF\xFFrcon "%s" %s' % (self._rcon_password, data))
+            self._socket.send(b'\xFF\xFF\xFF\xFFrcon "%s" %s' % (self._rcon_password, data))
             self._rcon_last_exec_time = time.time()
 
     # #########################################################################
