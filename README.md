@@ -1,4 +1,4 @@
-[![BigBrotherBot](http://www.bigbrotherbot.net/images/b3-logo-light-text.png)](http://forum.bigbrotherbot.net/)
+[![BigBrotherBot](https://raw.githubusercontent.com/BigBrotherBot/big-brother-bot/v2.0/resources/logo.png)](http://forum.bigbrotherbot.net/)
 
 **********
 
