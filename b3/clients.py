@@ -195,9 +195,9 @@ class Client(object):
         self.firstseen = other.firstseen
         self.lastseen = other.lastseen
 
-    # #########################################################################
+    # -----------------------------------------------------
     # DYNAMIC VARIABLE MANAGEMENT
-    # #########################################################################
+    # -----------------------------------------------------
 
     def delVar(self, plugin:Plugin, key:str):
         """Delete the ClientVar stored for the given plugin/key combination"""
@@ -234,7 +234,7 @@ class Client(object):
         except KeyError:
             return self.setVar(plugin, key, default)
 
-    # #########################################################################
+    # -----------------------------------------------------
 
     def __eq__(self, other):
         if not isinstance(other, Client):
@@ -313,9 +313,9 @@ class ClientManager(object):
                 saved = self._clients[index]
                 saved.update(client)
 
-    # #########################################################################
+    # -----------------------------------------------------
     # SEARCH
-    # #########################################################################
+    # -----------------------------------------------------
 
     def getByCID(self, cid:typing.Union[str, int]) -> typing.Optional[Client]:
         """Returns the client matching the given slot number"""

@@ -31,11 +31,9 @@ import typing
 
 from .output import LoggerMixin
 
-
-# #############################################################################
+# -----------------------------------------------------
 # BEGIN SETUP
-# #############################################################################
-
+# -----------------------------------------------------
 
 if hasattr(sys, 'frozen'):
     MODULE = os.path.normpath(os.path.expanduser(os.path.dirname(sys.executable)))
@@ -45,7 +43,7 @@ else:
     ROOT = os.path.join(MODULE, '..')
 
 HOME = os.path.normpath(os.path.expanduser('~/.b3'))
-CONF = os.path.join(HOME, 'conf')
+CONF = os.path.join(HOME, 'config')
 PLUGINS = os.path.join(ROOT, 'plugins')
 EXTPLUGINS = os.path.join(HOME, 'plugins')
 
@@ -56,11 +54,9 @@ if not os.path.isdir(CONF):
 if not os.path.isdir(EXTPLUGINS):
     os.mkdir(EXTPLUGINS)
 
-
-# #############################################################################
+# -----------------------------------------------------
 # END SETUP
-# #############################################################################
-
+# -----------------------------------------------------
 
 class FileManager(LoggerMixin, object):
     """Manager to deal with the underlying file system"""
@@ -130,7 +126,7 @@ class FileManager(LoggerMixin, object):
         self.remove(path)
         self.rename(staging, path)
 
-    # #########################################################################
+    # -----------------------------------------------------
 
     @staticmethod
     def expand(path:str) -> str:
@@ -138,7 +134,7 @@ class FileManager(LoggerMixin, object):
         The following tokens will be expanded:
 
             - @b3 => B3 module directory
-            - @conf => B3 main configuration directory
+            - @config => B3 main configuration directory
             - @home => B3 home directory (.b3 in $HOME)
             - @root => B3 root (matches @b3 if running a frozen application)
             - @plugins => B3 plugins directory
@@ -147,8 +143,8 @@ class FileManager(LoggerMixin, object):
         """
         if path.startswith('@b3/') or path.startswith('@b3\\'):
             path = os.path.join(MODULE, path[4:])
-        elif path.startswith('@conf/') or path.startswith('@conf\\'):
-            path = os.path.join(CONF, path[6:])
+        elif path.startswith('@config/') or path.startswith('@config\\'):
+            path = os.path.join(CONF, path[8:])
         elif path.startswith('@home/') or path.startswith('@home\\'):
             path = os.path.join(HOME, path[6:])
         elif path.startswith('@root/') or path.startswith('@root\\'):

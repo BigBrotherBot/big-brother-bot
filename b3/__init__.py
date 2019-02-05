@@ -24,5 +24,5 @@
 
 __author__ = 'ThorN, xlr8or, Courgette, Fenix, Freelander, 82ndAB.Bravo17, Ozon'
 __version__ = '2.0'
-__name__ = 'BigBrotherBot (b3)'
+__name__ = 'BigBrotherBot (B3)'
 __codename__ = 'IronPigeon'
