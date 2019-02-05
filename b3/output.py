@@ -127,6 +127,10 @@ class LoggerMixin(object):
         """Log a ERROR message"""
         self.logger.error(msg, *args, **kwargs)
 
+    def exception(self, msg:str, *args, exc_info=True, **kwargs):
+        """Log a ERROR message"""
+        self.logger.exception(msg, *args, exc_info, **kwargs)
+
     def info(self, msg:str, *args, **kwargs):
         """Log a INFO message"""
         self.logger.info(msg, *args, **kwargs)
