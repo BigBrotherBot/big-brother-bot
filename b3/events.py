@@ -40,7 +40,6 @@ from .plugin import Plugin
 @aenum.unique
 class EventType(aenum.Enum):
     """B3 parser indipendent event type definitions"""
-    EXIT = 'Program exit'
     CLIENT_AUTH = 'Client authentication'
     CLIENT_BAN = 'Client ban'
     CLIENT_CONNECT = 'Client connect'
@@ -96,17 +95,18 @@ class EventManager(LoggerMixin, object):
 
     def __init__(self, config:configparser.ConfigParser):
         super(EventManager, self).__init__()
-        self._running = True
         self._event_queue_size = config.getint('b3', 'event_queue_size', fallback=50)
         self._event_queue_expire_time = config.getint('b3', 'event_queue_expire_time', fallback=10)
         self._handlers:typing.Dict[EventType, typing.List[Plugin]] = {}
-        self._lock = threading.RLock()
+        self._lock = threading.Lock()
+        self._running = False
+        self._thread = threading.Thread(target=self._run)
         self.debug("Creating the event queue with size %s", self._event_queue_size)
         self.queue = queue.Queue(self._event_queue_size)
 
-    # #########################################################################
+    # -----------------------------------------------------
     # EVENT MANAGEMENT
-    # #########################################################################
+    # -----------------------------------------------------
 
     def create(self, name:str, description:str):
         """Dynamically create a new event type"""
@@ -115,40 +115,43 @@ class EventManager(LoggerMixin, object):
 
     def post(self, event:Event, expire:int=None) -> bool:
         """Enqueue the given event for later processing"""
-        if event.type in self._handlers:
-            if expire is None:
-                expire = self._event_queue_expire_time
-            event.time = time.time()
-            event.expire = event.time + expire
-            try:
-                time.sleep(0.001)  # wait a bit so event doesnt get jumbled
-                self.verbose('Queuing event %s', event)
-                self.queue.put(event, True, 2)
-                return True
-            except queue.Full:
-                self.error('Event queue is full (%d)', self.queue.qsize())
-                return False
+        if self.running():
+            if event.type in self._handlers:
+                if expire is None:
+                    expire = self._event_queue_expire_time
+                event.time = time.time()
+                event.expire = event.time + expire
+                try:
+                    time.sleep(0.001)  # wait a bit so event doesnt get jumbled
+                    self.verbose('Queuing event %s', event)
+                    self.queue.put(event, True, 2)
+                    return True
+                except queue.Full:
+                    self.error('Event queue is full (%d)', self.queue.qsize())
+                    return False
         return False
 
     def subscribe(self, handler:Plugin, event:EventType):
         """Register an handler for the given event type"""
-        self.debug('%s: register event <%s>', handler.__class__.__name__, event.value)
-        if event not in self._handlers:
-            self._handlers[event] = []
-        if handler not in self._handlers[event]:
-            self._handlers[event].append(handler)
+        if not self.running():
+            self.debug('%s: register event <%s>', handler.__class__.__name__, event.value)
+            if event not in self._handlers:
+                self._handlers[event] = []
+            if handler not in self._handlers[event]:
+                self._handlers[event].append(handler)
 
     def unsubscribe(self, handler:Plugin, event:EventType=None):
         """Unregister an event handler"""
-        for e in self._handlers:
-            if event is None or e is event:
-                if handler in self._handlers[e]:
-                    self.debug('%s: unregister event <%s>', handler.__class__.__name__, e.value)
-                    self._handlers[e].remove(handler)
+        if not self.running():
+            for e in self._handlers:
+                if event is None or e is event:
+                    if handler in self._handlers[e]:
+                        self.debug('%s: unregister event <%s>', handler.__class__.__name__, e.value)
+                        self._handlers[e].remove(handler)
 
-    # #########################################################################
+    # -----------------------------------------------------
     # MAIN
-    # #########################################################################
+    # -----------------------------------------------------
 
     def running(self) -> bool:
         """Returns True if the event manager is running, False otherwise"""
@@ -159,8 +162,15 @@ class EventManager(LoggerMixin, object):
         """Shutdown the event manager preving further event processing"""
         with self._lock:
             self._running = False
+        self._thread.join(timeout=2)
 
     def start(self):
+        """Start processing events in a separate thread"""
+        if not self.running():
+            self._running = True
+            self._thread.start()
+
+    def _run(self):
         """Main event loop"""
         self.debug('Event manager started processing events')
         while self.running():
