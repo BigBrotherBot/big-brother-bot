@@ -258,7 +258,7 @@ class PluginManager(LoggerMixin, object):
             try:
                 self.debug('Starting plugin #%s: %s', i, plugin_name)
                 plugin = self._plugins[plugin_name]
-                plugin.startup()
+                plugin.onStartup()
             except Exception:
                 self.exception('Could not start %s plugin', plugin_name)
             else:
