@@ -55,7 +55,7 @@ Game servers supported:
 
 * [Master server](http://master.bigbrotherbot.net/)
 * [Bug tracker](https://github.com/BigBrotherBot/big-brother-bot/issues)
-* [Documentation](http://wiki.bigbrotherbot.net/)
+* [Documentation](https://github.com/BigBrotherBot/big-brother-bot/wiki)
 
 
 ## Installation, configuration and usage
