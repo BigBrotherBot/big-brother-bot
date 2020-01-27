@@ -221,9 +221,9 @@ class SftpytailPlugin(b3.plugin.Plugin):
                         self._remoteFileOffset = remotesize - self._maxGap
                     #self.debug('RETR from remote offset %s. (expecting to read at least %s bytes)' % (
                     #           self._remoteFileOffset, remoteSize - self._remoteFileOffset))
-                    if not rfile:
-                        self.debug('opening remote game log file %s for reading' % self.sftpconfig['path'])
-                        rfile = sftp.open(self.sftpconfig['path'], 'r')
+                    #if not rfile:
+                    self.debug('opening remote game log file %s for reading' % self.sftpconfig['path'])
+                    rfile = sftp.open(self.sftpconfig['path'], 'r')
                     rfile.seek(self._remoteFileOffset)
                     self.debug('reading remote game log file from offset %s' % self._remoteFileOffset)
                     handle_download(rfile.read())
