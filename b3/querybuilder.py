@@ -189,7 +189,7 @@ class QueryBuilder(object):
         :param having: The HAVING clause for this select statement.
         :param keywords: Unused at the moment.
         """
-        sql = ['SELECT %s FROM %s' % (self.fieldStr(fields), table)]
+        sql = ['SELECT %s FROM `%s`' % (self.fieldStr(fields), table)]
 
         if where:
             sql.append("WHERE %s" % self.WhereClause(where))
