@@ -7,7 +7,7 @@ http://www.bigbrotherbot.net
 Description
 
 -----------
-This plugin brings Urban Terror 4.1 and 4.2 specific features to Bigbrotherbot.
+This plugin brings Urban Terror 4.1 / 4.2 / 4.3 specific features to Bigbrotherbot.
 
 
 Commands
