@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 
 from textwrap import dedent

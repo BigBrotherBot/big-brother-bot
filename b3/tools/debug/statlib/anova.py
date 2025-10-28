@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import map
+from six.moves import range
 if 1:
     import numpy as N
     from b3.tools.debug.statlib.pstat import *
@@ -48,7 +52,7 @@ if 1:
         SSlist = []
         SSsources = []
 
-        print
+        print()
         variables = 1       # this function only handles one measured variable
 
         if type(data)!=type([]):
@@ -142,7 +146,7 @@ if 1:
                 dindex = dindex + 1
 
         # Collapse multiple repetitions on the same subject and same condition
-        cdata = pstat.collapse(data,range(Nfactors+1),-1,None,None,mean)
+        cdata = pstat.collapse(data,list(range(Nfactors+1)),-1,None,None,mean)
 
         # Find a value that's not a data score with which to fill the array DA
         dummyval = -1
@@ -220,8 +224,8 @@ if 1:
                 Lwithinsourcecol = makelist(Bwithinsource, Nfactors+1)
                 # Make a list of cols that are source within-subj OR btw-subj
                 Lsourceandbtws = makelist(source | Bbetweens, Nfactors+1)
-                if Lwithinnonsource <> []:
-                    Lwithinsourcecol = map(Lsourceandbtws.index,Lwithinsourcecol)
+                if Lwithinnonsource != []:
+                    Lwithinsourcecol = list(map(Lsourceandbtws.index,Lwithinsourcecol))
                     # Now indxlist should hold a list of indices into the list of possible
                     # coefficients, one row per combo of coefficient. Next line PRESERVES dummyval
                 dvarshape = N.array(N.take(mns.shape,Lwithinsourcecol[1:])) -1
@@ -255,7 +259,7 @@ if 1:
                         try:
                             nextcoeff = coefflist[nlevels-1][indxlist[i,wfactor]]
                         except IndexError:
-                            raise IndexError, "anova() can only handle up to 10 levels on a within-subject factors"
+                            raise IndexError("anova() can only handle up to 10 levels on a within-subject factors")
                         for j in range(nlevels):
                             coeffmatrix[j] = coeffmatrix[j] * nextcoeff[j]
                         # Swap it back to where it came from
@@ -280,7 +284,7 @@ if 1:
 
                 # Big long thing to create DMarray (list of DM variables) for this source
                 variables = D[dcount].shape[1] # Num variables for this source
-                tidx = range(1,len(subjslots.shape)) + [0] # [0] = Ss dim
+                tidx = list(range(1,len(subjslots.shape))) + [0] # [0] = Ss dim
                 tsubjslots = N.transpose(subjslots,tidx) # put Ss in last dim
                 DMarray = N.zeros(list(tsubjslots.shape[0:-1]) +
                                   [variables],'f') # btw-subj dims, then vars
@@ -289,7 +293,7 @@ if 1:
                 idx = [0] *len(tsubjslots.shape[0:-1])
                 idx[0] = -1
                 loopcap = N.array(tsubjslots.shape[0:-1]) -1
-                while incr(idx,loopcap) <> -1:
+                while incr(idx,loopcap) != -1:
                     DNarray[idx] = float(asum(tsubjslots[idx]))
                     thismean =  (N.add.reduce(tsubjslots[idx] * # 1=subj dim
                                               N.transpose(D[dcount]),1) /
@@ -303,7 +307,7 @@ if 1:
             # DONE CREATING M AND D VARIABLES ... TIME FOR SOME SS WORK
             # DONE CREATING M AND D VARIABLES ... TIME FOR SOME SS WORK
             #
-            if Bscols[1:] <> []:
+            if Bscols[1:] != []:
                 BNs = pstat.colex([Nlevels],Bscols[1:])
             else:
                 BNs = [1]
@@ -321,7 +325,7 @@ if 1:
                 # DIMENSIONS in M, since M has fewer dims than the original data array
                 # (assuming within-subj vars exist); Bscols has list of between-subj cols
                 # from input list, the indices of which correspond to that var's loc'n in M
-                btwcols = map(Bscols.index,Lsource)
+                btwcols = list(map(Bscols.index,Lsource))
                 # Obviously-needed loop to get cell means is embedded in the collapse fcn, -1
                 # represents last (measured-variable) column, None=std, 1=retain Ns
 
@@ -344,12 +348,12 @@ if 1:
                 # DIMENSIONS in M, since M has fewer dims than the original data array
                 # (assuming within-subj vars exist); Bscols has list of between-subj cols
                 # from input list, the indices of which correspond to that var's loc'n in M
-                btwsourcecols = (N.array(map(Bscols.index,Lsource))-1).tolist()
+                btwsourcecols = (N.array(list(map(Bscols.index,Lsource)))-1).tolist()
 
                 # Average Marray and get harmonic means of Narray OVER NON-SOURCE DIMS
                 Bbtwnonsourcedims = ~source & Bbetweens
                 Lbtwnonsourcedims = makelist(Bbtwnonsourcedims,Nfactors+1)
-                btwnonsourcedims = (N.array(map(Bscols.index,Lbtwnonsourcedims))-1).tolist()
+                btwnonsourcedims = (N.array(list(map(Bscols.index,Lbtwnonsourcedims)))-1).tolist()
 
         ## Average Marray over non-source dimensions (1=keep squashed dims)
                 sourceMarray = amean(Marray,btwnonsourcedims,1)
@@ -404,7 +408,7 @@ if 1:
                 # CALCULATE MS, MSw, F AND PROB FOR ALL-BETWEEN-SUBJ SOURCES ONLY
                 MS = SS / dfnum
                 MSw = SSw / dfden
-                if MSw <> 0:
+                if MSw != 0:
                     f = MS / MSw
                 else:
                     f = 0  # i.e., absolutely NO error in the full model
@@ -459,7 +463,7 @@ if 1:
                     dfden = Nsubjects -N.multiply.reduce(N.ravel(BNs))-dfnum +1
                     MS = SS / dfnum
                     MSw = SSw / dfden
-                    if MSw <> 0:
+                    if MSw != 0:
                         f = MS / MSw
                     else:
                         f = 0  # i.e., absolutely NO error in full model
@@ -486,7 +490,7 @@ if 1:
                     dfden = m*s - dfnum/2.0 + 1
 
                     # Given a within-between combined source, Wilk's Lambda is appropriate
-                    if LA.determinant(er) <> 0:
+                    if LA.determinant(er) != 0:
                         lmbda = LA.determinant(ef) / LA.determinant(er)
                         W = math.pow(lmbda,(1.0/s))
                         f = ((1.0-W)/W) * (dfden/dfnum)
@@ -529,7 +533,7 @@ if 1:
             collapsed = pstat.collapse(cdata,Lsource,-1,sterr,len,mean)
 
             # First, get the list of level-combos for source cells
-            prefixcols = range(len(collapsed[0][:-3]))
+            prefixcols = list(range(len(collapsed[0][:-3])))
             outlist = pstat.colex(collapsed,prefixcols)
             # Start w/ factor names (A,B,C, or ones input to anova())
             eff = []
@@ -540,19 +544,19 @@ if 1:
                 eff.append(item)
             # To the list of level-combos, abut the corresp. means and Ns
             outlist = pstat.abut(outlist,
-                                 map(round4, pstat.colex(collapsed,-3)),
-                                 map(round4, pstat.colex(collapsed,-2)),
-                                 map(round4, pstat.colex(collapsed,-1)))
+                                 list(map(round4, pstat.colex(collapsed,-3))),
+                                 list(map(round4, pstat.colex(collapsed,-2))),
+                                 list(map(round4, pstat.colex(collapsed,-1))))
             outlist = [eff] + outlist # add titles to the top of the list
             pstat.printcc(outlist)    # print it in customized columns
-            print
+            print()
 
 
 ###
 ### OUTPUT FINAL RESULTS (ALL SOURCES TOGETHER)
 ### Note: All 3 types of source-calcs fall through to here
 ###
-        print
+        print()
         title = [['FACTORS: ','RANDOM'] + effects[:Nfactors]]
         title = title + [['LEVELS:  ']+Nlevels]
         facttypes = ['BETWEEN']*Nfactors
@@ -560,7 +564,7 @@ if 1:
             facttypes[Wscols[i+1]-1] = 'WITHIN'
         title = title + [['TYPE:    ','RANDOM']+facttypes]
         pstat.printcc(title)
-        print
+        print()
 
         title = [['Effect','SS','DF','MS','F','p','sig']] + ['dashes']
         outputlist = title + outputlist
@@ -617,8 +621,8 @@ if 1:
             sourcewithins = (source-1) & Bwithins
             sourcebetweens = (source-1) & Bbetweens
             dindex = Bwonly_sources.index(sourcewithins)
-            all_cellmeans = N.transpose(DM[dindex],[-1]+range(0,len(DM[dindex].shape)-1))
-            all_cellns = N.transpose(DN[dindex],[-1]+range(0,len(DN[dindex].shape)-1))
+            all_cellmeans = N.transpose(DM[dindex],[-1]+list(range(0,len(DM[dindex].shape)-1)))
+            all_cellns = N.transpose(DN[dindex],[-1]+list(range(0,len(DN[dindex].shape)-1)))
             hn = aharmonicmean(all_cellns)
 
             levels = D[dindex].shape[1]  # GENERAL, 'cause each workd is always 2D
@@ -641,16 +645,16 @@ if 1:
 
 ### HERE BEGINS THE MAXWELL & DELANEY APPROACH TO CALCULATING SS
             Lsource = makelist(sourcebetweens,Nfactors+1)
-            btwsourcecols = (N.array(map(Bscols.index,Lsource))-1).tolist()
+            btwsourcecols = (N.array(list(map(Bscols.index,Lsource)))-1).tolist()
             Bbtwnonsourcedims = ~source & Bbetweens
             Lbtwnonsourcedims = makelist(Bbtwnonsourcedims,Nfactors+1)
-            btwnonsourcedims = (N.array(map(Bscols.index,Lbtwnonsourcedims))-1).tolist()
+            btwnonsourcedims = (N.array(list(map(Bscols.index,Lbtwnonsourcedims)))-1).tolist()
 
           ## Average Marray over non-source dimensions
             sourceDMarray = DM[dindex] *1.0
             for dim in btwnonsourcedims: # collapse all non-source dims
                 if dim == len(DM[dindex].shape)-1:
-                    raise ValueError, "Crashing ... shouldn't ever collapse ACROSS variables"
+                    raise ValueError("Crashing ... shouldn't ever collapse ACROSS variables")
                 sourceDMarray = amean(sourceDMarray,dim,1)
 
           ## Calculate harmonic means for each level in source
@@ -658,15 +662,15 @@ if 1:
 
           ## Calc grand average (ga), used for ALL effects
             variableNs = asum(sourceDNarray,
-                              range(len(sourceDMarray.shape)-1))
+                              list(range(len(sourceDMarray.shape)-1)))
             ga = asum((sourceDMarray*sourceDNarray) /
                       variableNs,
-                      range(len(sourceDMarray.shape)-1),1)
+                      list(range(len(sourceDMarray.shape)-1)),1)
 
           ## If GRAND interaction, use harmonic mean of ALL cell Ns
             if source == Nallsources-1:
                 sourceDNarray = aharmonicmean(DN[dindex],
-                                              range(len(sourceDMarray.shape)-1))
+                                              list(range(len(sourceDMarray.shape)-1)))
 
           ## Calc all SUBSOURCES to be subtracted from sourceMarray (M&D p.320)
             sub_effects = ga *1.0   # start with grand mean
@@ -675,7 +679,7 @@ if 1:
                 subsourcebtw = (subsource-1) & Bbetweens
                 if (propersubset(subsource-1,source-1) and
                     (subsource-1)&Bwithins == (source-1)&Bwithins and
-                    (subsource-1) <> (source-1)&Bwithins):
+                    (subsource-1) != (source-1)&Bwithins):
                     sub_effects = (sub_effects +
                                    alleffects[alleffsources.index(subsource)])
 
@@ -690,7 +694,7 @@ if 1:
             SS = N.zeros((levels,levels),'f')
             SS = asum((effect**2 *sourceDNarray) *
                       N.multiply.reduce(N.take(DM[dindex].shape,btwnonsourcedims)),
-                            range(len(sourceDMarray.shape)-1))
+                            list(range(len(sourceDMarray.shape)-1)))
           ## Save it so you don't have to calculate it again next time
             SSlist.append(SS)
             SSsources.append(source)
@@ -727,7 +731,7 @@ if 1:
 
         # Now, fix this list by mapping the dims from the original source
         # to dims for a between-subjects variable (namely, subjslots)
-        transidx = range(len(subjslots.shape))[1:] + [0] # put subj dim at end
+        transidx = list(range(len(subjslots.shape)))[1:] + [0] # put subj dim at end
         tsubjslots = N.transpose(subjslots,transidx) # get all Ss for this idx
         tworkd = N.transpose(workd) # swap subj. and variable dims
         errors = 1.0 * tworkd
@@ -735,8 +739,8 @@ if 1:
         if len(sourcedims) == 0:
             idx = [-1]
             loopcap = [0]
-        if len(sourcedims) <> 0:
-            btwsourcedims = map(Bscols.index,sourcedims)
+        if len(sourcedims) != 0:
+            btwsourcedims = list(map(Bscols.index,sourcedims))
             idx = [0] * len(btwsourcedims)
             idx[0] = -1 # compensate for pre-increment of 1st slot in incr()
 
@@ -744,7 +748,7 @@ if 1:
             loopcap = N.take(N.array(Nlevels),sourcedims)-1
 
 ### WHILE STILL MORE GROUPS, CALCULATE GROUP MEAN FOR EACH D-VAR
-        while incr(idx,loopcap) <> -1:  # loop through source btw level-combos
+        while incr(idx,loopcap) != -1:  # loop through source btw level-combos
             mask = tsubjslots[idx]
             thisgroup = tworkd*mask[N.NewAxis,:]
             groupmns = amean(N.compress(mask,thisgroup),1)

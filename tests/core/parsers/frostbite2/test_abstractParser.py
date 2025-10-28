@@ -22,9 +22,10 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import logging
 import re
-import unittest2 as unittest
+import unittest
 
 from mock import Mock, patch, call
 from b3.clients import Client
@@ -32,6 +33,7 @@ from b3.plugins.admin import AdminPlugin
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.abstractParser import AbstractParser
+from functools import reduce
 
 sleep_patcher = None
 def setUpModule():
@@ -998,9 +1000,9 @@ class Test_getFullBanList(AbstractParser_TestCase):
         self.__class__.bans = (('name', 'Foo1 ', 'perm', '0', '0', 'Banned by admin'),)
         # verify
         mlb = self.parser.getFullBanList()
-        self.assertEqual(
-            "BanlistContent[{'idType': 'name', 'seconds_left': '0', 'reason': 'Banned by admin', 'banType': 'perm', 'rounds_left': '0', 'id': 'Foo1 '}]"
-            , repr(mlb))
+        self.assertDictEqual(
+            {'idType': 'name', 'seconds_left': '0', 'reason': 'Banned by admin', 'banType': 'perm', 'rounds_left': '0', 'id': 'Foo1 '}
+            , mlb.getData(0))
         self.assertEqual(2, self.parser.write.call_count)
 
     def test_two_bans(self):
@@ -1011,9 +1013,9 @@ class Test_getFullBanList(AbstractParser_TestCase):
             )
         # verify
         mlb = self.parser.getFullBanList()
-        self.assertEqual("BanlistContent[{'idType': 'name', 'seconds_left': '0', 'reason': 'Banned by admin', 'banType': 'perm', 'rounds_left': '0', 'id': 'Foo1 '}, \
-{'idType': 'name', 'seconds_left': '0', 'reason': 'Banned by admin', 'banType': 'perm', 'rounds_left': '0', 'id': 'Foo2 '}]"
-            , repr(mlb))
+        self.assertDictEqual({'idType': 'name', 'seconds_left': '0', 'reason': 'Banned by admin', 'banType': 'perm', 'rounds_left': '0', 'id': 'Foo1 '}
+            , mlb.getData(0))
+        self.assertDictEqual({'idType': 'name', 'seconds_left': '0', 'reason': 'Banned by admin', 'banType': 'perm', 'rounds_left': '0', 'id': 'Foo2 '}, mlb.getData(1))
         self.assertEqual(2, self.parser.write.call_count)
 
 

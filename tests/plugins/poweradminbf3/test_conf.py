@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import logging
 from textwrap import dedent
 from mock import Mock, call

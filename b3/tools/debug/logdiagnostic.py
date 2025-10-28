@@ -76,6 +76,10 @@
 #     Initial release.
 #
  
+from __future__ import absolute_import
+from __future__ import print_function
+import six
+from six.moves import range
 __version__ = '0.9.5'
 __author__ = 'GrosBedo'
  
@@ -85,13 +89,13 @@ sys.path.append(os.path.join(pathname, 'b3','lib'))
 
 # Maths functions
 import math
-from statlib import stats as mstats
-import corestats # we need the corestats lib because the mstats implementation of percentile score is broken
+from .statlib import stats as mstats
+from . import corestats # we need the corestats lib because the mstats implementation of percentile score is broken
 import itertools
 
 # Output and saving functions
 import pprint # to nicely print to the console
-import cPickle as pickle # raw matrix and raw stats exporter - cPickle is a C implementation that is more efficient than pickle
+import six.moves.cPickle as pickle # raw matrix and raw stats exporter - cPickle is a C implementation that is more efficient than pickle
 import yaml # human readable yaml format
 try:
     from yaml import CLoader as Loader
@@ -136,7 +140,7 @@ class LogDiagnostic():
                     m = re.match(f, line)
                     if m:
                         gametime = int(m.group('seconds')) + (int(m.group('minutes')) * 60) # game time at the time this line was outputted
-                        if self.debug: print('%i- gametime %s %s:%s' % (i, str(gametime), str(m.group('minutes')), str(m.group('seconds'))))
+                        if self.debug: print(('%i- gametime %s %s:%s' % (i, str(gametime), str(m.group('minutes')), str(m.group('seconds')))))
                         if previoustime is None:
                             matrix.append(1)
                         elif gametime == previoustime:
@@ -161,9 +165,9 @@ class LogDiagnostic():
                     filesize = filestats.st_size
                     if previouscursor != currpos:
                         if self.faster:
-                            if (i % 1000) == 0: print('Processing %s%% (byte %s of %s)...' % (str(currpos*100/filesize), str(currpos), str(filesize)))
+                            if (i % 1000) == 0: print(('Processing %s%% (byte %s of %s)...' % (str(currpos*100/filesize), str(currpos), str(filesize))))
                         elif not self.morefaster:
-                            print('Processing %s%% (byte %s of %s)...' % (str(currpos*100/filesize), str(currpos), str(filesize)))
+                            print(('Processing %s%% (byte %s of %s)...' % (str(currpos*100/filesize), str(currpos), str(filesize))))
                         previouscursor = currpos
                     # Sleep cycle to avoid freezing the system
                     time.sleep(0.0001)
@@ -171,8 +175,8 @@ class LogDiagnostic():
                 self.file.close()
                 if self.debug: pprint.pprint(matrix)
                 self.supermatrix.append( (game_log, matrix) )
-            except Exception, e:
-                print('Exception when reading the logs per second: '+str(e))
+            except Exception as e:
+                print(('Exception when reading the logs per second: '+str(e)))
 
         return self.supermatrix
         
@@ -218,9 +222,9 @@ class LogDiagnostic():
             self.stream = sys.stdout
         try:
             for game_log, stats in args:
-                print >> self.stream, '\n-------------------------'
-                print >> self.stream, '\nStats per second of the log file %s:\n' % game_log
-                print >> self.stream, 'Zero is significant (count missing lines): %s' % str(self.significantzero)
+                print('\n-------------------------', file=self.stream)
+                print('\nStats per second of the log file %s:\n' % game_log, file=self.stream)
+                print('Zero is significant (count missing lines): %s' % str(self.significantzero), file=self.stream)
                 pprint.pprint(stats)
         except:
             pprint.pprint(args)
@@ -234,12 +238,12 @@ class LogDiagnostic():
             self.stream = sys.stdout
         try:
             for game_log, stats in args:
-                print >> self.stream, '### Stats per second of the log file %s:\n' % game_log
-                print >> self.stream, '# Zero is significant (count missing lines): %s' % str(self.significantzero)
-                print >> self.stream, yaml.dump(stats, default_flow_style=False, Dumper=Dumper)
-                print >> self.stream, '---' # YAML objects separator
+                print('### Stats per second of the log file %s:\n' % game_log, file=self.stream)
+                print('# Zero is significant (count missing lines): %s' % str(self.significantzero), file=self.stream)
+                print(yaml.dump(stats, default_flow_style=False, Dumper=Dumper), file=self.stream)
+                print('---', file=self.stream) # YAML objects separator
         except:
-            print >> self.stream, yaml.dump_all(args, default_flow_style=False, Dumper=Dumper)
+            print(yaml.dump_all(args, default_flow_style=False, Dumper=Dumper), file=self.stream)
 
     def load_data_yaml(self, *args):
         ''' Load one or several YAML stats files and merge them with current results '''
@@ -257,8 +261,8 @@ class LogDiagnostic():
             csvWriter.writerow([object for object in args])
             file.close
             return True
-        except Exception, e:
-            print('Exception when trying to save the stats: %s' % str(e))
+        except Exception as e:
+            print(('Exception when trying to save the stats: %s' % str(e)))
             return False        
 
     def load_data_csv(self, *args):
@@ -289,8 +293,8 @@ class LogDiagnostic():
                         superstats[lastindex + i] = int(row.strip())
                         i += 1
                 file.close
-            except Exception, e:
-                print('Exception when trying to load the stats: %s' % str(e))
+            except Exception as e:
+                print(('Exception when trying to load the stats: %s' % str(e)))
                 return False
         return superstats
 
@@ -302,8 +306,8 @@ class LogDiagnostic():
                 pickle.dump(object, file)
             file.close
             return True
-        except Exception, e:
-            print('Exception when trying to save the stats: %s' % str(e))
+        except Exception as e:
+            print(('Exception when trying to save the stats: %s' % str(e)))
             return False
 
     def load_data(self, merge=False, *args):
@@ -324,8 +328,8 @@ class LogDiagnostic():
                 else:
                     superstats.append(pickle.load(file))
                 file.close
-            except Exception, e:
-                print('Exception when trying to load the stats: %s' % str(e))
+            except Exception as e:
+                print(('Exception when trying to load the stats: %s' % str(e)))
                 return False
         #print(type(superstats))
         return superstats
@@ -350,18 +354,18 @@ class LogDiagnostic():
                 del stats['cumfreq'] # same...
                 del stats['itemfreq'] # same...
                 del stats['itemscore'] # same...
-            except KeyError, e:
+            except KeyError as e:
                 print('Notice: one of the loaded stat file seems to have been generated by an older version of the Diagnostic tool ! You may miss some important new parameters !')
                 pass
-            for key, value in stats.iteritems():
+            for key, value in six.iteritems(stats):
                 if key is not 'count' and key is not 'skewmeaning' and key is not 'cumfreq':
                     newstat[key] = value * count # multiply by the count of lines
                     try: # doing the sum of all the stats (one stat at a time)
                         superstats[key] += newstat[key]
-                    except Exception, e:
+                    except Exception as e:
                         superstats[key] = newstat[key]
         divisor = sum([stat['count'] for stat in args]) # calculating the common divisor, being the sum of all the counts of lines of all the stats
-        weighted_stats = dict( (map(lambda (key, value): (key,float(value) / divisor), superstats.iteritems())) ) # dividing each of the superstats by the common divisor, this gives us the final weighted_stats
+        weighted_stats = dict( ([(key_value[0],float(key_value[1]) / divisor) for key_value in six.iteritems(superstats)]) ) # dividing each of the superstats by the common divisor, this gives us the final weighted_stats
         # adding a few useful fields
         weighted_stats['count'] = divisor
         weighted_stats['perfectvalue'] = int(math.ceil(weighted_stats['3sigma'] + weighted_stats['mean']))

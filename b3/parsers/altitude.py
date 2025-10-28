@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 import b3.clients
 import b3.functions
@@ -31,6 +32,7 @@ import time
 
 from b3.events import Event
 from b3.parser import Parser
+from six.moves import range
 
 __author__ = 'Courgette'
 __version__ = '1.6'
@@ -767,7 +769,7 @@ class AltitudeParser(Parser):
             ## erase Altitude command file content so the Altitude
             ## server wron't try to redo those commands on restart
             self.output.clear()
-        except Exception, e:
+        except Exception as e:
             self.error(e)
         finally:
             ## call original shutdown()

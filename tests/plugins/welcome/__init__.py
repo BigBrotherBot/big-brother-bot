@@ -15,6 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
+from __future__ import absolute_import
 import b3
 
 from mockito import when
@@ -23,9 +24,10 @@ from b3.plugins.welcome import WelcomePlugin
 from b3.config import CfgConfigParser
 from b3.fake import FakeClient
 from tests import B3TestCase, logging_disabled
+import unittest
 
 
-class Welcome_functional_test(B3TestCase):
+class Welcome_functional_test(B3TestCase, unittest.TestCase):
 
     def setUp(self):
 

@@ -22,12 +22,14 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import sys
 
 from tests.plugins.duel import DuelTestCase
+import unittest
 
 
-class Test_plugin(DuelTestCase):
+class Test_plugin(DuelTestCase,unittest.TestCase):
 
     ####################################################################################################################
     #                                                                                                                  #

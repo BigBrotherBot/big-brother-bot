@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import logging
 import re
 import sys
@@ -45,9 +46,10 @@ from b3.parsers.ravaged.ravaged_rcon import RavagedServerCommandTimeout
 from b3.parsers.ravaged.ravaged_rcon import RavagedServerError
 from b3.parsers.ravaged.rcon import Rcon as RavagedRcon
 from b3.lib.sourcelib import SourceQuery
-from Queue import Queue
-from Queue import Full
-from Queue import Empty
+from six.moves.queue import Queue
+from six.moves.queue import Full
+from six.moves.queue import Empty
+import six
 
 __author__  = 'Courgette'
 __version__ = '1.10'
@@ -133,7 +135,7 @@ class RavagedParser(Parser):
                     self.game.sv_hostname = serverinfo['hostname']
                 if 'maxplayers' in serverinfo:
                     self.game.sv_maxclients = serverinfo['maxplayers']
-            except Exception, err:
+            except Exception as err:
                 self.error("could not retrieve server info using Source Query protocol", exc_info=err)
 
     def pluginsStarted(self):
@@ -279,7 +281,7 @@ class RavagedParser(Parser):
         """
         plist = self.getPlayerList()
         mlist = {}
-        for cid, client in plist.iteritems():
+        for cid, client in six.iteritems(plist):
             if client:
                 mlist[cid] = client
         return mlist
@@ -327,7 +329,7 @@ class RavagedParser(Parser):
         :param silent: Whether or not to announce this kick
         """
         self.debug('kick reason: [%s]' % reason)
-        if isinstance(client, basestring):
+        if isinstance(client, six.string_types):
             clients = self.clients.getByMagic(client)
             if len(clients) != 1:
                 return
@@ -363,7 +365,7 @@ class RavagedParser(Parser):
             return
 
         self.debug('BAN : client: %s, reason: %s', client, reason)
-        if isinstance(client, basestring):
+        if isinstance(client, six.string_types):
             clients = self.clients.getByMagic(client)
             if len(clients) != 1:
                 return
@@ -419,7 +421,7 @@ class RavagedParser(Parser):
             return
 
         self.debug('TEMPBAN : client: %s, duration: %s, reason: %s', client, duration, reason)
-        if isinstance(client, basestring):
+        if isinstance(client, six.string_types):
             clients = self.clients.getByMagic(client)
             if len(clients) != 1:
                 return
@@ -487,7 +489,7 @@ class RavagedParser(Parser):
         Return a list of suggested map names in cases it fails to recognize the map that was provided
         """
         rv = self.getMapsSoundingLike(map_name)
-        if isinstance(rv, basestring):
+        if isinstance(rv, six.string_types):
             self.output.write("addmap %s 1" % rv)
             self.output.write("nextmap")
         else:
@@ -694,13 +696,13 @@ class RavagedParser(Parser):
             if not self._serverConnection or not self._serverConnection.connected:
                 try:
                     self.setup_game_connection()
-                except RavagedServerError, err:
+                except RavagedServerError as err:
                     self.error("RavagedServerError %s"% err)
                     continue
-                except IOError, err:
+                except IOError as err:
                     self.error("IOError: %s"% err)
                     continue
-                except Exception, err:
+                except Exception as err:
                     self.error(err)
                     self.exitcode = 220
                     break
@@ -712,15 +714,15 @@ class RavagedParser(Parser):
                 self.route_game_event(packet)
             except Empty:
                 pass
-            except RavagedServerCommandError, err:
+            except RavagedServerCommandError as err:
                 # it does not matter from the parser perspective if Frostbite command failed
                 # (timeout or bad reply)
                 self.warning(err)
-            except RavagedServerNetworkError, e:
+            except RavagedServerNetworkError as e:
                 # the connection to the frostbite server is lost
                 self.warning(e)
                 self.close_game_connection()
-            except Exception, e:
+            except Exception as e:
                 self.error("Unexpected error: please report this on the B3 forums")
                 self.error(e)
                 self.error('%s: %s', e, traceback.extract_tb(sys.exc_info()[2]))
@@ -753,7 +755,7 @@ class RavagedParser(Parser):
             self.close_game_connection()
         try:
             self._serverConnection = RavagedServer(self._rconIp, self._rconPort, self._rconPassword)
-        except RavagedServerNetworkError, err:
+        except RavagedServerNetworkError as err:
             self.error(err)
             time.sleep(10)
 
@@ -764,7 +766,7 @@ class RavagedParser(Parser):
             self.info("Retrying to connect to game server...")
             try:
                 self._serverConnection = RavagedServer(self._rconIp, self._rconPort, self._rconPassword)
-            except RavagedServerNetworkError, err:
+            except RavagedServerNetworkError as err:
                 self.error(err)
 
         if self._serverConnection is None:
@@ -778,11 +780,11 @@ class RavagedParser(Parser):
 
         try:
             self._serverConnection.auth()
-        except RavagedServerCommandTimeout, err:
+        except RavagedServerCommandTimeout as err:
             self.warning(err)
             try:
                 self._serverConnection.auth()
-            except RavagedServerCommandTimeout, err:
+            except RavagedServerCommandTimeout as err:
                 self.error(err)
                 self._serverConnection.stop()
                 self._serverConnection = None
@@ -816,7 +818,7 @@ class RavagedParser(Parser):
     def route_game_event(self, game_event):
         hfunc, param_dict = ger.getHandler(game_event)
         if hfunc:
-            self.verbose2("Calling %s%r" % (hfunc.func_name, param_dict))
+            self.verbose2("Calling %s%r" % (hfunc.__name__, param_dict))
             event = hfunc(self, **param_dict)
             if event:
                 self.queueEvent(event)

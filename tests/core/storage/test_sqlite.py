@@ -22,17 +22,18 @@
 #                                                                     #
 # ################################################################### #
 
-import nose
+from __future__ import absolute_import
 
 from b3.functions import splitDSN
 from b3.storage.sqlite import SqliteStorage
 from tests import B3TestCase
 from tests.core.storage.common import StorageAPITest
+import unittest
 
 SQLITE_DB = ":memory:"
 #SQLITE_DB = "c:/Users/Thomas/b3.db"
 
-class Test_sqlite(B3TestCase, StorageAPITest):
+class Test_sqlite(B3TestCase, StorageAPITest, unittest.TestCase):
 
     def setUp(self):
         """this method is called before each test"""
@@ -56,8 +57,5 @@ class Test_sqlite(B3TestCase, StorageAPITest):
              'penalties',
              'data',
             ]), set(self.storage.getTables()))
-
-if __name__ == '__main__':
-    nose.main()
     
     

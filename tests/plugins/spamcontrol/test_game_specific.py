@@ -22,8 +22,9 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
-import new
+import types
 
 from mock import Mock
 from mockito import when
@@ -51,13 +52,13 @@ class Test_game_specific_spam(SpamcontrolTestCase):
             new_event = Event(type=event.type, client=event.client, target=event.target, data=event.data['text'])
             this.onChat(new_event)
 
-        self.p.onRadio = new.instancemethod(onRadio, self.p, SpamcontrolPlugin)
+        self.p.onRadio = types.MethodType(onRadio, self.p)
         self.p.registerEvent('EVT_CLIENT_RADIO', self.p.onRadio)
 
         # patch joe to make him able to send radio messages
         def radios(me, text):
             me.console.queueEvent(Event(type=EVT_CLIENT_RADIO, client=me, data={'text': text}))
-        self.joe.radios = new.instancemethod(radios, self.joe, FakeClient)
+        self.joe.radios = radios
 
     def test_radio_spam(self):
         when(self.p).getTime().thenReturn(0)

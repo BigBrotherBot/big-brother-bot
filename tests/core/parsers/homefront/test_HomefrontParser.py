@@ -22,11 +22,14 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 import b3.clients
-import unittest2 as unittest
+import unittest
 
-from b3.parsers.homefront import HomefrontParser
+import pytest
+pytest.importorskip("b3.parsers.homefront",exc_type=NameError)
+HomefrontParser = b3.parsers.homefont.HomeFront
 from mock import Mock, sentinel
 
  

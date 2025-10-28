@@ -22,6 +22,9 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+from __future__ import print_function
+import six
 __author__ = 'ThorN, Courgette, xlr8or, Bakes, Ozon, Fenix'
 __version__ = '1.43.6'
 
@@ -30,11 +33,11 @@ import os
 import sys
 import re
 import time
-import thread
+import six.moves._thread
 import datetime
 import dateutil.tz
-import Queue
-import imp
+import six.moves.queue
+import importlib
 import atexit
 import socket
 import glob
@@ -49,7 +52,7 @@ import b3.cron
 import b3.parsers.q3a.rcon
 import b3.timezones
 
-from ConfigParser import NoOptionError
+from six.moves.configparser import NoOptionError
 from collections import OrderedDict
 from b3 import __version__ as currentVersion
 from b3.clients import Clients
@@ -125,6 +128,7 @@ class Parser(object):
     type = None
     working = True  # whether B3 is running or not
     wrapper = None  # textwrapper instance
+    is_dummy = False # Allows the use of a dummy instance ( No game attached )
 
     deadPrefix = '[DEAD]^7'  # say dead prefix
     msgPrefix = ''  # say prefix
@@ -178,7 +182,7 @@ class Parser(object):
     #
     #   Exits occurring in the main thread do not need to be synchronised.
 
-    exiting = thread.allocate_lock()
+    exiting = six.moves._thread.allocate_lock()
     exitcode = None
 
     def __new__(cls, *args, **kwargs):
@@ -255,13 +259,13 @@ class Parser(object):
 
         if self._publicIp and self._publicIp[0:1] in ('~', '/'):
             # load ip from a file
-            f = file(b3.getAbsolutePath(self._publicIp, decode=True))
+            f = open(b3.getAbsolutePath(self._publicIp, decode=True))
             self._publicIp = f.read().strip()
             f.close()
 
         if self._rconIp[0:1] in ('~', '/'):
             # load ip from a file
-            f = file(b3.getAbsolutePath(self._rconIp, decode=True))
+            f = open(b3.getAbsolutePath(self._rconIp, decode=True))
             self._rconIp = f.read().strip()
             f.close()
 
@@ -313,7 +317,7 @@ class Parser(object):
             # setup storage module
             dsn = self.config.get('b3', 'database')
             self.storage = b3.storage.getStorage(dsn=dsn, dsnDict=splitDSN(dsn), console=self)
-        except (AttributeError, ImportError), e:
+        except (AttributeError, ImportError) as e:
             # exit if we don't manage to setup the storage module: B3 will stop working upon Admin
             # Plugin loading so it makes no sense to keep going with the console initialization
             self.critical('Could not setup storage module: %s', e)
@@ -358,7 +362,7 @@ class Parser(object):
             self.screen.write('Using gamelog    : %s\n' % b3.getShortPath(os.path.abspath(f)))
 
             if os.path.isfile(f):
-                self.input = file(f, 'r')
+                self.input = open(f, 'r')
                 if self.config.has_option('server', 'seek'):
                     seek = self.config.getboolean('server', 'seek')
                     if seek:
@@ -369,61 +373,61 @@ class Parser(object):
                 self.screen.write(">>> Cannot read file: %s\n" % os.path.abspath(f))
                 self.screen.flush()
                 self.critical("Cannot read file: %s", os.path.abspath(f))
-
-        try:
-            # setup rcon
-            self.output = self.OutputClass(self, (self._rconIp, self._rconPort), self._rconPassword)
-        except Exception, err:
-            self.screen.write(">>> Cannot setup RCON: %s\n" % err)
-            self.screen.flush()
-            self.critical("Cannot setup RCON: %s" % err, exc_info=err)
-        
-        if self.config.has_option('server', 'rcon_timeout'):
-            custom_socket_timeout = self.config.getfloat('server', 'rcon_timeout')
-            self.output.socket_timeout = custom_socket_timeout
-            self.bot('Setting rcon socket timeout to: %0.3f sec', custom_socket_timeout)
-
-        # allow configurable max line length
-        if self.config.has_option('server', 'max_line_length'):
-            self._line_length = self.config.getint('server', 'max_line_length')
-            self.bot('Setting line_length to: %s', self._line_length)
-
-        # allow configurable line color prefix
-        if self.config.has_option('server', 'line_color_prefix'):
-            self._line_color_prefix = self.config.get('server', 'line_color_prefix')
-            self.bot('Setting line_color_prefix to: "%s"', self._line_color_prefix)
-
-        # allow configurable multiline (manual line breaks)
-        if self.config.has_option('server', 'multiline'):
-            self._multiline = self.config.getboolean('server', 'multiline')
-            self.bot('Setting multiline to: %s', self._multiline)
-
-        # allow configurable multiline (manual line breaks)
-        if self.config.has_option('server', 'multiline_noprefix'):
-            self._multiline_noprefix = self.config.getboolean('server', 'multiline_noprefix')
-            self.bot('Setting multiline_noprefix to: %s', self._multiline_noprefix)
-
-        # testing rcon
-        if self.rconTest:
-            res = self.output.write('status')
-            self.output.flush()
-            self.screen.write('Testing RCON     : ')
-            self.screen.flush()
-            badRconReplies = ['Bad rconpassword.', 'Invalid password.']
-            if res in badRconReplies:
-                self.screen.write('>>> Oops: Bad RCON password\n'
-                                  '>>> Hint: This will lead to errors and render B3 without any power to interact!\n')
+        if not self.is_dummy:
+            try:
+                # setup rcon
+                self.output = self.OutputClass(self, (self._rconIp, self._rconPort), self._rconPassword)
+            except Exception as err:
+                self.screen.write(">>> Cannot setup RCON: %s\n" % err)
                 self.screen.flush()
-                time.sleep(2)
-            elif res == '':
-                self.screen.write('>>> Oops: No response\n'
-                                  '>>> Could be something wrong with the rcon connection to the server!\n'
-                                  '>>> Hint 1: The server is not running or it is changing maps.\n'
-                                  '>>> Hint 2: Check your server-ip and port.\n')
+                self.critical("Cannot setup RCON: %s" % err, exc_info=err)
+
+            if self.config.has_option('server', 'rcon_timeout'):
+                custom_socket_timeout = self.config.getfloat('server', 'rcon_timeout')
+                self.output.socket_timeout = custom_socket_timeout
+                self.bot('Setting rcon socket timeout to: %0.3f sec', custom_socket_timeout)
+
+            # allow configurable max line length
+            if self.config.has_option('server', 'max_line_length'):
+                self._line_length = self.config.getint('server', 'max_line_length')
+                self.bot('Setting line_length to: %s', self._line_length)
+
+            # allow configurable line color prefix
+            if self.config.has_option('server', 'line_color_prefix'):
+                self._line_color_prefix = self.config.get('server', 'line_color_prefix')
+                self.bot('Setting line_color_prefix to: "%s"', self._line_color_prefix)
+
+            # allow configurable multiline (manual line breaks)
+            if self.config.has_option('server', 'multiline'):
+                self._multiline = self.config.getboolean('server', 'multiline')
+                self.bot('Setting multiline to: %s', self._multiline)
+
+            # allow configurable multiline (manual line breaks)
+            if self.config.has_option('server', 'multiline_noprefix'):
+                self._multiline_noprefix = self.config.getboolean('server', 'multiline_noprefix')
+                self.bot('Setting multiline_noprefix to: %s', self._multiline_noprefix)
+
+            # testing rcon
+            if self.rconTest:
+                res = self.output.write('status')
+                self.output.flush()
+                self.screen.write('Testing RCON     : ')
                 self.screen.flush()
-                time.sleep(2)
-            else:
-                self.screen.write('OK\n')
+                badRconReplies = ['Bad rconpassword.', 'Invalid password.']
+                if res in badRconReplies:
+                    self.screen.write('>>> Oops: Bad RCON password\n'
+                                    '>>> Hint: This will lead to errors and render B3 without any power to interact!\n')
+                    self.screen.flush()
+                    time.sleep(2)
+                elif res == '':
+                    self.screen.write('>>> Oops: No response\n'
+                                    '>>> Could be something wrong with the rcon connection to the server!\n'
+                                    '>>> Hint 1: The server is not running or it is changing maps.\n'
+                                    '>>> Hint 2: Check your server-ip and port.\n')
+                    self.screen.flush()
+                    time.sleep(2)
+                else:
+                    self.screen.write('OK\n')
 
         self.loadEvents()
         self.screen.write('Loading events   : %s events loaded\n' % len(self._events))
@@ -438,12 +442,12 @@ class Parser(object):
             queuesize = self.config.getint('b3', 'event_queue_size')
         except NoOptionError:
             queuesize = 50
-        except ValueError, err:
+        except ValueError as err:
             queuesize = 50
             self.warning(err)
 
         self.debug("Creating the event queue with size %s", queuesize)
-        self.queue = Queue.Queue(queuesize)
+        self.queue = six.moves.queue.Queue(queuesize)
 
         atexit.register(self.shutdown)
 
@@ -475,7 +479,7 @@ class Parser(object):
         self.bot("All plugins started")
         self.pluginsStarted()
         self.bot("Starting event dispatching thread")
-        thread.start_new_thread(self.handleEvents, ())
+        six.moves._thread.start_new_thread(self.handleEvents, ())
         self.bot("Start reading game events")
         self.run()
 
@@ -669,6 +673,7 @@ class Parser(object):
                 # file, then keep loading the plugin if such a plugin doesn't require a configuration file (optional)
                 # otherwise stop loading the plugin and loag an error message.
                 p_config_absolute_path = b3.getAbsolutePath(p_config_path, decode=True)
+                print(p_config_absolute_path)
                 if os.path.exists(p_config_absolute_path):
                     self.bot('Loading configuration file %s for plugin %s', p_config_absolute_path, p_name)
                     return b3.config.load(p_config_absolute_path)
@@ -703,7 +708,7 @@ class Parser(object):
                 clz = getattr(mod, '%sPlugin' % p['name'].title())
                 cfg = _get_plugin_config(p['name'], clz, p['conf'])
                 plugins[p['name']] = PluginData(name=p['name'], module=mod, clazz=clz, conf=cfg, disabled=p['disabled'])
-            except Exception, err:
+            except Exception as err:
                 self.error('Could not load plugin %s' % p['name'], exc_info=err)
 
         # check for AdminPlugin
@@ -753,7 +758,7 @@ class Parser(object):
                                 self.debug('Plugin %s has unmet dependency : %s : trying to load plugin %s...' % (p_data.name, r, r))
                                 collection += _get_plugin_data(PluginData(name=r))
                                 self.debug('Plugin %s dependency satisfied: %s' % (p_data.name, r))
-                            except Exception, ex:
+                            except Exception as ex:
                                 raise MissingRequirement('missing required plugin: %s : %s' % (r, extract_tb(sys.exc_info()[2])), ex)
 
                     return collection
@@ -776,7 +781,7 @@ class Parser(object):
         for plugin_name, plugin_data in plugins.items():
             try:
                 plugin_list += _get_plugin_data(plugin_data)
-            except MissingRequirement, err:
+            except MissingRequirement as err:
                 self.error('Could not load plugin %s' % plugin_name, exc_info=err)
 
         plugin_dict = {x.name: x for x in plugin_list}      # dict(str, PluginData)
@@ -817,7 +822,7 @@ class Parser(object):
             try:
                 self.bot('Loading plugin #%s : %s [%s]', plugin_num, plugin_data.name, plugin_conf_path)
                 self._plugins[plugin_data.name] = plugin_data.clazz(self, plugin_data.conf)
-            except Exception, err:
+            except Exception as err:
                 self.error('Could not load plugin %s' % plugin_data.name, exc_info=err)
                 self.screen.write('x')
             else:
@@ -859,7 +864,7 @@ class Parser(object):
                 console._plugins[plugin_name] = getattr(plugin_module, '%sPlugin' % plugin_name.title())(console)
                 version = getattr(plugin_module, '__version__', 'Unknown Version')
                 author = getattr(plugin_module, '__author__', 'Unknown Author')
-            except Exception, e:
+            except Exception as e:
                 console.screen.write('x')
                 if plugin_name in _mandatory_plugins:
                     # critical will stop B3 from running
@@ -890,7 +895,7 @@ class Parser(object):
             if remote_log_plugin and remote_log_plugin not in self._plugins:
                 _load_plugin(self, remote_log_plugin)
 
-        self.screen.write(' (%s)\n' % len(self._plugins.keys()))
+        self.screen.write(' (%s)\n' % len(list(self._plugins.keys())))
         self.screen.flush()
 
     def pluginImport(self, name, path=None):
@@ -901,9 +906,9 @@ class Parser(object):
         if path is not None:
             # import error is being handled in loadPlugins already
             self.info('Loading plugin from specified path: %s', path)
-            fp, pathname, description = imp.find_module(name, [path])
+            fp, pathname, description = importlib.machinery.PathFinder().find_spec(name, [path])
             try:
-                return imp.load_module(name, fp, pathname, description)
+                return importlib.load_module(name, fp, pathname, description)
             finally:
                 if fp:
                     fp.close()
@@ -911,13 +916,17 @@ class Parser(object):
         fp = None
 
         try:
-            fp, pathname, description = imp.find_module(name, [os.path.join(b3.getB3Path(True), 'plugins')])
-            return imp.load_module(name, fp, pathname, description)
-        except ImportError, m:
+            spec = importlib.util.spec_from_file_location(name, os.path.join(b3.getB3Path(True), f'plugins/{name}/__init__.py'))
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            return mod
+        except AttributeError as m:
             self.verbose('%s is not a built-in plugin (%s)' % (name.title(), m))
             self.verbose('Trying external plugin directory : %s', self.config.get_external_plugins_dir())
-            fp, pathname, description = imp.find_module(name, [self.config.get_external_plugins_dir()])
-            return imp.load_module(name, fp, pathname, description)
+            spec = importlib.util.spec_from_file_location(name, os.path.join(self.config.get_external_plugins_dir(), f'{name}/__init__.py'))
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            return mod
         finally:
             if fp:
                 fp.close()
@@ -946,7 +955,7 @@ class Parser(object):
             try:
                 self.bot('Starting plugin #%s : %s' % (plugin_num, plugin_name))
                 start_plugin(self, plugin_name)
-            except Exception, err:
+            except Exception as err:
                 self.error("Could not start plugin %s" % plugin_name, exc_info=err)
                 self.screen.write('x')
             else:
@@ -986,7 +995,7 @@ class Parser(object):
         except KeyError:
             try:
                 msg = self._messages[msg] = self.config.getTextTemplate('messages', msg)
-            except Exception, err:
+            except Exception as err:
                 self.warning("Falling back on default message for '%s': %s" % (msg, err))
                 msg = vars2printf(self._messages_default.get(msg, '')).strip()
 
@@ -1016,7 +1025,7 @@ class Parser(object):
                     cleanattr = pattern.sub('', attr)  # trim any underscore or any non alphanumeric character
                     variables[cleanattr] = getattr(obj, attr)
 
-        for key, obj in kwargs.iteritems():
+        for key, obj in six.iteritems(kwargs):
             #self.debug('Type of kwarg %s: %s' % (key, type(obj).__name__))
             if obj is None:
                 continue
@@ -1052,7 +1061,7 @@ class Parser(object):
         <data> can be either a group keyword or a group level.
         Raises KeyError if group is not found.
         """
-        if type(data) is int or isinstance(data, basestring) and data.isdigit():
+        if type(data) is int or isinstance(data, six.string_types) and data.isdigit():
             g = Group(level=data)
         else:
             g = Group(keyword=data)
@@ -1167,7 +1176,7 @@ class Parser(object):
                                 self.parseLine(line)
                             except SystemExit:
                                 raise
-                            except Exception, msg:
+                            except Exception as msg:
                                 self.error('Could not parse line %s: %s', msg, extract_tb(sys.exc_info()[2]))
                             
                             time.sleep(self.delay2)
@@ -1222,7 +1231,7 @@ class Parser(object):
                 time.sleep(0.001)  # wait a bit so event doesnt get jumbled
                 self.queue.put((self.time(), self.time() + expire, event), True, 2)
                 return True
-            except Queue.Full:
+            except six.moves.queue.Full:
                 self.error('**** Event queue was full (%s)', self.queue.qsize())
                 return False
 
@@ -1250,7 +1259,7 @@ class Parser(object):
                         break
 
                     self.verbose('Parsing event: %s: %s', event_name, hfunc.__class__.__name__)
-                    timer_plugin_begin = time.clock()
+                    timer_plugin_begin = time.time()
                     try:
                         hfunc.parseEvent(event)
                         time.sleep(0.001)
@@ -1258,13 +1267,13 @@ class Parser(object):
                         # plugin called for event hault, do not continue processing
                         self.bot('Event %s vetoed by %s', event_name, str(hfunc))
                         nomore = True
-                    except SystemExit, e:
+                    except SystemExit as e:
                         self.exitcode = e.code
-                    except Exception, msg:
+                    except Exception as msg:
                         self.error('Handler %s could not handle event %s: %s: %s %s', hfunc.__class__.__name__,
                                    event_name, msg.__class__.__name__, msg, extract_tb(sys.exc_info()[2]))
                     finally:
-                        elapsed = time.clock() - timer_plugin_begin
+                        elapsed = time.time() - timer_plugin_begin
                         self._eventsStats.add_event_handled(hfunc.__class__.__name__, event_name, elapsed * 1000)
                     
         self.bot('Shutting down event handler')
@@ -1343,7 +1352,7 @@ class Parser(object):
                 if self.storage:
                     self.bot('Shutting down database connection')
                     self.storage.shutdown()
-        except Exception, e:
+        except Exception as e:
             self.error(e)
 
     def finalize(self):
@@ -1362,7 +1371,7 @@ class Parser(object):
                 self.bot('Found PID file : %s : attempt to remove it' % pidpath)
                 try:
                     os.unlink(pidpath)
-                except Exception, e:
+                except Exception as e:
                     self.error('Could not remove PID file (%s) : %s' % (pidpath, e))
                 else:
                     self.bot('PID file removed (%s)' % pidpath)
@@ -1528,7 +1537,7 @@ class Parser(object):
                 from b3.tools.documentationBuilder import DocBuilder
                 docbuilder = DocBuilder(self)
                 docbuilder.save()
-            except Exception, err:
+            except Exception as err:
                 self.error("Failed to generate user documentation")
                 self.exception(err)
         else:

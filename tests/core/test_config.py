@@ -22,16 +22,17 @@
 #                                                                     #
 # ################################################################### #
 
-import ConfigParser
+from __future__ import absolute_import
+import configparser
 import logging
 from unittest import TestCase
-import unittest2 as unittest
+import unittest
 import sys
 from b3.config import XmlConfigParser, CfgConfigParser, ConfigFileNotValid
 from tests import B3TestCase
 
 @unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
-class Test_XmlConfigParser_windows(B3TestCase):
+class Test_XmlConfigParser_windows(B3TestCase, unittest.TestCase):
 
     def setUp(self):
         B3TestCase.setUp(self)
@@ -59,7 +60,7 @@ class CommonTestMethodsMixin:
         self.conf.loadFromString(self.__class__.assert_func_template % conf_value)
         try:
             self.assertEqual(expected, func('section_foo', 'foo'))
-        except (ConfigParser.Error, ValueError), err:
+        except (configparser.Error, ValueError) as err:
             self.fail("expecting %s, but got %r" % (expected, err))
 
     def _assert_func_raises(self, func, expected_error, section, name, conf):
@@ -68,7 +69,7 @@ class CommonTestMethodsMixin:
             func(section, name)
         except expected_error:
             pass
-        except Exception, err:
+        except Exception as err:
             self.fail("expecting %s, but got %r" % (expected_error, err))
         else:
             self.fail("expecting %s" % expected_error)
@@ -103,8 +104,8 @@ class CommonTestMethodsMixin:
     def test_get(self):
         self.assert_get('bar', 'bar')
         self.assert_get('', '')
-        self.assert_get_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', self.assert_func_template % "")
-        self.assert_get_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', self.assert_func_template % "")
+        self.assert_get_raises(configparser.NoOptionError, 'section_foo', 'bar', self.assert_func_template % "")
+        self.assert_get_raises(configparser.NoOptionError, 'section_bar', 'foo', self.assert_func_template % "")
 
     def test_getint(self):
         self.assert_getint(-54, '-54')
@@ -113,8 +114,8 @@ class CommonTestMethodsMixin:
         self.assert_getint_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "bar")
         self.assert_getint_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "64.5")
         self.assert_getint_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "")
-        self.assert_getint_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', self.assert_func_template % "")
-        self.assert_getint_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', self.assert_func_template % "")
+        self.assert_getint_raises(configparser.NoOptionError, 'section_foo', 'bar', self.assert_func_template % "")
+        self.assert_getint_raises(configparser.NoOptionError, 'section_bar', 'foo', self.assert_func_template % "")
 
     def test_getfloat(self):
         self.assert_getfloat(-54.0, '-54')
@@ -126,8 +127,8 @@ class CommonTestMethodsMixin:
         self.assert_getfloat_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "bar")
         self.assert_getfloat_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "64,5")
         self.assert_getfloat_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "")
-        self.assert_getfloat_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', self.assert_func_template % "")
-        self.assert_getfloat_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', self.assert_func_template % "")
+        self.assert_getfloat_raises(configparser.NoOptionError, 'section_foo', 'bar', self.assert_func_template % "")
+        self.assert_getfloat_raises(configparser.NoOptionError, 'section_bar', 'foo', self.assert_func_template % "")
 
     def test_getboolean(self):
         self.assert_getboolean(False, 'false')
@@ -145,8 +146,8 @@ class CommonTestMethodsMixin:
         self.assert_getboolean_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "bar")
         self.assert_getboolean_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "64,5")
         self.assert_getboolean_raises(ValueError, 'section_foo', 'foo', self.assert_func_template % "")
-        self.assert_getboolean_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', self.assert_func_template % "")
-        self.assert_getboolean_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', self.assert_func_template % "")
+        self.assert_getboolean_raises(configparser.NoOptionError, 'section_foo', 'bar', self.assert_func_template % "")
+        self.assert_getboolean_raises(configparser.NoOptionError, 'section_bar', 'foo', self.assert_func_template % "")
 
     def test_getDuration(self):
         self.assert_getDuration(0, '0')
@@ -155,7 +156,7 @@ class CommonTestMethodsMixin:
         self.assert_getDuration(0.5, '30s')
 
 
-class Test_XmlConfigParser(CommonTestMethodsMixin, B3TestCase):
+class Test_XmlConfigParser(CommonTestMethodsMixin, B3TestCase, unittest.TestCase):
 
     assert_func_template = """
         <configuration>
@@ -172,8 +173,8 @@ class Test_XmlConfigParser(CommonTestMethodsMixin, B3TestCase):
         log.setLevel(logging.DEBUG)
 
     def test_get_missing(self):
-        self.assert_get_raises(ConfigParser.NoOptionError, 'section_foo', 'bar', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
-        self.assert_get_raises(ConfigParser.NoOptionError, 'section_bar', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+        self.assert_get_raises(configparser.NoOptionError, 'section_foo', 'bar', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
+        self.assert_get_raises(configparser.NoOptionError, 'section_bar', 'foo', """<configuration><settings name="section_foo"><set name="foo"/></settings></configuration>""")
 
 
 class Test_ConfigFileNotValid(TestCase):
@@ -181,22 +182,22 @@ class Test_ConfigFileNotValid(TestCase):
     def test_exception_message(self):
         try:
             raise ConfigFileNotValid("f00")
-        except ConfigFileNotValid, e:
+        except ConfigFileNotValid as e:
             self.assertEqual(repr("f00"), str(e))
 
     def test_loading_invalid_conf(self):
         config = XmlConfigParser()
         try:
             config.loadFromString(r"""<configuration """)
-        except ConfigFileNotValid, e:
+        except ConfigFileNotValid as e:
             self.assertEqual("'unclosed token: line 1, column 0'", str(e))
-        except Exception, e:
+        except Exception as e:
             self.fail("unexpected exception %r" % e)
         else:
             self.fail("expecting exception")
 
 
-class Test_CfgConfigParser(CommonTestMethodsMixin, B3TestCase):
+class Test_CfgConfigParser(CommonTestMethodsMixin, B3TestCase, unittest.TestCase):
 
     assert_func_template = """
 [section_foo]

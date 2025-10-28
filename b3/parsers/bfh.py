@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 import b3.clients
 import b3.events
@@ -34,6 +35,9 @@ from time import sleep
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import PlayerInfoBlock
+import six
+from six.moves import range
+from six.moves import zip
 
 __author__ = 'Thomas LEVEIL, Fenix'
 __version__ = '0.2'
@@ -254,7 +258,7 @@ class BfhParser(AbstractParser):
         AbstractParser.pluginsStarted(self)
         self.info('Connecting all players...')
         plist = self.getPlayerList()
-        for cid, p in plist.iteritems():
+        for cid, p in six.iteritems(plist):
             self.getClient(cid)
 
     ####################################################################################################################
@@ -388,7 +392,7 @@ class BfhParser(AbstractParser):
                     pings[player['name']] = int(player['ping'])
         except (ValueError, TypeError):
             pass  # continue if the ping value is empty
-        except Exception, err:
+        except Exception as err:
             self.error('Unable to retrieve pings from player list', exc_info=err)
         return pings
 
@@ -492,7 +496,7 @@ class BfhParser(AbstractParser):
         Return a list of supported levels for the current game mod.
         """
         # TODO : remove this method once the method on from AbstractParser is working
-        return MAP_NAME_BY_ID.keys()
+        return list(MAP_NAME_BY_ID.keys())
 
     def getSupportedGameModesByMapId(self, map_id):
         """
@@ -622,7 +626,7 @@ class BfhParser(AbstractParser):
         # If this fails, we use the old method and get the map name from the server vars.
         try:
             return self.write(('currentLevel',))[0]
-        except CommandFailedError, err:
+        except CommandFailedError as err:
             self.warning(err)
             self.getServerInfo()
             return self.game.mapName
@@ -712,7 +716,7 @@ class BfhParser(AbstractParser):
         )
 
         start_index = 7 + numOfTeams + 8
-        for i, n in zip(range(start_index, start_index + len(new_info)), new_info):
+        for i, n in zip(list(range(start_index, start_index + len(new_info))), new_info):
             try:
                 response[n] = data[i]
             except IndexError:
@@ -742,12 +746,12 @@ class BfhParser(AbstractParser):
                         return False
             except IndexError:
                 pass
-            except CommandFailedError, err:
+            except CommandFailedError as err:
                 if err.message[0] == 'InvalidPlayerName':
                     pass
                 else:
                     raise Exception(err)
-            except Exception, err:
+            except Exception as err:
                 self.console.error("Could not get player state for player %s: %s" % (_player_name, err), exc_info=err)
 
         def getPlayerState(self):
@@ -773,7 +777,7 @@ class BfhParser(AbstractParser):
             try:
                 _player_info_block = PlayerInfoBlock(self.console.write(('admin.listPlayers', 'player', _player_name)))
                 return int(_player_info_block[0]['type'])
-            except Exception, err:
+            except Exception as err:
                 self.console.error("Could not get player_type for player %s: %s" % (self.name, err), exc_info=err)
 
         def get_player_type(self):

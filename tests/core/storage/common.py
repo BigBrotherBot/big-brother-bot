@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from b3.clients import Client
 from b3.clients import Alias
 from b3.clients import IpAlias
@@ -280,7 +281,7 @@ class StorageAPITest(object):
         p1 = self.storage.getClientPenalty(Penalty(id=id1, type='foo'))
         self.assertIsInstance(p1, Penalty)
         self.assertIs(type(p1), Penalty)
-        self.assertEquals('', p1.keyword)
+        self.assertEqual('', p1.keyword)
 
     # def test_setClientPenalty_no_db(self):
     #     when(self.storage).query(ANY()).thenRaise(KeyError())
@@ -460,15 +461,15 @@ class StorageAPITest(object):
     def test_getGroup_by_keyword(self):
         g = self.storage.getGroup(Group(keyword='superadmin'))
         self.assertIsInstance(g, Group)
-        self.assertEquals('superadmin', g.keyword)
-        self.assertEquals(100, g.level)
+        self.assertEqual('superadmin', g.keyword)
+        self.assertEqual(100, g.level)
         self.assertRaises(KeyError, self.storage.getGroup, Group(keyword='foo'))
 
     def test_getGroup_by_level(self):
         g = self.storage.getGroup(Group(level='20'))
         self.assertIsInstance(g, Group)
-        self.assertEquals('mod', g.keyword)
-        self.assertEquals(20, g.level)
+        self.assertEqual('mod', g.keyword)
+        self.assertEqual(20, g.level)
         self.assertRaises(KeyError, self.storage.getGroup, Group(level='500'))
 
     def test_getGroup_none(self):

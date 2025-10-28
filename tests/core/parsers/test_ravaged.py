@@ -22,8 +22,9 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import os
-import unittest2 as unittest
+import unittest
 
 from mock import Mock, call, patch
 from mockito import when
@@ -31,10 +32,14 @@ from b3 import TEAM_UNKNOWN
 from b3.clients import Client
 from b3.config import XmlConfigParser, CfgConfigParser
 from b3.fake import FakeClient
+import pytest
+pytest.importorskip("b3.parsers.ravaged",exc_type=NameError)
 from b3.parsers.ravaged import RavagedParser, TEAM_SCAVENGERS, TEAM_RESISTANCE
 from b3.plugins.admin import AdminPlugin
 
 from b3 import __file__ as b3_module__file__
+import six
+from six.moves import map
 
 ADMIN_CONFIG_FILE = os.path.normpath(os.path.join(os.path.dirname(b3_module__file__), "conf/plugin_admin.ini"))
 ADMIN_CONFIG = None
@@ -45,7 +50,7 @@ def client_equal(client_a, client_b):
         return False
     if client_a is not None and client_b is None:
         return False
-    return all(map(lambda x: getattr(client_a, x, None) == getattr(client_b, x, None), ('cid', 'guid', 'name', 'ip', 'ping')))
+    return all([getattr(client_a, x, None) == getattr(client_b, x, None) for x in ('cid', 'guid', 'name', 'ip', 'ping')])
 
 
 class RavagedTestCase(unittest.TestCase):
@@ -97,7 +102,7 @@ class RavagedTestCase(unittest.TestCase):
         """
         assert that self.evt_queue contains at least one event for the given type that has the given characteristics.
         """
-        assert isinstance(event_type, basestring)
+        assert isinstance(event_type, six.string_types)
         expected_event = self.parser.getEvent(event_type, data, client, target)
 
         if not len(self.evt_queue):
@@ -123,7 +128,7 @@ class RavagedTestCase(unittest.TestCase):
                 if all(results):
                     return
 
-            self.fail("expecting event %s. Got instead: %s" % (expected_event, map(str, self.evt_queue)))
+            self.fail("expecting event %s. Got instead: %s" % (expected_event, list(map(str, self.evt_queue))))
 
 
 

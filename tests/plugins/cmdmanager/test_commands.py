@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from b3.plugins.cmdmanager import GRANT_SET_ATTR
 from b3.fake import FakeClient
 from tests.plugins.cmdmanager import Cmdmanager_TestCase

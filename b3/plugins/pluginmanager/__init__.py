@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 __author__ = 'Fenix'
 __version__ = '1.2'
 
@@ -232,7 +233,7 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
                                 self.warning('plugin %s has unmet dependency : %s : trying to load plugin %s...' % (p_data.name, r, r))
                                 collection += _get_plugin_data(PluginData(name=r))
                                 self.debug('plugin %s dependency satisfied: %s' % r)
-                            except Exception, err:
+                            except Exception as err:
                                 raise MissingRequirement('missing required plugin: %s' % r, err)
 
                     return collection
@@ -283,7 +284,7 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
                 # here we do not have to rollback
                 client.message('^7Plugin ^1%s can\'t be loaded due to unmet dependencies' % name)
                 client.message('^7Please inspect your b3 log file for more information')
-            except Exception, e:
+            except Exception as e:
                 # here we rollback all the plugins loaded which are not needed anymore
                 client.message('^7Could not load plugin ^1%s^7: %s' % (name, e))
                 client.message('^7Please inspect your b3 log file for more information')
@@ -386,7 +387,7 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
         List loaded plugins
         :param client: The client who launched the command
         """
-        plugin_list = self.console._plugins.keys()
+        plugin_list = list(self.console._plugins.keys())
         plugin_list.sort()
         plugin_list = ['^2' + x if self.console.getPlugin(x).isEnabled() else '^1' + x for x in plugin_list]
         client.message('^7Loaded plugins: %s' % '^3, ^7'.join(plugin_list))
@@ -452,5 +453,5 @@ class PluginmanagerPlugin(b3.plugin.Plugin):
                 try:
                     func = getattr(self, 'plugin_%s' % match.group('command'))
                     func(client=client, data=match.group('data'))
-                except Exception, e:
+                except Exception as e:
                     client.message('unhandled exception: %s' % e)

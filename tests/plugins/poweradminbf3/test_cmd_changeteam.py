@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 from b3.config import CfgConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError

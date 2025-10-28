@@ -25,6 +25,8 @@
 """
 This module provides different utilities specific to the Frostbite engine
 """
+from __future__ import absolute_import
+from six.moves import range
 
 __author__ = 'Courgette'
 __version__ = '1.2'
@@ -81,7 +83,7 @@ class BanlistContent(object):
         Returns the ban data for the provided index.
         :param index: The index of the ban data
         """
-        if index >= self.numOfBans:
+        if index >= int(self.numOfBans):
             raise IndexError
         tmp = self.bansData[index*5:(index+1)*5]
         return {

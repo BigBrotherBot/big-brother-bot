@@ -22,9 +22,10 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from b3.parsers.q3a.abstractParser import AbstractParser
 from mock import Mock
-import unittest2 as unittest
+import unittest
 
 class Test(unittest.TestCase):
 

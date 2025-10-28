@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import unittest
 from b3.cvar import Cvar
 from mockito import when

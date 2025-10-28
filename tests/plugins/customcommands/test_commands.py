@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from mock import patch, call
 from b3.config import CfgConfigParser
 from b3.plugins.customcommands import CustomcommandsPlugin

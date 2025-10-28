@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 __author__ = 'ThorN, ttlogic, xlr8or'
 __version__ = '1.4.1'
 

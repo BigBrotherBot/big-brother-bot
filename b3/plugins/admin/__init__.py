@@ -22,6 +22,10 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+import six
+from six.moves import map
+from six.moves import range
 __version__ = '1.35'
 __author__ = 'ThorN, xlr8or, Courgette, Ozon, Fenix'
 
@@ -30,7 +34,7 @@ import time
 import threading
 import sys
 import traceback
-import thread
+import six.moves._thread
 import random
 import copy
 import b3.cron
@@ -41,7 +45,7 @@ from b3.clients import Client
 from b3.clients import Group
 from b3.functions import minutesStr
 from b3.functions import getCmd
-from ConfigParser import NoOptionError
+from configparser import NoOptionError
 
 # pylint: disable-msg=E1103
 class AdminPlugin(b3.plugin.Plugin):
@@ -152,7 +156,7 @@ class AdminPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.warning('could not find settings/noreason_level in config file, '
                          'using default: %s' % self._noreason_level)
-        except KeyError, e:
+        except KeyError as e:
             self.error('could not load settings/noreason_level config value: %s' % e)
             self.debug('using default value (%s) for settings/noreason_level' % self._noreason_level)
 
@@ -162,7 +166,7 @@ class AdminPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.warning('could not find settings/long_tempban_level in config file, '
                          'using default: %s' % self._long_tempban_level)
-        except KeyError, e:
+        except KeyError as e:
             self.error('could not load settings/long_tempban_level config value: %s' % e)
             self.debug('using default value (%s) for settings/long_tempban_level' % self._long_tempban_level)
 
@@ -179,7 +183,7 @@ class AdminPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.warning('could not find settings/hidecmd_level in config file, '
                          'using default: %s' % self._hidecmd_level)
-        except KeyError, e:
+        except KeyError as e:
             self.error('could not load settings/hidecmd_level config value: %s' % e)
             self.debug('using default value (%s) for settings/hidecmd_level' % self._hidecmd_level)
 
@@ -189,7 +193,7 @@ class AdminPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.warning('could not find settings/admins_level in config file, '
                          'using default: %s' % self._admins_level)
-        except KeyError, e:
+        except KeyError as e:
             self.error('could not load settings/admins_level config value: %s' % e)
             self.debug('using default value (%s) for settings/admins_level' % self._admins_level)
 
@@ -199,7 +203,7 @@ class AdminPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.warning('could not find settings/announce_registration in config file, '
                          'using default: %s' % self._announce_registration)
-        except ValueError, e:
+        except ValueError as e:
             self.error('could not load settings/announce_registration config value: %s' % e)
             self.debug('using default value (%s) for settings/announce_registration' % self._announce_registration)
 
@@ -213,7 +217,7 @@ class AdminPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.warning('could not find settings/past_bans_check_rate in config file, '
                          'using default: %s' % self._past_bans_check_rate)
-        except ValueError, e:
+        except ValueError as e:
             self.error('could not load settings/past_bans_check_rate config value: %s' % e)
             self.debug('using default value (%s) for settings/past_bans_check_rate' % self._past_bans_check_rate)
 
@@ -232,10 +236,10 @@ class AdminPlugin(b3.plugin.Plugin):
             if not '%s' in msg:
                 raise ValueError("message regme_confirmation must have a placeholder '%%s' for the group name")
             self._messages['regme_confirmation'] = msg
-        except NoOptionError:
+        except NoOptionError as e:
             self.warning('could not find messages/regme_confirmation in config file, '
                          'using default: %s' % self._messages['regme_confirmation'])
-        except ValueError, e:
+        except ValueError as e:
             self.error('could not load messages/regme_confirmation config value: %s' % e)
             self.debug('using default value (%s) for messages/regme_confirmation' % self._messages['regme_confirmation'])
 
@@ -249,10 +253,11 @@ class AdminPlugin(b3.plugin.Plugin):
                 raise ValueError("can't be less than 0")
             self.warn_delay = raw_data
             self.debug('loaded warn/warn_delay: %s' % self.warn_delay)
-        except NoOptionError:
+        except NoOptionError as e:
+            self.debug(e)
             self.warning('could not find warn/warn_delay in config file, '
                          'using default: %s' % self.warn_delay)
-        except ValueError, e:
+        except ValueError as e:
             self.error('could not load warn/warn_delay config value: %s' % e)
             self.debug('using default value (%s) for warn/warn_delay' % self.warn_delay)
 
@@ -265,7 +270,7 @@ class AdminPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.warning('could not find warn/instant_kick_num in config file, '
                          'using default: %s' % self.warn_instant_kick_num)
-        except ValueError, e:
+        except ValueError as e:
             self.error('could not load warn/instant_kick_num config value: %s' % e)
             self.debug('using default value (%s) for warn/instant_kick_num' % self.warn_instant_kick_num)
 
@@ -278,7 +283,7 @@ class AdminPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.warning('could not find warn/alert_kick_num in config file, '
                          'using default: %s' % self.warn_alert_kick_num)
-        except ValueError, e:
+        except ValueError as e:
             self.error('could not load warn/alert_kick_num config value: %s' % e)
             self.debug('using default value (%s) for warn/alert_kick_num' % self.warn_alert_kick_num)
 
@@ -288,7 +293,7 @@ class AdminPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.warning('could not find warn/warn_command_abusers in config file, '
                          'using default: %s' % self._warn_command_abusers)
-        except ValueError, e:
+        except ValueError as e:
             self.error('could not load warn/warn_command_abusers config value: %s' % e)
             self.debug('using default value (%s) for warn/warn_command_abusers' % self._warn_command_abusers)
 
@@ -331,7 +336,7 @@ class AdminPlugin(b3.plugin.Plugin):
                     self.warning("warn_reason '%s' refers to '/%s' but warn_reason '%s' cannot "
                                  "be found" % (key, reason_from_config[1:], reason_from_config[1:]))
                     return
-                except Exception, err:
+                except Exception as err:
                     self.error("warn_reason '%s' refers to '/%s' but '%s' could not be read: "
                                "%s" % (key, reason_from_config[1:], reason_from_config[1:], err), err)
                     return
@@ -450,7 +455,7 @@ class AdminPlugin(b3.plugin.Plugin):
             try:
                 superadmins = self.console.clients.lookupSuperAdmins()
                 self.debug('%s superadmins found in database' % len(superadmins))
-            except Exception, msg:
+            except Exception as msg:
                 # no proper groups available, cannot continue
                 self.critical('seems your groups table in the database is empty: please recreate your database using '
                               'the proper sql syntax. To do so you can import in your database the following SQL '
@@ -524,7 +529,7 @@ class AdminPlugin(b3.plugin.Plugin):
                                                                               self._commands[command].func.__name__,
                                                                               self._commands[command].level))
             return True
-        except Exception, msg:
+        except Exception as msg:
             self.error('command "%s" registration failed: %s' % (command, msg))
             self.exception(msg)
             return False
@@ -601,7 +606,7 @@ class AdminPlugin(b3.plugin.Plugin):
                             self.debug('\tplugin %s:', k)
                             for kk, vv in v.items():
                                 self.debug('\t\t%s = %s', kk, str(vv.value))
-                    except Exception, e:
+                    except Exception as e:
                         self.debug('error getting vars: %s', e)
 
                     self.debug('end of vars')
@@ -634,7 +639,7 @@ class AdminPlugin(b3.plugin.Plugin):
                                     self.debug('\t\tpoints = %s', tkinfo.points)
                                     self.debug('\t\t_grudged = %s', str(tkinfo._grudged))
                                     self.debug('\t\tlastAttacker = %s', tkinfo.lastAttacker)
-                    except Exception, e:
+                    except Exception as e:
                         self.debug('error getting teamkill info: %s', e)
 
                     self.debug('end of teamkill info')
@@ -700,6 +705,7 @@ class AdminPlugin(b3.plugin.Plugin):
             if command.canUse(event.client):
 
                 try:
+                    self.debug(f"Can Use  {command}")
                     if event.data[:1] == self.cmdPrefixLoud and event.client.maxLevel >= 9:
                         results = command.executeLoud(data, event.client)
                     elif event.data[:1] == self.cmdPrefixBig and event.client.maxLevel >= 9:
@@ -737,7 +743,7 @@ class AdminPlugin(b3.plugin.Plugin):
                         event.client.message(self.getMessage('cmd_not_enough_access', {'group_name': group.name,
                                                                                        'prefix': self.cmdPrefix,
                                                                                        'command': cmd}))
-                    except Exception, e:
+                    except Exception as e:
                         # fallback to default one if we errors shows up (mostly invalid command level/group specified
                         # in the configuration file thus we fail in retrieving the group from the storage)
                         self.warning("could not format 'cmd_not_enough_access' message (using default): %s" % e)
@@ -770,7 +776,7 @@ class AdminPlugin(b3.plugin.Plugin):
         :param client: The client who executed the command
         """
         c_list = []
-        for c, cmd in self._commands.iteritems():
+        for c, cmd in six.iteritems(self._commands):
             if cmd.canUse(client):
                 if cmd.command not in c_list:
                     c_list.append(cmd.command)
@@ -823,6 +829,8 @@ class AdminPlugin(b3.plugin.Plugin):
         req: set to True if parameters is required.
         Return None if could cmd is not in the expected format
         """
+        if not cmd:
+            return None
         m = re.match(self._parseUserCmdRE, cmd)
 
         if m:
@@ -910,7 +918,7 @@ class AdminPlugin(b3.plugin.Plugin):
             return s
         except NoOptionError:
             return None
-        except Exception, msg:
+        except Exception as msg:
             self.error('getSpam: could not get spam "%s": %s\n%s', kword, msg, traceback.extract_tb(sys.exc_info()[2]))
             return None
 
@@ -1151,7 +1159,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 rules.append(rule)
             except NoOptionError:
                 break
-            except Exception, err:
+            except Exception as err:
                 self.error(err)
         try:
             if sclient:
@@ -1165,7 +1173,7 @@ class AdminPlugin(b3.plugin.Plugin):
                     else:
                         self.console.say(rule)
                     time.sleep(1)
-        except Exception, err:
+        except Exception as err:
             self.error(err)
 
     ####################################################################################################################
@@ -1376,7 +1384,7 @@ class AdminPlugin(b3.plugin.Plugin):
                 client.message(self.getMessage('help_no_command', data))
             return
         else:
-            for c, cmd in self._commands.iteritems():
+            for c, cmd in six.iteritems(self._commands):
                 if cmd.canUse(client):
                     if cmd.command not in commands:
                         commands.append(cmd.command)
@@ -1394,13 +1402,13 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         - list all connected players
         """
-        thread.start_new_thread(self.doList, (client, cmd))
+        six.moves._thread.start_new_thread(self.doList, (client, cmd))
 
     def cmd_longlist(self, data, client, cmd=None):
         """
         - list all connected players one line at a time, helps find 'funny' unicode names
         """
-        thread.start_new_thread(self.doLonglist, (client, cmd))
+        six.moves._thread.start_new_thread(self.doLonglist, (client, cmd))
 
     def cmd_regulars(self, data, client, cmd=None):
         """
@@ -1523,14 +1531,14 @@ class AdminPlugin(b3.plugin.Plugin):
 
         try:
             group_reg = self.console.storage.getGroup(Group(keyword='reg'))
-        except Exception, err:
+        except Exception as err:
             self.debug(err)
             client.message("^7Group ^1regular ^7does not exist")
         else:
 
             try:
                 group_user = self.console.storage.getGroup(Group(keyword='user'))
-            except Exception, err:
+            except Exception as err:
                 self.debug(err)
                 client.message("^7Group ^1user ^7does not exist")
             else:
@@ -1620,7 +1628,7 @@ class AdminPlugin(b3.plugin.Plugin):
         try:
             group = Group(keyword='superadmin')
             group = self.console.storage.getGroup(group)
-        except Exception, e:
+        except Exception as e:
             self.error('could not get superadmin group: %s', e)
         else:
 
@@ -1693,7 +1701,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         <message> - yell a message to all player
         """
-        thread.start_new_thread(self.sayMany, (data, 5, 1))
+        six.moves._thread.start_new_thread(self.sayMany, (data, 5, 1))
 
     def cmd_find(self, data, client=None, cmd=None):
         """
@@ -2240,7 +2248,7 @@ class AdminPlugin(b3.plugin.Plugin):
         """
         [player] <message> - spam a predefined message to all players or a given player
         """
-        m = re.match('^((?P<player>\w+)\s+)?(?P<keyword>\w{2,})$', data)
+        m = re.match('^((?P<player>\\w+)\\s+)?(?P<keyword>\\w{2,})$', data)
         if not m:
             client.message(self.getMessage('invalid_parameters'))
         else:
@@ -2275,14 +2283,14 @@ class AdminPlugin(b3.plugin.Plugin):
                             client.message('%s ^7already knows the rules' % sclient.exactName)
                         else:
                             client.message('^7Sir, Yes Sir!, spamming rules to %s' % sclient.exactName)
-                            thread.start_new_thread(self._sendRules, (), {'sclient': sclient})
+                            six.moves._thread.start_new_thread(self._sendRules, (), {'sclient': sclient})
                 else:
                     client.message('^7Stop trying to spam other players')
             else:
                 if cmd.loud or cmd.big:
-                    thread.start_new_thread(self._sendRules, (), {'sclient': None, 'big': cmd.big})
+                    six.moves._thread.start_new_thread(self._sendRules, (), {'sclient': None, 'big': cmd.big})
                 else:
-                    thread.start_new_thread(self._sendRules, (), {'sclient': client})
+                    six.moves._thread.start_new_thread(self._sendRules, (), {'sclient': client})
 
     def cmd_spams(self, data, client=None, cmd=None):
         """
@@ -2305,7 +2313,7 @@ class AdminPlugin(b3.plugin.Plugin):
             return
 
         cid = m[0]
-        m = re.match('^([0-9]+[dwhsm]*)(?:\s(.+))?$', m[1], re.I)
+        m = re.match('^([0-9]+[dwhsm]*)(?:\\s(.+))?$', m[1], re.I)
         if not m:
             client.message(self.getMessage('invalid_parameters'))
             return
@@ -2400,7 +2408,7 @@ class Command(object):
 
         level = str(level)
         if level.lower() == 'none':
-            self.level = None
+            self.level = (0,100)
         elif level.count('-') == 1:
             level = level.split('-', 1)
             self.level = (int(level[0]), int(level[1]))
@@ -2495,7 +2503,7 @@ class Command(object):
         badfield = None
         valid = True
         for a in args:
-            if not a[0] in params.keys() or len(params[a[0]]) == 0:
+            if not a[0] in list(params.keys()) or len(params[a[0]]) == 0:
                 if len(a) == 3:
                     # set the default
                     params[a[0]] = a[2]

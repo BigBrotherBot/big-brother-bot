@@ -22,7 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
-import unittest2 as unittest
+from __future__ import absolute_import
+import unittest
 
 from b3.plugins.tk import TkPlugin, TkInfo
 from mock import Mock, sentinel

@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from textwrap import dedent
 from tests.plugins.afk import *
 from mock import call, Mock
@@ -31,7 +32,7 @@ from b3.events import Event
 # This test suite makes sure `check_client` is called appropriately
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def plugin(console):
     p = plugin_maker_ini(console, dedent("""
         [settings]

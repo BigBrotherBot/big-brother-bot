@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 __author__  = 'PtitBigorneau - www.ptitbigorneau.fr'
 __version__ = '1.5.2'
 

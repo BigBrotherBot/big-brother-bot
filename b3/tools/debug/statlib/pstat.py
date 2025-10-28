@@ -105,9 +105,13 @@ functions/methods.  Their inclusion here is for function name consistency.
 ##
 ## 11/08/98 ... fixed aput to output large arrays correctly
 
+from __future__ import absolute_import
+from __future__ import print_function
 import string
 import copy
 from types import *
+from six.moves import map
+from six.moves import range
 
 
 __version__ = 0.4
@@ -216,16 +220,16 @@ Returns: a list-of-lists corresponding to the columns from listoflists
     column = 0
     if type(cnums) in [ListType,TupleType]:   # if multiple columns to get
         index = cnums[0]
-        column = map(lambda x: x[index], listoflists)
+        column = [x[index] for x in listoflists]
         for col in cnums[1:]:
             index = col
-            column = abut(column,map(lambda x: x[index], listoflists))
+            column = abut(column,[x[index] for x in listoflists])
     elif type(cnums) == StringType:              # if an 'x[3:]' type expr.
         evalstring = 'map(lambda x: x'+cnums+', listoflists)'
         column = eval(evalstring)
     else:                                     # else it's just 1 col to get
         index = cnums
-        column = map(lambda x: x[index], listoflists)
+        column = [x[index] for x in listoflists]
     return column
 
 
@@ -291,13 +295,13 @@ Returns: a list of lists with all unique permutations of entries appearing in
             for col in collapsecols:
                 avgcol = colex(tmprows,col)
                 item.append(cfcn(avgcol))
-                if fcn1 <> None:
+                if fcn1 != None:
                     try:
                         test = fcn1(avgcol)
                     except:
                         test = 'N/A'
                     item.append(test)
-                if fcn2 <> None:
+                if fcn2 != None:
                     try:
                         test = fcn2(avgcol)
                     except:
@@ -402,7 +406,7 @@ Usage:   linedelimited (inlist,delimiter)
 """
     outstr = ''
     for item in inlist:
-        if type(item) <> StringType:
+        if type(item) != StringType:
             item = str(item)
         outstr = outstr + item + delimiter
     outstr = outstr[0:-1]
@@ -418,7 +422,7 @@ Usage:   lineincols (inlist,colsize)   where colsize is an integer
 """
     outstr = ''
     for item in inlist:
-        if type(item) <> StringType:
+        if type(item) != StringType:
             item = str(item)
         size = len(item)
         if size <= colsize:
@@ -442,7 +446,7 @@ Returns: formatted string created from inlist
 """
     outstr = ''
     for i in range(len(inlist)):
-        if type(inlist[i]) <> StringType:
+        if type(inlist[i]) != StringType:
             item = str(inlist[i])
         else:
             item = inlist[i]
@@ -464,7 +468,7 @@ the string.join function.
 Usage:   list2string (inlist,delimit=' ')
 Returns: the string created from inlist
 """
-    stringlist = map(makestr,inlist)
+    stringlist = list(map(makestr,inlist))
     return string.join(stringlist,delimit)
 
 
@@ -483,7 +487,7 @@ Returns: if l = [1,2,'hi'] then returns [[1],[2],['hi']] etc.
 
 
 def makestr (x):
-    if type(x) <> StringType:
+    if type(x) != StringType:
         x = str(x)
     return x
 
@@ -511,18 +515,18 @@ Returns: None
     maxsize = [0]*len(list2print[0])
     for col in range(len(list2print[0])):
         items = colex(list2print,col)
-        items = map(makestr,items)
-        maxsize[col] = max(map(len,items)) + extra
+        items = list(map(makestr,items))
+        maxsize[col] = max(list(map(len,items))) + extra
     for row in lst:
         if row == ['\n'] or row == '\n' or row == '' or row == ['']:
-            print
+            print()
         elif row == ['dashes'] or row == 'dashes':
             dashes = [0]*len(maxsize)
             for j in range(len(maxsize)):
                 dashes[j] = '-'*(maxsize[j]-2)
-            print lineincustcols(dashes,maxsize)
+            print(lineincustcols(dashes,maxsize))
         else:
-            print lineincustcols(row,maxsize)
+            print(lineincustcols(row,maxsize))
     return None
 
 
@@ -535,7 +539,7 @@ Usage:   printincols (listoflists,colsize)
 Returns: None
 """
     for row in listoflists:
-        print lineincols(row,colsize)
+        print(lineincols(row,colsize))
     return None
 
 
@@ -548,9 +552,9 @@ Returns: None
 """
     for row in listoflists:
         if row[-1] == '\n':
-            print row,
+            print(row, end=' ')
         else:
-            print row
+            print(row)
     return None
 
 
@@ -790,13 +794,13 @@ try:                         # DEFINE THESE *ONLY* IF numpy IS AVAILABLE
         if keepcols == []:
             avgcol = acolex(a,collapsecols)
             means = N.sum(avgcol)/float(len(avgcol))
-            if fcn1<>None:
+            if fcn1!=None:
                 try:
                     test = fcn1(avgcol)
                 except:
                     test = N.array(['N/A']*len(means))
                 means = aabut(means,test)
-            if fcn2<>None:
+            if fcn2!=None:
                 try:
                     test = fcn2(avgcol)
                 except:
@@ -817,13 +821,13 @@ try:                         # DEFINE THESE *ONLY* IF numpy IS AVAILABLE
                 for col in collapsecols:
                     avgcol = acolex(tmprows,col)
                     item.append(acollmean(avgcol))
-                    if fcn1<>None:
+                    if fcn1!=None:
                         try:
                             test = fcn1(avgcol)
                         except:
                             test = 'N/A'
                         item.append(test)
-                    if fcn2<>None:
+                    if fcn2!=None:
                         try:
                             test = fcn2(avgcol)
                         except:
@@ -966,7 +970,7 @@ try:                         # DEFINE THESE *ONLY* IF numpy IS AVAILABLE
     """
         return 
         if row1.dtype.char=='O' or row2.dtype=='O':
-            cmpvect = N.logical_not(abs(N.array(map(cmp,row1,row2)))) # cmp fcn gives -1,0,1
+            cmpvect = N.logical_not(abs(N.array(list(map(cmp,row1,row2))))) # cmp fcn gives -1,0,1
         else:
             cmpvect = N.equal(row1,row2)
         return cmpvect
@@ -1026,7 +1030,7 @@ try:                         # DEFINE THESE *ONLY* IF numpy IS AVAILABLE
                 for item in inarray[1:]:
                     newflag = 1
                     for unq in uniques:  # NOTE: cmp --> 0=same, -1=<, 1=>
-                        test = N.sum(abs(N.array(map(cmp,item,unq))))
+                        test = N.sum(abs(N.array(list(map(cmp,item,unq)))))
                         if test == 0:   # if item identical to any 1 row in uniques
                             newflag = 0 # then not a novel item to add
                             break

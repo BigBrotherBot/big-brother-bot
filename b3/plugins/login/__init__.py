@@ -22,13 +22,14 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import string
 import b3.events
 import b3.plugin
 
 from b3.functions import hash_password
 from b3.clients import Client
-from ConfigParser import NoOptionError
+from six.moves.configparser import NoOptionError
 
 __author__ = 'Tim ter Laak'
 __version__ = '1.4'

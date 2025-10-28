@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 import b3.events
 import b3.plugin
@@ -30,7 +31,8 @@ import time
 import re
 
 from b3.functions import getCmd
-from ConfigParser import NoOptionError
+from six.moves.configparser import NoOptionError
+from six.moves import zip
 
 __version__ = '1.4'
 __author__ = 'ThorN, xlr8or, Courgette'
@@ -105,7 +107,7 @@ class WelcomePlugin(b3.plugin.Plugin):
         try:
             self._newbConnections = self.config.getint('settings', 'newb_connections')
             self.debug('loaded settings/newb_connections: %s' % self._newbConnections)
-        except (NoOptionError, ValueError), e:
+        except (NoOptionError, ValueError) as e:
             self._newbConnections = 15
             self.error('could not load settings/newb_connections config value: %s' % e)
             self.debug('using default value (%s) for settings/newb_connections' % self._newbConnections)
@@ -116,7 +118,7 @@ class WelcomePlugin(b3.plugin.Plugin):
             if self._welcomeDelay < 15 or self._welcomeDelay > 90:
                 self._welcomeDelay = 30
                 self.debug('welcome delay not in range 15-90: using 30 instead')
-        except (NoOptionError, ValueError), e:
+        except (NoOptionError, ValueError) as e:
             self._welcomeDelay = 30
             self.error('could not load settings/delay config value: %s' % e)
             self.debug('using default value (%s) for settings/delay' % self._welcomeDelay)
@@ -130,7 +132,7 @@ class WelcomePlugin(b3.plugin.Plugin):
             if self._min_gap < 0:
                 self._min_gap = 0
                 self.debug('min_gap must be positive or 0: using 0 instead')
-        except (NoOptionError, ValueError), e:
+        except (NoOptionError, ValueError) as e:
             self._min_gap = 3600
             self.error('could not load settings/min_gap config value: %s' % e)
             self.debug('using default value (%s) for settings/min_gap' % self._min_gap)
@@ -151,7 +153,7 @@ class WelcomePlugin(b3.plugin.Plugin):
             ("show_user_greeting", F_CUSTOM_GREETING)
         ]
 
-        config_options = zip(*flag_options)[0]
+        config_options = list(zip(*flag_options))[0]
 
         def set_flag(flag):
             self._welcomeFlags |= flag
@@ -159,13 +161,13 @@ class WelcomePlugin(b3.plugin.Plugin):
         def unset_flag(flag):
             self._welcomeFlags &= ~flag
 
-        if not any(map(lambda o: self.config.has_option('settings', o), config_options)):
+        if not any([self.config.has_option('settings', o) for o in config_options]):
             if self.config.has_option('settings', 'flags'):
                 # old style config
                 try:
                     self._welcomeFlags = self.config.getint('settings', 'flags')
                     self.debug('loaded settings/flags: %s' % self._welcomeFlags)
-                except (NoOptionError, ValueError), e:
+                except (NoOptionError, ValueError) as e:
                     self.error('could not load settings/flags config value: %s' % e)
                     self.debug('using default value (%s) for settings/flags' % self._welcomeFlags)
             else:
@@ -177,7 +179,7 @@ class WelcomePlugin(b3.plugin.Plugin):
                     try:
                         _ = self.config.getboolean("settings", opt)
                         set_flag(F) if _ else unset_flag(F)
-                    except (NoOptionError, ValueError), e:
+                    except (NoOptionError, ValueError) as e:
                         self.error('could not load settings/%s config value: %s' % (opt, e))
                         self.debug('using default value (yes) for settings/%s' % opt)
                 else:
@@ -301,7 +303,7 @@ class WelcomePlugin(b3.plugin.Plugin):
                         'group': getattr(client.maxGroup, 'name', None),
                         'connections': client.connections
                     }))
-                except ValueError, msg:
+                except ValueError as msg:
                     client.message(self.getMessage('greeting_bad', msg))
                     return False
                 else:

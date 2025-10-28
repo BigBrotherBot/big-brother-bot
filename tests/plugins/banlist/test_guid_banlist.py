@@ -22,13 +22,15 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import sys
 import xml.etree.ElementTree as ET
 from mock import Mock
 from b3.plugins.banlist import GuidBanlist
 from tests.plugins.banlist import BanlistTestCase
+import unittest
 
-class Test_GuidBanlist(BanlistTestCase):
+class Test_GuidBanlist(BanlistTestCase, unittest.TestCase):
 
     def setUp(self):
         BanlistTestCase.setUp(self)

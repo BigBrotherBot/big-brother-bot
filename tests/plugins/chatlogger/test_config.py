@@ -22,10 +22,11 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 import b3.events
 import os
-import unittest2 as unittest
+import unittest
 import sys
 
 from mockito import when
@@ -42,7 +43,7 @@ def flush_console_streams():
     sys.stdout.flush()
 
 
-class Test_config(ChatloggerTestCase):
+class Test_config(ChatloggerTestCase, unittest.TestCase):
 
     def setUp(self):
         ChatloggerTestCase.setUp(self)

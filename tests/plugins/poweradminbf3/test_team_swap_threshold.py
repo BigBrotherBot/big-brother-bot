@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from mock import Mock, patch
 from tests.plugins.poweradminbf3 import Bf3TestCase, logging_disabled
 from b3.config import CfgConfigParser

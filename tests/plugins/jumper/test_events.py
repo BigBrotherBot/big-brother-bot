@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from mock import Mock
 from b3 import TEAM_FREE, TEAM_SPEC
 from b3.plugins.jumper import JumpRun

@@ -22,11 +22,12 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3.cron
 import b3.cvar
 import b3.events
 import b3.parser
-import Queue
+import six.moves.queue
 import re
 import sys
 import traceback
@@ -43,6 +44,8 @@ from b3.output import VERBOSE2
 from b3.output import VERBOSE
 from b3.clients import Clients
 from logging import Formatter
+import six
+from six.moves import range
 
 __author__  = '82ndab-Bravo17, Courgette'
 __version__ = '1.3.4'
@@ -72,8 +75,8 @@ class AbstractParser(b3.parser.Parser):
     # flag to find out if we need to fire a EVT_GAME_ROUND_START event.
     _waiting_for_round_start = True
 
-    battleye_event_queue = Queue.Queue(400)
-    sayqueue = Queue.Queue(100)
+    battleye_event_queue = six.moves.queue.Queue(400)
+    sayqueue = six.moves.queue.Queue(100)
     sayqueuelistener = None
 
     # battleye engine does not support color code, so we need
@@ -216,11 +219,11 @@ class AbstractParser(b3.parser.Parser):
             if not self._serverConnection or not self._serverConnection.connected:
                 try:
                     self.setup_battleye_connection()
-                except CommandError, err:
+                except CommandError as err:
                     self.error(err.message)
-                except IOError, err:
+                except IOError as err:
                     self.error("IOError %s"% err)
-                except Exception, err:
+                except Exception as err:
                     self.error(err)
                     self.exitcode = 220
                     break
@@ -228,17 +231,17 @@ class AbstractParser(b3.parser.Parser):
             try:
                 added, expire, event = self.battleye_event_queue.get(timeout=5)
                 self.routeBattleyeEvent(event)
-            except Queue.Empty:
+            except six.moves.queue.Empty:
                 self.verbose2("No game server event to treat in the last 5s")
-            except CommandError, err:
+            except CommandError as err:
                 # it does not matter from the parser perspective if Battleye command failed
                 # (timeout or bad reply)
                 self.warning(err)
-            except BattleyeError, e:
+            except BattleyeError as e:
                 # the connection to the battleye server is lost
                 self.warning(e)
                 self.close_battleye_connection()
-            except Exception, e:
+            except Exception as e:
                 self.error("Unexpected error: please report this on the B3 forums")
                 self.error(e)
                 # unexpected exception, better close the battleye connection
@@ -332,7 +335,7 @@ class AbstractParser(b3.parser.Parser):
                     self.warning('message_delay cannot be less than 0.5 second.')
                     delay_sec = .5
                 self._message_delay = delay_sec
-            except Exception, err:
+            except Exception as err:
                 self.error('failed to read message_delay setting "%s" : %s' %
                            (self.config.get(self.gameName, 'message_delay'), err))
         self.debug('message_delay: %s' % self._message_delay)
@@ -429,15 +432,15 @@ class AbstractParser(b3.parser.Parser):
         while self.working:
             try:
                 self._say(self.sayqueue.get(timeout=40))
-            except Queue.Empty:
+            except six.moves.queue.Empty:
                 self.verbose2("sayqueuelistener: had nothing to do in the last 40 sec")
-            except Exception, err:
+            except Exception as err:
                 self.info("sayqueuelistener error", exc_info=err)
         self.info("sayqueuelistener job ended")
 
     def start_sayqueue_worker(self):
         self.sayqueuelistener = threading.Thread(target=self.sayqueuelistener_worker)
-        self.sayqueuelistener.setDaemon(True)
+        self.sayqueuelistener.daemon = True
         self.sayqueuelistener.start()
 
     def getCommand(self, cmd, **kwargs):
@@ -518,7 +521,7 @@ class AbstractParser(b3.parser.Parser):
         try:
             self.battleye_event_queue.put((self.time(), self.time() + 10, event), timeout=2)
             self.info('Battleye event queue: %s' % repr(self.battleye_event_queue))
-        except Queue.Full:
+        except six.moves.queue.Full:
             self.error("Battleye event queue full: dropping event: %r" % event)
 
     def OnPlayerChat(self, data):
@@ -697,7 +700,7 @@ class AbstractParser(b3.parser.Parser):
         Write a message to Rcon/Console
         Unfortunately this has been abused all over B3 and B3 plugins to broadcast text :(
         """
-        if isinstance(msg, basestring):
+        if isinstance(msg, six.string_types):
             # console abuse to broadcast text
             self.say(msg)
         else:
@@ -721,7 +724,7 @@ class AbstractParser(b3.parser.Parser):
         player_list = None
         try:
             player_list = self.output.write("players").splitlines()
-        except AttributeError, err:
+        except AttributeError as err:
             if player_list is None:
                 return players
             else:
@@ -788,7 +791,7 @@ class AbstractParser(b3.parser.Parser):
         """
         plist = self.getPlayerList()
         mlist = {}
-        for cid, c in plist.iteritems():
+        for cid, c in six.iteritems(plist):
             client = self.clients.getByCID(cid)
             c_guid = c.get('guid', None)
             if client:
@@ -930,7 +933,7 @@ class AbstractParser(b3.parser.Parser):
                 self.write(('writeBans',))
                 if admin:
                     admin.message('Banned: %s (@%s) has been added to banlist' % (client.exactName, client.id))
-            except CommandFailedError, err:
+            except CommandFailedError as err:
                 self.error(err)
         else:
             # ban by cid
@@ -940,7 +943,7 @@ class AbstractParser(b3.parser.Parser):
                 self.write(('writeBans',))
                 if admin:
                     admin.message('Banned: %s (@%s) has been added to banlist' % (client.exactName, client.id))
-            except CommandFailedError, err:
+            except CommandFailedError as err:
                 self.error(err)
 
         if not silent and fullreason != '':
@@ -977,7 +980,7 @@ class AbstractParser(b3.parser.Parser):
             self.verbose('UNBAN: removed ban (%s) guid from banlist' % ban_entry['ban_index'])
             if admin:
                 admin.message('Unbanned: removed %s guid from banlist' % client.exactName)
-        except CommandFailedError, err:
+        except CommandFailedError as err:
             if "NotInList" in err.message:
                 if admin:
                     admin.message("ban not found in banlist")
@@ -1015,7 +1018,7 @@ class AbstractParser(b3.parser.Parser):
             try:
                 self.write(self.getCommand('tempbanByGUID', guid=client.guid, duration=duration, reason=reason[:80]))
                 self.write(('writeBans',))
-            except CommandFailedError, err:
+            except CommandFailedError as err:
                 if admin:
                     admin.message("server replied with error %s" % err.message[0])
                 else:
@@ -1024,7 +1027,7 @@ class AbstractParser(b3.parser.Parser):
             try:
                 self.write(self.getCommand('tempban', cid=client.cid, duration=duration, reason=reason[:80]))
                 self.write(('writeBans',))
-            except CommandFailedError, err:
+            except CommandFailedError as err:
                 if admin:
                     admin.message("server replied with error %s" % err.message[0])
                 else:
@@ -1111,7 +1114,7 @@ class AbstractParser(b3.parser.Parser):
                     self._cron.stop()
                 self.bot('shutting down database connections...')
                 self.storage.shutdown()
-        except Exception, e:
+        except Exception as e:
             self.error(e)
 
     def restart(self):

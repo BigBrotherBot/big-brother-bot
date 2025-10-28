@@ -19,8 +19,11 @@
 # http://www.maxmind.com/app/python
 # http://www.maxmind.com/download/geoip/api/pureperl
 
+from __future__ import absolute_import
 import re
 import struct
+from six.moves import map
+from six.moves import range
 
 def nreverse(sequence):
     """nreverse in Common Lisp. :)"""
@@ -108,8 +111,8 @@ class GeoIP(object):
     def addr_to_num(ip_address):
         """Convert IP-address to number."""
         # a = [int(s) for s in re.split('\.', ip_address)]
-        a = map(int, re.split('\.', ip_address))
-        return a[0] * 16777216L + a[1] * 65536L + a[2] * 256L + a[3]
+        a = list(map(int, re.split('\.', ip_address)))
+        return a[0] * 16777216 + a[1] * 65536 + a[2] * 256 + a[3]
 
     @staticmethod
     def open(db_file, flags):
@@ -134,13 +137,13 @@ class GeoIP(object):
         record_length = self.record_length
         databaseSegments = self.databaseSegments
         offset = 0
-        for depth in nreverse(range(32)):
+        for depth in nreverse(list(range(32))):
             fh.seek(offset * 2 * record_length, 0)
             x0 = fh.read(record_length)
             x1 = fh.read(record_length)
             x0, = struct.unpack("<1l", x0 + "\0")
             x1, = struct.unpack("<1l", x1 + "\0")
-            if ipnum & (1L << depth):
+            if ipnum & (1 << depth):
                 if x1 >= databaseSegments:
                     return x1
                 offset = x1

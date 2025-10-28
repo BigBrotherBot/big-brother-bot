@@ -22,8 +22,10 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from mock import Mock, call
 from tests.plugins.spree import SpreeTestCase
+from six.moves import range
 
 
 class Test_events(SpreeTestCase):

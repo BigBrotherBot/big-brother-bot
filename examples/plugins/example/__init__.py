@@ -17,6 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
+from __future__ import absolute_import
 import b3
 import b3.functions
 import b3.plugin
@@ -177,7 +178,7 @@ class ExamplePlugin(b3.plugin.Plugin):
         except b3.config.NoOptionError:
             # This exception is raised whenever the configuration option is missing.
             self.warning('could not find settings::use_saybig in configuration file : using default (%s)' % self.use_saybig)
-        except ValueError, e:
+        except ValueError as e:
             # This exception is raised whenever the configuration entry is not valid.
             self.error('invalid value specified in settings::use_saybig in configuration file : %s' % e)
             self.debug('using default value for settings::use_saybig : %s' % self.use_saybig)
@@ -191,7 +192,7 @@ class ExamplePlugin(b3.plugin.Plugin):
             # This exception is raised whenever the configuration option is missing.
             self.warning('could not find settings::refill_interval in configuration file : '
                          'using default (%s)' % self.refill_interval)
-        except ValueError, e:
+        except ValueError as e:
             # This exception is raised whenever the configuration entry is not valid.
             self.error('invalid value specified in settings::refill_interval in configuration file : %s' % e)
             self.debug('using default value for settings::refill_interval : %s' % self.refill_interval)

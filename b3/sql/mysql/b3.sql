@@ -66,7 +66,7 @@ INSERT INTO `groups` (`id`, `time_edit`, `name`, `keyword`, `time_add`, `level`)
 
 CREATE TABLE IF NOT EXISTS `penalties` (
   `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `type` ENUM('Ban','TempBan','Kick','Warning','Notice') NOT NULL DEFAULT 'Ban',
+  `type` ENUM('Ban','TempBan','Kick','Warning','Notice','') NOT NULL DEFAULT 'Ban',
   `client_id` INT(10) UNSIGNED NOT NULL DEFAULT '0',
   `admin_id` INT(10) UNSIGNED NOT NULL DEFAULT '0',
   `duration` INT(10) UNSIGNED NOT NULL DEFAULT '0',

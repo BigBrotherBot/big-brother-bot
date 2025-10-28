@@ -22,8 +22,9 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import json
-import unittest2
+import unittest
 
 from textwrap import dedent
 from mockito import when
@@ -42,7 +43,7 @@ MAPDATA_JSON = '''{"ut4_uranus_beta1a": {"size": 1841559, "nom": "Uranus", "njum
 "pk3": "ut4_crouchtraining_a1", "level": 79, "id": 346, "utversion": 2, "nway": 1, "howjump": "", "mapper": "spidercochon"}}'''
 
 
-class JumperTestCase(unittest2.TestCase):
+class JumperTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):

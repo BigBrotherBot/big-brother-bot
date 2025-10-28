@@ -22,15 +22,19 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 import b3.events
-import functions
+from . import functions
 import re
 import string
 import sys
 import threading
 import time
 import traceback
+import six
+from six import unichr
+from six.moves import range
 
 
 class ClientVar(object):
@@ -66,7 +70,7 @@ class ClientVar(object):
         """
         if self.value is None:
             return ()
-        return self.value.items()
+        return list(self.value.items())
 
     def length(self):
         """
@@ -126,7 +130,7 @@ class Client(object):
         if 'console' in kwargs:
             self.console = kwargs['console']
             
-        for k, v in kwargs.iteritems():
+        for k, v in six.iteritems(kwargs):
             setattr(self, k, v)
 
     ####################################################################################################################
@@ -223,7 +227,7 @@ class Client(object):
     # -----------------------
 
     def _set_data(self, data):
-        for k, v in data.iteritems():
+        for k, v in six.iteritems(data):
             self._data[k] = v
 
     def _get_data(self):
@@ -494,7 +498,7 @@ class Client(object):
         elif not self._maskGroup:
             try:
                 group = self.console.storage.getGroup(Group(level=self.maskLevel))
-            except Exception, err:
+            except Exception as err:
                 self.console.error("Could not find group with level %r" % self.maskLevel, exc_info=err)
                 self.maskLevel = 0
                 return None
@@ -878,10 +882,10 @@ class Client(object):
             ip = self.ip
             try:
                 inStorage = self.console.storage.getClient(self)
-            except KeyError, msg:
+            except KeyError as msg:
                 self.console.debug('Client not found %s: %s', self.guid, msg)
                 inStorage = False
-            except Exception, e:
+            except Exception as e:
                 self.console.error('Auth self.console.storage.getClient(client) - %s\n%s', e,
                                    traceback.extract_tb(sys.exc_info()[2]))
                 self.authorizing = False
@@ -930,7 +934,7 @@ class Struct(object):
         """
         Object constructor.
         """
-        for k, v in kwargs.iteritems():
+        for k, v in six.iteritems(kwargs):
             setattr(self, k, v)
 
     def _set_id(self, v):
@@ -1482,7 +1486,7 @@ class Clients(dict):
             c = self[cid]
         except KeyError:
             return None
-        except Exception, e:
+        except Exception as e:
             self.console.error('Unexpected error getByCID(%s) - %s', cid, e)
         else:
             # self.console.debug('found client by CID %s = %s', cid, c.name)
@@ -1499,7 +1503,7 @@ class Clients(dict):
         Value should be bytes or unicode.
         Source - https://github.com/PyMySQL/PyMySQL/blob/40f6a706144a9b65baa123e6d5d89d23558646ac/pymysql/converters.py
         """
-        if isinstance(value, unicode):
+        if isinstance(value, six.text_type):
             return value.translate(self.escape_table)
         if isinstance(value, (bytes, bytearray)):
             value = value.replace('\\', '\\\\')
@@ -1548,7 +1552,7 @@ class Clients(dict):
         try:
             group = Group(keyword='superadmin')
             group = self.console.storage.getGroup(group)
-        except Exception, e:
+        except Exception as e:
             self.console.error('Could not get superadmin group: %s', e)
             return False
 
@@ -1621,9 +1625,12 @@ class Clients(dict):
         Empty the clients list and reset the indexes.
         """
         self.resetIndex()
+        del_items = []
         for cid, c in self.items():
             if not c.hide:
-                del self[cid]
+                del_items.append(self[cid])
+        for item in del_items:
+            del item
 
     def sync(self):
         """
@@ -1633,7 +1640,7 @@ class Clients(dict):
         # remove existing clients
         self.clear()
         # add list of matching clients
-        for cid, c in mlist.iteritems():
+        for cid, c in six.iteritems(mlist):
             self[cid] = c
 
     def authorizeClients(self):

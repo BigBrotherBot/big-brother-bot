@@ -22,7 +22,9 @@
 #                                                                     #
 # ################################################################### #
 
-import unittest2 as unittest
+from __future__ import absolute_import
+from __future__ import print_function
+import unittest
 from b3.parsers.frostbite2.util import BanlistContent, BanlistContentError, PlayerInfoBlock, TeamScoresBlock, MapListBlock, MapListBlockError
 
 
@@ -44,7 +46,7 @@ class Test_BanlistContent(unittest.TestCase):
         self.assertEqual('BanlistContent[]', repr(blc))
         blc = BanlistContent(['name', 'Averell', 'seconds', '3600', '0', 'reason 2'])
         self.assertEqual(1, len(blc))
-        self.assertEqual("BanlistContent[{'idType': 'name', 'seconds_left': '3600', 'reason': 'reason 2', 'banType': 'seconds', 'rounds_left': '0', 'id': 'Averell'}]", repr(blc))
+        self.assertDictEqual({'idType': 'name', 'seconds_left': '3600', 'reason': 'reason 2', 'banType': 'seconds', 'rounds_left': '0', 'id': 'Averell'}, blc.getData(0))
 
     def test_1(self):
         bloc = BanlistContent([
@@ -52,8 +54,8 @@ class Test_BanlistContent(unittest.TestCase):
             'name', 'Averell', 'seconds', '3600', '0', 'reason 2',
         ])
         self.assertEqual(2, len(bloc))
-        self.assertEqual("BanlistContent[{'idType': 'name', 'seconds_left': '0', 'reason': 'reason 1', 'banType': 'perm', 'rounds_left': '0', 'id': 'William'}, \
-{'idType': 'name', 'seconds_left': '3600', 'reason': 'reason 2', 'banType': 'seconds', 'rounds_left': '0', 'id': 'Averell'}]", repr(bloc))
+        self.assertDictEqual({'idType': 'name', 'seconds_left': '0', 'reason': 'reason 1', 'banType': 'perm', 'rounds_left': '0', 'id': 'William'}, bloc.getData(0))
+        self.assertDictEqual({'idType': 'name', 'seconds_left': '3600', 'reason': 'reason 2', 'banType': 'seconds', 'rounds_left': '0', 'id': 'Averell'}, bloc.getData(1))
 
     def test_slice(self):
         bloc = BanlistContent([
@@ -65,7 +67,7 @@ class Test_BanlistContent(unittest.TestCase):
         ])
         self.assertEqual(5, len(bloc))
         self.assertEqual(2, len(bloc[1:3]))
-        print bloc[1:3]
+        print(bloc[1:3])
         self.assertEqual('name', bloc[1:3][0]['idType'])
         self.assertEqual('Averell', bloc[1:3][0]['id'])
         self.assertEqual('seconds', bloc[1:3][0]['banType'])
@@ -144,7 +146,8 @@ class Test_PlayerInfoBlock(unittest.TestCase):
         self.assertEqual('bla2', bloc[0]['param2'])
         self.assertEqual('foo1', bloc[1]['param1'])
         self.assertEqual('foo2', bloc[1]['param2'])
-        self.assertEqual("PlayerInfoBlock[{'param2': 'bla2', 'param1': 'bla1'}{'param2': 'foo2', 'param1': 'foo1'}]", repr(bloc))
+        self.assertDictEqual({'param2': 'bla2', 'param1': 'bla1'}, bloc._getPlayerData(0))
+        self.assertDictEqual({'param2': 'foo2', 'param1': 'foo1'}, bloc._getPlayerData(1))
 
     def test_slice(self):
         bloc = PlayerInfoBlock(['2','param1','param2','4','player0-p1','player0-p2','player1-p1','player1-p2', 'player2-p1','player2-p2','player3-p1','player3-p2' ])
@@ -154,7 +157,9 @@ class Test_PlayerInfoBlock(unittest.TestCase):
         self.assertEqual('player1-p2', bloc[1:3][0]['param2'])
         self.assertEqual('player2-p1', bloc[1:3][1]['param1'])
         self.assertEqual('player2-p2', bloc[1:3][1]['param2'])
-        self.assertEqual("[{'param2': 'player1-p2', 'param1': 'player1-p1'}, {'param2': 'player2-p2', 'param1': 'player2-p1'}]", repr(bloc[1:3]))
+        info = [{'param2': 'player1-p2', 'param1': 'player1-p1'}, {'param2': 'player2-p2', 'param1': 'player2-p1'}]
+        for i in range(1,3):
+            self.assertDictEqual(info[i-1], bloc[i])
 
     def test_R38_no_player(self):
         bloc = PlayerInfoBlock(['8', 'name', 'guid', 'teamId', 'squadId', 'kills', 'deaths', 'score', 'rank', '0'])
@@ -314,9 +319,9 @@ class Test_MapListBlock_append(unittest.TestCase):
         self.assertEqual(3, mlb1._num_words)
         try:
             mlb1.append(data2)
-        except MapListBlockError, err:
+        except MapListBlockError as err:
             self.assertIn('cannot append data', str(err), "expecting error message to contain 'cannot append data' but got %r instead" % err)
-        except Exception, err:
+        except Exception as err:
             self.fail("expecting MapListBlockError but got %r instead" % err)
         else:
             self.fail("expecting MapListBlockError")

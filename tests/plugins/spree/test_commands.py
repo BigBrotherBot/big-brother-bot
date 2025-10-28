@@ -22,7 +22,9 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from tests.plugins.spree import SpreeTestCase
+from six.moves import range
 
 
 class Test_commands(SpreeTestCase):

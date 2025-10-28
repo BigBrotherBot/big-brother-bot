@@ -38,6 +38,8 @@
 # - bp (banner print area, top of screen)
 # - say (chat window, with "console: " in front)
 
+from __future__ import absolute_import
+import six
 __author__ = 'xlr8or, ailmanki'
 __version__ = '0.0.11'
 
@@ -277,7 +279,7 @@ class EtproParser(AbstractParser):
         :param line: The line to be parsed
         """
         m = None
-        line = re.sub(self._lineClear, '', line, 1)
+        line = re.sub(self._lineClear, '', line, count=1)
         for f in self._lineFormats:
             m = re.match(f, line)
             if m:
@@ -294,7 +296,7 @@ class EtproParser(AbstractParser):
         Parse an infostring.
         :param info: The infostring to be parsed.
         """
-        player_id, info = string.split(info, ' ', 1)
+        player_id, info = str.split(info, ' ', 1)
         if info[:1] != '\\':
             info += '\\'
 
@@ -310,7 +312,7 @@ class EtproParser(AbstractParser):
 
         # split port from ip field
         if 'ip' in data:
-            tip = string.split(data['ip'], ':', 1)
+            tip = str.split(data['ip'], ':', 1)
             data['ip'] = tip[0]
             data['port'] = tip[1]
 
@@ -350,7 +352,7 @@ class EtproParser(AbstractParser):
             client = self.clients.getByCID(bclient['cid'])
             if client:
                 # update existing client
-                for k, v in bclient.iteritems():
+                for k, v in six.iteritems(bclient):
                     setattr(client, k, v)
             else:
                 # make a new client
@@ -615,7 +617,7 @@ class EtproParser(AbstractParser):
         """
         plist = self.getPlayerList()
         mlist = {}
-        for cid, c in plist.iteritems():
+        for cid, c in six.iteritems(plist):
             client = self.clients.getByCID(cid)
             if client:
                 if client.guid and 'guid' in c:

@@ -20,6 +20,8 @@
 # Eg:
 #	nbcalc.py 127/8 - 127/16 + 127.0.0.0/24 + 127.0.6.0/24
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 
 # look ma, netblock caculations:
@@ -35,7 +37,7 @@ def warn(str):
 def dumpout(r):
 	res = r.tocidr()
 	if len(res) > 0:
-		print "\n".join(res)
+		print("\n".join(res))
 
 def process(args):
 	r = netblock.IPRanges()

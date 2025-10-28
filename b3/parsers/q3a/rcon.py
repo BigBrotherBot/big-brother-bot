@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+    # -*- coding: utf-8 -*-
 
 # ################################################################### #
 #                                                                     #
@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
 #
+from __future__ import absolute_import
+import six
 __author__ = 'ThorN'
 __version__ = '1.11'
 
@@ -29,22 +31,22 @@ import re
 import socket
 import select
 import time
-import thread
+import six.moves._thread
 import threading
-import Queue
+import six.moves.queue
 
 class Rcon(object):
 
     host = ()
     password = None
-    lock = thread.allocate_lock()
+    lock = six.moves._thread.allocate_lock()
     socket = None
     queue = None
     console = None
     socket_timeout = 0.80
-    rconsendstring = '\377\377\377\377rcon "%s" %s\n'
-    rconreplystring = '\377\377\377\377print\n'
-    qserversendstring = '\377\377\377\377%s\n'
+    rconsendstring = b'\xff\xff\xff\xffrcon "%s" %s\n'
+    rconreplystring = b'\xff\xff\xff\xffprint\n'
+    qserversendstring = '\xff\xff\xff\xff%s\n'
 
     # default expiretime for the status cache in seconds and cache type
     status_cache_expire_time = 2
@@ -60,7 +62,7 @@ class Rcon(object):
         :param password: The RCON password
         """
         self.console = console
-        self.queue = Queue.Queue()
+        self.queue = six.moves.queue.Queue()
 
         if self.console.config.has_option('caching', 'status_cache_type'):
             status_cache_type = self.console.config.get('caching', 'status_cache_type').lower()
@@ -79,12 +81,12 @@ class Rcon(object):
         self.console.bot('Game name is: %s' % self.console.gameName)
         self.socket = socket.socket(type=socket.SOCK_DGRAM)
         self.host = host
-        self.password = password
+        self.password = password.encode()
         self.socket.settimeout(2)
         self.socket.connect(self.host)
 
         self._stopEvent = threading.Event()
-        thread.start_new_thread(self._writelines, ())
+        six.moves._thread.start_new_thread(self._writelines, ())
 
     def encode_data(self, data, source):
         """
@@ -93,13 +95,10 @@ class Rcon(object):
         :param source: Who requested the encoding
         """
         try:
-            if isinstance(data, str):
-                data = unicode(data, errors='ignore')
             data = data.encode(self.console.encoding, 'replace')
-        except Exception, msg:
+        except Exception as msg:
             self.console.warning('%s: error encoding data: %r', source, msg)
             data = 'Encoding error'
-            
         return data
         
     def send(self, data, maxRetries=None, socketTimeout=None):
@@ -130,14 +129,14 @@ class Rcon(object):
             elif len(writeables) > 0:
                 try:
                     writeables[0].send(self.qserversendstring % data)
-                except Exception, msg:
+                except Exception as msg:
                     self.console.warning('QSERVER: error sending: %r', msg)
                 else:
                     try:
                         data = self.readSocket(self.socket, socketTimeout=socketTimeout)
                         self.console.verbose2('QSERVER: received %r' % data)
                         return data
-                    except Exception, msg:
+                    except Exception as msg:
                         self.console.warning('QSERVER: error reading: %r', msg)
             else:
                 self.console.verbose('QSERVER: no writeable socket')
@@ -171,7 +170,7 @@ class Rcon(object):
         if self.console.encoding:
             data = self.encode_data(data, 'RCON')
 
-        self.console.verbose('RCON sending (%s:%s) %r', self.host[0], self.host[1], data)
+        self.console.verbose('RCON sending (%s:%s) %r', self.host[0], self.host[1], data.decode())
         start_time = time.time()
 
         retries = 0
@@ -182,18 +181,19 @@ class Rcon(object):
                 self.console.warning('RCON: %s', str(errors))
             elif len(writeables) > 0:
                 try:
-                    writeables[0].send(self.rconsendstring % (self.password, data))
-                except Exception, msg:
+                    command = self.rconsendstring % (self.password, data)
+                    writeables[0].send(command)
+                except Exception as msg:
                     self.console.warning('RCON: error sending: %r', msg)
                 else:
                     try:
                         data = self.readSocket(self.socket, socketTimeout=socketTimeout)
-                        self.console.verbose2('RCON: received %r' % data)
+                        self.console.verbose2('RCON: received %s' % data)
                         return data
-                    except Exception, msg:
+                    except Exception as msg:
                         self.console.warning('RCON: error reading: %r', msg)
 
-                if re.match(r'^quit|map(_rotate)?.*', data):
+                if re.match(rb'^quit|map(_rotate)?.*', data):
                     # do not retry quits and map changes since they prevent the server from responding
                     self.console.verbose2('RCON: no retry for %r', data)
                     return ''
@@ -282,7 +282,7 @@ class Rcon(object):
         while time.time() - start_time < 1:
             try:
                 d = str(sock.recv(4096))
-            except socket.error, detail:
+            except socket.error as detail:
                 self.console.debug('RCON: error reading: %s' % detail)
                 break
             else:
@@ -304,7 +304,7 @@ class Rcon(object):
         if socketTimeout is None:
             socketTimeout = self.socket_timeout
 
-        data = ''
+        data = b''
         readables, writeables, errors = select.select([sock], [], [sock], socketTimeout)
 
         if not len(readables):
@@ -312,17 +312,17 @@ class Rcon(object):
             return ''
 
         while len(readables):
-            d = str(sock.recv(size))
+            d = sock.recv(size)
 
             if d:
                 # remove rcon header
-                data += d.replace(self.rconreplystring, '')
+                data += d.replace(self.rconreplystring, b'')
 
             readables, writeables, errors = select.select([sock], [], [sock], socketTimeout)
             if len(readables):
                 self.console.verbose('RCON: more data to read in socket')
 
-        return data
+        return data.decode()
 
     def close(self):
         pass

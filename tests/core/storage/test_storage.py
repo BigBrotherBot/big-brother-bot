@@ -22,7 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
-import unittest2 as unittest
+from __future__ import absolute_import
+import unittest
 
 from b3.functions import splitDSN
 from b3.storage import Storage
@@ -54,7 +55,7 @@ except ImportError:
     is_postgresql_ready = False
     no_postgresql_reason = "no psycopg2 module available"
 
-class Test_Storage(B3TestCase):
+class Test_Storage(B3TestCase, unittest.TestCase):
 
     storage = None
 

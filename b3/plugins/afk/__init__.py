@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 __author__ = "Thomas LEVEIL"
 __version__ = "1.10"
 
@@ -173,7 +174,7 @@ class AfkPlugin(Plugin):
     def load_conf_min_ingame_humans(self):
         try:
             self.min_ingame_humans = self.config.getint('settings', 'min_ingame_humans')
-        except (NoOptionError, ValueError), err:
+        except (NoOptionError, ValueError) as err:
             self.warning("no value or bad value for settings/min_ingame_humans. %s", err)
         else:
             if self.min_ingame_humans < 0:
@@ -184,7 +185,7 @@ class AfkPlugin(Plugin):
     def load_conf_consecutive_deaths_threshold(self):
         try:
             self.consecutive_deaths_threshold = self.config.getint('settings', 'consecutive_deaths_threshold')
-        except (NoOptionError, ValueError), err:
+        except (NoOptionError, ValueError) as err:
             self.warning("no value or bad value for settings/consecutive_deaths_threshold. %s", err)
         else:
             if self.consecutive_deaths_threshold < 0:
@@ -195,7 +196,7 @@ class AfkPlugin(Plugin):
     def load_conf_inactivity_threshold(self):
         try:
             self.inactivity_threshold_second = int(60 * self.config.getDuration('settings', 'inactivity_threshold'))
-        except (NoOptionError, ValueError), err:
+        except (NoOptionError, ValueError) as err:
             self.warning("no value or bad value for settings/inactivity_threshold. %s", err)
         else:
             if self.inactivity_threshold_second < 30:
@@ -206,7 +207,7 @@ class AfkPlugin(Plugin):
     def load_conf_last_chance_delay(self, default, min_value, max_value):
         try:
             self.last_chance_delay = self.config.getint('settings', 'last_chance_delay')
-        except (NoOptionError, ValueError), err:
+        except (NoOptionError, ValueError) as err:
             self.warning("no value or bad value for settings/last_chance_delay. %s", err)
             self.last_chance_delay = default
         else:
@@ -224,7 +225,7 @@ class AfkPlugin(Plugin):
             if len(self.kick_reason.strip()) == 0:
                 raise ValueError()
             self.info('settings/kick_reason: %s sec' % self.kick_reason)
-        except (NoOptionError, ValueError), err:
+        except (NoOptionError, ValueError) as err:
             self.warning("no value or bad value for settings/kick_reason. %s", err)
             self.kick_reason = "AFK for too long on this server"
 
@@ -234,7 +235,7 @@ class AfkPlugin(Plugin):
             if len(self.are_you_afk.strip()) == 0:
                 raise ValueError()
             self.info('settings/are_you_afk: %s sec' % self.are_you_afk)
-        except (NoOptionError, ValueError), err:
+        except (NoOptionError, ValueError) as err:
             self.warning("no value or bad value for settings/are_you_afk. %s", err)
             self.are_you_afk = "Are you AFK?"
 
@@ -247,7 +248,7 @@ class AfkPlugin(Plugin):
                 raise ValueError("missing placeholder {name}")
             if "{last_chance_delay}" not in self.suspicion_announcement:
                 raise ValueError("missing placeholder {last_chance_delay}")
-        except (NoOptionError, ValueError), err:
+        except (NoOptionError, ValueError) as err:
             self.warning("no value or bad value for settings/suspicion_announcement. %s", err)
             self.suspicion_announcement = default
         self.info('settings/suspicion_announcement: %s' % self.suspicion_announcement)
@@ -257,10 +258,10 @@ class AfkPlugin(Plugin):
             self.immunity_level = self.config.getint('settings', 'immunity_level')
         except NoOptionError:
             self.info('no value for settings/immunity_level. Using default value : %s' % self.immunity_level)
-        except ValueError, err:
+        except ValueError as err:
             self.debug(err)
             self.warning('bad value for settings/immunity_level. Using default value : %s' % self.immunity_level)
-        except Exception, err:
+        except Exception as err:
             self.error(err)
         self.info('immunity_level is %s' % self.immunity_level)
 

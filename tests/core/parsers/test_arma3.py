@@ -22,14 +22,18 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import logging
-import unittest2 as unittest
+import unittest
 from mock import Mock, patch
 from mockito import when
 from b3.clients import Client
 from b3.parsers.arma3 import Arma3Parser
 from b3.config import XmlConfigParser
 from tests import logging_disabled
+import six
+from six.moves import map
+from tests import B3SimpleTestCase
 
 ANY = object()
 
@@ -99,7 +103,7 @@ class EventParsingTestCase(Arma3TestCase):
         """
         assert that self.evt_queue contains at least one event for the given type that has the given characteristics.
         """
-        assert isinstance(event_type, basestring)
+        assert isinstance(event_type, six.string_types)
 
         def assert_event_equals(expected_event, actual_event):
             if expected_event is None:
@@ -125,7 +129,7 @@ class EventParsingTestCase(Arma3TestCase):
                     return
                 except AssertionError:
                     pass
-            self.fail("expecting event %s. Got instead: %s" % (expected_event, map(str, self.evt_queue)))
+            self.fail("expecting event %s. Got instead: %s" % (expected_event, list(map(str, self.evt_queue))))
 
 
     ################################################################################################################
@@ -193,7 +197,7 @@ class test_sync(EventParsingTestCase):
 
     def test_new_client_with_unverified_guid(self):
         # GIVEN
-        self.assertDictContainsSubset({'clients': 1}, self.parser.storage.getCounts())
+        self.assertEqual(1, self.parser.storage.getCounts()["clients"])
         self.assertNotIn('8', self.parser.clients)
         # WHEN
         when(self.parser.output).write('players').thenReturn('''\
@@ -205,7 +209,7 @@ Players on server:
 ''')
         rv = self.parser.sync()
         # THEN no new client is saved to database
-        self.assertDictContainsSubset({'clients': 1}, self.parser.storage.getCounts())
+        self.assertEqual(1, self.parser.storage.getCounts()["clients"])
         # THEN sync return correct info
         self.assertIn('8', rv)
         client = rv["8"]
@@ -226,7 +230,7 @@ Players on server:
         # GIVEN
         self.parser.routeBattleyeEvent(u'Player #8 Max (111.222.200.50:2304) connected')
         self.parser.routeBattleyeEvent(u'Player #8 Max - GUID: 73c5e50a7860475f0000000000000000 (unverified)')
-        self.assertDictContainsSubset({'clients': 1}, self.parser.storage.getCounts())
+        self.assertEqual(1, self.parser.storage.getCounts()["clients"])
         self.assertIn('8', self.parser.clients)
         self.clear_events()
         # WHEN
@@ -239,7 +243,7 @@ Players on server:
 ''')
         rv = self.parser.sync()
         # THEN no new client is saved to database
-        self.assertDictContainsSubset({'clients': 1}, self.parser.storage.getCounts())
+        self.assertEqual(1, self.parser.storage.getCounts()["clients"])
         # THEN sync return correct info
         self.assertIn('8', rv)
         client = rv["8"]
@@ -262,7 +266,7 @@ Players on server:
         self.parser.routeBattleyeEvent(u'Player #8 Max (111.222.200.50:2304) connected')
         self.parser.routeBattleyeEvent(u'Player #8 Max - GUID: 73c5e50a7860475f0000000000000000 (unverified)')
         self.parser.routeBattleyeEvent(u'Verified GUID (73c5e50a7860475f0000000000000000) of player #8 Max')
-        self.assertDictContainsSubset({'clients': 2}, self.parser.storage.getCounts())
+        self.assertEqual(2, self.parser.storage.getCounts()["clients"])
         self.assertIn('8', self.parser.clients)
         # GIVEN that the player exists in database
         client_from_db = self.parser.storage.getClient(Client(guid="73c5e50a7860475f0000000000000000"))
@@ -281,7 +285,7 @@ Players on server:
 ''')
         rv = self.parser.sync()
         # THEN no new client is saved to database
-        self.assertDictContainsSubset({'clients': 2}, self.parser.storage.getCounts())
+        self.assertEqual(2, self.parser.storage.getCounts()["clients"])
         # THEN sync return correct info
         self.assertIn('8', rv)
         client = rv["8"]

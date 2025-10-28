@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+import six
 __author__ = 'xlr8or'
 __version__ = '1.4.2'
 
@@ -193,7 +195,7 @@ class Cod5Parser(b3.parsers.cod2.Cod2Parser):
         plist = self.getPlayerList(maxRetries=4)
         mlist = {}
 
-        for cid, c in plist.iteritems():
+        for cid, c in six.iteritems(plist):
             cid = str(cid)
             client = self.clients.getByCID(cid)
             if client:

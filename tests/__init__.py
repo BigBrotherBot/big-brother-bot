@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+from __future__ import print_function
 import logging
 import threading
 import sys
@@ -29,6 +31,8 @@ import sys
 from b3.config import CfgConfigParser
 from b3.config import MainConfig
 from contextlib import contextmanager
+import six
+from six.moves import map
 
 logging.raiseExceptions = False  # get rid of 'No handlers could be found for logger output' message
 import b3.output # do not remove, needed because the module alters some defaults of the logging module
@@ -37,7 +41,7 @@ log.setLevel(logging.WARNING)
 
 from mock import Mock, patch
 import time
-import unittest2 as unittest
+import unittest
 from b3.events import Event
 
 
@@ -73,8 +77,14 @@ def flush_console_streams():
     sys.stderr.flush()
     sys.stdout.flush()
 
+class B3SimpleTestCase():
+    def assertDictContainsSubset(self, test, target):
+        if len(test.keys()) > len(target.keys()):
+            self.assertDictEqual(test, test | target)
+        else:
+            self.assertDictEqual(target, target | test)
 
-class B3TestCase(unittest.TestCase):
+class B3TestCase():
 
     def setUp(self):
         testcase_lock.acquire()
@@ -94,7 +104,7 @@ class B3TestCase(unittest.TestCase):
         self.console.cron.stop()
 
         def myError(msg, *args, **kwargs):
-            print(("ERROR: %s" % msg) % args)
+            print((("ERROR: %s" % msg) % args))
         self.console.error = myError
 
     def tearDown(self):
@@ -117,7 +127,7 @@ class B3TestCase(unittest.TestCase):
                 # WHEN
                 self.client.team = 24
         """
-        if type(event_type) is basestring:
+        if type(event_type) is six.string_types:
             event_type_name = event_type
         else:
             event_type_name = self.console.getEventName(event_type)

@@ -2,6 +2,12 @@
    License:  Public Domain     Author:   Raymond Hettinger email:  python@rcn.com
    Updates and documentation:  http://users.rcn.com/python/download/python.htm
    Revision In Use:  'File %n, Ver %v, Date %f'                             '''
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import map
+from six.moves import range
+from six.moves import zip
+from functools import reduce
 Version = 'File MATFUNC.PY, Ver 183, Date 12-Dec-2002,14:33:42'
 
 import operator, math, random
@@ -42,12 +48,12 @@ class Table(list):
         elements in two arrays.  If the dimensions are different, broadcast the smaller dimension over
         the larger (i.e. match a scalar to every element in a vector or a vector to a matrix).'''
         if rhs is None:                                                 # Unary case
-            return self.dim==1 and self.__class__( map(op, self) ) or self.__class__( [elem.map(op) for elem in self] )
+            return self.dim==1 and self.__class__( list(map(op, self)) ) or self.__class__( [elem.map(op) for elem in self] )
         elif not hasattr(rhs,'dim'):                                    # List / Scalar op
             return self.__class__( [op(e,rhs) for e in self] )
         elif self.dim == rhs.dim:                                       # Same level Vec / Vec or Matrix / Matrix
             assert NPRE or len(self) == len(rhs), 'Table operation requires len sizes to agree'
-            return self.__class__( map(op, self, rhs) )
+            return self.__class__( list(map(op, self, rhs)) )
         elif self.dim < rhs.dim:                                        # Vec / Matrix
             return self.__class__( [op(self,e) for e in rhs]  )
         return self.__class__( [op(e,rhs) for e in self] )         # Matrix / Vec
@@ -82,7 +88,7 @@ class Table(list):
     def __eq__( self, rhs ):  return (self - rhs).forall( iszero )
 
 class Vec(Table):
-    def dot( self, otherVec ):  return reduce(operator.add, map(operator.mul, self, otherVec), 0.0)
+    def dot( self, otherVec ):  return reduce(operator.add, list(map(operator.mul, self, otherVec)), 0.0)
     def norm( self ):  return math.sqrt(abs( self.dot(self.conjugate()) ))
     def normalize( self ):  return self / self.norm()
     def outer( self, otherVec ):  return Mat([otherVec*x for x in self])
@@ -113,11 +119,11 @@ class Matrix(Table):
     __slots__ = ['size', 'rows', 'cols']
     def __init__( self, elems ):
         'Form a matrix from a list of lists or a list of Vecs'
-        Table.__init__( self, hasattr(elems[0], 'dot') and elems or map(Vec,map(tuple,elems)) )
+        Table.__init__( self, hasattr(elems[0], 'dot') and elems or list(map(Vec,list(map(tuple,elems)))) )
         self.size = self.rows, self.cols = len(elems), len(elems[0])
     def tr( self ):
         'Tranpose elements so that Transposed[i][j] = Original[j][i]'
-        return Mat(zip(*self))
+        return Mat(list(zip(*self)))
     def star( self ):
         'Return the Hermetian adjoint so that Star[i][j] = Original[j][i].conjugate()'
         return self.tr().conjugate()
@@ -127,13 +133,13 @@ class Matrix(Table):
     def trace( self ): return self.diag().sum()
     def mmul( self, other ):
         'Matrix multiply by another matrix or a column vector '
-        if other.dim==2: return Mat( map(self.mmul, other.tr()) ).tr()
+        if other.dim==2: return Mat( list(map(self.mmul, other.tr())) ).tr()
         assert NPRE or self.cols == len(other)
-        return Vec( map(other.dot, self) )
+        return Vec( list(map(other.dot, self)) )
     def augment( self, otherMat ):
         'Make a new matrix with the two original matrices laid side by side'
-        assert self.rows == otherMat.rows, 'Size mismatch: %s * %s' % (`self.size`, `otherMat.size`)
-        return Mat( map(Table.concat, self, otherMat) )
+        assert self.rows == otherMat.rows, 'Size mismatch: %s * %s' % (repr(self.size), repr(otherMat.size))
+        return Mat( list(map(Table.concat, self, otherMat)) )
     def qr( self, ROnly=0 ):
         'QR decomposition using Householder reflections: Q*R==self, Q.tr()*Q==I(n), R upper triangular'
         R = self
@@ -145,7 +151,7 @@ class Matrix(Table):
         R = Mat(R[:n])
         if ROnly: return R
         Q = R.tr().solve(self.tr()).tr()       # Rt Qt = At    nn  nm  = nm
-        self.qr = lambda r=0, c=`self`: not r and c==`self` and (Q,R) or Matrix.qr(self,r) #Cache result
+        self.qr = lambda r=0, c=repr(self): not r and c==repr(self) and (Q,R) or Matrix.qr(self,r) #Cache result
         assert NPOST or m>=n and Q.size==(m,n) and isinstance(R,UpperTri) or m<n and Q.size==(m,m) and R.size==(m,n)
         assert NPOST or Q.mmul(R)==self and Q.tr().mmul(Q)==eye(min(m,n))
         return Q, R
@@ -156,7 +162,7 @@ class Matrix(Table):
         return R.solve( Q.tr().mmul(b) )
     def solve( self, b ):
         'Divide matrix into a column vector or matrix and iterate to improve the solution'
-        if b.dim==2: return Mat( map(self.solve, b.tr()) ).tr()
+        if b.dim==2: return Mat( list(map(self.solve, b.tr())) ).tr()
         assert NPRE or self.rows == len(b), 'Matrix row count %d must match vector length %d' % (self.rows, len(b))
         x = self._solve( b )
         diff = b - self.mmul(x)
@@ -246,11 +252,11 @@ def Mat( elems ):
     if m != n: return Matrix(elems)
     if n <= 1: return Square(elems)
     for i in range(1, len(elems)):
-        if not iszero( max(map(abs, elems[i][:i])) ):
+        if not iszero( max(list(map(abs, elems[i][:i]))) ):
             break
     else: return UpperTri(elems)
     for i in range(0, len(elems)-1):
-        if not iszero( max(map(abs, elems[i][i+1:])) ):
+        if not iszero( max(list(map(abs, elems[i][i+1:]))) ):
             return Square(elems)
     return LowerTri(elems)
 
@@ -264,19 +270,22 @@ def funToVec( tgtfun, low=-1, high=1, steps=40, EqualSpacing=0 ):
     else:
         scale, base = (0.0+high-low)/2.0, (0.0+high+low)/2.0
         xvec = [base+scale*math.cos(((2*steps-1-2*i)*math.pi)/(2*steps)) for i in range(steps)]
-    yvec = map(tgtfun, xvec)
+    yvec = list(map(tgtfun, xvec))
     return Mat( [xvec, yvec] )
 
-def funfit( (xvec, yvec), basisfuns ):
+def funfit(xxx_todo_changeme, basisfuns ):
     'Solves design matrix for approximating to basis functions'
-    return Mat([ map(form,xvec) for form in basisfuns ]).tr().solve(Vec(yvec))
+    (xvec, yvec) = xxx_todo_changeme
+    return Mat([ list(map(form,xvec)) for form in basisfuns ]).tr().solve(Vec(yvec))
 
-def polyfit( (xvec, yvec), degree=2 ):
+def polyfit(xxx_todo_changeme1, degree=2 ):
     'Solves Vandermonde design matrix for approximating polynomial coefficients'
+    (xvec, yvec) = xxx_todo_changeme1
     return Mat([ [x**n for n in range(degree,-1,-1)] for x in xvec ]).solve(Vec(yvec))
 
-def ratfit( (xvec, yvec), degree=2 ):
+def ratfit(xxx_todo_changeme2, degree=2 ):
     'Solves design matrix for approximating rational polynomial coefficients (a*x**2 + b*x + c)/(d*x**2 + e*x + 1)'
+    (xvec, yvec) = xxx_todo_changeme2
     return Mat([[x**n for n in range(degree,-1,-1)]+[-y*x**n for n in range(degree,0,-1)] for x,y in zip(xvec,yvec)]).solve(Vec(yvec))
 
 def genmat(m, n, func):
@@ -304,87 +313,87 @@ if __name__ == '__main__':
     a = Table([1+2j,2,3,4])
     b = Table([5,6,7,8])
     C = Table([a,b])
-    print 'a+b', a+b
-    print '2+a', 2+a
-    print 'a/5.0', a/5.0
-    print '2*a+3*b', 2*a+3*b
-    print 'a+C', a+C
-    print '3+C', 3+C
-    print 'C+b', C+b
-    print 'C.sum()', C.sum()
-    print 'C.map(math.cos)', C.map(cmath.cos)
-    print 'C.conjugate()', C.conjugate()
-    print 'C.real()', C.real()
+    print('a+b', a+b)
+    print('2+a', 2+a)
+    print('a/5.0', a/5.0)
+    print('2*a+3*b', 2*a+3*b)
+    print('a+C', a+C)
+    print('3+C', 3+C)
+    print('C+b', C+b)
+    print('C.sum()', C.sum())
+    print('C.map(math.cos)', C.map(cmath.cos))
+    print('C.conjugate()', C.conjugate())
+    print('C.real()', C.real())
 
-    print zeroes(3)
-    print eye(4)
-    print hilb(3,5)
+    print(zeroes(3))
+    print(eye(4))
+    print(hilb(3,5))
 
     C = Mat( [[1,2,3], [4,5,1,], [7,8,9]] )
-    print C.mmul( C.tr()), '\n'
-    print C ** 5, '\n'
-    print C + C.tr(), '\n'
+    print(C.mmul( C.tr()), '\n')
+    print(C ** 5, '\n')
+    print(C + C.tr(), '\n')
 
     A = C.tr().augment( Mat([[10,11,13]]).tr() ).tr()
     q, r = A.qr()
     assert q.mmul(r) == A
     assert q.tr().mmul(q)==eye(3)
-    print 'q:\n', q, '\nr:\n', r, '\nQ.tr()&Q:\n', q.tr().mmul(q), '\nQ*R\n', q.mmul(r), '\n'
+    print('q:\n', q, '\nr:\n', r, '\nQ.tr()&Q:\n', q.tr().mmul(q), '\nQ*R\n', q.mmul(r), '\n')
     b = Vec([50, 100, 220, 321])
     x = A.solve(b)
-    print 'x:  ', x
-    print 'b:  ', b
-    print 'Ax: ', A.mmul(x)
+    print('x:  ', x)
+    print('b:  ', b)
+    print('Ax: ', A.mmul(x))
 
     inv = C.inverse()
-    print '\ninverse C:\n', inv, '\nC * inv(C):\n', C.mmul(inv)
+    print('\ninverse C:\n', inv, '\nC * inv(C):\n', C.mmul(inv))
     assert C.mmul(inv) == eye(3)
 
     points = (xvec,yvec) = funToVec(lambda x: math.sin(x)+2*math.cos(.7*x+.1), low=0, high=3, EqualSpacing=1)
     basis = [lambda x: math.sin(x), lambda x: math.exp(x), lambda x: x**2]
-    print 'Func coeffs:', funfit( points, basis )
-    print 'Poly coeffs:', polyfit( points, degree=5 )
+    print('Func coeffs:', funfit( points, basis ))
+    print('Poly coeffs:', polyfit( points, degree=5 ))
     points = (xvec,yvec) = funToVec(lambda x: math.sin(x)+2*math.cos(.7*x+.1), low=0, high=3)
-    print 'Rational coeffs:', ratfit( points )
+    print('Rational coeffs:', ratfit( points ))
 
-    print polyfit(([1,2,3,4], [1,4,9,16]), 2)
+    print(polyfit(([1,2,3,4], [1,4,9,16]), 2))
 
     mtable = Vec([1,2,3]).outer(Vec([1,2]))
-    print mtable, mtable.size
+    print(mtable, mtable.size)
 
     A = Mat([ [2,0,3], [1,5,1], [18,0,6] ])
-    print 'A:'
-    print A
-    print 'eigs:'
-    print A.eigs()
-    print 'Should be:', Vec([11.6158, 5.0000, -3.6158])
-    print 'det(A)'
-    print A.det()
+    print('A:')
+    print(A)
+    print('eigs:')
+    print(A.eigs())
+    print('Should be:', Vec([11.6158, 5.0000, -3.6158]))
+    print('det(A)')
+    print(A.det())
 
     c = Mat( [[1,2,30],[4,5,10],[10,80,9]] )     # Failed example from Konrad Hinsen
-    print 'C:\n', c
-    print c.eigs()
-    print 'Should be:', Vec([-8.9554, 43.2497, -19.2943])
+    print('C:\n', c)
+    print(c.eigs())
+    print('Should be:', Vec([-8.9554, 43.2497, -19.2943]))
 
     A = Mat([ [1,2,3,4], [4,5,6,7], [2,1,5,0], [4,2,1,0] ] )    # Kincaid and Cheney p.326
-    print 'A:\n', A
-    print A.eigs()
-    print 'Should be:', Vec([3.5736, 0.1765, 11.1055, -3.8556])
+    print('A:\n', A)
+    print(A.eigs())
+    print('Should be:', Vec([3.5736, 0.1765, 11.1055, -3.8556]))
 
     A = rand(3)
     q,r = A.qr()
     s,t = A.qr()
-    print q is s                # Test caching
-    print r is t
+    print(q is s)                # Test caching
+    print(r is t)
     A[1][1] = 1.1               # Invalidate the cache
     u,v = A.qr()
-    print q is u                # Verify old result not used
-    print r is v
-    print u.mmul(v) == A        # Verify new result
+    print(q is u)                # Verify old result not used
+    print(r is v)
+    print(u.mmul(v) == A)        # Verify new result
 
-    print 'Test qr on 3x5 matrix'
+    print('Test qr on 3x5 matrix')
     a = rand(3,5)
     q,r = a.qr()
-    print q.mmul(r) == a
-    print q.tr().mmul(q) == eye(3)
+    print(q.mmul(r) == a)
+    print(q.tr().mmul(q) == eye(3))
 

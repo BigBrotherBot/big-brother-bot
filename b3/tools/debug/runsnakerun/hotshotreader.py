@@ -1,4 +1,6 @@
 """Module implementing the hotshot profile-data reader"""
+from __future__ import absolute_import
+from __future__ import print_function
 from hotshot import _hotshot
 import os
 import parser
@@ -95,21 +97,21 @@ def loadHotshot( filename, yieldCount=10000 ):
             yield i, files, functions
         if givesDelta( what ):
             key = fileno,lineno 
-            print 'lineno', lineno, tdelta, getattr(getFunction( key ),'name','')
+            print('lineno', lineno, tdelta, getattr(getFunction( key ),'name',''))
             if what == whatEnter:
                 key = (fileno,lineno)
                 function = getFunction( key )
                 depth += 1
                 try:
                     localDeltas[depth] = 0
-                except IndexError, err:
-                    print 'extend localDeltas'
+                except IndexError as err:
+                    print('extend localDeltas')
                     localDeltas = numpy.resize( localDeltas, (depth+200,))
                 if function is not None:
                     try:
                         frames[depth] = function.accumArray
-                    except IndexError, err:
-                        print 'extend frames'
+                    except IndexError as err:
+                        print('extend frames')
                         frames.extend( [None]*((depth+200)-len(frames)) )
                     function.callArray[0]+=1
                     # XXX like to get rid of this copy eventually...
@@ -120,8 +122,8 @@ def loadHotshot( filename, yieldCount=10000 ):
                 else:
                     try:
                         frames[depth] = None
-                    except IndexError, err:
-                        print 'extend frames'
+                    except IndexError as err:
+                        print('extend frames')
                         frames.extend( [None]*((depth+200)-len(frames)) )
             # should both enter and exit tdelta get credited to the lower function?
             # current does so
@@ -139,8 +141,8 @@ def loadHotshot( filename, yieldCount=10000 ):
                     depth -= 1
                     if frames[depth] is not None:
                         frames[depth][0] += localDelta
-                except IndexError, err:
-                    print 'Warning frame underflow!'
+                except IndexError as err:
+                    print('Warning frame underflow!')
         elif what == defineFile:
             files[ fileno ] = FileRecord( fileno, tdelta )
         elif what == defineFunction:
@@ -150,10 +152,10 @@ def loadHotshot( filename, yieldCount=10000 ):
             if file is not None:
                 file.functions[ lineno ] = record
         else:
-            print 'unrecognised what', what
+            print('unrecognised what', what)
             for name in [n for n in dir(_hotshot) if n.startswith( 'WHAT_')]:
                 if getattr( _hotshot,name) == what:
-                    print ' == %s'%(name,)
+                    print(' == %s'%(name,))
                     break
 
     yield i, files, functions
@@ -193,12 +195,12 @@ def loadHotshot2( filename ):
             if file is not None:
                 file.functions[ lineno ] = record
         elif what == whatLineTime:
-            print 'line time',(tdelta,fileno,lineno)
+            print('line time',(tdelta,fileno,lineno))
         else:
-            print 'unrecognised what', what
+            print('unrecognised what', what)
             for name in [n for n in dir(_hotshot) if n.startswith( 'WHAT_')]:
                 if getattr( _hotshot,name) == what:
-                    print ' == %s'%(name,)
+                    print(' == %s'%(name,))
                     break
     return asTree( heatmap ), functions
 class StackInfo( object ):
@@ -259,5 +261,5 @@ if __name__ == "__main__":
     t1 = time.time()
     pprint.pprint( loadHotshot2( sys.argv[1] ) )
     t2 = time.time()
-    print 'loadHotshot2: %s seconds'%( t2-t1 )
+    print('loadHotshot2: %s seconds'%( t2-t1 ))
     

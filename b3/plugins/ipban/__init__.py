@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 __version__ = '1.3.0'
 __author__ = 'xlr8or'
 
@@ -31,7 +32,7 @@ import b3.lib
 import b3.plugin
 
 from time import time
-from ConfigParser import NoOptionError
+from six.moves.configparser import NoOptionError
 
 
 class IpbanPlugin(b3.plugin.Plugin):

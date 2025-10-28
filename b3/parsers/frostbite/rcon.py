@@ -22,10 +22,11 @@
 #                                                                     #
 # ################################################################### #
  
+from __future__ import absolute_import
 __author__ = 'Courgette'
 __version__ = '2.1'
  
-import thread
+import six.moves._thread
 
 from b3.parsers.frostbite.connection import FrostbiteConnection
 from b3.parsers.frostbite.connection import FrostbiteException
@@ -35,7 +36,7 @@ class Rcon(object):
 
     console = None
 
-    _lock = thread.allocate_lock()
+    _lock = six.moves._thread.allocate_lock()
     _frostbiteConnection = None
     
     _rconIp = None
@@ -89,7 +90,7 @@ class Rcon(object):
                         return response[0]
                     else:
                         return response[1:]
-                except FrostbiteException, err:
+                except FrostbiteException as err:
                     self.console.warning('RCON: sending \'%s\', %s' % (cmd, err))
             self.console.error('RCON: failed to send \'%s\'', cmd)
             try:

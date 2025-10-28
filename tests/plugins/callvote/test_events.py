@@ -22,10 +22,12 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from textwrap import dedent
 from tests.plugins.callvote import CallvoteTestCase
+import unittest
 
-class Test_events(CallvoteTestCase):
+class Test_events(CallvoteTestCase, unittest.TestCase):
 
     def tearDown(self):
         self.mike.disconnects()

@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 __author__ = 'ThorN, xlr8or, courgette, Fenix'
 __version__ = '3.7'
 
@@ -34,9 +35,11 @@ import zipfile
 import setuptools
 import platform
 
-from distutils import dir_util, log
+import logging
 from setuptools.command.egg_info import egg_info as orig_egg_info
 from time import strftime
+
+log = logging.getLogger(__name__)
 
 
 def getPlatform():
@@ -109,10 +112,10 @@ class CleanCommand(setuptools.Command):
 
     def run(self):
         if os.path.isdir(BUILD_DIR):
-            dir_util.remove_tree(BUILD_DIR, verbose=1)
+            shutil.rmtree(BUILD_DIR)
         _egg_info_dir = os.path.join(PROJECT_DIR, 'b3.egg-info')
         if os.path.isdir(_egg_info_dir):
-            dir_util.remove_tree(_egg_info_dir, verbose=1)
+            shutil.rmtree(_egg_info_dir, verbose=1)
 
 
 class my_egg_info(orig_egg_info):
@@ -293,7 +296,7 @@ else:
                             '/dB3_BUILD_PATH=' + self.build_exe,
                         ]
                         subprocess.call(cmd)
-                    except Exception, e:
+                    except Exception as e:
                         log.error('could not build %s: %s' % (script_file, e))
 
     cmdclass['build_exe'] = my_build_exe

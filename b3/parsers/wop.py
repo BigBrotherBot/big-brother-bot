@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+import six
 __author__ = 'xlr8or'
 __version__ = '1.5'
 
@@ -297,7 +299,7 @@ class WopParser(AbstractParser):
                 # update existing client
                 bclient['cl_guid'] = client.guid 
                 bclient['ip'] = client.ip
-                for k, v in bclient.iteritems():
+                for k, v in six.iteritems(bclient):
                     setattr(client, k, v)
             else:
                 # make a new client

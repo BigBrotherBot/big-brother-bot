@@ -22,11 +22,13 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import time
-import unittest2 as unittest
+import unittest
 from mock import sentinel, Mock
 from b3.cron import CronTab, OneTimeCronTab, PluginCronTab, Cron
 from tests import B3TestCase
+from six.moves import range
 
 class Test_Crontab(unittest.TestCase):
 
@@ -153,41 +155,41 @@ class Test_Crontab_getRate(unittest.TestCase):
         self.assertRaises(TypeError, self.t, None)
 
     def test_getRate_int(self):
-        self.assertEquals(0, self.t(0))
-        self.assertEquals(1, self.t(1))
-        self.assertEquals(59, self.t(59))
+        self.assertEqual(0, self.t(0))
+        self.assertEqual(1, self.t(1))
+        self.assertEqual(59, self.t(59))
         self.assertRaises(ValueError, self.t, 60)
         self.assertRaises(ValueError, self.t, -1)
 
     def test_float(self):
-        self.assertEquals(0, self.t(0.0))
-        self.assertEquals(1, self.t(1.0))
-        self.assertEquals(59, self.t(59.0))
+        self.assertEqual(0, self.t(0.0))
+        self.assertEqual(1, self.t(1.0))
+        self.assertEqual(59, self.t(59.0))
         self.assertRaises(ValueError, self.t, 60.0)
         self.assertRaises(ValueError, self.t, -1.0)
 
     def test_str_every(self):
-        self.assertEquals(-1, self.t('*'))
+        self.assertEqual(-1, self.t('*'))
 
     def test_str_everySo(self):
-        self.assertEquals(range(0,60,2), self.t('*/2') )
-        self.assertEquals(range(0,60,17), self.t('*/17'))
-        self.assertEquals([0,59], self.t('*/59'))
-        self.assertEquals([0], self.t('*/60'))
+        self.assertEqual(list(range(0,60,2)), self.t('*/2') )
+        self.assertEqual(list(range(0,60,17)), self.t('*/17'))
+        self.assertEqual([0,59], self.t('*/59'))
+        self.assertEqual([0], self.t('*/60'))
         self.assertRaises(ValueError, self.t, ('*/61'))
         self.assertRaises(TypeError, self.t, ('*/-1'))
         self.assertRaises(ValueError, self.t, ('*/80'))
 
     def test_str_range(self):
-        self.assertEquals(range(5,12), self.t('5-11'))
+        self.assertEqual(list(range(5,12)), self.t('5-11'))
         self.assertRaises(TypeError, self.t, ('-5-11'))
         self.assertRaises(ValueError, self.t, ('35-11'))
         self.assertRaises(TypeError, self.t, ('5--11'))
         self.assertRaises(ValueError, self.t, ('5-80'))
 
     def test_str_range_with_step(self):
-        self.assertEquals(range(5,12,2), self.t('5-11/2'))
-        self.assertEquals([5], self.t('5-11/60'))
+        self.assertEqual(list(range(5,12,2)), self.t('5-11/2'))
+        self.assertEqual([5], self.t('5-11/60'))
         self.assertRaises(ValueError, self.t, ('5-11/80'))
         self.assertRaises(TypeError, self.t, ('5-11/'))
         self.assertRaises(TypeError, self.t, ('5-11/-1'))
@@ -197,16 +199,16 @@ class Test_Crontab_getRate(unittest.TestCase):
         self.assertRaises(TypeError, self.t, ('test'))
 
     def test_list(self):
-        self.assertEquals([5,11,32,45], self.t('5,11,45,32'))
-        self.assertEquals([0,1,2,5,6,7,8], self.t('5-8,0-2'))
-        self.assertEquals([5,6,7,20,30], self.t('5-7, 20, 30'))
-        self.assertEquals([5,6,7,30,40], self.t('5-7,40,30'))
-        self.assertEquals([0,5,6,7,40], self.t('5-7,40,0'))
-        self.assertEquals([5,7,9,11,30,40,41,42], self.t('5-12/2, 30, 40-42'))
+        self.assertEqual([5,11,32,45], self.t('5,11,45,32'))
+        self.assertEqual([0,1,2,5,6,7,8], self.t('5-8,0-2'))
+        self.assertEqual([5,6,7,20,30], self.t('5-7, 20, 30'))
+        self.assertEqual([5,6,7,30,40], self.t('5-7,40,30'))
+        self.assertEqual([0,5,6,7,40], self.t('5-7,40,0'))
+        self.assertEqual([5,7,9,11,30,40,41,42], self.t('5-12/2, 30, 40-42'))
         self.assertRaises(TypeError, self.t, ('5-12/2, -5, 40-42'))
 
 
-class Test_Cron(B3TestCase):
+class Test_Cron(B3TestCase, unittest.TestCase):
 
     def setUp(self):
         B3TestCase.setUp(self)

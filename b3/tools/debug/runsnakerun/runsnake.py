@@ -1,14 +1,16 @@
 #! /usr/bin/python
 """The main script for the RunSnakeRun profile viewer"""
+from __future__ import absolute_import
 import sys
 import os
 import logging
 
 import wx
+from six.moves import zip
 
 try:
     from wx.py import editor
-except ImportError, err:
+except ImportError as err:
     editor = None
 from gettext import gettext as _
 from b3.tools.debug.runsnakerun import squaremap, pstatsloader
@@ -165,7 +167,7 @@ class ProfileView(wx.ListCtrl):
         """We have double-clicked for hit enter on a node refocus squaremap to this node"""
         try:
             node = self.sorted[event.GetIndex()]
-        except IndexError, err:
+        except IndexError as err:
             log.warn(_('Invalid index in node activated: %(index)s'),
                      index=event.GetIndex())
         else:
@@ -179,7 +181,7 @@ class ProfileView(wx.ListCtrl):
         """We have selected a node with the list control, tell the world"""
         try:
             node = self.sorted[event.GetIndex()]
-        except IndexError, err:
+        except IndexError as err:
             log.warn(_('Invalid index in node selected: %(index)s'),
                      index=event.GetIndex())
         else:
@@ -196,7 +198,7 @@ class ProfileView(wx.ListCtrl):
         if item > -1:
             try:
                 node = self.sorted[item]
-            except IndexError, err:
+            except IndexError as err:
                 log.warn(_('Invalid index in mouse move: %(index)s'),
                          index=event.GetIndex())
             else:
@@ -299,7 +301,7 @@ class ProfileView(wx.ListCtrl):
         try:
             column = self.columns[col]
             value = column.get(self.sorted[item])
-        except IndexError, err:
+        except IndexError as err:
             return None
         else:
             if column.percentPossible and self.percentageView and self.total:
@@ -307,7 +309,7 @@ class ProfileView(wx.ListCtrl):
             if column.format:
                 try:
                     return column.format % (value,)
-                except Exception, err:
+                except Exception as err:
                     log.warn('Column %s could not format %r value: %s',
                         column.name, type(value), value
                     )
@@ -676,7 +678,7 @@ class MainFrame(wx.Frame):
         self.historyIndex -= 1
         try:
             self.RestoreHistory(self.history[self.historyIndex])
-        except IndexError, err:
+        except IndexError as err:
             self.SetStatusText(_('No further history available'))
 
     def OnRootView(self, event):
@@ -707,7 +709,7 @@ class MainFrame(wx.Frame):
         if self.sourceFileShown != path:
             try:
                 data = open(path).read()
-            except Exception, err:
+            except Exception as err:
                 # TODO: load from zips/eggs? What about .pyc issues?
                 return None
             else:
@@ -753,7 +755,7 @@ class MainFrame(wx.Frame):
             if self.historyIndex < -1:
                 try:
                     del self.history[self.historyIndex+1:]
-                except AttributeError, err:
+                except AttributeError as err:
                     pass
             if (not self.history) or record != self.history[-1]:
                 self.history.append(record)
@@ -780,7 +782,7 @@ class MainFrame(wx.Frame):
             self.SetModel(pstatsloader.PStatsLoader(*filenames))
             self.SetTitle(_("Run Snake Run: %(filenames)s")
                           % {'filenames': ', '.join(filenames)[:120]})
-        except (IOError, OSError, ValueError), err:
+        except (IOError, OSError, ValueError) as err:
             self.SetStatusText(
                 _('Failure during load of %(filenames)s: %(err)s'
             ) % dict(
@@ -792,7 +794,7 @@ class MainFrame(wx.Frame):
         """Set our overall model (a loader object) and populate sub-controls"""
         self.loader = loader
         self.adapter, tree, rows = self.RootNode()
-        self.listControl.integrateRecords(rows.values())
+        self.listControl.integrateRecords(list(rows.values()))
         self.activated_node = tree
         self.squareMap.SetModel(tree, self.adapter)
         self.RecordHistory()

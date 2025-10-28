@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from types import MethodType
 from textwrap import dedent
 from tests.plugins.afk import *
@@ -38,7 +39,7 @@ def evt_client_standing(self, client):
     self.console.queueEvent(self.console.getEvent('EVT_CLIENT_STANDING', client=client))
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def plugin(console):
     console.createEvent('EVT_CLIENT_MOVE', 'Event client move')
     console.createEvent('EVT_CLIENT_STANDING', 'Event client standing')
@@ -50,8 +51,8 @@ def plugin(console):
         kick_reason: AFK for too long on this server
         are_you_afk: Are you AFK?
     """))
-    p.evt_client_move = MethodType(evt_client_move, p, AfkPlugin)
-    p.evt_client_standing = MethodType(evt_client_standing, p, AfkPlugin)
+    p.evt_client_move = MethodType(evt_client_move, p)
+    p.evt_client_standing = MethodType(evt_client_standing, p)
     p.MIN_INGAME_PLAYERS = 0  # disable this check by default
     p.onLoadConfig()
     p.onStartup()

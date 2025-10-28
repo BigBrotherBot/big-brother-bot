@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 __author__  = 'Courgette'
 __version__ = '1.2'
 

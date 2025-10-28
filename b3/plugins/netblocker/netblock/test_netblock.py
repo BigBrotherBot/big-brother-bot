@@ -1,5 +1,6 @@
 #
 # I am too impatient to write really good tests here, unfortuntely.
+from __future__ import absolute_import
 import unittest
 
 from b3.plugins.netblocker.netblock import netblock

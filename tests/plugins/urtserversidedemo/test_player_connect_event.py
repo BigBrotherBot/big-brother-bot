@@ -23,6 +23,7 @@
 # ################################################################### #
 
 
+from __future__ import absolute_import
 from mock import Mock
 from b3.events import Event
 from tests.plugins.urtserversidedemo import PluginTestCase

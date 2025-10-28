@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from b3 import TEAM_RED
 from b3 import TEAM_BLUE
 from mock import  call, Mock

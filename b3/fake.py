@@ -28,6 +28,8 @@ with fakeConsole and joe which can be used to say commands
 as if it where a player.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 __version__ = '1.18'
 
 import b3.events
@@ -36,7 +38,7 @@ import b3.parser
 import b3.parsers.punkbuster
 import logging
 import re
-import StringIO
+from io import StringIO
 import sys
 import time
 import traceback
@@ -87,7 +89,7 @@ class FakeConsole(b3.parser.Parser):
         if not self.config.has_option('server', 'punkbuster') or self.config.getboolean('server', 'punkbuster'):
             self.PunkBuster = b3.parsers.punkbuster.PunkBuster(self)
         
-        self.input = StringIO.StringIO()
+        self.input = StringIO()
         self.working = True
     
     def run(self):
@@ -129,9 +131,9 @@ class FakeConsole(b3.parser.Parser):
                 # plugin called for event hault, do not continue processing
                 self.bot('Event %s vetoed by %s', self.Events.getName(event.type), str(hfunc))
                 nomore = True
-            except SystemExit, e:
+            except SystemExit as e:
                 self.exitcode = e.code
-            except Exception, msg:
+            except Exception as msg:
                 self.error('handler %s could not handle event %s: %s: %s %s',
                            hfunc.__class__.__name__, self.Events.getName(event.type),
                            msg.__class__.__name__, msg, traceback.extract_tb(sys.exc_info()[2]))
@@ -149,7 +151,7 @@ class FakeConsole(b3.parser.Parser):
                     self._cron.stop()
                 self.bot('shutting down database connections...')
                 self.storage.shutdown()
-        except Exception, e:
+        except Exception as e:
             self.error(e)
 
     def getPlugin(self, name):
@@ -171,23 +173,23 @@ class FakeConsole(b3.parser.Parser):
         """
         Send text to the server.
         """
-        print ">>> %s" % re.sub(re.compile('\^[0-9]'), '', msg % args).strip()
+        print(">>> %s" % re.sub(re.compile('\^[0-9]'), '', msg % args).strip())
     
     def saybig(self, msg, *args):
         """
         Send bigtext to the server.
         """
-        print "+++ %s" % re.sub(re.compile('\^[0-9]'), '', msg % args).strip()
+        print("+++ %s" % re.sub(re.compile('\^[0-9]'), '', msg % args).strip())
     
     def write(self, msg, maxRetries=0, socketTimeout=None):
         """
         Send text to the console.
         """
         if type(msg) == str:
-            print "### %s" % re.sub(re.compile('\^[0-9]'), '', msg).strip()
+            print("### %s" % re.sub(re.compile('\^[0-9]'), '', msg).strip())
         else:
             # which happens for BFBC2
-            print "### %s" % msg
+            print("### %s" % msg)
     
     def writelines(self, lines):
         for line in lines:
@@ -200,7 +202,7 @@ class FakeConsole(b3.parser.Parser):
         """
         Permban a client.
         """
-        print '>>>permbanning %s (%s)' % (client.name, reason)
+        print('>>>permbanning %s (%s)' % (client.name, reason))
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN', {'reason': reason, 'admin': admin}, client))
         client.disconnect()
     
@@ -208,8 +210,8 @@ class FakeConsole(b3.parser.Parser):
         """
         Tempban a client.
         """
-        from functions import minutesStr
-        print '>>>tempbanning %s for %s (%s)' % (client.name, reason, minutesStr(duration))
+        from .functions import minutesStr
+        print('>>>tempbanning %s for %s (%s)' % (client.name, reason, minutesStr(duration)))
         data = {'reason': reason, 'duration': duration, 'admin': admin}
         self.queueEvent(self.getEvent('EVT_CLIENT_BAN_TEMP', data=data, client=client))
         client.disconnect()
@@ -218,14 +220,14 @@ class FakeConsole(b3.parser.Parser):
         """
         Unban a client.
         """
-        print '>>>unbanning %s (%s)' % (client.name, reason)
+        print('>>>unbanning %s (%s)' % (client.name, reason))
         self.queueEvent(self.getEvent('EVT_CLIENT_UNBAN', reason, client))
 
     def kick(self, client, reason='', admin=None, silent=False, *kwargs):
         """
         Kick a client.
         """
-        print '>>>kick %s for %s' % (client.name, reason)
+        print('>>>kick %s for %s' % (client.name, reason))
         self.queueEvent(self.getEvent('EVT_CLIENT_KICK', data={'reason': reason, 'admin': admin}, client=client))
         client.disconnect()
     
@@ -238,20 +240,20 @@ class FakeConsole(b3.parser.Parser):
         elif client.cid is None:
             pass
         else:
-            print "sending msg to %s: %s" % (client.name, re.sub(re.compile('\^[0-9]'), '', text % args).strip())
+            print("sending msg to %s: %s" % (client.name, re.sub(re.compile('\^[0-9]'), '', text % args).strip()))
     
     def getCvar(self, key):
         """
         Get a server variable.
         """
-        print "get cvar %s" % key
+        print("get cvar %s" % key)
         return self.cvars.get(key)
 
     def setCvar(self, key, value):
         """
         Set a server variable.
         """
-        print "set cvar %s" % key
+        print("set cvar %s" % key)
         c = Cvar(name=key,value=value)
         self.cvars[key] = c
 
@@ -293,14 +295,14 @@ class FakeClient(b3.clients.Client):
         msg = msg % args
         cleanmsg = re.sub(re.compile('\^[0-9]'), '', msg).strip()
         self.message_history.append(cleanmsg)
-        print "sending msg to %s: %s" % (self.name, cleanmsg)
+        print("sending msg to %s: %s" % (self.name, cleanmsg))
 
     def warn(self, duration, warning, keyword=None, admin=None, data=''):
         w = b3.clients.Client.warn(self, duration, warning, keyword=None, admin=None, data='')
-        print(">>>>%s gets a warning : %s" % (self, w))
+        print((">>>>%s gets a warning : %s" % (self, w)))
 
     def connects(self, cid):
-        print "\n%s connects to the game on slot #%s" % (self.name, cid)
+        print("\n%s connects to the game on slot #%s" % (self.name, cid))
         self.cid = cid
         self.timeAdd = self.console.time()
         #self.console.clients.newClient(cid)
@@ -319,7 +321,7 @@ class FakeClient(b3.clients.Client):
             clients._authorizeClients()
          
     def disconnects(self):
-        print "\n%s disconnects from slot #%s" % (self.name, self.cid)
+        print("\n%s disconnects from slot #%s" % (self.name, self.cid))
         self.console.clients.disconnect(self)
         self.cid = None
         self.authed = False
@@ -327,23 +329,23 @@ class FakeClient(b3.clients.Client):
         self.state = b3.STATE_UNKNOWN
     
     def says(self, msg):
-        print "\n%s says \"%s\"" % (self.name, msg)
+        print("\n%s says \"%s\"" % (self.name, msg))
         self.console.queueEvent(self.console.getEvent('EVT_CLIENT_SAY', data=msg, client=self))
 
     def says2team(self, msg):
-        print "\n%s says to team \"%s\"" % (self.name, msg)
+        print("\n%s says to team \"%s\"" % (self.name, msg))
         self.console.queueEvent(self.console.getEvent('EVT_CLIENT_TEAM_SAY', data=msg, client=self))
 
     def says2squad(self, msg):
-        print "\n%s says to squad \"%s\"" % (self.name, msg)
+        print("\n%s says to squad \"%s\"" % (self.name, msg))
         self.console.queueEvent(self.console.getEvent('EVT_CLIENT_SQUAD_SAY', data=msg, client=self))
 
     def says2private(self, msg):
-        print "\n%s says privately \"%s\"" % (self.name, msg)
+        print("\n%s says privately \"%s\"" % (self.name, msg))
         self.console.queueEvent(self.console.getEvent('EVT_CLIENT_PRIVATE_SAY', data=msg, client=self, target=self))
         
     def damages(self, victim, points=34.0):
-        print "\n%s damages %s for %s points" % (self.name, victim.name, points)
+        print("\n%s damages %s for %s points" % (self.name, victim.name, points))
         if self == victim:
             eventkey = 'EVT_CLIENT_DAMAGE_SELF'
         elif self.team != b3.TEAM_UNKNOWN and self.team == victim.team:
@@ -355,7 +357,7 @@ class FakeClient(b3.clients.Client):
         self.console.queueEvent(self.console.getEvent(eventkey, data=data, client=self, target=victim))
         
     def kills(self, victim, weapon=1, hit_location=1):
-        print "\n%s kills %s" % (self.name, victim.name)
+        print("\n%s kills %s" % (self.name, victim.name))
         if self == victim:
             self.suicides()
             return
@@ -368,7 +370,7 @@ class FakeClient(b3.clients.Client):
         self.console.queueEvent(self.console.getEvent(eventkey, data=data, client=self, target=victim))
         
     def suicides(self):
-        print "\n%s kills himself" % self.name
+        print("\n%s kills himself" % self.name)
         data = (100, 1, 1, 1)
         self.console.queueEvent(self.console.getEvent('EVT_CLIENT_SUICIDE', data=data, client=self, target=self))
         
@@ -376,17 +378,17 @@ class FakeClient(b3.clients.Client):
         self.console.queueEvent(self.console.getEvent('EVT_CLIENT_ACTION', data=actiontype, client=self))
 
     def trigger_event(self, type, data, target=None):
-        print "\n%s trigger event %s" % (self.name, type)
+        print("\n%s trigger event %s" % (self.name, type))
         self.console.queueEvent(b3.events.Event(type, data, self, target))
 
 
 #####################################################################################
 
 
-print "creating fakeConsole with @b3/conf/b3.distribution.ini"
+print("creating fakeConsole with @b3/conf/b3.distribution.ini")
 fakeConsole = FakeConsole('@b3/conf/b3.distribution.ini')
 
-print "creating fakeAdminPlugin with @b3/conf/plugin_admin.ini"
+print("creating fakeAdminPlugin with @b3/conf/plugin_admin.ini")
 fakeAdminPlugin = AdminPlugin(fakeConsole, '@b3/conf/plugin_admin.ini')
 fakeAdminPlugin.onLoadConfig()
 fakeAdminPlugin.onStartup()

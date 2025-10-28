@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+from __future__ import print_function
 from tests.plugins.censor import Detection_TestCase
 
 
@@ -33,7 +35,7 @@ class Test_Censor_badname(Detection_TestCase):
     def test_regexp(self):
 
         def my_info(text):
-            print("INFO\t%s" % text)
+            print(("INFO\t%s" % text))
         #self.p.info = my_info
 
         self.p._badNames = []
@@ -51,7 +53,7 @@ class Test_Censor_badname(Detection_TestCase):
     def test_word(self):
 
         def my_info(text):
-            print("INFO\t%s" % text)
+            print(("INFO\t%s" % text))
         #self.p.info = my_info
 
         self.p._badNames = []

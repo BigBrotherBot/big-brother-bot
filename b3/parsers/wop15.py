@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+import six
 __author__ = 'xlr8or, Courgette'
 __version__ = '1.6'
 
@@ -195,7 +197,7 @@ class Wop15Parser(AbstractParser):
         
         # initialize connected clients
         plist = self.getPlayerList()
-        for cid, c in plist.iteritems():
+        for cid, c in six.iteritems(plist):
             userinfostring = self.queryClientUserInfoByCid(cid)
             if userinfostring:
                 self.OnClientuserinfo(None, userinfostring)
@@ -224,7 +226,7 @@ class Wop15Parser(AbstractParser):
             if client:
                 # update existing client
                 bclient['ip'] = client.ip
-                for k, v in bclient.iteritems():
+                for k, v in six.iteritems(bclient):
                     setattr(client, k, v)
 
     def OnClientdisconnect(self, action, data, match=None):
@@ -438,7 +440,7 @@ class Wop15Parser(AbstractParser):
             client = self.clients.getByCID(bclient['cid'])
             if client:
                 # update existing client
-                for k, v in bclient.iteritems():
+                for k, v in six.iteritems(bclient):
                     setattr(client, k, v)
             else:
                 cid = bclient['cid']
@@ -544,7 +546,7 @@ class Wop15Parser(AbstractParser):
         Join all the connected clients.
         """
         plist = self.getPlayerList()
-        for cid, c in plist.iteritems():
+        for cid, c in six.iteritems(plist):
             client = self.clients.getByCID(cid)
             if client:
                 self.debug('Joining client: %s' % client.name)

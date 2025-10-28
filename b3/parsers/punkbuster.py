@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 __author__  = 'ThorN'
 __version__ = '1.3'
 

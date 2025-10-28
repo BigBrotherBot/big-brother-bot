@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import asyncore
 import re
 import socket
@@ -85,7 +86,7 @@ class Client(asyncore.dispatcher_with_send):
                 for handler_func in self._handlers:
                     try:
                         handler_func(p)
-                    except Exception, err:
+                    except Exception as err:
                         self.console.exception(err)
                 p = self._readPacket()
 
@@ -132,7 +133,7 @@ class Client(asyncore.dispatcher_with_send):
         hashed_password = md5.new("%s%s" % (challenge, self._password)).hexdigest()
         try:
             self.send('RESPONSE %s %s' % (self._username, hashed_password))
-        except socket.error, e:
+        except socket.error as e:
             self.console.error(repr(e))
 
     def ping(self):
@@ -156,7 +157,7 @@ class Client(asyncore.dispatcher_with_send):
         packet = "%s%s" % (text.strip(), CMD_TERMINATOR)
         try:
             self.send(packet)
-        except socket.error, e:
+        except socket.error as e:
             self.console.error(repr(e))
         
     def _readPacket(self):

@@ -16,6 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
+from __future__ import absolute_import
 __author__ = 'Courgette'
 __version__ = '1.2'
 
@@ -104,9 +105,9 @@ class Storage(object):
     def status(self):
         raise NotImplementedError
 
-from mysql import MysqlStorage
-from sqlite import SqliteStorage
-from postgresql import PostgresqlStorage
+from .mysql import MysqlStorage
+from .sqlite import SqliteStorage
+from .postgresql import PostgresqlStorage
 
 def getStorage(dsn, dsnDict, console):
     """

@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import logging
 from mock import Mock
 from mockito import when, verify, unstub

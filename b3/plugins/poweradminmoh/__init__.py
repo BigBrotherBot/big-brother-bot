@@ -22,6 +22,9 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+import six
+from functools import reduce
 __version__ = '1.3'
 __author__  = 'Courgette'
 
@@ -98,12 +101,12 @@ class Scrambler(object):
                 if clients and len(clients) > 0:
                     allClients.remove(clients[0])
                     sortedClients.append(clients[0])
-            self.debug('sorted clients A : %r' % map(lambda z: z.cid, sortedClients))
+            self.debug('sorted clients A : %r' % [z.cid for z in sortedClients])
             random.shuffle(allClients)
             for client in allClients:
                 # add remaining clients (they had no score ?)
                 sortedClients.append(client)
-            self.debug('sorted clients B : %r' % map(lambda z: z.cid, sortedClients))
+            self.debug('sorted clients B : %r' % [z.cid for z in sortedClients])
             return sortedClients
 
     def debug(self, msg):
@@ -235,7 +238,7 @@ class PoweradminmohPlugin(b3.plugin.Plugin):
             # load all the configuration files into a dict
             for key, value in self.config.items('matchmode_configs'):
                 self._gameconfig[key] = value
-        except (b3.config.NoSectionError, b3.config.NoOptionError, KeyError), e:
+        except (b3.config.NoSectionError, b3.config.NoOptionError, KeyError) as e:
             self.warning('could not read matchmode configs: %s' % e)
 
     def loadScrambler(self):
@@ -383,7 +386,7 @@ class PoweradminmohPlugin(b3.plugin.Plugin):
             self.debug('Executing punkbuster command = [%s]', data)
             try:
                 self.console.write(('punkBuster.pb_sv_command', '%s' % data))
-            except FrostbiteCommandFailedError, err:
+            except FrostbiteCommandFailedError as err:
                 self.error(err)
                 client.message('Error: %s' % err.message)
 
@@ -396,7 +399,7 @@ class PoweradminmohPlugin(b3.plugin.Plugin):
         time.sleep(1)
         try:
             self.console.write(('admin.runNextRound',))
-        except FrostbiteCommandFailedError, err:
+        except FrostbiteCommandFailedError as err:
             client.message('Error: %s' % err.message)
         
     def cmd_restartround(self, data, client, cmd=None):
@@ -407,7 +410,7 @@ class PoweradminmohPlugin(b3.plugin.Plugin):
         time.sleep(1)
         try:
             self.console.write(('admin.restartRound',))
-        except FrostbiteCommandFailedError, err:
+        except FrostbiteCommandFailedError as err:
             client.message('Error: %s' % err.message)
 
     def cmd_kill(self, data, client, cmd=None):
@@ -425,7 +428,7 @@ class PoweradminmohPlugin(b3.plugin.Plugin):
             else:
                 try:
                     self.console.write(('admin.killPlayer', sclient.cid))
-                except FrostbiteCommandFailedError, err:
+                except FrostbiteCommandFailedError as err:
                     client.message('Error: %s' % err.message)
 
     def cmd_reserveslot(self, data, client, cmd=None):
@@ -447,7 +450,7 @@ class PoweradminmohPlugin(b3.plugin.Plugin):
                     self.console.write(('reservedSpectateSlots.save',))
                     client.message('%s added to reserved slots list' % sclient.cid)
                     sclient.message('You now have access to reserved slots thanks to %s' % client.cid)
-                except FrostbiteCommandFailedError, err:
+                except FrostbiteCommandFailedError as err:
                     if err.message == ['PlayerAlreadyInList']:
                         client.message('%s already has access to reserved slots' % sclient.cid)
                     else:
@@ -472,7 +475,7 @@ class PoweradminmohPlugin(b3.plugin.Plugin):
                     self.console.write(('reservedSpectateSlots.save',))
                     client.message('%s removed from reserved slots list' % sclient.cid)
                     sclient.message('You don\'t have access to reserved slots anymore')
-                except FrostbiteCommandFailedError, err:
+                except FrostbiteCommandFailedError as err:
                     if err.message == ['PlayerNotInList']:
                         client.message('%s has no access to reserved slots' % sclient.cid)
                     else:
@@ -493,7 +496,7 @@ class PoweradminmohPlugin(b3.plugin.Plugin):
             else:
                 try:
                     self._movePlayer(sclient, 3)
-                except FrostbiteCommandFailedError, err:
+                except FrostbiteCommandFailedError as err:
                     client.message('Error: %s' % err.message)
 
     def cmd_changeteam(self, data, client, cmd=None):
@@ -732,7 +735,7 @@ class PoweradminmohPlugin(b3.plugin.Plugin):
         """
         team1players = []
         team2players = []
-        for name, clientdata in self.console.getPlayerList().iteritems():
+        for name, clientdata in six.iteritems(self.console.getPlayerList()):
             if str(clientdata['teamId']) == '1':
                 team1players.append(name)
             elif str(clientdata['teamId']) == '2':
@@ -780,7 +783,7 @@ class PoweradminmohPlugin(b3.plugin.Plugin):
             if c.teamId == bigTeam:
                 playerTeamTimes[c] = c.var(self, 'teamtime', self.console.time()).value
         #self.debug('playerTeamTimes: %s' % playerTeamTimes)
-        sortedPlayersTeamTimes = sorted(playerTeamTimes.iteritems(), key=lambda (k,v):(v,k), reverse=True)
+        sortedPlayersTeamTimes = sorted(six.iteritems(playerTeamTimes), key=lambda k_v:(k_v[1],k_v[0]), reverse=True)
         #self.debug('sortedPlayersTeamTimes: %s' % sortedPlayersTeamTimes)
 
 
@@ -797,7 +800,7 @@ class PoweradminmohPlugin(b3.plugin.Plugin):
         try:
             client.setvar(self, 'movedByBot', True)
             self.console.write(('admin.movePlayer', client.cid, newTeamId, 'true'))
-        except FrostbiteCommandFailedError, err:
+        except FrostbiteCommandFailedError as err:
             self.warning('Error, server replied %s' % err)
 
 class MatchManager(object):

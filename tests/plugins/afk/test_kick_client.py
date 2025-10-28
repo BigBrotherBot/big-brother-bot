@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from textwrap import dedent
 from time import time
 from tests.plugins.afk import *
@@ -31,7 +32,7 @@ from mock import call, Mock
 from b3 import TEAM_SPEC, TEAM_RED
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def plugin(console):
     with logging_disabled():
         p = plugin_maker_ini(console, dedent("""

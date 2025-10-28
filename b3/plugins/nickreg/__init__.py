@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 __version__ = '2.1'
 __author__  = 'Ismael, SGT, Fenix'
 
@@ -31,7 +32,7 @@ import b3.cron
 import b3.functions
 import b3.plugin
 import os
-import thread
+import six.moves._thread
 
 from b3.functions import clamp
 
@@ -105,7 +106,7 @@ class NickregPlugin(b3.plugin.Plugin):
         """
         Handle EVT_CLIENT_NAME_CHANGE.
         """
-        thread.start_new_thread(self.check_client_for_nick_steal, (event.client,))
+        six.moves._thread.start_new_thread(self.check_client_for_nick_steal, (event.client,))
 
     ####################################################################################################################
     #                                                                                                                  #

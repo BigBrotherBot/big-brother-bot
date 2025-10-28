@@ -22,7 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
-import unittest2 as unittest
+from __future__ import absolute_import
+import unittest
 from b3.parsers.frostbite.util import BanlistContent, PlayerInfoBlock
 
 
@@ -37,12 +38,12 @@ class TestBanlistContent(unittest.TestCase):
         self.assertEqual(0, len(BanlistContent(['0'])))
         self.assertEqual('BanlistContent[]', repr(BanlistContent(['0'])))
         self.assertEqual(1, len(BanlistContent(['1','d1','d2','d3','d4','d5'])))
-        self.assertEqual("BanlistContent[{'idType': 'd1', 'reason': 'd5', 'banType': 'd3', 'id': 'd2', 'time': 'd4'}]", repr(BanlistContent(['1','d1','d2','d3','d4','d5'])))
+        self.assertDictEqual({'idType': 'd1', 'reason': 'd5', 'banType': 'd3', 'id': 'd2', 'time': 'd4'}, BanlistContent(['1','d1','d2','d3','d4','d5']).getData(0))
     def test_1(self):
         bloc = BanlistContent(['2','d1','d2','d3','d4','d5','p1','p2','p3','p4','p5'])
         self.assertEqual(2, len(bloc))
-        self.assertEqual("BanlistContent[{'idType': 'd1', 'reason': 'd5', 'banType': 'd3', 'id': 'd2', 'time': 'd4'}{'idType': 'p1', 'reason': 'p5', 'banType': 'p3', 'id': 'p2', 'time': 'p4'}]", repr(bloc))
-
+        self.assertDictEqual({'idType': 'd1', 'reason': 'd5', 'banType': 'd3', 'id': 'd2', 'time': 'd4'}, bloc.getData(0))
+        self.assertDictEqual({'idType': 'p1', 'reason': 'p5', 'banType': 'p3', 'id': 'p2', 'time': 'p4'}, bloc.getData(1))
 
 
 class TestPlayerInfoBlock(unittest.TestCase):
@@ -80,4 +81,6 @@ class TestPlayerInfoBlock(unittest.TestCase):
         self.assertEqual('bla2', bloc[0]['param2'])
         self.assertEqual('foo1', bloc[1]['param1'])
         self.assertEqual('foo2', bloc[1]['param2'])
-        self.assertEqual("PlayerInfoBlock[{'param2': 'bla2', 'param1': 'bla1'}{'param2': 'foo2', 'param1': 'foo1'}]", repr(bloc))
+        self.assertDictEqual({'param2': 'bla2', 'param1': 'bla1'}, bloc.getPlayerData(0))
+        self.assertDictEqual({'param2': 'foo2', 'param1': 'foo1'}, bloc.getPlayerData(1))
+

@@ -22,7 +22,9 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import unicodedata
+import six
 
 class Location(object):
 
@@ -57,7 +59,7 @@ class Location(object):
         :param value: The attribute value
         """
         if value:
-            value = unicodedata.normalize('NFKD', unicode(value)).encode('ascii','ignore').strip()
+            value = unicodedata.normalize('NFKD', six.text_type(value)).encode('ascii','ignore').strip()
         self.__dict__[key] = value
 
     def __repr__(self):

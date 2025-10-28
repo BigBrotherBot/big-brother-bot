@@ -23,6 +23,7 @@
 # 2010-09-17 - v0.1.1 - GrosBedo - fixed import bug
 # 2010-09-11 - v0.1   - GrosBedo - initial version
 
+from __future__ import absolute_import
 __author__  = 'GrosBedo'
 __version__ = '0.1.1'
 

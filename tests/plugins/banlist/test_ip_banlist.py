@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import sys
 import xml.etree.ElementTree as ET
 from mock import Mock

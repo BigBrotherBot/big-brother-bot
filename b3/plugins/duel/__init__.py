@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 __author__  = 'Courgette'
 __version__ = '1.2'
 
@@ -158,7 +159,7 @@ class DuelPlugin(b3.plugin.Plugin):
         x = self.adminPlugin.parseUserCmd(data)
         if not x:
             if len(duels) == 1:
-                self.cancelDuel(duels.values()[0])
+                self.cancelDuel(list(duels.values())[0])
             else:
                 client.message('^7You have ^3%s ^7duels running, type ^3!^7duelcancel <name>' % len(duels))
         else:
@@ -186,7 +187,7 @@ class DuelPlugin(b3.plugin.Plugin):
         x = self.adminPlugin.parseUserCmd(data)
         if not x:
             if len(duels) == 1:
-                duels.values()[0].resetScores()
+                list(duels.values())[0].resetScores()
             else:
                 client.message('^7You have ^3%s ^7duels running, type ^3!^7duelreset <name>' % len(duels))
         else:

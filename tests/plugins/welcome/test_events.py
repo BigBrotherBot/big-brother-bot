@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from mock import patch, call
 from b3.plugins.welcome import F_FIRST, F_NEWB, F_ANNOUNCE_USER, F_ANNOUNCE_FIRST, F_USER, F_CUSTOM_GREETING
 from b3.fake import FakeClient

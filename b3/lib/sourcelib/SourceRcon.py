@@ -26,7 +26,10 @@
 
 """http://developer.valvesoftware.com/wiki/Source_RCON_Protocol"""
 
+from __future__ import absolute_import
 import select, socket, struct
+from six.moves import filter
+from six.moves import map
 
 SERVERDATA_AUTH = 3
 SERVERDATA_AUTH_RESPONSE = 2
@@ -189,8 +192,8 @@ class SourceRcon(object):
         if '\n' in command:
             commands = command.split('\n')
             def f(x): y = x.strip(); return len(y) and not y.startswith("//")
-            commands = filter(f, commands)
-            results = map(self.rcon, commands)
+            commands = list(filter(f, commands))
+            results = list(map(self.rcon, commands))
             return "".join(results)
 
         # send a single command. connect and auth if necessary.

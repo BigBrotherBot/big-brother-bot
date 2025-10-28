@@ -23,6 +23,7 @@
 # ################################################################### #
 
 
+from __future__ import absolute_import
 from mock import Mock
 from b3.config import CfgConfigParser
 from b3.plugins.poweradminbf3 import Poweradminbf3Plugin

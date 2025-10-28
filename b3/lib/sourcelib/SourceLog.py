@@ -28,9 +28,11 @@
 
 """http://developer.valvesoftware.com/wiki/HL_Log_Standard"""
 
+from __future__ import absolute_import
 import re
 import socket
-import asyncore
+import asyncio
+from six.moves import map
 
 PACKETSIZE=1400
 
@@ -138,7 +140,7 @@ class SourceLogParser(object):
         if match.group('type') == 'RL':
             remote = True
 
-        timestamp = map(int, match.group('year', 'month', 'day', 'hour', 'minute', 'second'))
+        timestamp = list(map(int, match.group('year', 'month', 'day', 'hour', 'minute', 'second')))
 
         # parse properties (key "value"), optional
         properties = {}
@@ -205,13 +207,13 @@ class SourceLogParser(object):
 class SourceLogListenerError(Exception):
     pass
 
-class SourceLogListener(asyncore.dispatcher):
+class SourceLogListener():
     def __init__(self, local, remote, parser):
-        asyncore.dispatcher.__init__(self)
         self.parser = parser
-        self.create_socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.bind(local)
-        self.connect(remote)
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket.bind(local)
+        self.socket.connect(remote)
+        self.loop = assyncio.get_event_loop()
 
     def handle_connect(self):
         pass

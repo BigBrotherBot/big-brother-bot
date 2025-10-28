@@ -23,8 +23,9 @@
 # ################################################################### #
 
 
+from __future__ import absolute_import
 import time
-import unittest2 as unittest
+import unittest
 import threading
 import sys
 
@@ -49,7 +50,7 @@ def cleanUp():
     testcase_lock.release()
 
 
-class ChatloggerTestCase(unittest.TestCase):
+class ChatloggerTestCase():
 
     def setUp(self):
         testcase_lock.acquire()

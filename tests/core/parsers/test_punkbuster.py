@@ -22,14 +22,16 @@
 #                                                                     #
 # ################################################################### #
 #
+from __future__ import absolute_import
 import logging
 from mockito import when
 from b3.parsers.punkbuster import PunkBuster
+import unittest
 from tests import B3TestCase
 from b3.output import VERBOSE2
 
 
-class Test_Punkbuster(B3TestCase):
+class Test_Punkbuster(B3TestCase, unittest.TestCase):
 
     def setUp(self):
         logger = logging.getLogger('output')
@@ -38,6 +40,12 @@ class Test_Punkbuster(B3TestCase):
         self.pb = PunkBuster(self.console)
         logger.setLevel(VERBOSE2)
         logger.propagate = True
+
+    def assertDictContainsSubset(self, test, target):
+        if len(test.keys()) > len(target.keys()):
+            self.assertDictEqual(test, test | target)
+        else:
+            self.assertDictEqual(target, target | test)
 
     def test_getPlayerList_nominal(self):
         # GIVEN
@@ -183,8 +191,7 @@ class Test_Punkbuster(B3TestCase):
             # THEN
             self.assertIn('0', rv, repr(line))
             self.assertDictContainsSubset(
-                {'slot': '1', 'pbid': '9732d328485274156125252141252ba1', 'guid': '9732d328485274156125252141252ba1', 'ip': '33.133.3.133', 'name': 'FATTYBMBLATY'}, rv['0'],
-                msg=repr(line)
+                {'slot': '1', 'pbid': '9732d328485274156125252141252ba1', 'guid': '9732d328485274156125252141252ba1', 'ip': '33.133.3.133', 'name': 'FATTYBMBLATY'}, rv['0']
             )
 
     def test_getPlayerList_missing_chars_randomly_no_pb_prefix(self):
@@ -237,8 +244,7 @@ class Test_Punkbuster(B3TestCase):
             # THEN
             self.assertIn('0', rv, repr(line))
             self.assertDictContainsSubset(
-                {'slot': '1', 'pbid': '9732d328485274156125252141252ba1', 'guid': '9732d328485274156125252141252ba1', 'ip': '33.133.3.133', 'name': 'FATTYBMBLATY'}, rv['0'],
-                msg=repr(line)
+                {'slot': '1', 'pbid': '9732d328485274156125252141252ba1', 'guid': '9732d328485274156125252141252ba1', 'ip': '33.133.3.133', 'name': 'FATTYBMBLATY'}, rv['0']
             )
 
 
@@ -295,6 +301,5 @@ whatever 19 c0356dc89ddb0000000d4f9509db46d1(-) 11.111.111.11:28960 OK   0 2.9 0
             # THEN
             self.assertIn('18', rv, msg="for test line %r" % line)
             self.assertDictContainsSubset(
-                {'slot': '19', 'pbid': 'c0356dc89ddb0000000d4f9509db46d1', 'guid': 'c0356dc89ddb0000000d4f9509db46d1', 'ip': '11.111.111.11', 'name': 'FATTYBMBLATY'}, rv['18'],
-                msg="for test line %r" % line
+                {'slot': '19', 'pbid': 'c0356dc89ddb0000000d4f9509db46d1', 'guid': 'c0356dc89ddb0000000d4f9509db46d1', 'ip': '11.111.111.11', 'name': 'FATTYBMBLATY'}, rv['18']
             )

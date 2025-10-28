@@ -23,6 +23,7 @@
 # ################################################################### #
 
 
+from __future__ import absolute_import
 import b3
 import b3.events
 import traceback
@@ -32,6 +33,8 @@ from b3.functions import prefixText
 from b3.parsers.frostbite2.abstractParser import AbstractParser
 from b3.parsers.frostbite2.util import PlayerInfoBlock
 from b3.parsers.frostbite2.util import MapListBlockError
+import six
+from six.moves import range
 
 __author__  = 'Freelander'
 __version__ = '0.5'
@@ -179,7 +182,7 @@ class MohwParser(AbstractParser):
         AbstractParser.pluginsStarted(self)
         self.info('Connecting all players...')
         plist = self.getPlayerList()
-        for cid, p in plist.iteritems():
+        for cid, p in six.iteritems(plist):
             client = self.clients.getByCID(cid)
             if not client:
                 self.debug('Client %s found on the server' % cid)
@@ -293,7 +296,7 @@ class MohwParser(AbstractParser):
             else:
                 cmd_name = 'bigmessage' if self._big_b3_private_responses else 'message'
                 self.write(self.getCommand(cmd_name, message=text, teamId=client.teamId))
-        except Exception, err:
+        except Exception as err:
             self.warning(err)
 
     ####################################################################################################################
@@ -397,7 +400,7 @@ class MohwParser(AbstractParser):
         Return a list of supported levels for the current game mod.
         """
         # TODO : remove this method once the method on from AbstractParser is working
-        return MAP_NAME_BY_ID.keys()
+        return list(MAP_NAME_BY_ID.keys())
 
     def getSupportedGameModesByMapId(self, map_id):
         """
@@ -579,12 +582,12 @@ class NewMapListBlock(b3.parsers.frostbite2.util.MapListBlock):
 
         try:
             num_maps = int(data[0])
-        except ValueError, err:
+        except ValueError as err:
             raise MapListBlockError("invalid data: first element should be a integer, got %r" % data[0], err)
 
         try:
             num_words = int(data[2])
-        except ValueError, err:
+        except ValueError as err:
             raise MapListBlockError("invalid data: second element should be a integer, got %r" % data[1], err)
 
         if len(data) != (3 + (num_maps * num_words)):

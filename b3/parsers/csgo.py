@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import re
 import time
 
@@ -38,6 +39,7 @@ from b3.functions import time2minutes
 from b3.functions import getStuffSoundingLike
 from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
+import six
 
 __author__ = 'Courgette'
 __version__ = '1.7.9'
@@ -479,7 +481,7 @@ class CsgoParser(Parser):
         """
         plist = self.getPlayerList()
         mlist = {}
-        for cid, c in plist.iteritems():
+        for cid, c in six.iteritems(plist):
             client = self.clients.getByCID(cid)
             if client:
                 mlist[cid] = client
@@ -541,7 +543,7 @@ class CsgoParser(Parser):
         :param silent: Whether or not to announce this kick
         """
         self.debug('kick reason: [%s]' % reason)
-        if isinstance(client, basestring):
+        if isinstance(client, six.string_types):
             clients = self.clients.getByMagic(client)
             if len(clients) != 1:
                 return
@@ -575,7 +577,7 @@ class CsgoParser(Parser):
             return
 
         self.debug('BAN : client: %s, reason: %s', client, reason)
-        if isinstance(client, basestring):
+        if isinstance(client, six.string_types):
             clients = self.clients.getByMagic(client)
             if len(clients) != 1:
                 return
@@ -647,7 +649,7 @@ class CsgoParser(Parser):
             return
 
         self.debug('TEMPBAN : client: %s -  duration: %s - reason: %s', client, duration, reason)
-        if isinstance(client, basestring):
+        if isinstance(client, six.string_types):
             clients = self.clients.getByMagic(client)
             if len(clients) != 1:
                 return
@@ -705,7 +707,7 @@ class CsgoParser(Parser):
         Return a list of suggested map names in cases it fails to recognize the map that was provided.
         """
         rv = self.getMapsSoundingLike(map_name)
-        if isinstance(rv, basestring):
+        if isinstance(rv, six.string_types):
             self.output.write('sm_map %s' % map_name)
         else:
             return rv
@@ -716,7 +718,7 @@ class CsgoParser(Parser):
         """
         clients = self.queryServerInfo()
         pings = {}
-        for cid, client in clients.iteritems():
+        for cid, client in six.iteritems(clients):
             pings[cid] = client.ping
         return pings
 
@@ -755,17 +757,22 @@ class CsgoParser(Parser):
         """
         Parse a single line from the log file.
         """
+        # Ensure is str type
+        print(type(line))
+        if isinstance(line, bytes):
+            print("CONVERTING")
+            line = line.decode()
         if line is None:
             return
         if line.startswith("mp\x08 \x08\x08 \x08"):
             line = line[8:]
-        m = re.match(RE_HL_LOG_LINE, line.decode('UTF-8', 'replace'))
+        m = re.match(RE_HL_LOG_LINE, line)
         if m:
             data = m.group('data')
             if data:
                 hfunc, param_dict = ger.getHandler(data)
                 if hfunc:
-                    self.verbose2("calling %s%r" % (hfunc.func_name, param_dict))
+                    self.verbose2("calling %s%r" % (hfunc.__name__, param_dict))
                     event = hfunc(self, **param_dict)
                     if event:
                         self.queueEvent(event)

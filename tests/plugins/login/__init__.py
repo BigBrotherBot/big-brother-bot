@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 import logging
 
@@ -30,12 +31,12 @@ from b3.plugins.admin import AdminPlugin
 from tests import B3TestCase
 from b3.plugins.login import LoginPlugin
 from b3.config import CfgConfigParser
-
+import unittest
 
 F00_MD5 = '9f06f2538cdbb40bce9973f60506de09'
 
 
-class LoginTestCase(B3TestCase):
+class LoginTestCase(B3TestCase, unittest.TestCase):
     """
     Ease testcases that need an working B3 console and need to control the censor plugin config.
     """

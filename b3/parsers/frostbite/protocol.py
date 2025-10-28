@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+from __future__ import print_function
 __version__ = '1.1'
 
 import socket
@@ -131,23 +133,23 @@ def printPacket(packet):
     Display contents of packet in user-friendly format, useful for debugging purposes.
     """
     if packet[0]:
-        print "IsFromServer, ",
+        print("IsFromServer, ", end=' ')
     else:
-        print "IsFromClient, ",
+        print("IsFromClient, ", end=' ')
     
     if packet[1]:
-        print "Response, ",
+        print("Response, ", end=' ')
     else:
-        print "Request, ",
+        print("Request, ", end=' ')
 
-    print "Sequence: " + str(packet[2]),
+    print("Sequence: " + str(packet[2]), end=' ')
 
     if packet[3]:
-        print " Words:",
+        print(" Words:", end=' ')
         for word in packet[3]:
-            print "\"" + word + "\"",
+            print("\"" + word + "\"", end=' ')
 
-    print ""
+    print("")
 
 
 def generatePasswordHash(salt, password):

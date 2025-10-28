@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from time import time
 from textwrap import dedent
 from tests.plugins.afk import *
@@ -40,7 +41,7 @@ def fakeclient_repr(self):
 FakeClient.__repr__ = fakeclient_repr
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def plugin(console):
     p = plugin_maker_ini(console, dedent("""
         [settings]

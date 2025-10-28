@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import os
 from mock import patch
 from b3.config import CfgConfigParser

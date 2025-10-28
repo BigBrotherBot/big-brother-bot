@@ -28,7 +28,9 @@
 
 
 
+from __future__ import absolute_import
 import sys, math
+import six
 
 
 class Stats:
@@ -84,7 +86,7 @@ class Stats:
         for item in sequence:
             results.setdefault(item, 0) # if index does not already exists, create it and set a value of 0
             results[item] += 1
-        results = sorted(results.iteritems(), key=lambda (k,v):(v,k), reverse=True) # Sort by value (count), then if 2 keys have the same count, it will sort them by their keys
+        results = sorted(six.iteritems(results), key=lambda k_v:(k_v[1],k_v[0]), reverse=True) # Sort by value (count), then if 2 keys have the same count, it will sort them by their keys
         return results
 
     def mode(self, sequence):
@@ -98,7 +100,7 @@ class Stats:
         for item in scores:
             freq.setdefault(item, 0) # if index does not already exists, create it and set a value of 0
             freq[item] = sequence.count(item)
-        results = sorted(freq.iteritems(), key=lambda (k,v):(v,k), reverse=True) # Sort by value (count), then if 2 keys have the same count, it will sort them by their keys
+        results = sorted(six.iteritems(freq), key=lambda k_v1:(k_v1[1],k_v1[0]), reverse=True) # Sort by value (count), then if 2 keys have the same count, it will sort them by their keys
         return results
 
     def variance(self, sequence):

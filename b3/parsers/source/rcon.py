@@ -22,7 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
-from Queue import Queue
+from __future__ import absolute_import
+from six.moves.queue import Queue
 from socket import timeout
 from threading import Event
 from threading import Lock
@@ -31,6 +32,7 @@ from b3.lib.sourcelib.SourceRcon import SourceRcon
 from b3.lib.sourcelib.SourceRcon import SourceRconError
 from b3.lib.sourcelib.SourceRcon import SERVERDATA_EXECCOMMAND
 from b3.lib.sourcelib.SourceRcon import SERVERDATA_AUTH
+import six
 
 __version__ = '1.3'
 __author__ = 'Courgette'
@@ -45,7 +47,7 @@ legacy_receive = SourceRcon.receive
 
 def receive_wrapper(self):
     rv = legacy_receive(self)
-    if isinstance(rv, basestring) and rv.strip().endswith(": Bad Password"):
+    if isinstance(rv, six.string_types) and rv.strip().endswith(": Bad Password"):
         raise SourceRconError('Bad RCON password (patched SourceRcon)')
     else:
         return rv
@@ -78,7 +80,7 @@ class Rcon(object):
 
         try:
             self.server.connect()
-        except timeout, err:
+        except timeout as err:
             self.console.error("RCON: timeout error while trying to connect to game server at %s:%s. "
                                "Make sure the rcon_ip and port are correct and that the game server is "
                                "running" % (self.host, self.port))
@@ -176,7 +178,7 @@ class Rcon(object):
         """
         if not data:
             return data
-        if type(data) is unicode:
+        if type(data) is six.text_type:
             return data.encode('UTF-8')
         else:
             return data

@@ -22,15 +22,19 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+from six.moves import map
+from six.moves import range
+from functools import reduce
 __version__ = '1.8'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
-import ConfigParser
+import six.moves.configparser
 import random
 import time
 import os
-import thread
+import six.moves._thread
 import b3
 import b3.cron
 import b3.events
@@ -39,7 +43,7 @@ from b3.plugin import Plugin
 from b3.functions import getCmd
 from b3.functions import soundex
 from b3.functions import levenshteinDistance
-from ConfigParser import NoOptionError
+from six.moves.configparser import NoOptionError
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import MapListBlock
 from b3.parsers.frostbite2.util import PlayerInfoBlock
@@ -108,12 +112,12 @@ class Scrambler:
                 if clients and len(clients)>0:
                     allClients.remove(clients[0])
                     sortedClients.append(clients[0])
-            self.debug('sorted clients A : %r' % map(lambda x:x.cid, sortedClients))
+            self.debug('sorted clients A : %r' % [x.cid for x in sortedClients])
             random.shuffle(allClients)
             for client in allClients:
                 # add remaining clients (they had no score ?)
                 sortedClients.append(client)
-            self.debug('sorted clients B : %r' % map(lambda x:x.cid, sortedClients))
+            self.debug('sorted clients B : %r' % [x.cid for x in sortedClients])
             return sortedClients
 
     def debug(self, msg):
@@ -133,7 +137,7 @@ class vip_commands_mixin(object):
 
             if data:
                 filter_txt = data.lower()
-                filtered_vips = filter(lambda x: filter_txt in x.lower(), vips)
+                filtered_vips = [x for x in vips if filter_txt in x.lower()]
                 if not len(filtered_vips):
                     client.message("no VIP matching '%s' found over the %s existing VIPs" % (filter_txt, len(vips)))
                     return
@@ -167,7 +171,7 @@ class vip_commands_mixin(object):
             client.message("No VIP connected")
         else:
             from operator import attrgetter
-            connected_players = map(attrgetter('cid'), self.console.clients.getList())
+            connected_players = list(map(attrgetter('cid'), self.console.clients.getList()))
             connected_vips = [x for x in vips if x in connected_players]
             if not len(connected_vips):
                 client.message("No VIP connected")
@@ -196,7 +200,7 @@ class vip_commands_mixin(object):
 
             try:
                 self.console.write(('reservedSlotsList.add', name))
-            except CommandFailedError, err:
+            except CommandFailedError as err:
                 client.message('Error: %s' % err.message)
             else:
                 client.message('%s is now a VIP' % name)
@@ -237,7 +241,7 @@ class vip_commands_mixin(object):
                     return
             try:
                 self.console.write(('reservedSlotsList.remove', name))
-            except CommandFailedError, err:
+            except CommandFailedError as err:
                 if err.message[0] == 'PlayerNotInList':
                     client.message("There is no VIP named '%s'" % name)
                 else:
@@ -251,7 +255,7 @@ class vip_commands_mixin(object):
         """
         try:
             self.console.write(('reservedSlotsList.clear',))
-        except CommandFailedError, err:
+        except CommandFailedError as err:
             client.message('Error: %s' % err.message[0])
         else:
             client.message('VIP list is now empty')
@@ -263,7 +267,7 @@ class vip_commands_mixin(object):
         try:
             self.console.write(('reservedSlotsList.load',))
             vips = self.getFullreservedSlotsList()
-        except CommandFailedError, err:
+        except CommandFailedError as err:
             client.message('Error: %s' % err.message[0])
         else:
             client.message('VIP list loaded from disk (%s name%s loaded)' % (len(vips), 's' if len(vips) else ''))
@@ -275,7 +279,7 @@ class vip_commands_mixin(object):
         try:
             vips = self.getFullreservedSlotsList()
             self.console.write(('reservedSlotsList.save',))
-        except CommandFailedError, err:
+        except CommandFailedError as err:
             client.message('Error: %s' % err.message[0])
         else:
             client.message('VIP list saved to disk (%s name%s written)' % (len(vips), 's' if len(vips) else ''))
@@ -471,7 +475,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
         time.sleep(1)
         try:
             self.console.write(('mapList.runNextRound',))
-        except CommandFailedError, err:
+        except CommandFailedError as err:
             client.message('Error: %s' % err.message)
 
     def cmd_serverreboot(self, data, client, cmd=None):
@@ -483,7 +487,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
             self.console.say('Reboot the Gameserver')
             time.sleep(1)
             self.console.write(('admin.shutDown',))
-        except CommandFailedError, err:
+        except CommandFailedError as err:
             client.message('Error: %s' % err.message[0])
 
     def cmd_endround(self, data, client, cmd=None):
@@ -505,7 +509,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                 self.console.say('End current round')
                 time.sleep(1)
                 self.console.write(('mapList.endRound', winnerTeamID))
-            except CommandFailedError, err:
+            except CommandFailedError as err:
                 client.message('Error: %s' % err.message[0])
 
     def cmd_roundrestart(self, data, client, cmd=None):
@@ -516,7 +520,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
         time.sleep(1)
         try:
             self.console.write(('mapList.restartRound',))
-        except CommandFailedError, err:
+        except CommandFailedError as err:
             client.message('Error: %s' % err.message)
 
     def cmd_kill(self, data, client, cmd=None):
@@ -543,7 +547,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                         sclient.message("Kill reason: %s" % reason)
                     else:
                         sclient.message("Killed by admin")
-                except CommandFailedError, err:
+                except CommandFailedError as err:
                     if err.message[0] == "SoldierNotAlive":
                         client.message("%s is already dead" % sclient.name)
                     else:
@@ -577,7 +581,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                     try:
                         self.console.write(('admin.movePlayer', sclient.cid, newteam, 0, 'true'))
                         cmd.sayLoudOrPM(client, '%s forced from team %s to team %s' % (sclient.cid, original_team, newteam))
-                    except CommandFailedError, err:
+                    except CommandFailedError as err:
                         client.message('Error, server replied %s' % err)
 
     def cmd_swap(self, data, client, cmd=None):
@@ -651,7 +655,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                 self._movePlayer(sclientA, teamB, squadB)
 
             cmd.sayLoudOrPM(client, 'swapped player %s with %s' % (sclientA.cid, sclientB.cid))
-        except CommandFailedError, e:
+        except CommandFailedError as e:
             client.message("Error while trying to swap %s with %s. (%s)" % (sclientA.cid, sclientB.cid, e.message[0]))
 
         self._autoassign = temp_autoassign
@@ -668,13 +672,13 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                 if isPbActive and len(isPbActive) and isPbActive[0] == 'false':
                     client.message('Punkbuster is not active')
                     return
-            except CommandFailedError, err:
+            except CommandFailedError as err:
                 self.error(err)
 
             self.debug('Executing punkbuster command = [%s]', data)
             try:
                 self.console.write(('punkBuster.pb_sv_command', '%s' % data))
-            except CommandFailedError, err:
+            except CommandFailedError as err:
                 self.error(err)
                 client.message('Error: %s' % err.message)
 
@@ -707,10 +711,10 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                 self.console.write(('mapList.setNextMapIndex', next_map_index))
             elif len(matching_maps) == 1:
                 # easy case, just set the nextLevelIndex to the index found
-                self.console.write(('mapList.setNextMapIndex', matching_maps.keys()[0]))
+                self.console.write(('mapList.setNextMapIndex', list(matching_maps.keys())[0]))
             else:
                 # multiple matches :s
-                matching_indices = matching_maps.keys()
+                matching_indices = list(matching_maps.keys())
                 # try to find the next indice after the index of the current map
                 indices_after_current = [x for x in matching_indices if x > current_map_index]
                 if len(indices_after_current):
@@ -742,7 +746,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                 client.message("Loading config %s ..." % data)
                 try:
                     self._load_server_config_from_file(client, config_name=found_names[0], file_path=_fName, threaded=True)
-                except Exception, msg:
+                except Exception as msg:
                     self.error('Error loading config: %s' % msg)
                     client.message("Error while loading config")
 
@@ -844,7 +848,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                     current_mode = 'ON'
                 elif current_mode == 'false':
                     current_mode = 'OFF'
-            except Exception, err:
+            except Exception as err:
                 self.error(err)
                 current_mode = 'unknown'
             cmd.sayLoudOrPM(client=client, message="Vehicle spawn is [%s]" % current_mode)
@@ -852,7 +856,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
             new_value = 'true' if data.lower() == 'on' else 'false'
             try:
                 self.console.setCvar('vehicleSpawnAllowed', new_value)
-            except CommandFailedError, err:
+            except CommandFailedError as err:
                 client.message("could not change vehicle spawn mode : %s" % err.message)
             else:
                 self.console.game['vehicleSpawnAllowed'] = new_value
@@ -870,7 +874,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                 current_mode = cvar.getString()
                 self.console.game['idleTimeout'] = current_mode
                 return current_mode
-            except Exception, err:
+            except Exception as err:
                 self.error(err)
                 return 'unknown'
 
@@ -920,7 +924,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
 
             try:
                 self.console.setCvar('idleTimeout', new_value)
-            except CommandFailedError, err:
+            except CommandFailedError as err:
                 client.message("could not change idle timeout : %s" % err.message)
             else:
                 self.console.game['idleTimeout'] = str(new_value)
@@ -1061,7 +1065,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                         sclient.message("Nuke reason: %s" % reason)
                     else:
                         sclient.message("Nuked by admin")
-                except CommandFailedError, err:
+                except CommandFailedError as err:
                     if err.message[0] == "SoldierNotAlive":
                         client.message("%s is already dead" % sclient.name)
                     else:
@@ -1117,7 +1121,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
             strategy = self.config.get('scrambler', 'strategy')
             self._scrambler.setStrategy(strategy)
             self.debug("scrambling strategy '%s' set" % strategy)
-        except Exception, err:
+        except Exception as err:
             self.debug(err)
             self._scrambler.setStrategy('random')
             self.debug('Using default value (random) for scrambling strategy')
@@ -1136,7 +1140,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                 self._autoscramble_rounds = False
                 self._autoscramble_maps = True
             self.debug('auto scrambler mode is : %s' % mode)
-        except Exception, err:
+        except Exception as err:
             self.debug(err)
             self._autoscramble_rounds = False
             self._autoscramble_maps = False
@@ -1156,10 +1160,10 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                         blacklist.append(gamemode)
                 if len(invalid_gamemodes):
                     self.warning(r"option 'srambler\gamemodes_blacklist' in your config file has invalid gamemode(s) : %s" % ', '.join(invalid_gamemodes))
-            except ConfigParser.NoOptionError:
+            except six.moves.configparser.NoOptionError:
                 self.warning(r"cannot find option 'srambler\gamemodes_blacklist' in your config file")
 
-        except Exception, err:
+        except Exception as err:
             self.error(err)
         self._autoscramble_gamemode_blacklist = blacklist
         self.info('auto scrambler will ignore gamemodes : %s' % ', '.join(blacklist) if len(blacklist) else 'auto scrambler will not ignore any gamemodes')
@@ -1209,10 +1213,10 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
             self._autoassign = self.config.getboolean('preferences', 'autoassign')
         except NoOptionError:
             self.info('No config option \"preferences\\autoassign\" found. Using default value : %s' % self._autoassign)
-        except ValueError, err:
+        except ValueError as err:
             self.debug(err)
             self.warning('Could not read level value from config option \"preferences\\autoassign\". Using default value \"%s\" instead. (%s)' % (self._autoassign, err))
-        except Exception, err:
+        except Exception as err:
             self.error(err)
         self.info('autoassign is %s' % self._autoassign)
 
@@ -1220,10 +1224,10 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
             self._autobalance = self.config.getboolean('preferences', 'autobalance')
         except NoOptionError:
             self.info('No config option \"preferences\\autobalance\" found. Using default value : %s' % self._autobalance)
-        except ValueError, err:
+        except ValueError as err:
             self.debug(err)
             self.warning('Could not read level value from config option \"preferences\\autobalance\". Using default value \"%s\" instead. (%s)' % (self._autobalance, err))
-        except Exception, err:
+        except Exception as err:
             self.error(err)
         self.info('autobalance is %s' % self._autobalance)
 
@@ -1236,10 +1240,10 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
             self._autobalance_timer = self.config.getint('preferences', 'autobalance_timer')
         except NoOptionError:
             self.info('No config option \"preferences\\autobalance_timer\" found. Using default value : %s' % self._autobalance_timer)
-        except ValueError, err:
+        except ValueError as err:
             self.debug(err)
             self.warning('Could not read level value from config option \"preferences\\autobalance_timer\". Using default value \"%s\" instead. (%s)' % (self._autobalance_timer, err))
-        except Exception, err:
+        except Exception as err:
             self.error(err)
         if self._autobalance_timer < 30:
             self._autobalance_timer = 30
@@ -1253,10 +1257,10 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
             self._team_swap_threshold = self.config.getint('preferences', 'team_swap_threshold')
         except NoOptionError:
             self.info(r'No config option "preferences\team_swap_threshold" found. Using default value : %s' % self._team_swap_threshold)
-        except ValueError, err:
+        except ValueError as err:
             self.debug(err)
             self.warning(r'Could not read level value from config option "preferences\team_swap_threshold". Using default value "%s" instead. (%s)' % (self._team_swap_threshold, err))
-        except Exception, err:
+        except Exception as err:
             self.error(err)
         if self._team_swap_threshold < 2:
             self._team_swap_threshold = 2
@@ -1266,10 +1270,10 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
             self._team_swap_threshold_prop = self.config.getboolean('preferences', 'team_swap_threshold_prop')
         except NoOptionError:
             self.info('No config option \"preferences\\team_swap_threshold_prop\" found. Using default value : %s' % self._team_swap_threshold_prop)
-        except ValueError, err:
+        except ValueError as err:
             self.debug(err)
             self.warning('Could not read level value from config option \"preferences\\team_swap_threshold_prop\". Using default value \"%s\" instead. (%s)' % (self._team_swap_threshold_prop, err))
-        except Exception, err:
+        except Exception as err:
             self.error(err)
         if self._team_swap_threshold_prop:
             self.info('Team swap threshold will vary according to server population')
@@ -1280,7 +1284,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
         try:
             self._configmanager = self.config.getboolean('configmanager', 'status')
             self.debug('Configmanager: %s' % self._configmanager)
-        except Exception, err:
+        except Exception as err:
             self.debug('Unable to load configmanager status from config file, disabling it', exc_info=err)
             self._configmanager = False
 
@@ -1293,10 +1297,10 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
             self.debug('yell_duration: %s' % self._yell_duration)
         except NoOptionError:
             self.info(r'No config option "preferences\yell_duration" found. Using default value : %s' % self._yell_duration)
-        except ValueError, err:
+        except ValueError as err:
             self.debug(err)
             self.warning(r'Could not read value from config option "preferences\yell_duration". Using default value "%s" instead. (%s)' % (self._yell_duration, err))
-        except Exception, err:
+        except Exception as err:
             self.error(err)
 
     def _movePlayer(self, client, teamId, squadId=0):
@@ -1312,12 +1316,12 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
         Loads a preset config file to send to the server
         """
         self.info('Loading %s' % file_path)
-        with file(file_path, 'r') as f:
+        with open(file_path, 'r') as f:
             lines = f.readlines()
         #self.verbose(repr(lines))
         if threaded:
             #delegate communication with the server to a new thread
-            thread.start_new_thread(self.load_server_config, (client, config_name, lines))
+            six.moves._thread.start_new_thread(self.load_server_config, (client, config_name, lines))
         else:
             self.load_server_config(client, config_name, lines)
 
@@ -1350,7 +1354,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                 # set cvar
                 try:
                     self.console.write((m.group('cvar'), m.group('value')))
-                except CommandFailedError, err:
+                except CommandFailedError as err:
                     self._sendMessage(client, 'Error "%s" received at line %s when sending "%s" to server' % (err.message, line_index, line))
             else:
                 # read cvar
@@ -1358,7 +1362,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                     result = self.console.write((m.group('cvar'),))
                     if len(result):
                         self._sendMessage(client, ("%s is \"%s\"" % (m.group('cvar'), result[0])))
-                except CommandFailedError, err:
+                except CommandFailedError as err:
                     self._sendMessage(client, 'Error "%s" received at line %s when sending "%s" to server' % (err.message, line_index, m.group('cvar')))
 
         if len(map_item_matches):
@@ -1366,12 +1370,12 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
             for line_index, line, m in map_item_matches:
                 try:
                     self.console.write(('mapList.add', m.group('map_id'), m.group('gamemode'), m.group('num_rounds')))
-                except CommandFailedError, err:
+                except CommandFailedError as err:
                     self._sendMessage(client, "Error adding map \"%s\" on line %s : %s" % (line, line_index, err.message))
             try:
                 self.console.write(('mapList.save',)) # write current in-memory map list to server config file so if the server restarts our list is recovered.
                 self._sendMessage(client, "New map rotation list written to disk.")
-            except CommandFailedError, err:
+            except CommandFailedError as err:
                 self._sendMessage(client, "Error writing map rotation list to disk. %s" % err.message)
 
         self._sendMessage(client, ("config \"%s\" loaded" % config_name))
@@ -1643,7 +1647,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
         self.debug(self._joined_order)
         try:
             self._joined_order.remove(client_name)
-        except ValueError, err:
+        except ValueError as err:
             self.debug(err)
             self.warning('Client %s was not in joined list' % client_name)
 
@@ -1689,6 +1693,6 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                     c.exactName = c.name
                     clients.append(c)
                 return clients
-        except Exception, err:
+        except Exception as err:
             self.error(err)
             return []

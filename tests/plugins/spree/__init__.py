@@ -22,7 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
-import unittest2
+from __future__ import absolute_import
+import unittest
 
 from mockito import when, unstub
 from b3.config import MainConfig
@@ -33,7 +34,7 @@ from tests import logging_disabled
 from textwrap import dedent
 
 
-class SpreeTestCase(unittest2.TestCase):
+class SpreeTestCase(unittest.TestCase):
 
     def setUp(self):
         # create a FakeConsole parser

@@ -22,9 +22,10 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 import os
-import unittest2 as unittest
+import unittest
 
 from b3.clients import Client
 from b3.functions import splitDSN
@@ -64,7 +65,7 @@ class Test_DatabaseStorage(unittest.TestCase):
         self.assertEqual(100, c1._tempLevel)
         
         mock_storage.console.config.has_option = Mock(return_value=False)
-        self.assertRaises(KeyError, mock_storage.getClient, mock_storage, Mock())
+        self.assertRaises(KeyError, mock_storage.getClient, mock_storage, Mock(id=1))
 
 
     def test_getConnection_mysql(self):

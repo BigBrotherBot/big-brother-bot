@@ -22,6 +22,9 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+from __future__ import print_function
+import six
 __author__ = 'xlr8or & ttlogic'
 __version__ = '3.0.0-beta.17'
 
@@ -34,14 +37,14 @@ import datetime
 import time
 import os
 import re
-import thread
+import six.moves._thread
 import threading
-import urllib2
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
 
 from b3.functions import escape
 from b3.functions import getCmd
 from b3.functions import right_cut
-from ConfigParser import NoOptionError
+from six.moves.configparser import NoOptionError
 
 KILLER = "killer"
 VICTIM = "victim"
@@ -342,7 +345,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                         with open(sql_path, 'r') as sql_file:
                             query = self.console.storage.getQueriesFromFile(sql_file)[0]
                         self.console.storage.query(query % v)
-                    except Exception, e:
+                    except Exception as e:
                         self.error("could not create schema for database table '%s': %s", v, e)
                     else:
                         self.info('created database table: %s', v)
@@ -389,9 +392,9 @@ class XlrstatsPlugin(b3.plugin.Plugin):
                     raise ValueError("invalid table name for %s: %r" % (setting_option, table_name))
                 setattr(self, property_to_set, table_name)
                 self._defaultTableNames = False
-            except NoOptionError, err:
+            except NoOptionError as err:
                 self.debug(err)
-            except Exception, err:
+            except Exception as err:
                 self.error(err)
             self.info('using value "%s" for tables::%s' % (property_to_set, setting_option))
 
@@ -483,7 +486,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         else:
             req = str(self.webfront_url.rstrip('/')) + '/' + str(self.webfront_config_nr) + '/pluginreq/index'
         try:
-            f = urllib2.urlopen(req)
+            f = six.moves.urllib.request.urlopen(req)
             res = f.readline().split(',')
             # Our webfront will present us 3 values ie.: 200,20,30 -> minKills,minRounds,maxDays
             if len(res) == 3:
@@ -789,7 +792,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
             target._attackers = {}
             ainfo = target._attackers
 
-        for k, v in ainfo.iteritems():
+        for k, v in six.iteritems(ainfo):
             if k == client.cid:
                 # don't award the killer for the assist aswell
                 continue
@@ -1443,7 +1446,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     def _addTableColumn(self, c1, t1, specs):
         try:
             self.query("""SELECT %s FROM %s limit 1;""" % (c1, t1))
-        except Exception, e:
+        except Exception as e:
             if e[0] == 1054:
                 self.console.debug('column does not yet exist: %s' % e)
                 self.query("""ALTER TABLE %s ADD %s %s ;""" % (t1, c1, specs))
@@ -1478,7 +1481,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
     def optimizeTables(self, t=None):
         if not t:
             t = self.showTables()
-        if isinstance(t, basestring):
+        if isinstance(t, six.string_types):
             _tables = str(t)
         else:
             _tables = ', '.join(t)
@@ -1486,14 +1489,14 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         try:
             self.query('OPTIMIZE TABLE %s' % _tables)
             self.debug('optimize success')
-        except Exception, msg:
+        except Exception as msg:
             self.error('optimizing table(s) failed: %s: trying to repair...', msg)
             self.repairTables(t)
 
     def repairTables(self, t=None):
         if not t:
             t = self.showTables()
-        if isinstance(t, basestring):
+        if isinstance(t, six.string_types):
             _tables = str(t)
         else:
             _tables = ', '.join(t)
@@ -1501,7 +1504,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         try:
             self.query('REPAIR TABLE %s' % _tables)
             self.debug('repair success')
-        except Exception, msg:
+        except Exception as msg:
             self.error('repairing table(s) failed: %s' % msg)
 
     def calculateKillBonus(self):
@@ -1675,7 +1678,7 @@ class XlrstatsPlugin(b3.plugin.Plugin):
         """
         [<#>] - list the top # players of the last 14 days.
         """
-        thread.start_new_thread(self.doTopList, (data, client, cmd, ext))
+        six.moves._thread.start_new_thread(self.doTopList, (data, client, cmd, ext))
 
     def doTopList(self, data, client, cmd=None, ext=False):
         """
@@ -1971,7 +1974,7 @@ class XlrstatshistoryPlugin(b3.plugin.Plugin):
             self.console.cron + self._cronTabMonth
             self._cronTabWeek = b3.cron.PluginCronTab(self, self.snapshot_week, 0, 0, 0, '*', '*', 1)  # day 1 is monday
             self.console.cron + self._cronTabWeek
-        except Exception, msg:
+        except Exception as msg:
             self.error('unable to install history crontabs: %s', msg)
 
         # purge the tables on startup
@@ -1995,7 +1998,7 @@ class XlrstatshistoryPlugin(b3.plugin.Plugin):
         try:
             self.query(sql)
             self.verbose('monthly XLRstats snapshot created')
-        except Exception, msg:
+        except Exception as msg:
             self.error('creating history snapshot failed: %s' % msg)
 
     def snapshot_week(self):
@@ -2010,7 +2013,7 @@ class XlrstatshistoryPlugin(b3.plugin.Plugin):
         try:
             self.query(sql)
             self.verbose('weekly XLRstats snapshot created')
-        except Exception, msg:
+        except Exception as msg:
             self.error('creating history snapshot failed: %s', msg)
 
     def purge(self):
@@ -2608,7 +2611,7 @@ class PlayerBattles(StatObject):
 
 
 if __name__ == '__main__':
-    print '\nThis is version ' + __version__ + ' by ' + __author__ + ' for BigBrotherBot.\n'
+    print('\nThis is version ' + __version__ + ' by ' + __author__ + ' for BigBrotherBot.\n')
 
 """
 Crontab:

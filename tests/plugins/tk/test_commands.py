@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from mock import Mock, patch
 from tests.plugins.tk import Tk_functional_test
 

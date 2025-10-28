@@ -21,17 +21,19 @@
 #  02110-1301, USA.                                                   #
 #                                                                     #
 # ################################################################### #
+from __future__ import absolute_import
 import b3
 
 from b3.fake import FakeClient
 from b3.plugins.admin import AdminPlugin
 from b3.config import CfgConfigParser
 from b3 import TEAM_BLUE
+import unittest
 from b3 import TEAM_RED
 from tests import B3TestCase
 
 
-class Admin_TestCase(B3TestCase):
+class Admin_TestCase(B3TestCase, unittest.TestCase):
     """
     Tests from a class inherithing from Admin_TestCase must call self.init().
     """
@@ -51,7 +53,7 @@ class Admin_TestCase(B3TestCase):
         self.p.onLoadConfig()
         self.p.onStartup()
 
-class Admin_functional_test(B3TestCase):
+class Admin_functional_test(B3TestCase, unittest.TestCase):
     """ tests from a class inheriting from Admin_functional_test must call self.init() """
     def setUp(self):
         B3TestCase.setUp(self)

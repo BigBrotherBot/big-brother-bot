@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import time
 # http://www.voidspace.org.uk/python/mock/mock.html
 from mock import patch

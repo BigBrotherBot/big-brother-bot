@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from textwrap import dedent
 from tests.plugins.afk import *
 from b3 import TEAM_SPEC
@@ -29,7 +30,7 @@ from b3 import TEAM_SPEC
 # This test suite makes sure `check_client` is called appropriately
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def plugin(console):
     p = plugin_maker_ini(console, dedent("""
         [settings]

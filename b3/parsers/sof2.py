@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+import six
 __author__ = 'xlr8or, ~cGs*Pr3z, ~cGs*AQUARIUS'
 __version__ = '1.6'
 
@@ -216,7 +218,7 @@ class Sof2Parser(AbstractParser):
 
         # initialize connected clients
         plist = self.getPlayerList()
-        for cid, c in plist.iteritems():
+        for cid, c in six.iteritems(plist):
             userinfostring = self.queryClientUserInfoByName(cid, c['name'])
             if userinfostring:
                 self.OnClientuserinfo(None, userinfostring)
@@ -349,7 +351,7 @@ class Sof2Parser(AbstractParser):
             client = self.clients.getByCID(bclient['cid'])
             if client:
                 # update existing client
-                for k, v in bclient.iteritems():
+                for k, v in six.iteritems(bclient):
                     setattr(client, k, v)
             else:
                 # make a new client
@@ -420,7 +422,7 @@ class Sof2Parser(AbstractParser):
                 # update existing client
                 bclient['cl_guid'] = client.guid
                 bclient['ip'] = client.ip
-                for k, v in bclient.iteritems():
+                for k, v in six.iteritems(bclient):
                     setattr(client, k, v)
             else:
                 # make a new client
@@ -700,7 +702,7 @@ class Sof2Parser(AbstractParser):
         Join all the connected clients.
         """
         plist = self.getPlayerList()
-        for cid, c in plist.iteritems():
+        for cid, c in six.iteritems(plist):
             client = self.clients.getByCID(cid)
             if client:
                 self.debug('Joining client: %s' % client.name)

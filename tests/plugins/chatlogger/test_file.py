@@ -23,11 +23,13 @@
 # ################################################################### #
 #
 
+from __future__ import absolute_import
 import b3
 import b3.events
 import os
 import re
 import codecs
+import unittest
 
 from mockito import when
 from mock import ANY
@@ -50,7 +52,7 @@ with logging_disabled():
     FakeClient.sendsPM = sendsPM
 
 
-class Test_chatlogfile(ChatloggerTestCase):
+class Test_chatlogfile(ChatloggerTestCase, unittest.TestCase):
 
     def setUp(self):
         ChatloggerTestCase.setUp(self)

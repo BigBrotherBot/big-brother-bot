@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from b3.parsers.battleye.abstractParser import AbstractParser
 
 

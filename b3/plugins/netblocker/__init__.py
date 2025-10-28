@@ -25,6 +25,7 @@
 # netblocker module provided by siebenmann: https://github.com/siebenmann/python-netblock
 
 
+from __future__ import absolute_import
 __version__ = '1.0.2beta'
 __author__ = 'xlr8or'
 

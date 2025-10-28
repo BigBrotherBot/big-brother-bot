@@ -22,8 +22,9 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import time
-import thread
+import six.moves._thread
 from mock import patch, call, Mock
 from b3.config import CfgConfigParser
 from b3.plugins.poweradminurt import PoweradminurtPlugin

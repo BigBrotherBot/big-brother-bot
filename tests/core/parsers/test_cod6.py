@@ -22,13 +22,17 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import logging
 from mock import Mock
 from mockito import mock, when, any as anything
-import unittest2 as unittest
+import unittest
 from b3.clients import Client
 from b3.config import XmlConfigParser
 from b3.parsers.cod6 import Cod6Parser
+import six
+from tests import B3SimpleTestCase
+from six.moves import map
 
 log = logging.getLogger("test")
 log.setLevel(logging.INFO)
@@ -71,12 +75,18 @@ class Cod6TestCase(unittest.TestCase):
         self.output_mock = mock()
         # simulate game server actions
         def write(*args, **kwargs):
-            pretty_args = map(repr, args) + ["%s=%s" % (k, v) for k, v in kwargs.iteritems()]
+            pretty_args = list(map(repr, args)) + ["%s=%s" % (k, v) for k, v in six.iteritems(kwargs)]
             log.info("write(%s)" % ', '.join(pretty_args))
             return self.output_mock.write(*args, **kwargs)
         self.console.write = Mock(wraps=write)
 
         self.player = self.console.clients.newClient(cid="4", guid="theGuid", name="theName", ip="11.22.33.44")
+
+    def assertDictContainsSubset(self, test, target):
+        if len(test.keys()) > len(target.keys()):
+            self.assertDictEqual(test, test | target)
+        else:
+            self.assertDictEqual(target, target | test)
 
 
     def tearDown(self):

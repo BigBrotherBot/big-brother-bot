@@ -22,14 +22,16 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from textwrap import dedent
 from mock import patch
 from tests import B3TestCase
 from b3.plugins.status import StatusPlugin
 from b3.config import CfgConfigParser
+import unittest
 
 
-class Test_config(B3TestCase):
+class Test_config(B3TestCase, unittest.TestCase):
 
     @patch("b3.cron.PluginCronTab")
     def test_no_svar_table(self, pluginCronTab_mock):

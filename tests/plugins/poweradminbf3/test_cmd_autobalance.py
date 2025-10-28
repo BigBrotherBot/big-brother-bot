@@ -21,6 +21,7 @@
 #  02110-1301, USA.                                                   #
 #                                                                     #
 # ################################################################### #
+from __future__ import absolute_import
 from mock import Mock, patch # http://www.voidspace.org.uk/python/mock/mock.html
 from b3.config import CfgConfigParser
 from b3.plugins.poweradminbf3 import Poweradminbf3Plugin

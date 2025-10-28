@@ -22,10 +22,13 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+from __future__ import print_function
 from tests.plugins.adv import AdvTestCase
+from six.moves import range
+import unittest
 
-
-class Test_config(AdvTestCase):
+class Test_config(AdvTestCase, unittest.TestCase):
 
     def test_default_config(self):
         self.init_plugin()
@@ -36,7 +39,7 @@ class Test_config(AdvTestCase):
         self.assertEqual(4, self.p._feedmaxitems)
         self.assertEqual('News: ', self.p._feedpre)
         self.assertIsNotNone(self.p._cronTab)
-        self.assertTupleEqual((0, range(0, 59, 2), -1, -1, -1, -1),
+        self.assertTupleEqual((0, list(range(0, 59, 2)), -1, -1, -1, -1),
                               (self.p._cronTab.second, self.p._cronTab.minute, self.p._cronTab.hour,
                                self.p._cronTab.day, self.p._cronTab.month, self.p._cronTab.dow))
         self.assertEqual(10, len(self.p._msg.items))
@@ -74,7 +77,7 @@ class Test_config(AdvTestCase):
 """)
         self.assertEqual('1', self.p._rate)
         self.assertIsNotNone(self.p._cronTab)
-        self.assertTupleEqual((0, range(60), -1, -1, -1, -1),
+        self.assertTupleEqual((0, list(range(60)), -1, -1, -1, -1),
                               (self.p._cronTab.second, self.p._cronTab.minute, self.p._cronTab.hour,
                                self.p._cronTab.day, self.p._cronTab.month, self.p._cronTab.dow))
 
@@ -101,8 +104,8 @@ class Test_config(AdvTestCase):
     </settings>
 </configuration>
 """)
-        except TypeError, err:
-            print err
+        except TypeError as err:
+            print(err)
         except Exception:
             raise
         self.assertEqual('f00', self.p._rate)

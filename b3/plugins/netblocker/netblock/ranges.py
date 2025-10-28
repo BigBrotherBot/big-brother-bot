@@ -7,6 +7,10 @@ This module exports the Ranges class and the BadRange exception."""
 # This is necessary to get 'yield' under Python 2.2.
 # Since we still have Red Hat 7.3 machines (at least for a bit longer...)
 from __future__ import generators
+from __future__ import absolute_import
+from six.moves import map
+from six.moves import range
+from functools import reduce
 
 __all__ = ['BadRange', 'Ranges']
 
@@ -214,7 +218,7 @@ class Ranges:
 	def __eq__(self, other):
 		if len(other._l) != len(self._l):
 			return 0
-		for i in xrange(0, len(self._l)):
+		for i in range(0, len(self._l)):
 			if self._l[i] != other._l[i]:
 				return 0
 		return 1

@@ -23,22 +23,24 @@
 # ################################################################### #
 
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import re
 import sys
 import platform
-import pkg_handler
+from . import pkg_handler
 import traceback
 import time
 import signal
 import shutil
 
 from tempfile import TemporaryFile
-from ConfigParser import NoOptionError
-from ConfigParser import NoSectionError
+from six.moves.configparser import NoOptionError
+from six.moves.configparser import NoSectionError
 
-__author__ = 'ThorN'
-__version__ = '1.12'
+__author__ = 'Blitztide'
+__version__ = '2.0'
 
 modulePath = pkg_handler.resource_directory(__name__)
 
@@ -46,7 +48,7 @@ versionId = 'v%s' % __version__
 version = '^8www.bigbrotherbot.net ^0(^8b3^0) ^9%s ^9[^3IronPigeon^9]^3' % versionId
 
 confdir = None
-console = None
+console = "/home/sysadmin/Projects/big-brother-bot/b3/config"
 
 # STRINGS
 B3_TITLE = 'BigBrotherBot (B3) %s' % versionId
@@ -91,10 +93,10 @@ def getHomePath():
     """
     Return the path to the B3 home directory.
     """
-    path = os.path.normpath(os.path.expanduser('~/.b3')).decode(sys.getfilesystemencoding())
+    path = os.path.normpath(os.path.expanduser('~/.b3'))
 
     ## RENAME v1.10.1 -> v1.10.7
-    path_1 = os.path.normpath(os.path.expanduser('~/BigBrotherBot')).decode(sys.getfilesystemencoding())
+    path_1 = os.path.normpath(os.path.expanduser('~/BigBrotherBot'))
     if os.path.isdir(path_1):
         shutil.move(path_1, path)
 
@@ -137,7 +139,7 @@ def getConfPath(decode=False, conf=None):
         else:
             raise TypeError('invalid configuration type specified: expected str|XmlConfigParser|CfgConfigParser|MainConfig, got %s instead' % type(conf))
     else:
-        path = confdir
+        path = os.path.join(getB3Path(),"conf")
 
     if not decode:
         return path
@@ -157,6 +159,7 @@ def getAbsolutePath(path, decode=False, conf=None):
         path = os.path.join(getConfPath(decode=False, conf=conf), path[6:])
     elif path[0:6] == '@home\\' or path[0:6] == '@home/':
         path = os.path.join(HOMEDIR, path[6:])
+
     if not decode:
         return os.path.normpath(os.path.expanduser(path))
     return decode_(os.path.normpath(os.path.expanduser(path)))
@@ -328,13 +331,13 @@ def start(mainconfig, options):
         console.start()
     except KeyboardInterrupt:
         console.shutdown()
-        print 'Goodbye'
+        print('Goodbye')
         return
-    except SystemExit, msg:
-        print 'EXITING: %s' % msg
+    except SystemExit as msg:
+        print('EXITING: %s' % msg)
         raise
-    except Exception, msg:
-        print 'ERROR: %s' % msg
+    except Exception as msg:
+        print('ERROR: %s' % msg)
         traceback.print_exc()
         sys.exit(223)
 

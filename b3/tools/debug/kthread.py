@@ -22,6 +22,9 @@ with this library; if not, write to the Free Software Foundation, Inc., 59
 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 '''
 
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
 __first__ = '2004.9.9'
 __last__ = '2004.10.29'
 
@@ -71,13 +74,13 @@ if __name__ == '__main__':
     
     def func():
         print('Function started')
-        for i in xrange(1000000):
+        for i in range(1000000):
             pass
         print('Function finished')
 
     A = KThread(target=func)
     A.start()
-    for i in xrange(1000):
+    for i in range(1000):
       pass
     A.kill()
 

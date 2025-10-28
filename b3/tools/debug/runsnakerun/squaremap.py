@@ -1,4 +1,6 @@
 #! /usr/bin/env python
+from __future__ import absolute_import
+from __future__ import print_function
 import wx, sys, os, logging
 import wx.lib.newevent
 log = logging.getLogger( 'squaremap' )
@@ -426,7 +428,7 @@ usage = 'squaremap.py somedirectory'
 def main():
     """Mainloop for the application"""
     if not sys.argv[1:]:
-        print usage
+        print(usage)
     else:
         app = TestApp(0)
         app.MainLoop()

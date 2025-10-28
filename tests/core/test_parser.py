@@ -22,10 +22,12 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import logging
-import unittest2 as unittest
+import unittest
 from b3.clients import Client
 from b3.parser import Parser
+from tests import B3SimpleTestCase
 
 
 class DummyParser(Parser):
@@ -42,6 +44,11 @@ class Test_getMessage(unittest.TestCase):
     def setUp(self):
         self.parser = DummyParser()
         self.parser._messages = {}
+    def assertDictContainsSubset(self, test, target):
+        if len(test.keys()) > len(target.keys()):
+            self.assertDictEqual(test, test | target)
+        else:
+            self.assertDictEqual(target, target | test)
 
     def test_unknown_msg__falls_back_on_default(self):
         self.parser._messages = {}
@@ -79,24 +86,35 @@ class Test_getMessageVariables(unittest.TestCase):
     def setUp(self):
         self.parser = DummyParser()
 
+    def assertDictContainsSubset(self, test, target):
+        if len(test.keys()) > len(target.keys()):
+            self.assertDictEqual(test, test | target)
+        else:
+            self.assertDictEqual(target, target | test)
+
     def test_with_parameters(self):
         client = Client(name="Jack")
         rv = self.parser.getMessageVariables(client)
-        self.assertDictContainsSubset({'name': client.name}, rv, rv)
+        self.assertDictContainsSubset(rv, {'name': client.name})
 
     def test_with_named_parameters(self):
         client = Client(name="Jack")
-        self.assertDictContainsSubset({'clientname': client.name, 'reason': 'this is a good reason'}, self.parser.getMessageVariables(client=client, reason="this is a good reason"))
+        self.assertDictContainsSubset( self.parser.getMessageVariables(client=client, reason="this is a good reason"), {'clientname': client.name, 'reason': 'this is a good reason'})
 
     def test_with_named_parameters__unicode(self):
         client = Client(name=u"ÄÖé")
-        self.assertDictContainsSubset({'clientname':client.name, 'reason': 'this is a good reason'}, self.parser.getMessageVariables(client=client, reason="this is a good reason"))
+        self.assertDictContainsSubset(self.parser.getMessageVariables(client=client, reason="this is a good reason"), {'clientname':client.name, 'reason': 'this is a good reason'})
 
 
 class Test_getWrap(unittest.TestCase):
 
     def setUp(self):
         self.parser = DummyParser()
+    def assertDictContainsSubset(self, test, target):
+        if len(test.keys()) > len(target.keys()):
+            self.assertDictEqual(test, test | target)
+        else:
+            self.assertDictEqual(target, target | test)
 
     def test_wrapped_initialized(self):
         self.parser._use_color_codes = False

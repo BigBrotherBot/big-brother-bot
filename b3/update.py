@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+from __future__ import print_function
 import b3
 import b3.config
 import json
@@ -29,14 +31,15 @@ import os
 import re
 import string
 import sys
-import urllib2
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
 
-from distutils import version
+from packaging.version import Version
 from time import sleep
-from types import StringType
+from six.moves import map
+from six.moves import input
 
 ## url from where we can get the latest B3 version number
-URL_B3_LATEST_VERSION = 'http://master.bigbrotherbot.net/version.json'
+URL_B3_LATEST_VERSION = 'https://api.github.com/repos/BigBrotherBot/big-brother-bot/releases'
 
 ## supported update channels
 UPDATE_CHANNEL_STABLE = 'stable'
@@ -44,7 +47,7 @@ UPDATE_CHANNEL_BETA = 'beta'
 UPDATE_CHANNEL_DEV = 'dev'
 
 
-class B3version(version.StrictVersion):
+class B3version(Version):
     """
     Version numbering for BigBrotherBot.
     Compared to version.StrictVersion this class allows version numbers such as :
@@ -58,6 +61,7 @@ class B3version(version.StrictVersion):
         1.0b1
         1.0b3
         1.9.0dev7.daily21-20121004
+        1.10.1
     And make sure that any 'dev' prerelease is inferior to any 'alpha' prerelease
     """
     version = None
@@ -93,7 +97,7 @@ $''', re.VERBOSE)
         if patch:
             self.version = tuple(map(string.atoi, [major, minor, patch]))
         else:
-            self.version = tuple(map(string.atoi, [major, minor]) + [0])
+            self.version = tuple(list(map(string.atoi, [major, minor])) + [0])
 
         prerelease = match.group('tag')
         prerelease_num = match.group('tag_num')
@@ -113,7 +117,7 @@ $''', re.VERBOSE)
         Compare current object with another one.
         :param other: The other object
         """
-        if isinstance(other, StringType):
+        if isinstance(other, str):
             other = B3version(other)
 
         compare = cmp(self.version, other.version)
@@ -187,6 +191,33 @@ $''', re.VERBOSE)
     elif m.group('tag').lower() == 'b':
         return UPDATE_CHANNEL_BETA
 
+def getChannelFromTag(tag):
+    version_re = re.compile(r'''^
+(?P<major>\d+)\.(?P<minor>\d+)   # 1.2
+(?:\. (?P<patch>\d+))?           # 1.2.45
+(?P<prerelease>                  # 1.2.45b2
+  (?P<tag>a|b|dev)
+  (?P<tag_num>\d+)?
+)?
+(?P<daily>                       # 1.2.45b2.daily4-20120901
+    \.daily(?P<build_num>\d+?)
+    (?:-20\d\d\d\d\d\d)?
+)?
+$''', re.VERBOSE)
+
+    m = version_re.match(tag)
+    if not m or m.group('tag') is None:
+        return UPDATE_CHANNEL_STABLE
+    elif m.group('tag').lower() in ('dev', 'a'):
+        return UPDATE_CHANNEL_DEV
+    elif m.group('tag').lower() == 'b':
+        return UPDATE_CHANNEL_BETA
+
+def getLatestInChannel(releases_json, channel):
+    for release in releases_json:
+        if channel == getChannelFromTag(release["tag_name"]):
+            return release
+
 
 def checkUpdate(currentVersion, channel=None, singleLine=True, showErrormsg=False, timeout=4):
     """
@@ -194,66 +225,61 @@ def checkUpdate(currentVersion, channel=None, singleLine=True, showErrormsg=Fals
     """
     if channel is None:
         channel = getDefaultChannel(currentVersion)
-
     if not singleLine:
-        sys.stdout.write("checking for updates... \n")
+        sys.stdout.write(f"checking for updates in {channel}... \n")
 
     message = None
     errormessage = None
     
     try:
-        json_data = urllib2.urlopen(URL_B3_LATEST_VERSION, timeout=timeout).read()
-        version_info = json.loads(json_data)
-    except IOError, e:
+        json_data = six.moves.urllib.request.urlopen(URL_B3_LATEST_VERSION, timeout=timeout).read()
+        release_info = json.loads(json_data)
+    except IOError as e:
         if hasattr(e, 'reason'):
             errormessage = '%s' % e.reason
         elif hasattr(e, 'code'):
             errormessage = 'error code: %s' % e.code
         else:
             errormessage = '%s' % e
-    except Exception, e:
+    except Exception as e:
         errormessage = repr(e)
     else:
-        latestVersion = None
-        try:
-            channels = version_info['B3']['channels']
-        except KeyError, err:
-            errormessage = repr(err) + '. %s' % version_info
+        # Check github releases
+        latestVersion = None # Dict from release API
+        # Repo data is ordered from latest to oldest
+        if channel not in (UPDATE_CHANNEL_STABLE, UPDATE_CHANNEL_BETA, UPDATE_CHANNEL_DEV):
+            errormessage = "unknown channel '%s': expecting (%s)"  % (channel, ', '.join(list(channels.keys())))
         else:
-            if channel not in channels:
-                errormessage = "unknown channel '%s': expecting (%s)"  % (channel, ', '.join(channels.keys()))
-            else:
-                try:
-                    latestVersion = channels[channel]['latest-version']
-                except KeyError, err:
-                    errormessage = repr(err) + '. %s' % version_info
+            latestVersion = getLatestInChannel(release_info, channel)
+            if not latestVersion:
+                errormessage = "No Channel update available"
 
         if not errormessage:
             try:
-                latestUrl = version_info['B3']['channels'][channel]['url']
+                latestUrl = latestVersion['html_url']
             except KeyError:
-                latestUrl = "www.bigbrotherbot.net"
+                latestUrl = "https://github.com/BigBrotherBot/big-brother-bot/releases"
 
-            not singleLine and sys.stdout.write('latest B3 %s version is %s\n' % (channel, latestVersion))
-            _lver = B3version(latestVersion)
+            not singleLine and sys.stdout.write('latest B3 %s version is %s\n' % (channel, latestVersion["tag_name"]))
+            _lver = B3version(latestVersion["tag_name"])
             _cver = B3version(currentVersion)
             if _cver < _lver:
                 if singleLine:
-                    message = 'update available (v%s : %s)' % (latestVersion, latestUrl)
+                    message = 'update available (%s : %s)' % (latestVersion["tag_name"], latestUrl)
                 else:
                     message = """
-                 _\|/_
-                 (o o)    {version:^21}
-         +----oOO---OOo-----------------------+
-         |                                    |
-         |                                    |
-         | A newer version of B3 is available |
-         |                                    |
-         | {url:^34} |
-         |                                    |
-         +------------------------------------+
+                         _\\|/_
+                         (o o)    {version:^21}
+         +-------------oOO---OOo------------------------------------------------------+
+         |                                                                            |
+         |                                                                            |
+         |               A newer version of B3 is available                           |
+         |                                                                            |
+         |     {url:^68}   |
+         |                                                                            |
+         +----------------------------------------------------------------------------+
 
-        """.format(version=latestVersion, url=latestUrl)
+        """.format(version=latestVersion["tag_name"], url=latestUrl)
 
     if errormessage and showErrormsg:
         return errormessage
@@ -286,7 +312,7 @@ class DBUpdate(object):
                 for e in ('ini', 'cfg', 'xml'):
                     path = b3.getAbsolutePath(p % e, True)
                     if os.path.isfile(path):
-                        print "Using configuration file: %s" % path
+                        print("Using configuration file: %s" % path)
                         config = path
                         sleep(3)
                         break
@@ -307,8 +333,8 @@ class DBUpdate(object):
         Run the DB update
         """
         clearscreen()
-        print """
-                        _\|/_
+        print("""
+                        _\\|/_
                         (o o)    {:>32}
                 +----oOO---OOo----------------------------------+
                 |                                               |
@@ -316,9 +342,9 @@ class DBUpdate(object):
                 |                                               |
                 +-----------------------------------------------+
 
-        """.format('B3 : %s' % b3.__version__)
+        """.format('B3 : %s' % b3.__version__))
 
-        raw_input("press any key to start the update...")
+        input("press any key to start the update...")
 
         def _update_database(storage, update_version):
             """
@@ -330,11 +356,11 @@ class DBUpdate(object):
                 sql = b3.getAbsolutePath('@b3/sql/%s/b3-update-%s.sql' % (storage.protocol, update_version))
                 if os.path.isfile(sql):
                     try:
-                        print '>>> updating database to version %s' % update_version
+                        print('>>> updating database to version %s' % update_version)
                         sleep(.5)
                         storage.queryFromFile(sql)
-                    except Exception, err:
-                        print 'WARNING: could not update database properly: %s' % err
+                    except Exception as err:
+                        print('WARNING: could not update database properly: %s' % err)
                         sleep(3)
 
         dsn = self.config.get('b3', 'database')

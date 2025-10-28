@@ -22,7 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
-import unittest2
+from __future__ import absolute_import
+import unittest
 
 from textwrap import dedent
 from mockito import when
@@ -38,7 +39,7 @@ from b3.plugins.callvote import CallvotePlugin
 from b3.parsers.iourt42 import Iourt42Parser
 from tests import logging_disabled
 
-class CallvoteTestCase(unittest2.TestCase):
+class CallvoteTestCase():
 
     @classmethod
     def setUpClass(cls):
@@ -65,6 +66,7 @@ class CallvoteTestCase(unittest2.TestCase):
 
         # initialize some fixed cvars which will be used by both the plugin and the iourt42 parser
         when(self.console).getCvar('auth').thenReturn(Cvar('auth', value='0'))
+        when(self.console).getCvar('auth_owners').thenReturn(Cvar('auth_owners', value="0"))
         when(self.console).getCvar('fs_basepath').thenReturn(Cvar('fs_basepath', value='/fake/basepath'))
         when(self.console).getCvar('fs_homepath').thenReturn(Cvar('fs_homepath', value='/fake/homepath'))
         when(self.console).getCvar('fs_game').thenReturn(Cvar('fs_game', value='q3ut4'))

@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from b3.parsers.sof2 import Sof2Parser
 from b3.functions import prefixText
 

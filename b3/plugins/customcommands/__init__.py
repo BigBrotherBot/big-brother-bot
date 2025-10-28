@@ -22,11 +22,13 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import re
 
 from functools import partial
 from b3.functions import getStuffSoundingLike
 from b3.plugin import Plugin
+import six
 
 __version__ = '1.2'
 __author__ = 'Courgette'
@@ -107,7 +109,7 @@ class CustomcommandsPlugin(Plugin):
             try:
                 self._validate_cmd_name(command_name)
                 self._validate_cmd_name_not_already_registered(command_name)
-            except ValueError, err:
+            except ValueError as err:
                 self.error(str(err))
                 continue
 
@@ -115,7 +117,7 @@ class CustomcommandsPlugin(Plugin):
 
             try:
                 self._validate_cmd_template(command_template)
-            except ValueError, err:
+            except ValueError as err:
                 self.error("command template invalid for %r: %s" % (command_name, err))
                 continue
 
@@ -184,7 +186,7 @@ class CustomcommandsPlugin(Plugin):
         """
         try:
             rcon_command = self._render_cmd_template(command_template, data, client)
-        except ValueError, err:
+        except ValueError as err:
             client.message("Error: %s" % err)
         else:
             if rcon_command:
@@ -211,7 +213,7 @@ class CustomcommandsPlugin(Plugin):
             if not data:
                 raise ValueError("missing parameter")
             result = self.getMapsSoundingLike(data)
-            if isinstance(result, basestring):
+            if isinstance(result, six.string_types):
                 command = command.replace("<ARG:FIND_MAP>", result)
             elif isinstance(result, list):
                 raise ValueError('do you mean : %s ?' % ', '.join(result))

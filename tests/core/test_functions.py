@@ -22,8 +22,9 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from b3 import functions
-import unittest2 as unittest
+import unittest
     
 class TestSplitDSN(unittest.TestCase):
     def assertDsnEqual(self, url, expected):
@@ -222,7 +223,7 @@ class Test_getStuffSoundingLike(unittest.TestCase):
 
     def test_substring_match(self):
         self.assertListEqual(['averell'], functions.getStuffSoundingLike('ere', ['bar', 'foO', 'joe', 'jack', 'averell', 'william']))
-        self.assertListEqual(['joe', 'jack'], functions.getStuffSoundingLike('j', ['bar', 'foO', 'joe', 'jack', 'averell', 'william']))
+        self.assertListEqual(['jack', 'joe'], functions.getStuffSoundingLike('j', ['bar', 'foO', 'joe', 'jack', 'averell', 'william']))
         self.assertListEqual(['xxxfoOx1', 'xxxfoOx2', 'xxxfoOx3', 'xxxfoOx4', 'xxxfoOx5', 'xxxfoOx6'],
             functions.getStuffSoundingLike('foO', ['xxxfoOx1', 'xxxfoOx2', 'xxxfoOx3', 'xxxfoOx4', 'xxxfoOx5', 'xxxfoOx6', 'bar']))
 
@@ -230,7 +231,7 @@ class Test_getStuffSoundingLike(unittest.TestCase):
         self.assertListEqual(['jack'], functions.getStuffSoundingLike('jak', ['bar', 'foO', 'joe', 'jack', 'averell', 'william']))
 
     def test_fallback(self):
-        self.assertListEqual(['bar', 'william', 'joe', 'averell', 'foO', 'jack'], functions.getStuffSoundingLike('xxx', ['bar', 'foO', 'joe', 'jack', 'averell', 'william']))
+        self.assertListEqual(['averell', 'bar', 'foO', 'jack', 'joe', 'william'], functions.getStuffSoundingLike('xxx', ['bar', 'foO', 'joe', 'jack', 'averell', 'william']))
 
 
 class Test_topologicalSort(unittest.TestCase):

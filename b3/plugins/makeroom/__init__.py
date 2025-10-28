@@ -23,6 +23,7 @@
 # ################################################################### #
 #
 
+from __future__ import absolute_import
 __version__ = '1.8'
 __author__ = 'Thomas LÉVEIL'
 
@@ -33,7 +34,7 @@ import threading
 from b3.functions import getCmd
 from b3.config import ConfigParser
 from b3.plugin import Plugin
-from ConfigParser import NoOptionError
+from six.moves.configparser import NoOptionError
 
 
 class MakeroomPlugin(Plugin):
@@ -76,7 +77,7 @@ class MakeroomPlugin(Plugin):
         """
         try:
             self._non_member_level = self.console.getGroupLevel(self.config.get('global_settings', 'non_member_level'))
-        except (NoOptionError, KeyError), err:
+        except (NoOptionError, KeyError) as err:
             default_non_member_group = 'reg'
             self._non_member_level = self.console.getGroupLevel(default_non_member_group)
             self.warning("using default value %s for 'non_member_level'. %s" % (default_non_member_group, err))
@@ -86,7 +87,7 @@ class MakeroomPlugin(Plugin):
         try:
             self._retain_free_duration = self.config.getint('global_settings', 'retain_free_duration')
             self.info('global_settings/retain_free_duration: %s' % self._retain_free_duration)
-        except (NoOptionError, ValueError), err:
+        except (NoOptionError, ValueError) as err:
             self.warning("No value or bad value for global_settings/retain_free_duration. %s", err)
         else:
             if self._retain_free_duration < 0:
@@ -112,7 +113,7 @@ class MakeroomPlugin(Plugin):
             self._automation_enabled = self.config.getboolean('automation', 'enabled')
         except NoOptionError:
             self._automation_enabled = None
-        except ValueError, err:
+        except ValueError as err:
             self.warning("bad value for setting automation/enabled. Expected 'yes' or 'no'. %s", err)
             self._automation_enabled = None
 
@@ -121,7 +122,7 @@ class MakeroomPlugin(Plugin):
         try:
             self._total_slots = self.config.getint('automation', 'total_slots')
             self.info('automation/total_slots: %s' % self._total_slots)
-        except (NoOptionError, ValueError), err:
+        except (NoOptionError, ValueError) as err:
             self.warning("No value or bad value for automation/total_slots. %s", err)
             self.uninstall_automation()
         else:
@@ -133,7 +134,7 @@ class MakeroomPlugin(Plugin):
             try:
                 self._min_free_slots = self.config.getint('automation', 'min_free_slots')
                 self.info('automation/min_free_slots: %s' % self._min_free_slots)
-            except (NoOptionError, ValueError), err:
+            except (NoOptionError, ValueError) as err:
                 self.warning("no value or bad value for automation/min_free_slots. %s", err)
                 self.uninstall_automation()
             else:
@@ -147,7 +148,7 @@ class MakeroomPlugin(Plugin):
     def uninstall_automation(self):
         self._automation_enabled = None
         # remove !makeroomauto command
-        if self._adminPlugin._commands.has_key('makeroomauto'):
+        if 'makeroomauto' in self._adminPlugin._commands:
             self._adminPlugin._commands.pop('makeroomauto')
         self.warning("could not set up automation")
 

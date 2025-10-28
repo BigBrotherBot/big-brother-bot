@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 __version__ = '2.8'
 __author__  = 'Courgette'
 
@@ -35,13 +36,13 @@ import os
 import random
 import re
 import string
-import StringIO
-import thread
+from io import StringIO
+import six.moves._thread
 import time
-import urllib2
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
 
 from b3.functions import getCmd
-from ConfigParser import NoOptionError
+from six.moves.configparser import NoOptionError
 
 
 user_agent =  "B3 Banlist plugin/%s" % __version__
@@ -119,7 +120,7 @@ class BanlistPlugin(b3.plugin.Plugin):
                 b = IpBanlist(self, banlistconfig)
                 self._banlists.append(b)
                 self.info("IP banlist [%s] loaded" % b.name)
-            except Exception, e:
+            except Exception as e:
                 self.error(e)
 
         for banlistconfig in self.config.get('guid_banlist'):
@@ -127,7 +128,7 @@ class BanlistPlugin(b3.plugin.Plugin):
                 b = GuidBanlist(self, banlistconfig)
                 self._banlists.append(b)
                 self.info("Guid banlist [%s] loaded" % b.name)
-            except Exception, e:
+            except Exception as e:
                 self.error(e)
 
         for banlistconfig in self.config.get('pbid_banlist'):
@@ -135,7 +136,7 @@ class BanlistPlugin(b3.plugin.Plugin):
                 b = PbidBanlist(self, banlistconfig)
                 self._banlists.append(b)
                 self.info("PBid banlist [%s] loaded" % b.name)
-            except Exception, e:
+            except Exception as e:
                 self.error(e)
 
         for banlistconfig in self.config.get('rules_of_combat'):
@@ -143,7 +144,7 @@ class BanlistPlugin(b3.plugin.Plugin):
                 b = RocBanlist(self, banlistconfig)
                 self._banlists.append(b)
                 self.info("RocBanlist [%s] loaded" % b.name)
-            except Exception, e:
+            except Exception as e:
                 self.error(e)
 
         self.debug("%d banlist loaded" % len(self._banlists))
@@ -155,7 +156,7 @@ class BanlistPlugin(b3.plugin.Plugin):
                 b = IpBanlist(self, whitelistconfig)
                 self._whitelists.append(b)
                 self.info("IP white list [%s] loaded" % b.name)
-            except Exception, e:
+            except Exception as e:
                 self.error(e)
 
         for whitelistconfig in self.config.get('guid_whitelist'):
@@ -163,7 +164,7 @@ class BanlistPlugin(b3.plugin.Plugin):
                 b = GuidBanlist(self, whitelistconfig)
                 self._whitelists.append(b)
                 self.info("Guid white list [%s] loaded" % b.name)
-            except Exception, e:
+            except Exception as e:
                 self.error(e)
 
         for whitelistconfig in self.config.get('pbid_whitelist'):
@@ -171,7 +172,7 @@ class BanlistPlugin(b3.plugin.Plugin):
                 b = PbidBanlist(self, whitelistconfig)
                 self._whitelists.append(b)
                 self.info("PBid white list [%s] loaded" % b.name)
-            except Exception, e:
+            except Exception as e:
                 self.error(e)
 
         self.debug("%d whitelists loaded" % len(self._whitelists))
@@ -188,7 +189,7 @@ class BanlistPlugin(b3.plugin.Plugin):
         Handle EVT_CLIENT_AUTH.
         """
         if self._banlists:
-            thread.start_new_thread(self.checkClient, (event.client,))
+            six.moves._thread.start_new_thread(self.checkClient, (event.client,))
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -251,7 +252,7 @@ class BanlistPlugin(b3.plugin.Plugin):
                 client.message('^7[^4%s^7] ^2updated' % banlist.name)
             else:
                 client.message('^7[^4%s^7] update ^1failed^7: %s' % (banlist.name, result))
-        except BanlistException, e:
+        except BanlistException as e:
             self.warning("%s" % e.message)
             client.message('^7[^4%s^7] update ^1failed^7: %s' % (banlist.name, e.message))
 
@@ -309,11 +310,11 @@ class BanlistPlugin(b3.plugin.Plugin):
 
         for banlist in self._banlists:
             if banlist.url is not None:
-                thread.start_new_thread(self._verboseUpdateBanListFromUrl, (client, banlist))
+                six.moves._thread.start_new_thread(self._verboseUpdateBanListFromUrl, (client, banlist))
 
         for banlist in self._whitelists:
             if banlist.url is not None:
-                thread.start_new_thread(self._verboseUpdateBanListFromUrl, (client, banlist))
+                six.moves._thread.start_new_thread(self._verboseUpdateBanListFromUrl, (client, banlist))
 
     def cmd_banlistcheck(self, data=None, client=None, cmd=None):
         """
@@ -421,7 +422,7 @@ class Banlist(object):
             if result is not True:
                 raise BanlistException("failed to update '%s' from %s. (%s)" % (self.file, self.url, result))
             self.plugin.checkConnectedPlayers()
-        except BanlistException, e:
+        except BanlistException as e:
             self.plugin.warning("%s" % e.message)
 
     def updateFromUrl(self):
@@ -432,20 +433,20 @@ class Banlist(object):
         self.plugin.info("[%s] updating from %s" % (self.name, self.url))
 
         try:
-            req =  urllib2.Request(self.url, None)
+            req =  six.moves.urllib.request.Request(self.url, None)
             req.add_header('User-Agent', user_agent)
             req.add_header('Accept-encoding', 'gzip')
             if self.remote_lastmodified:
                 req.add_header('If-Modified-Since', self.remote_lastmodified)
             if self.remote_etag:
                 req.add_header('If-None-Match', self.remote_etag)
-            opener = urllib2.build_opener()
+            opener = six.moves.urllib.request.build_opener()
             self.plugin.debug('headers : %r', req.headers)
             webFile =  opener.open(req)
             result = webFile.read()
             webFile.close()
             if webFile.headers.get('content-encoding', '') == 'gzip':
-                result = StringIO.StringIO(result)
+                result = StringIO(result)
                 gzipper = gzip.GzipFile(fileobj=result)
                 result = gzipper.read()
             self.remote_lastmodified = webFile.headers.get('Last-Modified') 
@@ -456,7 +457,7 @@ class Banlist(object):
             localFile.write(result)
             localFile.close()
             return True
-        except urllib2.HTTPError, err:
+        except six.moves.urllib.error.HTTPError as err:
             if err.code == 304:
                 self.plugin.info("remote banlist unchanged since last update")
                 return True
@@ -464,10 +465,10 @@ class Banlist(object):
                 self.remote_etag = self.remote_lastmodified = None
                 self.plugin.error("%r", err)
                 return "%s" % err
-        except urllib2.URLError, err:
+        except six.moves.urllib.error.URLError as err:
             self.remote_etag = self.remote_lastmodified = None
             return "%s" % err
-        except IOError, e:
+        except IOError as e:
             self.remote_etag = self.remote_lastmodified = None
             if hasattr(e, 'reason'):
                 return "%s" % e.reason
@@ -477,7 +478,7 @@ class Banlist(object):
             return "%s" % e
 
     def autoUpdateFromUrl(self):
-        thread.start_new_thread(self._updateFromUrlAndCheckAll, ())
+        six.moves._thread.start_new_thread(self._updateFromUrlAndCheckAll, ())
 
     def getMessage(self, client):
         """

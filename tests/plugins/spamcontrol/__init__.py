@@ -15,15 +15,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
+from __future__ import absolute_import
 import logging
 
 from mock import patch
 from b3.config import CfgConfigParser
 from b3.plugins.spamcontrol import SpamcontrolPlugin
 from tests import B3TestCase
+import unittest
 
-
-class SpamcontrolTestCase(B3TestCase):
+class SpamcontrolTestCase(B3TestCase, unittest.TestCase):
     """
     Ease testcases that need an working B3 console and need to control the Spamcontrol plugin config
     """

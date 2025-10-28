@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 __version__ = '1.5'
 __author__  = 'Courgette'
 
@@ -66,7 +67,7 @@ class SchedulerPlugin(b3.plugin.Plugin):
                 task = RestartTask(self, taskconfig)
                 self._tasks.append(task)
                 self.info("restart task [%s] loaded", task.name)
-            except Exception, e:
+            except Exception as e:
                 self.error("could not load task from configuration file: %s", e)
 
         for taskconfig in self.config.get('cron'):
@@ -74,7 +75,7 @@ class SchedulerPlugin(b3.plugin.Plugin):
                 task = CronTask(self, taskconfig)
                 self._tasks.append(task)
                 self.info("cron task [%s] loaded", task.name)
-            except Exception, e:
+            except Exception as e:
                 self.error("could not load task from configuration file: %s", e)
 
         for taskconfig in self.config.get('hourly'):
@@ -82,7 +83,7 @@ class SchedulerPlugin(b3.plugin.Plugin):
                 task = HourlyTask(self, taskconfig)
                 self._tasks.append(task)
                 self.info("hourly task [%s] loaded", task.name)
-            except Exception, e:
+            except Exception as e:
                 self.error("could not load task from configuration file: %s", e)
 
         for taskconfig in self.config.get('daily'):
@@ -90,7 +91,7 @@ class SchedulerPlugin(b3.plugin.Plugin):
                 task = DaylyTask(self, taskconfig)
                 self._tasks.append(task)
                 self.info("daily task [%s] loaded", task.name)
-            except Exception, e:
+            except Exception as e:
                 self.error("could not load task from configuration file: %s", e)
 
         self.debug("%d tasks scheduled", len(self._tasks))
@@ -102,7 +103,7 @@ class SchedulerPlugin(b3.plugin.Plugin):
         for task in self._restart_tasks:
             try:
                 task.runcommands()
-            except Exception, e:
+            except Exception as e:
                 self.error("could not run task %s : %s", task.name, e)
 
     ####################################################################################################################
@@ -222,7 +223,7 @@ class Task(object):
                         cmdlist.append(arg.text)
                     result = self.plugin.console.write(tuple(cmdlist))
                     self.plugin.info("frostbite command result : %s", result)
-                except Exception, e:
+                except Exception as e:
                     self.plugin.error("task %s : %s", self.name, e)
         else:
             # send rcon commands
@@ -230,7 +231,7 @@ class Task(object):
                 try:
                     result = self.plugin.console.write("%s" % cmd.text)
                     self.plugin.info("rcon command result : %s",  result)
-                except Exception, e:
+                except Exception as e:
                     self.plugin.error("task %s : %s", self.name, e)
 
     def _run_enable_plugin_commands(self):
@@ -246,7 +247,7 @@ class Task(object):
                         self.plugin.info('plugin %s is now ON', pluginName)
                 else:
                     self.plugin.warn('no plugin named %s loaded', pluginName)
-            except Exception, e:
+            except Exception as e:
                 self.plugin.error("task %s : %s" % (self.name, e))
 
     def _run_disable_plugin_commands(self):
@@ -262,7 +263,7 @@ class Task(object):
                         self.plugin.info('plugin %s is now OFF', pluginName)
                 else:
                     self.plugin.warn('no plugin named %s loaded', pluginName)
-            except Exception, e:
+            except Exception as e:
                 self.plugin.error("task %s : %s", self.name, e)
 
 

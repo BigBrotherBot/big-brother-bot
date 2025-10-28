@@ -22,18 +22,25 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from mock import Mock, call, patch
 from mockito import when, verify
 import sys
-import unittest2 as unittest
+import unittest
 from b3 import TEAM_BLUE, TEAM_RED, TEAM_UNKNOWN, TEAM_SPEC
 from b3.clients import Client
 from b3.config import XmlConfigParser
 from b3.fake import FakeClient
+import pytest
+pytest.importorskip("b3.parsers.csgo",exc_type=NameError)
 from b3.parsers.csgo import CsgoParser
+from tests import B3SimpleTestCase
+import six
+from six.moves import filter
+from six.moves import map
 
 
-WAS_FROSTBITE_LOADED = 'b3.parsers.frostbite' in sys.modules.keys() or 'b3.parsers.frostbite2' in sys.modules.keys()
+WAS_FROSTBITE_LOADED = 'b3.parsers.frostbite' in list(sys.modules.keys()) or 'b3.parsers.frostbite2' in list(sys.modules.keys())
 
 
 STATUS_RESPONSE = '''\
@@ -70,7 +77,7 @@ def client_equal(client_a, client_b):
 #    for p in ('cid', 'guid', 'name', 'ip', 'ping'):
 #        if client_a.get(p, None) != client_b.get(p, None):
 #            return False
-    return all(map(lambda x: getattr(client_a, x, None) == getattr(client_b, x, None), ('cid', 'guid', 'name', 'ip', 'ping')))
+    return all([getattr(client_a, x, None) == getattr(client_b, x, None) for x in ('cid', 'guid', 'name', 'ip', 'ping')])
 #    return True
 
 
@@ -106,6 +113,11 @@ class CsgoTestCase(unittest.TestCase):
         self.queueEvent_mock = self.queueEvent_patcher.start()
 
         self.parser.startup()
+    def assertDictContainsSubset(self, test, target):
+        if len(test.keys()) > len(target.keys()):
+            self.assertDictEqual(test, test | target)
+        else:
+            self.assertDictEqual(target, target | test)
 
 
     def tearDown(self):
@@ -126,7 +138,7 @@ class CsgoTestCase(unittest.TestCase):
         """
         assert that self.evt_queue contains at least one event for the given type that has the given characteristics.
         """
-        assert isinstance(event_type, basestring)
+        assert isinstance(event_type, six.string_types)
         expected_event = self.parser.getEvent(event_type, data, client, target)
 
         if not len(self.evt_queue):
@@ -148,13 +160,13 @@ class CsgoTestCase(unittest.TestCase):
                         and (client_equal(expected_event.target, evt.target) or target == WHATEVER):
                     return
 
-            self.fail("expecting event %s. Got instead: %s" % (expected_event, map(str, self.evt_queue)))
+            self.fail("expecting event %s. Got instead: %s" % (expected_event, list(map(str, self.evt_queue))))
 
     def assert_has_not_event(self, event_type, data=None, client=None, target=None):
         """
         assert that self.evt_queue does not contain at least one event for the given type that has the given characteristics.
         """
-        assert isinstance(event_type, basestring)
+        assert isinstance(event_type, six.string_types)
         unexpected_event = self.parser.getEvent(event_type, data, client, target)
 
         if not len(self.evt_queue):
@@ -168,7 +180,7 @@ class CsgoTestCase(unittest.TestCase):
                     and (target is None or client_equal(target, evt.target))
                 )
             if any(map(event_match, self.evt_queue)):
-                self.fail("not expecting event %s" % (filter(event_match, self.evt_queue)))
+                self.fail("not expecting event %s" % (list(filter(event_match, self.evt_queue))))
 
 
     def output_write(self, *args, **kwargs):
@@ -1350,12 +1362,12 @@ class Test_getClientOrCreate(CsgoTestCase):
         # GIVEN one connected player : courgette
         client = self.parser.getClient("194")
         self.assertEqual('courgette', client.name)
-        self.assertListEqual(['courgette'], map(lambda x: x.name, self.parser.clients.getList()))
+        self.assertListEqual(['courgette'], [x.name for x in self.parser.clients.getList()])
         # WHEN he disconnects
         self.parser.parseLine("""L 07/19/2013 - 17:18:44: "courgette<194><STEAM_1:0:1111111><CT>" disconnected (reason "Disconnect by user.")""")
         self.parser.parseLine("""L 07/19/2013 - 17:18:44: "courgette<194><STEAM_1:0:1111111><CT>" switched from team <TERRORIST> to <Unassigned>""")
         # THEN no more player is in the list of connected clients
-        self.assertListEqual([], map(lambda x: x.name, self.parser.clients.getList()))
+        self.assertListEqual([], [x.name for x in self.parser.clients.getList()])
 
 
 class Test_functional(CsgoTestCase):

@@ -15,6 +15,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
+from __future__ import absolute_import
+from __future__ import print_function
 import unittest
 import logging
 
@@ -29,7 +31,7 @@ from b3.plugins.urtserversidedemo import UrtserversidedemoPlugin
 
 
 def write(*args, **kwargs):
-    print "WRITE: %s" % args[0]
+    print("WRITE: %s" % args[0])
     return ""
 
 class Iourt41_TestCase_mixin(unittest.TestCase):

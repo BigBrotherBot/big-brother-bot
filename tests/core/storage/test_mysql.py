@@ -22,10 +22,10 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import os
 
-import nose
-import unittest2 as unittest
+import unittest
 
 from b3.functions import splitDSN
 from b3.storage.mysql import MysqlStorage
@@ -66,10 +66,10 @@ except ImportError:
 if is_mysql_ready:
     try:
         driver.connect(host=MYSQL_TEST_HOST, user=MYSQL_TEST_USER, passwd=MYSQL_TEST_PASSWORD)
-    except driver.Error, err:
+    except driver.Error as err:
         is_mysql_ready = False
-        no_mysql_reason = "%s" % err[1]
-    except Exception, err:
+        no_mysql_reason = "%s" % err
+    except Exception as err:
         is_mysql_ready = False
         no_mysql_reason = "%s" % err
 
@@ -80,7 +80,7 @@ if is_mysql_ready:
 #===============================================================================
 
 @unittest.skipIf(not is_mysql_ready, no_mysql_reason)
-class Test_MySQL(B3TestCase, StorageAPITest):
+class Test_MySQL(B3TestCase, StorageAPITest, unittest.TestCase):
 
     def setUp(self):
         """this method is called before each test"""
@@ -89,7 +89,7 @@ class Test_MySQL(B3TestCase, StorageAPITest):
 
         try:
             db = driver.connect(host=MYSQL_TEST_HOST, user=MYSQL_TEST_USER, password=MYSQL_TEST_PASSWORD)
-        except driver.OperationalError, message:
+        except driver.OperationalError as message:
             self.fail("Error %d:\n%s" % (message[0], message[1]))
 
         db.query("DROP DATABASE IF EXISTS `%s`" % MYSQL_TEST_DB)
@@ -114,8 +114,5 @@ class Test_MySQL(B3TestCase, StorageAPITest):
              'penalties',
              'data',
             ]), set(self.storage.getTables()))
-
-if __name__ == '__main__':
-    nose.main()
     
     

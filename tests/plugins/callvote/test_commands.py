@@ -22,9 +22,11 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from tests.plugins.callvote import CallvoteTestCase
+import unittest
 
-class Test_commands(CallvoteTestCase):
+class Test_commands(CallvoteTestCase, unittest.TestCase):
 
     def test_cmd_veto(self):
         # GIVEN

@@ -22,9 +22,10 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import binascii
 import logging
-import Queue
+import six.moves.queue
 import select
 import socket
 import sys
@@ -34,6 +35,8 @@ from collections import deque
 from threading import Thread
 from threading import Event
 from threading import Lock
+import six
+from six.moves import range
 
 __author__ = '82ndab-Bravo17, Courgette'
 __version__ = '1.2.1'
@@ -120,9 +123,9 @@ class BattleyeServer(Thread):
         self.port = port
         self.password = password
 
-        self.command_queue = Queue.Queue([])    # put here commands to be sent
+        self.command_queue = six.moves.queue.Queue([])    # put here commands to be sent
         self.observers = set()                  # functions to call when a BattleEye event is received
-        self.read_queue = Queue.Queue([])       # get here packets received
+        self.read_queue = six.moves.queue.Queue([])       # get here packets received
         self.sent_data_seq = []
         self.server = None
         self.write_queue = deque([])            # put here packets to be sent
@@ -146,7 +149,7 @@ class BattleyeServer(Thread):
         self.write_thread = None
 
         self.server_thread = Thread(target=self.polling_thread, name="BE_polling")
-        self.server_thread.setDaemon(True)
+        self.server_thread.daemon = True
         self.server_thread.start()
         time.sleep(.5)
 
@@ -179,7 +182,7 @@ class BattleyeServer(Thread):
                     except socket.timeout:
                         # We've read all the data that there is currently, so move on.
                         pass
-                    except socket.error, err: 
+                    except socket.error as err: 
                         self.getLogger().error("socket error %s" % err)
                         self.stop()
                 elif writable:
@@ -188,7 +191,7 @@ class BattleyeServer(Thread):
                         self.getLogger().debug("data to send: %s" % repr(data))
                         try:
                             self.server.send(data)
-                        except Exception, err:
+                        except Exception as err:
                             self.getLogger().error("data send error, trying again: %s" % err, exc_info=err)
                             self.write_queue.appendleft(data)
                         else:
@@ -211,11 +214,11 @@ class BattleyeServer(Thread):
         self._isconnected = self.login()
         if self._isconnected:
             self.read_thread = Thread(target=self.reading_thread, name="BE_read")
-            self.read_thread.setDaemon(True)
+            self.read_thread.daemon = True
             self.read_thread.start()
 
             self.write_thread = Thread(target=self.writing_thread, name="BE_write")
-            self.write_thread.setDaemon(True)
+            self.write_thread.daemon = True
             self.write_thread.start()
 
         while self._isconnected and not self.isStopped():
@@ -253,9 +256,9 @@ class BattleyeServer(Thread):
                 elif tp == 255:
                     #CRC Error
                     self.crc_error_count += 1
-            except Queue.Empty:
+            except six.moves.queue.Empty:
                 pass
-            except Exception, err:
+            except Exception as err:
                 self.getLogger().error("error in reading_thread", exc_info=err)
                 
         self.getLogger().info("ending reading thread")
@@ -276,10 +279,10 @@ class BattleyeServer(Thread):
         while self._isconnected and not self.isStopped():
             try:
                 enqueue_packet(self.command_queue.get(timeout=2))
-            except Queue.Empty:
+            except six.moves.queue.Empty:
                 if self.last_write_time + 30 < time.time():
                     enqueue_packet(None) # keep connection alive
-            except Exception, err:
+            except Exception as err:
                 self.getLogger().error("error in writing_thread", exc_info=err)
 
         self.getLogger().info("ending writing thread")
@@ -303,7 +306,7 @@ class BattleyeServer(Thread):
                     self.getLogger().warning('invalid packet')
                 elif tp == 0:
                     login_response = True
-            except Queue.Empty:
+            except six.moves.queue.Empty:
                 pass
 
         if login_response:
@@ -334,7 +337,7 @@ class BattleyeServer(Thread):
         self._command_lock.acquire() # this will eventually wait for the lock to be released
 
         try:
-            if timeout or not any(filter(lambda x: cmd.startswith(x + ' '), COMMANDS_WITH_NO_RESPONSE)):
+            if timeout or not any([x for x in COMMANDS_WITH_NO_RESPONSE if cmd.startswith(x + ' ')]):
                 return self._command_and_wait(cmd, timeout)
             else:
                 return self._command_no_wait(cmd)
@@ -342,9 +345,9 @@ class BattleyeServer(Thread):
             raise
         except BattleyeError:
             raise
-        except Exception, err:
+        except Exception as err:
             tp, value, traceback = sys.exc_info()
-            raise CommandFailedError, ("command \"%s\" failed: %s" % (cmd, err), tp, value), traceback
+            six.reraise(CommandFailedError, ("command \"%s\" failed: %s" % (cmd, err), tp, value), traceback)
         finally:
             self._command_lock.release() # release the lock so another command can be sent
 
@@ -428,7 +431,7 @@ class BattleyeServer(Thread):
         if seq is not None:
             data_to_send.append(seq)
         if data:
-            data_to_send.extend(unicode(data).encode('UTF-8', 'replace'))
+            data_to_send.extend(six.text_type(data).encode('UTF-8', 'replace'))
         crc1, crc2, crc3, crc4 = self.compute_crc(data_to_send)
         # request =  "B" + "E" + chr(crc1) + chr(crc2) + chr(crc3) + chr(crc4) + data_to_send
         request = bytearray(b'BE')

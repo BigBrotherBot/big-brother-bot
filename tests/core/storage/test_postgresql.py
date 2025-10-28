@@ -22,10 +22,10 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import os
 
-import nose
-import unittest2 as unittest
+import unittest
 
 from b3.functions import splitDSN
 from b3.storage.postgresql import PostgresqlStorage
@@ -70,10 +70,10 @@ else:
                          user=POSTGRESQL_TEST_USER,
                          password=POSTGRESQL_TEST_PASSWORD,
                          database='postgres')
-    except psycopg2.Error, err:
+    except psycopg2.Error as err:
         is_postgresql_ready = False
         no_postgresql_reason = "%r" % err
-    except Exception, err:
+    except Exception as err:
         is_postgresql_ready = False
         no_postgresql_reason = "%r" % err
 
@@ -84,7 +84,7 @@ else:
 #===============================================================================
 
 @unittest.skipIf(not is_postgresql_ready, no_postgresql_reason)
-class Test_PostgreSQL(B3TestCase, StorageAPITest):
+class Test_PostgreSQL(B3TestCase, StorageAPITest, unittest.TestCase):
 
     def setUp(self):
         """this method is called before each test"""
@@ -100,7 +100,7 @@ class Test_PostgreSQL(B3TestCase, StorageAPITest):
                 # dont remove the groups table since we would need it in next tests
                 tables.remove('groups')
                 self.storage.truncateTable(tables)
-        except Exception, e:
+        except Exception as e:
             self.fail("Error: %s" % e)
 
     def tearDown(self):
@@ -108,6 +108,4 @@ class Test_PostgreSQL(B3TestCase, StorageAPITest):
         B3TestCase.tearDown(self)
         self.storage.shutdown()
 
-if __name__ == '__main__':
-    nose.main()
 

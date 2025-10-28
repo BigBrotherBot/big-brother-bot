@@ -22,11 +22,13 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from mock import call, Mock
 from mockito import when
 from b3.config import CfgConfigParser
 from b3.plugins.poweradminbf3 import Poweradminbf3Plugin
 from tests.plugins.poweradminbf3 import Bf3TestCase
+from six.moves import range
 
 class Cmd_viplist_TestCase(Bf3TestCase):
     def setUp(self):

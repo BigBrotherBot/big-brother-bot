@@ -23,7 +23,8 @@
 # ################################################################### #
 
 
-import ConfigParser
+from __future__ import absolute_import
+import six.moves.configparser
 
 
 class ConfigFileNotFound(Exception):
@@ -43,6 +44,7 @@ class ConfigFileNotValid(Exception):
     """
     def __init__(self, message):
         Exception.__init__(self, message)
+        self.message = message
         
     def __str__(self):
         return repr(self.message)
@@ -98,5 +100,5 @@ class UpdateError(Exception):
         return repr(self.message)
 
 
-NoOptionError = ConfigParser.NoOptionError
-NoSectionError = ConfigParser.NoSectionError
+NoOptionError = six.moves.configparser.NoOptionError
+NoSectionError = six.moves.configparser.NoSectionError

@@ -22,6 +22,9 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import input
 __author__  = 'ThorN'
 __version__ = '1.8'
 
@@ -30,7 +33,7 @@ import b3.config
 import os
 import sys
 import argparse
-import pkg_handler
+from . import pkg_handler
 import traceback
 
 from b3 import HOMEDIR, B3_CONFIG_GENERATOR
@@ -116,7 +119,7 @@ def run_autorestart(args=None):
             sleep(4)
 
         except KeyboardInterrupt:
-            print 'Quit'
+            print('Quit')
             break
 
 
@@ -153,7 +156,7 @@ def run(options):
                 for e in ('ini', 'cfg', 'xml'):
                     path = b3.getAbsolutePath(p % e, True)
                     if os.path.isfile(path):
-                        print "Using configuration file: %s" % path
+                        print("Using configuration file: %s" % path)
                         config = path
                         sleep(3)
                         break
@@ -174,26 +177,26 @@ def run(options):
 
     except b3.config.ConfigFileNotValid:
         if analysis:
-            print 'CRITICAL: invalid configuration file specified:\n'
+            print('CRITICAL: invalid configuration file specified:\n')
             for problem in analysis:
-                print"  >>> %s\n" % problem
+                print("  >>> %s\n" % problem)
         else:
-            print 'CRITICAL: invalid configuration file specified!'
+            print('CRITICAL: invalid configuration file specified!')
         raise SystemExit(1)
-    except SystemExit, msg:
+    except SystemExit as msg:
         if not printexit and main_is_frozen():
             if sys.stdout != sys.__stdout__:
                 sys.stdout = sys.__stdout__
                 sys.stderr = sys.__stderr__
-            print msg
-            raw_input("press any key to continue...")
+            print(msg)
+            input("press any key to continue...")
         raise
     except:
         if sys.stdout != sys.__stdout__:
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__
         traceback.print_exc()
-        raw_input("press any key to continue...")
+        input("press any key to continue...")
 
 
 def main():

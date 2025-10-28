@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from mock import Mock, call
 from tests.plugins.countryfilter import CountryFilterTestCase
 from textwrap import dedent

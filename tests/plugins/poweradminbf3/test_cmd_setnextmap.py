@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import logging
 from mockito import when, verify
 from b3.config import CfgConfigParser

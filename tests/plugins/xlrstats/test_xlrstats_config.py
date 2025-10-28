@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import logging
 import os
 
@@ -29,7 +30,7 @@ from b3.config import CfgConfigParser
 from b3.plugins.xlrstats import XlrstatsPlugin
 from b3 import __file__ as b3_module__file__
 from tests import B3TestCase
-
+import unittest
 
 DEFAULT_XLRSTATS_CONFIG_FILE = os.path.join(os.path.dirname(b3_module__file__), 'conf', 'plugin_xlrstats.ini')
 
@@ -56,7 +57,7 @@ class XlrstatsTestCase(B3TestCase):
         logger.setLevel(logging.DEBUG)
 
 
-class Test_conf(XlrstatsTestCase):
+class Test_conf(XlrstatsTestCase, unittest.TestCase):
 
     def test_empty_conf(self):
         """
@@ -167,7 +168,7 @@ class Conf_settings_test_case(XlrstatsTestCase):
         self.p.onLoadConfig()
 
 
-class Test_conf_settings_silent(Conf_settings_test_case):
+class Test_conf_settings_silent(Conf_settings_test_case, unittest.TestCase):
 
     def test_missing(self):
         # WHEN
@@ -236,7 +237,7 @@ class Test_conf_settings_silent(Conf_settings_test_case):
         self.assertFalse(self.p.silent)
 
 
-class Test_conf_settings_hide_bots(Conf_settings_test_case):
+class Test_conf_settings_hide_bots(Conf_settings_test_case, unittest.TestCase):
 
     def test_missing(self):
         # WHEN
@@ -305,7 +306,7 @@ class Test_conf_settings_hide_bots(Conf_settings_test_case):
         self.assertFalse(self.p.hide_bots)
 
 
-class Test_conf_settings_exclude_bots(Conf_settings_test_case):
+class Test_conf_settings_exclude_bots(Conf_settings_test_case, unittest.TestCase):
 
     def test_missing(self):
         # WHEN
@@ -374,7 +375,7 @@ class Test_conf_settings_exclude_bots(Conf_settings_test_case):
         self.assertFalse(self.p.exclude_bots)
 
 
-class Test_conf_settings_minPlayers(Conf_settings_test_case):
+class Test_conf_settings_minPlayers(Conf_settings_test_case, unittest.TestCase):
     DEFAULT_VALUE = 3
 
     def test_missing(self):
@@ -426,7 +427,7 @@ class Test_conf_settings_minPlayers(Conf_settings_test_case):
         self.assertEqual(self.DEFAULT_VALUE, self.p.min_players)
 
 
-class Test_conf_settings_webfronturl(Conf_settings_test_case):
+class Test_conf_settings_webfronturl(Conf_settings_test_case, unittest.TestCase):
 
     def test_missing(self):
         # WHEN
@@ -453,7 +454,7 @@ class Test_conf_settings_webfronturl(Conf_settings_test_case):
         self.assertEqual("http://somewhere.com", self.p.webfront_url)
 
 
-class Test_conf_settings_servernumber(Conf_settings_test_case):
+class Test_conf_settings_servernumber(Conf_settings_test_case, unittest.TestCase):
     DEFAULT_VALUE = 0
 
     def test_missing(self):
@@ -505,7 +506,7 @@ class Test_conf_settings_servernumber(Conf_settings_test_case):
         self.assertEqual(self.DEFAULT_VALUE, self.p.webfront_config_nr)
 
 
-class Test_conf_settings_keep_history(Conf_settings_test_case):
+class Test_conf_settings_keep_history(Conf_settings_test_case, unittest.TestCase):
 
     def test_missing(self):
         # WHEN
@@ -574,7 +575,7 @@ class Test_conf_settings_keep_history(Conf_settings_test_case):
         self.assertFalse(self.p.keep_history)
 
 
-class Test_conf_settings_onemaponly(Conf_settings_test_case):
+class Test_conf_settings_onemaponly(Conf_settings_test_case, unittest.TestCase):
 
     def test_missing(self):
         # WHEN
@@ -643,7 +644,7 @@ class Test_conf_settings_onemaponly(Conf_settings_test_case):
         self.assertFalse(self.p.onemaponly)
 
 
-class Test_conf_settings_minlevel(Conf_settings_test_case):
+class Test_conf_settings_minlevel(Conf_settings_test_case, unittest.TestCase):
     DEFAULT_VALUE = 0
 
     def test_missing(self):
@@ -695,7 +696,7 @@ class Test_conf_settings_minlevel(Conf_settings_test_case):
         self.assertEqual(self.DEFAULT_VALUE, self.p.minlevel)
 
 
-class Test_conf_settings_defaultskill(Conf_settings_test_case):
+class Test_conf_settings_defaultskill(Conf_settings_test_case, unittest.TestCase):
     DEFAULT_VALUE = 1000
 
     def test_missing(self):
@@ -747,7 +748,7 @@ class Test_conf_settings_defaultskill(Conf_settings_test_case):
         self.assertEqual(self.DEFAULT_VALUE, self.p.defaultskill)
 
 
-class Test_conf_settings_Kfactor_high(Conf_settings_test_case):
+class Test_conf_settings_Kfactor_high(Conf_settings_test_case, unittest.TestCase):
     DEFAULT_VALUE = 16
 
     def test_missing(self):
@@ -799,7 +800,7 @@ class Test_conf_settings_Kfactor_high(Conf_settings_test_case):
         self.assertEqual(self.DEFAULT_VALUE, self.p.Kfactor_high)
 
 
-class Test_conf_settings_Kfactor_low(Conf_settings_test_case):
+class Test_conf_settings_Kfactor_low(Conf_settings_test_case, unittest.TestCase):
     DEFAULT_VALUE = 4
 
     def test_missing(self):
@@ -851,7 +852,7 @@ class Test_conf_settings_Kfactor_low(Conf_settings_test_case):
         self.assertEqual(self.DEFAULT_VALUE, self.p.Kfactor_low)
 
 
-class Test_conf_settings_Kswitch_confrontations(Conf_settings_test_case):
+class Test_conf_settings_Kswitch_confrontations(Conf_settings_test_case, unittest.TestCase):
     DEFAULT_VALUE = 50
 
     def test_missing(self):
@@ -903,7 +904,7 @@ class Test_conf_settings_Kswitch_confrontations(Conf_settings_test_case):
         self.assertEqual(self.DEFAULT_VALUE, self.p.Kswitch_confrontations)
 
 
-class Test_conf_settings_steepness(Conf_settings_test_case):
+class Test_conf_settings_steepness(Conf_settings_test_case, unittest.TestCase):
     DEFAULT_VALUE = 600
 
     def test_missing(self):
@@ -955,7 +956,7 @@ class Test_conf_settings_steepness(Conf_settings_test_case):
         self.assertEqual(self.DEFAULT_VALUE, self.p.steepness)
 
 
-class Test_conf_settings_suicide_penalty_percent(Conf_settings_test_case):
+class Test_conf_settings_suicide_penalty_percent(Conf_settings_test_case, unittest.TestCase):
     DEFAULT_VALUE = 0.05
 
     def test_missing(self):
@@ -1007,7 +1008,7 @@ class Test_conf_settings_suicide_penalty_percent(Conf_settings_test_case):
         self.assertEqual(0.5, self.p.suicide_penalty_percent)
 
 
-class Test_conf_settings_tk_penalty_percent(Conf_settings_test_case):
+class Test_conf_settings_tk_penalty_percent(Conf_settings_test_case, unittest.TestCase):
     DEFAULT_VALUE = 0.1
 
     def test_missing(self):
@@ -1059,7 +1060,7 @@ class Test_conf_settings_tk_penalty_percent(Conf_settings_test_case):
         self.assertEqual(0.5, self.p.tk_penalty_percent)
 
 
-class Test_conf_settings_assist_timespan(Conf_settings_test_case):
+class Test_conf_settings_assist_timespan(Conf_settings_test_case, unittest.TestCase):
     DEFAULT_VALUE = 2
 
     def test_missing(self):
@@ -1111,7 +1112,7 @@ class Test_conf_settings_assist_timespan(Conf_settings_test_case):
         self.assertEqual(self.DEFAULT_VALUE, self.p.assist_timespan)
 
 
-class Test_conf_settings_damage_assist_release(Conf_settings_test_case):
+class Test_conf_settings_damage_assist_release(Conf_settings_test_case, unittest.TestCase):
     DEFAULT_VALUE = 10
 
     def test_missing(self):
@@ -1163,7 +1164,7 @@ class Test_conf_settings_damage_assist_release(Conf_settings_test_case):
         self.assertEqual(self.DEFAULT_VALUE, self.p.damage_assist_release)
 
 
-class Test_conf_settings_prematch_maxtime(Conf_settings_test_case):
+class Test_conf_settings_prematch_maxtime(Conf_settings_test_case, unittest.TestCase):
     DEFAULT_VALUE = 70
 
     def test_missing(self):
@@ -1215,7 +1216,7 @@ class Test_conf_settings_prematch_maxtime(Conf_settings_test_case):
         self.assertEqual(self.DEFAULT_VALUE, self.p.prematch_maxtime)
 
 
-class Test_conf_settings_announce(Conf_settings_test_case):
+class Test_conf_settings_announce(Conf_settings_test_case, unittest.TestCase):
 
     def test_missing(self):
         # WHEN
@@ -1284,7 +1285,7 @@ class Test_conf_settings_announce(Conf_settings_test_case):
         self.assertFalse(self.p.announce)
 
 
-class Test_conf_settings_keep_time(Conf_settings_test_case):
+class Test_conf_settings_keep_time(Conf_settings_test_case, unittest.TestCase):
 
     def test_missing(self):
         # WHEN
@@ -1353,7 +1354,7 @@ class Test_conf_settings_keep_time(Conf_settings_test_case):
         self.assertFalse(self.p.keep_time)
 
 
-class Test_conf_settings_provisional_ranking(Conf_settings_test_case):
+class Test_conf_settings_provisional_ranking(Conf_settings_test_case, unittest.TestCase):
 
     def test_missing(self):
         # WHEN
@@ -1422,7 +1423,7 @@ class Test_conf_settings_provisional_ranking(Conf_settings_test_case):
         self.assertFalse(self.p.provisional_ranking)
 
 
-class Test_conf_settings_auto_correct(Conf_settings_test_case):
+class Test_conf_settings_auto_correct(Conf_settings_test_case, unittest.TestCase):
 
     def test_missing(self):
         # WHEN
@@ -1491,7 +1492,7 @@ class Test_conf_settings_auto_correct(Conf_settings_test_case):
         self.assertFalse(self.p.auto_correct)
 
 
-class Test_conf_settings_auto_purge(Conf_settings_test_case):
+class Test_conf_settings_auto_purge(Conf_settings_test_case, unittest.TestCase):
 
     def test_missing(self):
         # WHEN
@@ -1560,7 +1561,7 @@ class Test_conf_settings_auto_purge(Conf_settings_test_case):
         self.assertFalse(self.p.auto_purge)
         
         
-class Conf_tables_test_case(XlrstatsTestCase):
+class Conf_tables_test_case(XlrstatsTestCase, unittest.TestCase):
 
     def init(self, option_snippet=''):
         """
@@ -1575,7 +1576,7 @@ class Conf_tables_test_case(XlrstatsTestCase):
         self.p.onLoadConfig()
 
 
-class Test_conf_tables_playerstats(Conf_tables_test_case):
+class Test_conf_tables_playerstats(Conf_tables_test_case, unittest.TestCase):
     DEFAULT_VALUE = 'xlr_playerstats'
 
     def test_missing(self):
@@ -1600,7 +1601,7 @@ class Test_conf_tables_playerstats(Conf_tables_test_case):
         self.assertFalse(self.p._defaultTableNames)
 
 
-class Test_conf_tables_weaponstats(Conf_tables_test_case):
+class Test_conf_tables_weaponstats(Conf_tables_test_case, unittest.TestCase):
     DEFAULT_VALUE = 'xlr_weaponstats'
 
     def test_missing(self):
@@ -1625,7 +1626,7 @@ class Test_conf_tables_weaponstats(Conf_tables_test_case):
         self.assertFalse(self.p._defaultTableNames)
 
 
-class Test_conf_tables_weaponusage(Conf_tables_test_case):
+class Test_conf_tables_weaponusage(Conf_tables_test_case, unittest.TestCase):
     DEFAULT_VALUE = 'xlr_weaponusage'
 
     def test_missing(self):
@@ -1650,7 +1651,7 @@ class Test_conf_tables_weaponusage(Conf_tables_test_case):
         self.assertFalse(self.p._defaultTableNames)
 
 
-class Test_conf_tables_bodyparts(Conf_tables_test_case):
+class Test_conf_tables_bodyparts(Conf_tables_test_case, unittest.TestCase):
     DEFAULT_VALUE = 'xlr_bodyparts'
 
     def test_missing(self):
@@ -1675,7 +1676,7 @@ class Test_conf_tables_bodyparts(Conf_tables_test_case):
         self.assertFalse(self.p._defaultTableNames)
 
 
-class Test_conf_tables_playerbody(Conf_tables_test_case):
+class Test_conf_tables_playerbody(Conf_tables_test_case, unittest.TestCase):
     DEFAULT_VALUE = 'xlr_playerbody'
 
     def test_missing(self):
@@ -1700,7 +1701,7 @@ class Test_conf_tables_playerbody(Conf_tables_test_case):
         self.assertFalse(self.p._defaultTableNames)
 
 
-class Test_conf_tables_opponents(Conf_tables_test_case):
+class Test_conf_tables_opponents(Conf_tables_test_case, unittest.TestCase):
     DEFAULT_VALUE = 'xlr_opponents'
 
     def test_missing(self):
@@ -1725,7 +1726,7 @@ class Test_conf_tables_opponents(Conf_tables_test_case):
         self.assertFalse(self.p._defaultTableNames)
 
 
-class Test_conf_tables_mapstats(Conf_tables_test_case):
+class Test_conf_tables_mapstats(Conf_tables_test_case, unittest.TestCase):
     DEFAULT_VALUE = 'xlr_mapstats'
 
     def test_missing(self):
@@ -1750,7 +1751,7 @@ class Test_conf_tables_mapstats(Conf_tables_test_case):
         self.assertFalse(self.p._defaultTableNames)
 
 
-class Test_conf_tables_playermaps(Conf_tables_test_case):
+class Test_conf_tables_playermaps(Conf_tables_test_case, unittest.TestCase):
     DEFAULT_VALUE = 'xlr_playermaps'
 
     def test_missing(self):
@@ -1775,7 +1776,7 @@ class Test_conf_tables_playermaps(Conf_tables_test_case):
         self.assertFalse(self.p._defaultTableNames)
 
 
-class Test_conf_tables_actionstats(Conf_tables_test_case):
+class Test_conf_tables_actionstats(Conf_tables_test_case, unittest.TestCase):
     DEFAULT_VALUE = 'xlr_actionstats'
 
     def test_missing(self):
@@ -1800,7 +1801,7 @@ class Test_conf_tables_actionstats(Conf_tables_test_case):
         self.assertFalse(self.p._defaultTableNames)
 
 
-class Test_conf_tables_playeractions(Conf_tables_test_case):
+class Test_conf_tables_playeractions(Conf_tables_test_case, unittest.TestCase):
     DEFAULT_VALUE = 'xlr_playeractions'
 
     def test_missing(self):
@@ -1825,7 +1826,7 @@ class Test_conf_tables_playeractions(Conf_tables_test_case):
         self.assertFalse(self.p._defaultTableNames)
 
 
-class Test_conf_tables_history_monthly(Conf_tables_test_case):
+class Test_conf_tables_history_monthly(Conf_tables_test_case, unittest.TestCase):
     DEFAULT_VALUE = 'xlr_history_monthly'
 
     def test_missing(self):
@@ -1850,7 +1851,7 @@ class Test_conf_tables_history_monthly(Conf_tables_test_case):
         self.assertFalse(self.p._defaultTableNames)
 
 
-class Test_conf_tables_history_weekly(Conf_tables_test_case):
+class Test_conf_tables_history_weekly(Conf_tables_test_case, unittest.TestCase):
     DEFAULT_VALUE = 'xlr_history_weekly'
 
     def test_missing(self):
@@ -1875,7 +1876,7 @@ class Test_conf_tables_history_weekly(Conf_tables_test_case):
         self.assertFalse(self.p._defaultTableNames)
 
 
-class Test_conf_tables_ctime(Conf_tables_test_case):
+class Test_conf_tables_ctime(Conf_tables_test_case, unittest.TestCase):
     DEFAULT_VALUE = 'ctime'
 
     def test_missing(self):

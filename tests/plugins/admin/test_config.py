@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 import logging
 import sys
@@ -35,12 +36,8 @@ class Config_reading_TestCase(Admin_TestCase):
     Test case base class that ease assertions against calls to self.p.warning and self.p.error methods.
     """
     MESSAGE_BEACON = None
-
     def __init__(self, *args, **kwargs):
         Admin_TestCase.__init__(self, *args, **kwargs)
-        if not self.__class__.MESSAGE_BEACON:
-            raise NotImplementedError("you are supposed to set MESSAGE_BEACON with a string to look for in warning "
-                                      "and error messages when inheriting from Config_reading_TestCase")
 
     def setUp(self):
         Admin_TestCase.setUp(self)

@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+import six
 __author__ = 'xlr8or, Courgette'
 __version__ = '0.1.8'
 
@@ -296,7 +298,7 @@ class SmgParser(AbstractParser):
 
             if client:
                 # update existing client
-                for k, v in bclient.iteritems():
+                for k, v in six.iteritems(bclient):
                     setattr(client, k, v)
             else:
                 if not 'name' in bclient:
@@ -526,7 +528,7 @@ class SmgParser(AbstractParser):
         """
         plist = self.getPlayerList()
         mlist = dict()
-        for cid, c in plist.iteritems():
+        for cid, c in six.iteritems(plist):
             client = self.clients.getByCID(cid)
             if client:
                 if client.guid and 'guid' in c:
@@ -559,7 +561,7 @@ class SmgParser(AbstractParser):
         players = self.getPlayerList()
         self.verbose('connectClient() = %s' % players)
 
-        for cid, p in players.iteritems():
+        for cid, p in six.iteritems(players):
             if int(cid) == int(ccid):
                 self.debug('client found in status/playerList')
                 return p

@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from tests.plugins.welcome import Welcome_functional_test
 
 class Test_cmd_greeting(Welcome_functional_test):

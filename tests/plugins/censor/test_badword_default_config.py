@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+from __future__ import print_function
 import b3
 from mock import Mock
 from tests.plugins.censor import Detection_TestCase
@@ -36,11 +38,11 @@ class Test_Censor_badword_default_config(Detection_TestCase):
         self.p.debug = Mock()
 
         def my_info(text):
-            print("INFO\t%s" % text)
+            print(("INFO\t%s" % text))
         #self.p.info = my_info
 
         def my_warning(text):
-            print("WARNING\t%s" % text)
+            print(("WARNING\t%s" % text))
         #self.p.warning = my_warning
 
         self.p.config.load(b3.getAbsolutePath('@b3/conf/plugin_censor.xml'))
@@ -60,7 +62,7 @@ class Test_Censor_badword_default_config(Detection_TestCase):
         self.assertEqual('tempban', badword_object.penalty.type)
         self.assertEqual(2, badword_object.penalty.duration)
         self.assertIsNone(badword_object.penalty.reason)
-        self.assertEquals("cuss", badword_object.penalty.keyword)
+        self.assertEqual("cuss", badword_object.penalty.keyword)
 
     def test_shit_has_custom_penalty(self):
         badword_objects = [x for x in self.p._badWords if x.name == 'shit']
@@ -68,7 +70,7 @@ class Test_Censor_badword_default_config(Detection_TestCase):
         badword_object = badword_objects[0]
         self.assertEqual('warning', badword_object.penalty.type)
         self.assertEqual(60*24, badword_object.penalty.duration)
-        self.assertEquals("^7Please don't use profanity", badword_object.penalty.reason)
+        self.assertEqual("^7Please don't use profanity", badword_object.penalty.reason)
         self.assertIsNone(badword_object.penalty.keyword)
 
     def test_asshole_has_default_penalty(self):

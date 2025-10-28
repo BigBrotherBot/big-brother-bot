@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 import b3.cron
 import ftplib
@@ -30,9 +31,9 @@ import re
 import string
 import sys
 import time
-import urllib
-import urllib2
-import cookielib
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
+import six.moves.http_cookiejar
 import hashlib
 
 from b3 import functions
@@ -139,7 +140,7 @@ class Ro2Parser(Parser):
                 self.bot('getting configs from %s', ini_file)
                 f = self.config.getpath('server', 'inifile')
                 if os.path.isfile(f):
-                    self.input  = file(f, 'r')
+                    self.input  = open(f, 'r')
                     self._ini_file = f
 
         if not self._ini_file:
@@ -297,7 +298,7 @@ class Ro2Parser(Parser):
         self.headers['Referer'] = referer
         
         try:
-            request_console = urllib2.Request(data_url, data, self.headers)
+            request_console = six.moves.urllib.request.Request(data_url, data, self.headers)
             console_read = self.opener.open(request_console)
             console_data = console_read.read()
             return console_data
@@ -314,16 +315,16 @@ class Ro2Parser(Parser):
         password = ''
         login_url = self.url + '/'
         headers = {'Content-type' : 'application/x-www-form-urlencoded', 'User-Agent' : self.user_agent}
-        self.cj = cookielib.LWPCookieJar()
-        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
-        urllib2.install_opener(self.opener)
+        self.cj = six.moves.http_cookiejar.LWPCookieJar()
+        self.opener = six.moves.urllib.request.build_opener(six.moves.urllib.request.HTTPCookieProcessor(self.cj))
+        six.moves.urllib.request.install_opener(self.opener)
         findpage_attempt = 0
         self._paused = True
         response = ""
         while findpage_attempt < 11:
             try:
-                request = urllib2.Request(login_url, None, headers)
-                page = urllib2.urlopen(request)
+                request = six.moves.urllib.request.Request(login_url, None, headers)
+                page = six.moves.urllib.request.urlopen(request)
                 response = page.read()
                 break
             except Exception:
@@ -343,7 +344,7 @@ class Ro2Parser(Parser):
 
         login_url = self.url + '/'
         referer = login_url
-        data = urllib.urlencode({'token': token_value,
+        data = six.moves.urllib.parse.urlencode({'token': token_value,
                                  'password_hash': self.password_hash,
                                  'username': self.username,
                                  'password': password,
@@ -354,7 +355,7 @@ class Ro2Parser(Parser):
         while login_attempt < 11:
             try:
                 self.debug('Login attempt %s' % login_attempt)
-                request_console = urllib2.Request(login_url, data, self.headers)
+                request_console = six.moves.urllib.request.Request(login_url, data, self.headers)
                 self.opener.open(request_console)
                 self._paused = False
                 return True
@@ -595,7 +596,7 @@ class Ro2Parser(Parser):
                    "Content-type": "application/x-www-form-urlencoded",
                    "Accept-Charset": "ISO-8859-1,utf-8;q=0.7,*;q=0.7",
                    "Referer": referer}
-        request_banlist = urllib2.Request(banlist_url, None, headers)
+        request_banlist = six.moves.urllib.request.Request(banlist_url, None, headers)
         banlist_read = self.opener.open(request_banlist)
         banlist_data = banlist_read.read()
         ban_list = self.decodeBans(banlist_data)
@@ -624,7 +625,7 @@ class Ro2Parser(Parser):
             self.verbose("Connection successful: remote file size is %s" % remoteSize)
             ftp.retrlines('RETR ' + os.path.basename(self.ftpconfig['path']), handleDownload)
 
-        except ftplib.all_errors, e:
+        except ftplib.all_errors as e:
             self.debug(str(e))
             try:
                 ftp.close()
@@ -693,7 +694,7 @@ class Ro2Parser(Parser):
                    "Content-type": "application/x-www-form-urlencoded",
                    "Accept-Charset": "ISO-8859-1,utf-8;q=0.7,*;q=0.7",
                    "Referer": consoledata_url}
-        request_console = urllib2.Request(consoledata_url, data, headers)
+        request_console = six.moves.urllib.request.Request(consoledata_url, data, headers)
         adminconsole_read = self.opener.open(request_console)
         adminconsole_read.read()
 
@@ -1035,7 +1036,7 @@ class Ro2Parser(Parser):
         pings = {}
         clients = self.clients.getList()
         if filter_client_ids:
-             clients = filter(lambda client: client.cid in filter_client_ids, clients)
+             clients = [client for client in clients if client.cid in filter_client_ids]
 
         for c in clients:
             try:

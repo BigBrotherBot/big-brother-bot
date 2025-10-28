@@ -22,7 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
-import thread
+from __future__ import absolute_import
+import six.moves._thread
 import time
 import sys
 
@@ -34,8 +35,10 @@ from b3.config import CfgConfigParser
 from b3.plugins.admin import Command
 from b3.clients import Client, Group, ClientVar, ClientBan, ClientTempBan
 from tests import InstantTimer
+import unittest
 from tests.plugins.admin import Admin_TestCase
 from tests.plugins.admin import Admin_functional_test
+from six.moves import range
 
 class Test_misc_cmd(Admin_TestCase):
 
@@ -83,7 +86,7 @@ class Test_misc_cmd(Admin_TestCase):
         assert mock_client.message.called
 
     def test_maps(self):
-        mock_client = Mock(spec=Client, name="client")
+        mock_client = Mock(spec=Client, name="client", maxLevel=100)
         mock_cmd = Mock(spec=Command)
 
         # None
@@ -1224,7 +1227,7 @@ def _start_new_thread(callable, args_list, kwargs_dict):
     callable(*args_list, **kwargs_dict)
 
 @patch.object(time, "sleep")
-@patch.object(thread, "start_new_thread", wraps=_start_new_thread)
+@patch.object(six.moves._thread, "start_new_thread", wraps=_start_new_thread)
 class Test_cmd_rules(Admin_functional_test):
     def setUp(self):
         Admin_functional_test.setUp(self)

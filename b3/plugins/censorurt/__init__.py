@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 __author__ = 'xlr8or & courgette'
 __version__ = '0.2'
 

@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+import six
 __author__ = 'ThorN, xlr8or'
 __version__ = '1.5.1'
 
@@ -192,7 +194,7 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
         self.verbose2('plist: %s' % plist)
         mlist = {}
 
-        for cid, c in plist.iteritems():
+        for cid, c in six.iteritems(plist):
             client = self.clients.getByCID(cid)
             if client:
                 self.verbose2('client found: %s' % client.name)
@@ -227,7 +229,7 @@ class Cod4Parser(b3.parsers.cod2.Cod2Parser):
         """
         players = self.getPlayerList()
         self.verbose('authorizeClients() = %s' % players)
-        for cid, p in players.iteritems():
+        for cid, p in six.iteritems(players):
             if self.PunkBuster:
                 # Use guid since we already get the guid in the log file
                 sp = self.clients.getByGUID(p['guid'])
@@ -268,10 +270,10 @@ def patch_b3_clients():
             pbid = self.pbid
             try:
                 inStorage = self.console.storage.getClient(self)
-            except KeyError, msg:
+            except KeyError as msg:
                 self.console.debug('User not found %s: %s', self.guid, msg)
                 inStorage = False
-            except Exception, e:
+            except Exception as e:
                 self.console.error('Auth self.console.storage.getClient(client) - %s' % self, exc_info=e)
                 self.authorizing = False
                 return False

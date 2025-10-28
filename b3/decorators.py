@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+import six
 __author__ = 'Courgette, Fenix'
 __version__ = '1.3'
 
@@ -75,7 +77,7 @@ class Memoize(object):
             cache = obj.__cache
         except AttributeError:
             cache = obj.__cache = {}
-        key = (self.func, args[1:], frozenset(kw.items()))
+        key = (self.func, args[1:], frozenset(list(kw.items())))
         try:
             res = cache[key]
         except KeyError:
@@ -137,7 +139,7 @@ class GameEventRouter(object):
             for param in decorator_param:
                 if isinstance(param, type(re.compile(''))):
                     self._gameevents_mapping.append((param, func))
-                elif isinstance(param, basestring):
+                elif isinstance(param, six.string_types):
                     self._gameevents_mapping.append((re.compile(str(param)), func))
             return func
         return wrapper

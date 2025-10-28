@@ -22,13 +22,16 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import time
 from b3 import update
-import urllib2
-import unittest2 as unittest
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
+import unittest
 from mock import patch
 from b3.update import B3version
 
+
+@unittest.skip("Update deprecated")
 class TestB3Version(unittest.TestCase):
     def test_no_exception(self):
         B3version("1.4")
@@ -106,7 +109,7 @@ class TestB3Version(unittest.TestCase):
         self.assertLess(B3version('2.5.1b4'), B3version('2.5.2'))
         self.assertLess(B3version("1.9.0dev7.daily5-20120904"), B3version("1.9dev7.daily19-20121001"))
 
-
+@unittest.skip("Update deprecated")
 class TestGetDefaultChannel(unittest.TestCase):
     def test_rotten_input(self):
         self.assertEqual(update.UPDATE_CHANNEL_STABLE, update.getDefaultChannel(None))
@@ -135,7 +138,7 @@ class TestGetDefaultChannel(unittest.TestCase):
         self.assertEqual(update.UPDATE_CHANNEL_DEV, update.getDefaultChannel("1.2dev5"))
         self.assertEqual(update.UPDATE_CHANNEL_DEV, update.getDefaultChannel("1.10.0dev.daily118"))
 
-
+@unittest.skip("Update Deprecated")
 class TestCheckUpdateUrl(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -163,7 +166,7 @@ class TestCheckUpdateUrl(unittest.TestCase):
     #     result = update.checkUpdate('1.2', singleLine=True, showErrormsg=True)
     #     self.assertIn('Could not check updates', result)
 
-
+@unittest.skip("Update Deprecated")
 class TestCheckUpdate (unittest.TestCase):
 
     def setUp(self):
@@ -175,8 +178,8 @@ class TestCheckUpdate (unittest.TestCase):
             """
             will fake urllib2.urlopen
             """
-            import StringIO
-            return StringIO.StringIO("""
+            from io import StringIO
+            return StringIO("""
                 {
                     "B3": {
                         "channels": {
@@ -196,11 +199,11 @@ class TestCheckUpdate (unittest.TestCase):
                     }
                 }
             """)
-        self.original_urlopen = urllib2.urlopen
-        urllib2.urlopen = urlopen
+        self.original_urlopen = six.moves.urllib.request.urlopen
+        six.moves.urllib.request.urlopen = urlopen
 
     def tearDown(self):
-        urllib2.urlopen = self.original_urlopen
+        six.moves.urllib.request.urlopen = self.original_urlopen
 
     def test_default_channel(self):
         for v in ('1.0', '1.1.1', '1.4', '1.4.2'):
@@ -257,8 +260,8 @@ class TestCheckUpdate (unittest.TestCase):
     #         """
     #         will fake urllib2.urlopen
     #         """
-    #         import StringIO
-    #         return StringIO.StringIO("""
+    #         from io import StringIO
+    #         return StringIO("""
     #             {
     #                 "B3": {
     #                     "channels": {

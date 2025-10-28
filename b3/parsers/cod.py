@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+import six
 __author__ = 'ThorN, xlr8or'
 __version__ = '1.5.3'
 
@@ -433,7 +435,7 @@ class CodParser(AbstractParser):
         if self.encoding:
             try:
                 data = data.decode(self.encoding)
-            except Exception, msg:
+            except Exception as msg:
                 self.warning('ERROR: decoding data: %r', msg)
 
         if client.name != match.group('name'):
@@ -460,7 +462,7 @@ class CodParser(AbstractParser):
         if self.encoding:
             try:
                 data = data.decode(self.encoding)
-            except Exception, msg:
+            except Exception as msg:
                 self.warning('ERROR: decoding data: %r', msg)
 
         if client.name != match.group('name'):
@@ -486,7 +488,7 @@ class CodParser(AbstractParser):
         if self.encoding:
             try:
                 data = data.decode(self.encoding)
-            except Exception, msg:
+            except Exception as msg:
                 self.warning('ERROR: decoding data: %r', msg)
 
         client.name = match.group('name')
@@ -552,7 +554,7 @@ class CodParser(AbstractParser):
         """
         players = self.getPlayerList()
         self.verbose('connectClient() = %s' % players)
-        for cid, p in players.iteritems():
+        for cid, p in six.iteritems(players):
             #self.debug('cid: %s, ccid: %s, p: %s' %(cid, ccid, p))
             if int(cid) == int(ccid):
                 self.debug('%s found in status/playerList' % p['name'])
@@ -729,7 +731,7 @@ class CodParser(AbstractParser):
         plist = self.getPlayerList(maxRetries=4)
         mlist = {}
 
-        for cid, c in plist.iteritems():
+        for cid, c in six.iteritems(plist):
             client = self.clients.getByCID(cid)
             if client:
                 if client.guid and 'guid' in c and not self.IpsOnly:
@@ -761,7 +763,7 @@ class CodParser(AbstractParser):
         """
         players = self.getPlayerList(maxRetries=4)
         self.verbose('authorizeClients() = %s' % players)
-        for cid, p in players.iteritems():
+        for cid, p in six.iteritems(players):
             sp = self.clients.getByCID(cid)
             if sp:
                 # Only set provided data, otherwise use the currently set data

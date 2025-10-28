@@ -22,15 +22,17 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from textwrap import dedent
 from mockito import when
 from b3.plugins.admin import AdminPlugin
 from b3.plugins.cmdmanager import CmdmanagerPlugin
 from b3.config import CfgConfigParser
 from tests import B3TestCase
+import unittest
 
 
-class Cmdmanager_TestCase(B3TestCase):
+class Cmdmanager_TestCase(B3TestCase, unittest.TestCase):
 
     def setUp(self):
 

@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import sys
 import unittest
 from mock import Mock # http://www.voidspace.org.uk/python/mock/mock.html

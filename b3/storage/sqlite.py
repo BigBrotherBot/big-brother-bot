@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 import os
 
@@ -60,7 +61,7 @@ class SqliteStorage(DatabaseStorage):
             is_new_database = not os.path.isfile(path)
             self.db = sqlite3.connect(path, check_same_thread=False)
             self.db.isolation_level = None  # set autocommit mode
-        except Exception, e:
+        except Exception as e:
             self.db = None
             self.console.error('Database connection failed: %s', e)
             if self._consoleNotice:
@@ -113,7 +114,8 @@ class SqliteStorage(DatabaseStorage):
         if cursor and not cursor.EOF:
             while not cursor.EOF:
                 row = cursor.getRow()
-                tables.append(row.values()[0])
+                self.console.bot(row.values())
+                tables.append(list(row.values())[1])
                 cursor.moveNext()
         cursor.close()
         return tables

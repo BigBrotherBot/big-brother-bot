@@ -87,10 +87,12 @@
 # </pre>
 ##
 
+from __future__ import absolute_import
 import re, sys, string
+import six
 
 try:
-    unicode("")
+    six.text_type("")
 except NameError:
     def encode(s, encoding):
         # 1.5.2: application must use the right encoding
@@ -202,7 +204,7 @@ class XMLWriter:
         if attrib or extra:
             attrib = attrib.copy()
             attrib.update(extra)
-            attrib = attrib.items()
+            attrib = list(attrib.items())
             attrib.sort()
             for k, v in attrib:
                 k = escape_cdata(k, self.__encoding)
@@ -267,7 +269,7 @@ class XMLWriter:
     # can be omitted.
 
     def element(self, tag, text=None, attrib={}, **extra):
-        apply(self.start, (tag, attrib), extra)
+        self.start(*(tag, attrib), **extra)
         if text:
             self.data(text)
         self.end()

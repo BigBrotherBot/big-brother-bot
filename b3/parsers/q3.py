@@ -72,6 +72,8 @@
 #                                                 - adapted to quake 3 arena
 # 02/06/2017 - 0.17   - GrosBedo     - fix /tell message command (works only on ioq3 or e+ mod, but anyway most servers are running these)
 
+from __future__ import absolute_import
+import six
 __author__ = 'Courgette, GrosBedo, Fenix'
 __version__ = '0.17'
 
@@ -324,7 +326,7 @@ class Q3Parser(AbstractParser):
         # initialize connected clients
         self.info('Discover connected clients')
         plist = self.getPlayerList()
-        for cid, c in plist.iteritems():
+        for cid, c in six.iteritems(plist):
             userinfostring = self.queryClientUserInfoByCid(cid)
             if userinfostring:
                 self.OnClientuserinfochanged(None, userinfostring)
@@ -430,7 +432,7 @@ class Q3Parser(AbstractParser):
 
             if client:
                 # update existing client
-                for k, v in bclient.iteritems():
+                for k, v in six.iteritems(bclient):
                     setattr(client, k, v)
                 # use the full client as reference now
                 bclient = client
@@ -687,7 +689,7 @@ class Q3Parser(AbstractParser):
     def connectClient(self, ccid):
         players = self.getPlayerList()
         self.verbose('connectClient() = %s' % players)
-        for cid, p in players.iteritems():
+        for cid, p in six.iteritems(players):
             if int(cid) == int(ccid):
                 self.debug('Client found in status/playerList')
                 return p
@@ -934,10 +936,10 @@ class Q3Parser(AbstractParser):
         """
         plist = self.getPlayerList()
         mlist = dict()
-        for cid, c in plist.iteritems():
+        for cid, c in six.iteritems(plist):
             client = self.getByCidOrJoinPlayer(cid)
             if client:
-                if client.guid and 'guid' in c.keys():
+                if client.guid and 'guid' in list(c.keys()):
                     if client.guid == c['guid']:
                         # player matches
                         self.debug('in-sync %s == %s', client.guid, c['guid'])
@@ -945,7 +947,7 @@ class Q3Parser(AbstractParser):
                     else:
                         self.debug('no-sync %s <> %s', client.guid, c['guid'])
                         client.disconnect()
-                elif client.ip and 'ip' in c.keys():
+                elif client.ip and 'ip' in list(c.keys()):
                     if client.ip == c['ip']:
                         # player matches
                         self.debug('in-sync %s == %s', client.ip, c['ip'])

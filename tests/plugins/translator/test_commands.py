@@ -23,6 +23,7 @@
 # ################################################################### #
 
 
+from __future__ import absolute_import
 from mockito import when
 from b3.config import CfgConfigParser
 from b3.plugins.translator import TranslatorPlugin

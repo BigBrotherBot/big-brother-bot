@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
  
+from __future__ import absolute_import
+from __future__ import print_function
 __version__ = '1.10'
 __author__ = 'Bakes, Courgette'
 
@@ -32,7 +34,7 @@ import threading
 import ftplib
 import time
 
-from ConfigParser import NoOptionError
+from six.moves.configparser import NoOptionError
 from ftplib import FTP
 from b3 import functions
 
@@ -107,7 +109,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.debug('could not find server/use_windows_cache_fix in B3 config file, '
                        'using default: %s' % self._use_windows_cache_fix)
-        except ValueError, e:
+        except ValueError as e:
             self.error('could not load server/use_windows_cache_fix config value from B3 config file: %s' % e)
             self.debug('using default value (%s) for use_windows_cache_fix' % self._use_windows_cache_fix)
 
@@ -119,7 +121,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
             except NoOptionError:
                 self.debug('could not find server/cache_refresh_delay in B3 config file, '
                          'using default: %s' % self._cache_refresh_delay)
-            except ValueError, e:
+            except ValueError as e:
                 self.error('could not load server/cache_refresh_delay config value from B3 config file: %s' % e)
                 self.debug('using default value (%s) for server/cache_refresh_delay' % self._cache_refresh_delay)
 
@@ -133,7 +135,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.warning('could not find settings/timeout in config file, '
                          'using default: %s' % self._connectionTimeout)
-        except ValueError, e:
+        except ValueError as e:
             self.error('could not load settings/timeout config value: %s' % e)
             self.debug('using default value (%s) for settings/timeout' % self._connectionTimeout)
 
@@ -143,7 +145,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.warning('could not find settings/maxGapBytes in config file, '
                          'using default: %s' % self._maxGap)
-        except ValueError, e:
+        except ValueError as e:
             self.error('could not load settings/maxGapBytes config value: %s' % e)
             self.debug('using default value (%s) for settings/maxGapBytes' % self._maxGap)
 
@@ -153,7 +155,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.warning('could not find settings/max_consecutive_failures in config file, '
                          'using default: %s' % self._maxConsecutiveConnFailure)
-        except ValueError, e:
+        except ValueError as e:
             self.error('could not load settings/max_consecutive_failures config value: %s' % e)
             self.debug('using default value (%s) for settings/max_consecutive_failures' % self._maxConsecutiveConnFailure)
 
@@ -163,7 +165,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.warning('could not find settings/short_delay in config file, '
                          'using default: %s' % self._short_delay)
-        except ValueError, e:
+        except ValueError as e:
             self.error('could not load settings/short_delay config value: %s' % e)
             self.debug('using default value (%s) for settings/short_delay' % self._short_delay)
 
@@ -173,7 +175,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
         except NoOptionError:
             self.warning('could not find settings/long_delay in config file, '
                          'using default: %s' % self._long_delay)
-        except ValueError, e:
+        except ValueError as e:
             self.error('could not load settings/long_delay config value: %s' % e)
             self.debug('using default value (%s) for settings/long_delay' % self._long_delay)
 
@@ -225,7 +227,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
 
                     try:
                         ftp = self.ftpconnect()
-                    except Exception, e:
+                    except Exception as e:
                         self.error('could not connect with FTP server: %s' % e)
                         self.console.working = False
                         break
@@ -267,7 +269,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
                         self.console.unpause()
                         self.debug('unpausing')
 
-            except ftplib.all_errors, e:
+            except ftplib.all_errors as e:
                 self.debug(str(e))
                 self._nbConsecutiveConnFailure += 1
                 if self.console._paused is False:
@@ -331,7 +333,7 @@ class FtpytailPlugin(b3.plugin.Plugin):
 if __name__ == '__main__':
     from b3.fake import fakeConsole
     
-    print "------------------------------------"
+    print("------------------------------------")
     config = b3.config.XmlConfigParser()
     config.setXml("""
     <configuration plugin="ftpytail">

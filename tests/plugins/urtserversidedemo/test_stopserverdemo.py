@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from mockito import when
 from tests.plugins.urtserversidedemo import PluginTestCase
 from b3.fake import FakeClient

@@ -23,6 +23,7 @@
 # ################################################################### #
 
 
+from __future__ import absolute_import
 __author__ = 'Fenix, Courgette'
 __version__ = '2.3'
 
@@ -33,7 +34,7 @@ import b3.events
 import math
 
 from b3.functions import getCmd
-from ConfigParser import NoOptionError
+from six.moves.configparser import NoOptionError
 
 
 class LocationPlugin(b3.plugin.Plugin):

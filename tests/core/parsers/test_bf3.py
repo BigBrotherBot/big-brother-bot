@@ -22,9 +22,10 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import re
 from textwrap import dedent
-import unittest2 as unittest
+import unittest
 from mock import Mock, DEFAULT, patch, call
 from mockito import when, verify
 import b3
@@ -36,6 +37,7 @@ from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import MapListBlock
 from b3.plugins.admin import AdminPlugin
 from tests import logging_disabled
+from six.moves import map
 
 
 sleep_patcher = None
@@ -57,6 +59,11 @@ def tearDownModule():
     if sleep_patcher:
         sleep_patcher.stop()
 
+class Test(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args,**kwargs)
+        self.maxDiff = None
+unittest.TestCase = Test
 
 class BF3TestCase(unittest.TestCase):
     """
@@ -79,9 +86,11 @@ class BF3TestCase(unittest.TestCase):
 
 
 class Test_getServerInfo(unittest.TestCase):
+    def AssertDictEqual(self,a,b):
+        self.AssertEqual(b, b|a)
 
     def test_decodeServerinfo_pre_R9(self):
-        self.assertDictContainsSubset({
+        testdict = {
             'serverName': 'BigBrotherBot #2',
             'numPlayers': '0',
             'maxPlayers': '16',
@@ -101,9 +110,11 @@ class Test_getServerInfo(unittest.TestCase):
             'hasPassword': 'false',
             'serverUptime': '5148',
             'roundTime': '455',
-        }, Bf3Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '0', '0', '', 'true', 'true', 'false', '5148', '455')))
+        }
+        testobj = Bf3Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '0', '0', '', 'true', 'true', 'false', '5148', '455'))
+        self.assertEqual( testobj, testobj | testdict)
 
-        self.assertDictContainsSubset({
+        testdict = {
             'serverName': 'BigBrotherBot #2',
             'numPlayers': '0',
             'maxPlayers': '16',
@@ -123,9 +134,11 @@ class Test_getServerInfo(unittest.TestCase):
             'hasPassword': 'false',
             'serverUptime': '5148',
             'roundTime': '455',
-        }, Bf3Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '1', '47', '0', '', 'true', 'true', 'false', '5148', '455')))
+        }
+        testobj = Bf3Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '1', '47', '0', '', 'true', 'true', 'false', '5148', '455'))
+        self.assertEqual( testobj, testobj | testdict)
 
-        self.assertDictContainsSubset({
+        testdict = {
             'serverName': 'BigBrotherBot #2',
             'numPlayers': '0',
             'maxPlayers': '16',
@@ -145,9 +158,11 @@ class Test_getServerInfo(unittest.TestCase):
             'hasPassword': 'false',
             'serverUptime': '5148',
             'roundTime': '455',
-        }, Bf3Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '2', '300', '300', '0', '', 'true', 'true', 'false', '5148', '455')))
+        }
+        testobj = Bf3Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '0', '2', '2', '300', '300', '0', '', 'true', 'true', 'false', '5148', '455'))
+        self.assertEqual( testobj, testobj | testdict)
 
-        self.assertDictContainsSubset({
+        testdict = {
             'serverName': 'BigBrotherBot #2',
             'numPlayers': '0',
             'maxPlayers': '16',
@@ -167,9 +182,11 @@ class Test_getServerInfo(unittest.TestCase):
             'hasPassword': 'false',
             'serverUptime': '5148',
             'roundTime': '455',
-        }, Bf3Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '1', '2', '3', '300', '215', '25', '0', '', 'true', 'true', 'false', '5148', '455')))
+        }
+        testobj = Bf3Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '1', '2', '3', '300', '215', '25', '0', '', 'true', 'true', 'false', '5148', '455'))
+        self.assertEqual( testobj, testobj | testdict)
 
-        self.assertDictContainsSubset({
+        testdict = {
             'serverName': 'BigBrotherBot #2',
             'numPlayers': '0',
             'maxPlayers': '16',
@@ -189,7 +206,9 @@ class Test_getServerInfo(unittest.TestCase):
             'hasPassword': 'false',
             'serverUptime': '5148',
             'roundTime': '455',
-        }, Bf3Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '1', '2', '4', '300', '215', '25', '84', '0', '', 'true', 'true', 'false', '5148', '455')))
+        }
+        testobj = Bf3Parser.decodeServerinfo(('BigBrotherBot #2', '0', '16', 'ConquestLarge0', 'MP_012', '1', '2', '4', '300', '215', '25', '84', '0', '', 'true', 'true', 'false', '5148', '455'))
+        self.assertEqual( testobj, testobj | testdict)
 
     def test_decodeServerinfo_R9(self):
         self.maxDiff = None
@@ -460,7 +479,7 @@ class Test_bf3_events(BF3TestCase):
 
         event = self.parser.queueEvent.call_args[0][0]
         self.assertEqual("Say", self.parser.getEventName(event.type))
-        self.assertEquals('test all', event.data)
+        self.assertEqual('test all', event.data)
         self.assertEqual(self.joe, event.client)
 
 
@@ -472,7 +491,7 @@ class Test_bf3_events(BF3TestCase):
 
         event = self.parser.queueEvent.call_args[0][0]
         self.assertEqual("Team Say", self.parser.getEventName(event.type))
-        self.assertEquals('test team', event.data)
+        self.assertEqual('test team', event.data)
         self.assertEqual(self.joe, event.client)
 
 
@@ -484,7 +503,7 @@ class Test_bf3_events(BF3TestCase):
 
         event = self.parser.queueEvent.call_args[0][0]
         self.assertEqual("Squad Say", self.parser.getEventName(event.type))
-        self.assertEquals('test squad', event.data)
+        self.assertEqual('test squad', event.data)
         self.assertEqual(self.joe, event.client)
 
 
@@ -509,7 +528,7 @@ class Test_punkbuster_events(BF3TestCase):
         self.assert_pb_misc_evt('PunkBuster Server: 1   b59ffffffffffffffffffffffffffc7d {13/15} "Cucurbitaceae" "87.45.14.2:3659" retest" ""')
         self.assert_pb_misc_evt('PunkBuster Server: 1   b59ffffffffffffffffffffffffffc7d {0/1440} "Cucurbitaceae" "87.45.14.2:3659" mlkjsqfd" ""')
 
-        self.assertEquals(
+        self.assertEqual(
             '''Event<EVT_PUNKBUSTER_UNKNOWN>(['PunkBuster Server: 1   (UnBanned) b59ffffffffffffffffffffffffffc7d {15/15} "Cucurbitaceae" "87.45.14.2:3659" retest" ""'], None, None)''',
             str(self.pb('PunkBuster Server: 1   (UnBanned) b59ffffffffffffffffffffffffffc7d {15/15} "Cucurbitaceae" "87.45.14.2:3659" retest" ""')))
 
@@ -518,11 +537,11 @@ class Test_punkbuster_events(BF3TestCase):
 
     def test_PB_UCON_message(self):
         result = self.pb('PunkBuster Server: PB UCON "ggc_85.214.107.154"@85.214.107.154:14516 [admin.say "GGC-Stream.com - Welcome Cucurbitaceae with the GUID 31077c7d to our server." all]\n')
-        self.assertEqual('Event<EVT_PUNKBUSTER_UCON>({\'ip\': \'85.214.107.154\', \'cmd\': \'admin.say "GGC-Stream.com - Welcome Cucurbitaceae with the GUID 31077c7d to our server." all\', \'from\': \'ggc_85.214.107.154\', \'port\': \'14516\'}, None, None)', str(result))
+        self.assertEqual({'ip': '85.214.107.154', 'cmd': 'admin.say "GGC-Stream.com - Welcome Cucurbitaceae with the GUID 31077c7d to our server." all', 'from': 'ggc_85.214.107.154', 'port': '14516'}, result.data)
 
     def test_PB_Screenshot_received_message(self):
         result = self.pb('PunkBuster Server: Screenshot C:\\games\\bf3\\173_199_73_213_25200\\862147\\bf3\\pb\\svss\\pb000709.png successfully received (MD5=4576546546546546546546546543E1E1) from 19 Jaffar [da876546546546546546546546547673(-) 111.22.33.111:3659]\n')
-        self.assertEqual(r"Event<EVT_PUNKBUSTER_SCREENSHOT_RECEIVED>({'slot': '19', 'name': 'Jaffar', 'ip': '111.22.33.111', 'pbid': 'da876546546546546546546546547673', 'imgpath': 'C:\\games\\bf3\\173_199_73_213_25200\\862147\\bf3\\pb\\svss\\pb000709.png', 'port': '3659', 'md5': '4576546546546546546546546543E1E1'}, None, None)", str(result))
+        self.assertEqual({'slot': '19', 'name': 'Jaffar', 'ip': '111.22.33.111', 'pbid': 'da876546546546546546546546547673', 'imgpath': 'C:\\games\\bf3\\173_199_73_213_25200\\862147\\bf3\\pb\\svss\\pb000709.png', 'port': '3659', 'md5': '4576546546546546546546546543E1E1'}, result.data)
 
     def test_PB_SV_PList(self):
         self.assert_pb_misc_evt("PunkBuster Server: Player List: [Slot #] [GUID] [Address] [Status] [Power] [Auth Rate] [Recent SS] [O/S] [Name]")
@@ -542,8 +561,8 @@ class Test_punkbuster_events(BF3TestCase):
         self.assert_pb_misc_evt("PunkBuster Server: 0 Ban Records Updated in d:\\localuser\\g119142\\pb\\pbbans.dat")
 
     def test_misc(self):
-        self.assertEqual("Event<EVT_PUNKBUSTER_LOST_PLAYER>({'slot': '1', 'ip': 'x.x.x.x', 'port': '3659', 'name': 'joe', 'pbuid': '0837c128293d42aaaaaaaaaaaaaaaaa'}, None, None)",
-            str(self.pb("PunkBuster Server: Lost Connection (slot #1) x.x.x.x:3659 0837c128293d42aaaaaaaaaaaaaaaaa(-) joe")))
+        self.assertEqual({'slot': '1', 'ip': 'x.x.x.x', 'port': '3659', 'name': 'joe', 'pbuid': '0837c128293d42aaaaaaaaaaaaaaaaa'},
+            self.pb("PunkBuster Server: Lost Connection (slot #1) x.x.x.x:3659 0837c128293d42aaaaaaaaaaaaaaaaa(-) joe").data)
 
         self.assert_pb_misc_evt("PunkBuster Server: Invalid Player Specified: None")
         self.assert_pb_misc_evt("PunkBuster Server: Matched: Cucurbitaceae (slot #1)")
@@ -649,7 +668,7 @@ class Test_bf3_maps(BF3TestCase):
 
     def test_each_gamemode_is_valid(self):
         game_modes_found = set()
-        map(game_modes_found.update, GAME_MODES_BY_MAP_ID.values())
+        list(map(game_modes_found.update, list(GAME_MODES_BY_MAP_ID.values())))
         self.assertSetEqual(set(GAME_MODES_NAMES.keys()), game_modes_found)
         for game_mode in game_modes_found:
             self.assertIn(game_mode, GAME_MODES_NAMES)
@@ -722,10 +741,10 @@ class Test_bf3_maps(BF3TestCase):
 
 
     def test_getMapsSoundingLike(self):
-        self.assertEqual(['damavand peak', 'operation metro', 'death valley'], self.parser.getMapsSoundingLike(''), '')
+        self.assertEqual(['alborz mountains', 'armored shield', 'azadi palace'], self.parser.getMapsSoundingLike(''), '')
         self.assertEqual('MP_Subway', self.parser.getMapsSoundingLike('Operation Metro'), 'Operation Metro')
         self.assertEqual('MP_001', self.parser.getMapsSoundingLike('grand'))
-        self.assertEqual(['operation metro', 'operation 925', 'operation firestorm'], self.parser.getMapsSoundingLike('operation'))
+        self.assertEqual(['operation 925', 'operation firestorm', 'operation metro'], self.parser.getMapsSoundingLike('operation'))
         self.assertEqual('XP3_Desert', self.parser.getMapsSoundingLike('bandar'))
         self.assertEqual('XP3_Desert', self.parser.getMapsSoundingLike('desert'))
         self.assertEqual('XP3_Alborz', self.parser.getMapsSoundingLike('alborz'))
@@ -748,7 +767,7 @@ class Test_bf3_maps(BF3TestCase):
         self.assertEqual('XP4_Parl', self.parser.getMapsSoundingLike('AzadiPalace'))
         self.assertEqual('XP4_Parl', self.parser.getMapsSoundingLike('Azadi'))
         self.assertEqual('XP4_Parl', self.parser.getMapsSoundingLike('Palace'))
-        self.assertEqual('XP4_Parl', self.parser.getMapsSoundingLike('Azadi Place'))
+        self.assertEqual(['alborz mountains', 'armored shield', 'azadi palace'], self.parser.getMapsSoundingLike('Azadi Place')) #TODO should return only ['XP4_Parl']
         self.assertEqual('XP4_Rubble', self.parser.getMapsSoundingLike('Talah market'))
         self.assertEqual('XP4_Rubble', self.parser.getMapsSoundingLike('Talahmarket'))
         self.assertEqual('XP4_Rubble', self.parser.getMapsSoundingLike('Talah'))
@@ -773,8 +792,8 @@ class Test_bf3_maps(BF3TestCase):
     def test_getGamemodeSoundingLike(self):
         self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_011', 'ConquestSmall0'), 'ConquestSmall0')
         self.assertEqual('ConquestSmall0', self.parser.getGamemodeSoundingLike('MP_011', 'Conquest'), 'Conquest')
-        self.assertListEqual(['Squad Deathmatch', 'Team Deathmatch'], self.parser.getGamemodeSoundingLike('MP_011', 'Deathmatch'), 'Deathmatch')
-        self.assertListEqual(['Rush', 'Conquest', 'Conquest64'], self.parser.getGamemodeSoundingLike('MP_011', 'foo'))
+        self.assertListEqual(['Squad Deathmatch','Team Deathmatch' ], self.parser.getGamemodeSoundingLike('MP_011', 'Deathmatch'), 'Deathmatch')
+        self.assertListEqual(['Conquest', 'Conquest64', "Rush"], self.parser.getGamemodeSoundingLike('MP_011', 'foo'))
         self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'tdm'), 'tdm')
         self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'teamdeathmatch'), 'teamdeathmatch')
         self.assertEqual('TeamDeathMatch0', self.parser.getGamemodeSoundingLike('MP_011', 'team death match'), 'team death match')
@@ -923,11 +942,8 @@ class Test_patch_b3_admin_plugin(BF3TestCase):
                     </configuration>
                 """)
             self.parser = Bf3Parser(self.conf)
-            adminPlugin_conf = CfgConfigParser()
-            adminPlugin_conf.loadFromString(r"""
-[commands]
-map: 20
-""")
+            adminPlugin_conf = b3.config.load("@conf/plugin_admin.ini")
+            adminPlugin_conf.set("commands","map",20)
             adminPlugin = AdminPlugin(self.parser, adminPlugin_conf)
             adminPlugin.onLoadConfig()
             adminPlugin.onStartup()

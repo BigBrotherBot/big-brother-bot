@@ -8,7 +8,10 @@ Produces memory overviews very similar to the run-time overviews
 of cProfile.  This module maps the memory-dump information into
 the recursive records that RunSnakeRun needs to display properly.
 """
+from __future__ import absolute_import
+from __future__ import print_function
 import pstats, os, logging
+import six
 log = logging.getLogger( 'runsnake.memdumploader' )
 #log.setLevel( logging.DEBUG )
 
@@ -22,12 +25,12 @@ class MemDumpLoader( object ):
     def load( self, stats ):
         """Build a squaremap-compatible model from a memory_dump loader"""
         rows = self.rows
-        for func, raw in stats.iteritems():
+        for func, raw in six.iteritems(stats):
             try:
                 rows[func] =  PStatRow( func,raw )
-            except ValueError, err:
+            except ValueError as err:
                 log.info( 'Null row: %s', func )
-        for row in rows.itervalues():
+        for row in six.itervalues(rows):
             row.weave( rows )
         roots = []
         for key,value in rows.items():
@@ -97,7 +100,7 @@ class BaseStat( object ):
         if already_done is None:
             already_done = {}
         for child in getattr(self,attribute,()):
-            if not already_done.has_key( child ):
+            if child not in already_done:
                 already_done[child] = True
                 yield child
                 for descendent in child.recursive_distinct( already_done=already_done, attribute=attribute ):
@@ -116,7 +119,7 @@ class PStatRow( BaseStat ):
         file,line,func = self.key = key
         try:
             dirname,basename = os.path.dirname(file),os.path.basename(file)
-        except ValueError, err:
+        except ValueError as err:
             dirname = ''
             basename = file
         nc, cc, tt, ct, callers = raw
@@ -145,7 +148,7 @@ class PStatRow( BaseStat ):
         self.children.append( child )
 
     def weave( self, rows ):
-        for caller,data in self.callers.iteritems():
+        for caller,data in six.iteritems(self.callers):
             # data is (cc,nc,tt,ct)
             parent = rows.get( caller )
             if parent:
@@ -156,7 +159,7 @@ class PStatRow( BaseStat ):
         if total:
             try:
                 (cc,nc,tt,ct) = child.callers[ self.key ]
-            except TypeError, err:
+            except TypeError as err:
                 ct = child.callers[ self.key ]
             return float(ct)/total
         return 0
@@ -182,7 +185,7 @@ class PStatGroup( BaseStat ):
         """Finalize our values (recursively) taken from our children"""
         if already_done is None:
             already_done = {}
-        if already_done.has_key( self ):
+        if self in already_done:
             return True
         already_done[self] = True
         self.filter_children()
@@ -248,4 +251,4 @@ if __name__ == "__main__":
     import sys
     p = PStatsLoader( sys.argv[1] )
     assert p.tree
-    print p.tree
+    print(p.tree)

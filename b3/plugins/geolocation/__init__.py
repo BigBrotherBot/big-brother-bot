@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 __author__ = 'Fenix'
 __version__ = '1.5'
 
@@ -53,7 +54,7 @@ class GeolocationPlugin(b3.plugin.Plugin):
         try:
             # append this one separately since db may be missing
             self._geolocators.append(MaxMindGeolocator())
-        except IOError, e:
+        except IOError as e:
             self.debug('MaxMind geolocation not available: %s' % e)
 
     def onStartup(self):
@@ -93,9 +94,9 @@ class GeolocationPlugin(b3.plugin.Plugin):
                     client.location = geotool.getLocation(client)
                     self.debug('retrieved geolocation data for %s <@%s>: %r', client.name, client.id, client.location)
                     break # stop iterating if we collect valid data
-                except GeolocalizationError, e:
+                except GeolocalizationError as e:
                     self.warning('could not retrieve geolocation data %s <@%s>: %s', client.name, client.id, e)
-                except Exception, e:
+                except Exception as e:
                     self.error('client %s <@%s> geolocation terminated unexpectedtly when using %s service: %s',
                                client.name, client.id, geotool.__class__.__name__, e)
 

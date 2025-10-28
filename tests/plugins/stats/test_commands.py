@@ -23,6 +23,7 @@
 # ################################################################### #
 
 
+from __future__ import absolute_import
 from b3 import TEAM_RED, TEAM_BLUE, TEAM_FREE
 from tests.plugins.stats import StatPluginTestCase
 

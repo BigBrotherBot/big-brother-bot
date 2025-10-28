@@ -22,9 +22,11 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+from __future__ import print_function
 import re
 import time
-import new
+import types
 
 from b3 import TEAM_UNKNOWN
 from b3 import TEAM_BLUE
@@ -40,6 +42,7 @@ from b3.functions import time2minutes
 from b3.functions import getStuffSoundingLike
 from b3.parser import Parser
 from b3.parsers.source.rcon import Rcon
+import six
 
 __author__ = 'Courgette'
 __version__ = '0.17'
@@ -179,9 +182,9 @@ class InsurgencyParser(Parser):
                 client.message('do you mean : %s ?' % ', '.join(suggestions))
 
         adminPlugin = self.getPlugin('admin')
-        adminPlugin.parse_map_parameters = new.instancemethod(parse_map_parameters, adminPlugin)
+        adminPlugin.parse_map_parameters = types.MethodType(parse_map_parameters, adminPlugin)
         command = adminPlugin._commands['map']
-        command.func = new.instancemethod(new_cmd_map, adminPlugin)
+        command.func = types.MethodType(new_cmd_map, adminPlugin)
         command.help = new_cmd_map.__doc__.strip()
 
     def startup(self):
@@ -258,7 +261,7 @@ class InsurgencyParser(Parser):
         # L 08/26/2012 - 05:29:47: server cvars end
         # L 02/07/2015 - 15:15:24: Log file started (file "logs\\L023_081_154_166_23274_201502071515_001.log") (game "C:\\servers\\insurgency") (version "5885")
         # L 02/07/2015 - 15:15:22: Log file closed
-        print "ignored"
+        print("ignored")
         pass
 
     @ger.gameEvent(r'^"(?P<a_name>.+)<(?P<a_cid>\d+)><(?P<a_guid>.+)><(?P<a_team>.*)>" killed "(?P<v_name>.+)<(?P<v_cid>\d+)><(?P<v_guid>.+)><(?P<v_team>.*)>" with "(?P<weapon>\S*)"(?P<properties>.*)$',
@@ -612,7 +615,7 @@ class InsurgencyParser(Parser):
         """
         plist = self.getPlayerList()
 
-        for cid, c in plist.iteritems():
+        for cid, c in six.iteritems(plist):
             client = self.clients.getByCID(cid)
             if client:
                 if client.guid == c.guid:
@@ -633,7 +636,7 @@ class InsurgencyParser(Parser):
                 client_cid_list.append(cl.cid)
 
             #Use clients.items so we get all clients, including bots
-            client_list = self.clients.items()
+            client_list = list(self.clients.items())
             for cid, client in client_list:
                 self.verbose2('Client in Client list %s' % client.name)
                 if client.cid not in client_cid_list:
@@ -697,7 +700,7 @@ class InsurgencyParser(Parser):
         :param silent: Whether or not to announce this kick
         """
         self.debug('kick reason: [%s]' % reason)
-        if isinstance(client, basestring):
+        if isinstance(client, six.string_types):
             clients = self.clients.getByMagic(client)
             if len(clients) != 1:
                 return
@@ -731,7 +734,7 @@ class InsurgencyParser(Parser):
             return
 
         self.debug('BAN : client: %s, reason: %s', client, reason)
-        if isinstance(client, basestring):
+        if isinstance(client, six.string_types):
             clients = self.clients.getByMagic(client)
             if len(clients) != 1:
                 return
@@ -803,7 +806,7 @@ class InsurgencyParser(Parser):
             return
 
         self.debug('TEMPBAN : client: %s - duration: %s - reason: %s', client, duration, reason)
-        if isinstance(client, basestring):
+        if isinstance(client, six.string_types):
             clients = self.clients.getByMagic(client)
             if len(clients) != 1:
                 return
@@ -870,7 +873,7 @@ class InsurgencyParser(Parser):
         Return a list of suggested map names in cases it fails to recognize the map that was provided.
         """
         map_name = self.getMapsSoundingLike(map_name)
-        if not isinstance(map_name, basestring):
+        if not isinstance(map_name, six.string_types):
             return map_name
         else:
             self.saybig('Changing map to: %s - %s' % (map_name, gamemode_name))
@@ -892,7 +895,7 @@ class InsurgencyParser(Parser):
         """
         clients = self.queryServerInfo()
         pings = {}
-        for cid, client in clients.iteritems():
+        for cid, client in six.iteritems(clients):
             pings[cid] = client.ping
         return pings
 
@@ -938,7 +941,7 @@ class InsurgencyParser(Parser):
             return
         if line.startswith("mp\x08 \x08\x08 \x08"):
             line = line[8:]
-        text = line.decode('UTF-8', 'replace')
+        text = line
         data = None
 
         m = re.match(RE_HL_LOG_LINE, text)
@@ -950,7 +953,7 @@ class InsurgencyParser(Parser):
         if data is not None:
             hfunc, param_dict = ger.getHandler(data)
             if hfunc:
-                self.verbose2("calling %s%r" % (hfunc.func_name, param_dict))
+                self.verbose2("calling %s%r" % (hfunc.__name__, param_dict))
                 event = hfunc(self, **param_dict)
                 if event:
                     self.queueEvent(event)

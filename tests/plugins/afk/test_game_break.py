@@ -22,13 +22,14 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from textwrap import dedent
 from tests.plugins.afk import *
 from mock import Mock
 
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def plugin(console):
     p = None
     with logging_disabled():

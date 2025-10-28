@@ -22,6 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+import six
 __author__ = 'Bakes, Courgette'
 __version__ = '1.9'
 
@@ -94,7 +96,7 @@ class MohParser(AbstractParser):
         """
         self.info('Connecting all players...')
         plist = self.getPlayerList()
-        for cid, p in plist.iteritems():
+        for cid, p in six.iteritems(plist):
             client = self.clients.getByCID(cid)
             if not client:
                 name = p['name']

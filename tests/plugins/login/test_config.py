@@ -23,6 +23,7 @@
 # ################################################################### #
 
 
+from __future__ import absolute_import
 from textwrap import dedent
 from tests.plugins.login import LoginTestCase
 

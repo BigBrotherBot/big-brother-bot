@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import re
 
 from threading import Timer
@@ -247,14 +248,14 @@ class UrtserversidedemoPlugin(Plugin):
     def _load_config_haxbusterurt(self):
         try:
             self._haxbusterurt_demo_duration = self.config.getint('haxbusterurt', 'demo_duration')
-        except Exception, err:
+        except Exception as err:
             self.warning(err)
         self.info('haxbusterurt demo_duration: %s minutes' % self._haxbusterurt_demo_duration)
 
     def _load_config_follow(self):
         try:
             self._follow_demo_duration = self.config.getint('follow', 'demo_duration')
-        except Exception, err:
+        except Exception as err:
             self.warning(err)
         self.info('follow demo_duration: %s minutes' % self._follow_demo_duration)
 

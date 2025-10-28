@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import pytest
 
 from textwrap import dedent
@@ -33,7 +34,7 @@ from mock import call, Mock
 # This test suite makes sure `kick_client` is called appropriately when `ask_client` is run
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def plugin(console):
     p = None
     with logging_disabled():

@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from b3.fake import FakeClient
 from tests.plugins.login import LoginTestCase, F00_MD5
 

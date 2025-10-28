@@ -24,6 +24,7 @@
 # THE SOFTWARE.
 #------------------------------------------------------------------------------
 
-import SourceQuery
-import SourceRcon
-import SourceLog
+from __future__ import absolute_import
+from . import SourceQuery
+from . import SourceRcon
+from . import SourceLog

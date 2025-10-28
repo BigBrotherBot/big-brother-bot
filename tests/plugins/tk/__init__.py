@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 
 from b3.fake import FakeClient
@@ -31,9 +32,10 @@ from b3.config import CfgConfigParser
 from mockito import when
 from tests import B3TestCase
 from textwrap import dedent
+import unittest
 
 
-class Test_Tk_plugin(B3TestCase):
+class Test_Tk_plugin(B3TestCase, unittest.TestCase):
 
     def setUp(self):
         super(Test_Tk_plugin, self).setUp()
@@ -42,7 +44,7 @@ class Test_Tk_plugin(B3TestCase):
         self.p = TkPlugin(self.console, self.conf)
 
 
-class Tk_functional_test(B3TestCase):
+class Tk_functional_test(B3TestCase, unittest.TestCase):
 
     def setUp(self):
         B3TestCase.setUp(self)

@@ -20,6 +20,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 import os
 import logging
@@ -69,7 +70,7 @@ class ChatloggerPlugin(Plugin):
         except ConfigParser.NoOptionError:
             self._save2db = True
             self.info("using default value '%s' for save_to_database", self._save2db)
-        except ValueError, e:
+        except ValueError as e:
             self._save2db = True
             self.warning('unexpected value for save_to_database: using default value (%s) instead (%s)', self._save2db, e)
 
@@ -79,7 +80,7 @@ class ChatloggerPlugin(Plugin):
         except ConfigParser.NoOptionError:
             self._save2file = False
             self.info("using default value '%s' for save_to_file", self._save2file)
-        except ValueError, e:
+        except ValueError as e:
             self._save2file = False
             self.warning('unexpected value for save_to_file: using default value (%s) instead (%s)', self._save2file, e)
 
@@ -99,7 +100,7 @@ class ChatloggerPlugin(Plugin):
         try:
             self._file_name = self.config.getpath('file', 'logfile')
             self.info('using file (%s) to store log', self._file_name)
-        except Exception, e:
+        except Exception as e:
             self.error('error while reading logfile name: disabling logging to file (%s)' % e)
             self._save2file = False
         else:
@@ -112,7 +113,7 @@ class ChatloggerPlugin(Plugin):
             except ConfigParser.NoOptionError:
                 self._file_rotation_rate = 'D'
                 self.info("using default value '%s' for the file rotation rate", self._file_rotation_rate)
-            except ValueError, e:
+            except ValueError as e:
                 self._file_rotation_rate = 'D'
                 self.warning("unexpected value for file rotation rate: "
                              "falling back on default value: '%s' (%s)", self._file_rotation_rate, e)
@@ -129,7 +130,7 @@ class ChatloggerPlugin(Plugin):
             handler.setFormatter(logging.Formatter('%(asctime)s\t%(message)s', '%y-%m-%d %H:%M:%S'))
             self._filelogger.addHandler(handler)
             self._filelogger.setLevel(logging.INFO)
-        except Exception, e:
+        except Exception as e:
             self._save2file = False
             self.error("cannot setup file chat logger: disabling logging to file (%s)" % e, exc_info=e)
 
@@ -328,7 +329,7 @@ class ChatloggerPlugin(Plugin):
                 days = int(text[:-1]) * 365
             else:
                 days = int(text)
-        except ValueError, e:
+        except ValueError as e:
             self.error("could not convert '%s' to a valid number of days: %s" % (text, e))
             days = 0
         return days
@@ -356,7 +357,7 @@ class AbstractData(object):
                 self.plugin.debug("rowcount: %s, id:%s" % (cursor.rowcount, cursor.lastrowid))
             else:
                 self.plugin.warning("inserting into %s failed" % self._table)
-        except Exception, e:
+        except Exception as e:
             if e[0] == 1146:
                 self.plugin.error("could not save to database : %s" % e[1])
                 self.plugin.info("refer to this plugin readme file for instruction on how to create the required tables")

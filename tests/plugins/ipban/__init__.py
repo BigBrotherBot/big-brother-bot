@@ -22,7 +22,8 @@
 #                                                                     #
 # ################################################################### #
 
-import unittest2
+from __future__ import absolute_import
+import unittest
 
 from textwrap import dedent
 from mockito import when
@@ -33,7 +34,7 @@ from b3.config import MainConfig
 from b3.plugins.admin import AdminPlugin
 from tests import logging_disabled
 
-class IpbanTestCase(unittest2.TestCase):
+class IpbanTestCase(unittest.TestCase):
 
     def setUp(self):
         self.parser_conf = MainConfig(CfgConfigParser(allow_no_value=True))

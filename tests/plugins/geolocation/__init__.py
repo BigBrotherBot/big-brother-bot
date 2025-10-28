@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import time
 import logging
 
@@ -30,6 +31,7 @@ from mockito import unstub
 from b3.fake import FakeClient
 from b3.plugins.geolocation import GeolocationPlugin
 from tests import B3TestCase
+import unittest
 
 
 class GeolocationTestCase(B3TestCase):

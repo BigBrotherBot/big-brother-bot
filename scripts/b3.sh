@@ -48,6 +48,7 @@
 #                                    - fixed b3_list matching also non configuration files while retrieving instances
 #  2015-07-26 - 0.14 - Fenix         - do not allow to use root at all when using this very script
 #                                    - create b3 home directory if it has not been created already
+#  2025-08-22 - 0.15 - Blitztide     - Mandate python3
 
 
 ### SETUP
@@ -264,9 +265,9 @@ function b3_start() {
     local PID_FILE="${SCRIPT_DIR}/${PID_DIR}/${COMMON_PREFIX}${B3}.pid"
 
     if [ ${AUTO_RESTART} -eq 1 ]; then
-        screen -DmS "${SCREEN}" python "${PROCESS}" --restart --console --config "${CONFIG_FILE}" &
+        screen -DmS "${SCREEN}" python3 "${PROCESS}" --restart --console --config "${CONFIG_FILE}" &
     else
-        screen -DmS "${SCREEN}" python "${PROCESS}" --console --config "${CONFIG_FILE}" &
+        screen -DmS "${SCREEN}" python3 "${PROCESS}" --console --config "${CONFIG_FILE}" &
     fi
 
     echo "${!}" > "${PID_FILE}"
@@ -438,23 +439,17 @@ if [ ! "${DEVELOPER}" -eq 0 ]; then # allow developers to use root to start b3
 fi
 
 # check for python to be installed in the system
-if [ -z $(which python) ]; then
+if [ -z $(which python3) ]; then
     p_out "^1ERROR^0: The Python interpreter seems to be missing on your system"
-    p_out "You need to install Python ^22.7 ^0to run B3"
+    p_out "You need to install Python ^23 ^0to run B3"
     exit 1
 fi
 
 # check for correct python version to be installed on the system
-VERSION=($(python -c 'import sys; print("%s %s" % (sys.version_info.major, sys.version_info.minor));'))
-if [ ${VERSION[0]} -eq 3 ]; then
-    p_out "^1ERROR^0: B3 is not yet compatible with Python ^33^0"
-    p_out "You need to install Python ^22.7 ^0to run B3"
-    exit 1
-fi
-
-if [ ${VERSION[1]} -lt 7 ]; then
-    p_out "^1ERROR^0: B3 can't run under Python ^3${VERSION[0]}.${VERSION[1]}^0"
-    p_out "You need to install Python ^22.7 ^0to run B3"
+VERSION=($(python3 -c 'import sys; print("%s %s" % (sys.version_info.major, sys.version_info.minor));'))
+if [ ${VERSION[0]} -lt 3 ]; then
+    p_out "^1ERROR^0: B3 v2.0+ is no longer compatible with Python ^32^0"
+    p_out "You need to install Python ^23 ^0to run B3"
     exit 1
 fi
 

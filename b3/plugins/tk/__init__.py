@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
 import b3.events
 import b3.plugin
@@ -31,7 +32,9 @@ import re
 import threading
 import time
 
-from ConfigParser import NoOptionError
+from six.moves.configparser import NoOptionError
+import six
+from six.moves import map
 
 __version__ = '1.5'
 __author__ = 'ThorN, mindriot, Courgette, xlr8or, SGT, 82ndab-Bravo17, ozon, Fenix'
@@ -219,13 +222,13 @@ class TkPlugin(b3.plugin.Plugin):
 
         try:
             self._levels = self.load_config_for_levels()
-            self.debug('loaded levels: %s' % ','.join(map(str, self._levels.keys())))
+            self.debug('loaded levels: %s' % ','.join(map(str, list(self._levels.keys()))))
         except NoOptionError:
             self.warning('could not find levels in config file, '
-                         'using default: %s' % ','.join(map(str, self._levels.keys())))
-        except ValueError, e:
+                         'using default: %s' % ','.join(map(str, list(self._levels.keys()))))
+        except ValueError as e:
             self.error('could not load levels from config value: %s' % e)
-            self.debug('using default levels' % ','.join(map(str, self._levels.keys())))
+            self.debug('using default levels' % ','.join(map(str, list(self._levels.keys()))))
 
         self._maxLevel = max(self._levels.keys())
         self.debug('teamkill max level is %s', self._maxLevel)
@@ -284,7 +287,7 @@ class TkPlugin(b3.plugin.Plugin):
             except NoOptionError:
                 self.error("option kill_multiplier is missing in section %s" % section_name)
                 is_valid = False
-            except ValueError, err:
+            except ValueError as err:
                 self.error("value for kill_multiplier is invalid. %s" % err)
                 is_valid = False
 
@@ -293,7 +296,7 @@ class TkPlugin(b3.plugin.Plugin):
             except NoOptionError:
                 self.error("option damage_multiplier is missing in section %s" % section_name)
                 is_valid = False
-            except ValueError, err:
+            except ValueError as err:
                 self.error("value for damage_multiplier is invalid. %s" % err)
                 is_valid = False
 
@@ -302,7 +305,7 @@ class TkPlugin(b3.plugin.Plugin):
             except NoOptionError:
                 self.error("option ban_length is missing in section %s" % section_name)
                 is_valid = False
-            except ValueError, err:
+            except ValueError as err:
                 self.error("value for ban_length is invalid. %s" % err)
                 is_valid = False
 
@@ -485,7 +488,7 @@ class TkPlugin(b3.plugin.Plugin):
     
     def getMultipliers(self, client):
         level = ()
-        for lev, mult in self._levels.iteritems():
+        for lev, mult in six.iteritems(self._levels):
             if lev <= client.maxLevel:
                 level = mult
 

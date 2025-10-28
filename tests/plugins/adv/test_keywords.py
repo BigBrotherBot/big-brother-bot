@@ -22,15 +22,18 @@
 #                                                                     #
 # ################################################################### #
 
-import StringIO
+from __future__ import absolute_import
+from io import StringIO
 import feedparser
 
 from b3.fake import FakeClient
 from mock import patch, call, Mock
 from mockito import when, any as ANY
 from tests.plugins.adv import AdvTestCase, RSS_FEED_CONTENT
+import unittest
 
-class Test_keywords(AdvTestCase):
+class Test_keywords(AdvTestCase, unittest.TestCase):
+    __test__ = False
 
     def setUp(self):
         AdvTestCase.setUp(self)
@@ -84,7 +87,7 @@ class Test_keywords(AdvTestCase):
         self.p._feed = "http://some.feed/rss"
 
         when(self.p._msg).getnext().thenReturn("@feed")
-        with patch.object(feedparser, '_open_resource', return_value=StringIO.StringIO(RSS_FEED_CONTENT)):
+        with patch.object(feedparser, '_open_resource', return_value=StringIO(RSS_FEED_CONTENT)):
             with patch.object(self.console, "say") as say_mock:
                 self.p.adv()
                 say_mock.assert_has_calls([call(u'News: f00 bar item title')])

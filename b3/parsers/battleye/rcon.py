@@ -31,6 +31,7 @@ not require a separated socket connection for rcon commands
 To use that Rcon class, instantiate and use the set_battleye_server() method. 
 Then you can expect this class to work like the other Rcon classes
 """
+from __future__ import absolute_import
 from b3.parsers.battleye.protocol import CommandError
 from b3.parsers.battleye.protocol import CommandTimeoutError
 
@@ -59,9 +60,9 @@ class Rcon(object):
         try:
             response = self.battleye_server.command(cmd)
             self.console.bot(u'RCON < %s' % repr(response))
-        except CommandTimeoutError, err:
+        except CommandTimeoutError as err:
             self.console.error("RCON # %s" % err)
-        except CommandError, err:
+        except CommandError as err:
             self.console.error("RCON ERROR : %s" % err, exc_info=err)
         return response
         

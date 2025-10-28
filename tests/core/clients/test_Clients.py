@@ -22,14 +22,15 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import b3
-
+import unittest
 from b3.clients import Clients, Client
 from tests import B3TestCase
 from mock import Mock, patch
 
 
-class TestClients(B3TestCase):
+class TestClients(B3TestCase, unittest.TestCase):
     clients = None
     joe = None
     

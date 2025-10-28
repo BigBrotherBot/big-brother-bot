@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 __author__ = 'Fenix'
 __version__ = '3.2'
 
@@ -33,12 +34,12 @@ import b3.events
 # Note that the order or arguments in the URL matters.
 
 try:
-    from urllib import urlencode
+    from six.moves.urllib.parse import urlencode
 except ImportError:
     from urllib.parse import urlencode
 
 try:
-    import urllib2
+    import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
 except ImportError:
     import urllib.request as urllib2
 
@@ -52,8 +53,6 @@ import json
 import re
 import sys
 import time
-reload(sys)
-sys.setdefaultencoding('utf-8')
 
 try:
     # import the getCmd function
@@ -105,7 +104,7 @@ class TranslatorPlugin(b3.plugin.Plugin):
         """
         def validate_source(x):
             """helper used to validate the source language"""
-            acceptable = self.languages.keys()
+            acceptable = list(self.languages.keys())
             acceptable.append('auto')
             if x not in acceptable and x != 'auto':
                 raise ValueError('value must be one of [%s]' % ', '.join(acceptable))
@@ -113,7 +112,7 @@ class TranslatorPlugin(b3.plugin.Plugin):
 
         def validate_target(x):
             """helper used to validate the target language"""
-            acceptable = self.languages.keys()
+            acceptable = list(self.languages.keys())
             if x not in acceptable and x != 'auto':
                 raise ValueError('value must be one of [%s]' % ', '.join(acceptable))
             return x
@@ -279,10 +278,10 @@ class TranslatorPlugin(b3.plugin.Plugin):
         params.append(urlencode({'q': text}))
         url += '&'.join(params)
 
-        request = urllib2.Request(url)
+        request = six.moves.urllib.request.Request(url)
         browser = "Mozilla/5.0 (X11; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0"
         request.add_header('User-Agent', browser)
-        response = urllib2.urlopen(request)
+        response = six.moves.urllib.request.urlopen(request)
         rtn = json.loads(response.read().decode('utf8'))
         self.verbose('translation done and received, sanitizing...')
 
@@ -307,10 +306,10 @@ class TranslatorPlugin(b3.plugin.Plugin):
         params.append('tl=' + lang)
         params.append(urlencode({'q': text}))
         url += '&'.join(params)
-        request = urllib2.Request(url)
+        request = six.moves.urllib.request.Request(url)
         browser = "Mozilla/5.0 (X11; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0"
         request.add_header('User-Agent', browser)
-        response = urllib2.urlopen(request)
+        response = six.moves.urllib.request.urlopen(request)
         return response.read()
 
     def send_translation(self, client, message, cmd=None):

@@ -1,4 +1,8 @@
-import pdb, sys, time, thread, threading
+from __future__ import absolute_import
+from __future__ import print_function
+import pdb, sys, time, six.moves._thread, threading
+import six
+from six.moves import range
 
 class CodeInfo( object ):
     """Code-object information for multiple calls of code"""
@@ -9,7 +13,7 @@ class CodeInfo( object ):
         self.callcount = 0
         self.children = {}
         self.lines = {}
-        if isinstance( code, (str,unicode)):
+        if isinstance( code, (str,six.text_type)):
             self.filename = '~'
             self.firstline = 0
             self.name = code
@@ -60,9 +64,9 @@ class FrameInfo( object ):
         self.open_line = lineno
     def add_line( self, lineno, stop_time ):
         """Add per-line timing to our counters"""
-        if self.lines.has_key( lineno ):
+        if lineno in self.lines:
             delta = stop_time - self.lines[lineno]
-            print 'delta for lineno:', lineno, delta
+            print('delta for lineno:', lineno, delta)
             self.code_info.add_line( lineno, delta )
 
 class SimpleProfiler( object ):
@@ -99,7 +103,7 @@ class SimpleProfiler( object ):
                     else:
                         other = None
                     if info is None:
-                        print i,self.frame_info[:i+1]
+                        print(i,self.frame_info[:i+1])
                     info.add_cummulative( frame_delta, other )
                 frame_info.add_local( frame_delta )
             self.frame_info[ self.frame_depth ] = None
@@ -127,7 +131,7 @@ class SimpleProfiler( object ):
         return current
 
 def test():
-    23L**10000
+    23**10000
     time.sleep( 3.0 )
     r()
     
@@ -145,5 +149,5 @@ if __name__ == "__main__":
     test()
     sys.settrace( None )
     for value in s.code_info.values():
-        print value
+        print(value)
     

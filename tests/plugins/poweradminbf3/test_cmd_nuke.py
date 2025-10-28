@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from mock import patch, call, Mock
 import time
 from b3.config import CfgConfigParser

@@ -22,12 +22,18 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from mock import Mock, call, patch
-import unittest2 as unittest
+import unittest
 from b3 import TEAM_BLUE, TEAM_RED, TEAM_UNKNOWN, TEAM_SPEC
 from b3.config import XmlConfigParser
 from b3.fake import FakeClient
+import pytest
+pytest.importorskip("b3.parsers.chiv", exc_type=NameError)
 from b3.parsers.chiv import ChivParser, Packet, MessageType
+import six
+from six.moves import filter
+from six.moves import map
 
 
 def client_equal(client_a, client_b):
@@ -38,7 +44,7 @@ def client_equal(client_a, client_b):
 #    for p in ('cid', 'guid', 'name', 'ip', 'ping'):
 #        if client_a.get(p, None) != client_b.get(p, None):
 #            return False
-    return all(map(lambda x: getattr(client_a, x, None) == getattr(client_b, x, None), ('cid', 'guid', 'name', 'ip', 'ping')))
+    return all([getattr(client_a, x, None) == getattr(client_b, x, None) for x in ('cid', 'guid', 'name', 'ip', 'ping')])
 #    return True
 
 WHATEVER = object()  # sentinel used in CsgoTestCase.assert_has_event
@@ -84,7 +90,7 @@ class ChivTestCase(unittest.TestCase):
         """
         assert that self.evt_queue contains at least one event for the given type that has the given characteristics.
         """
-        assert isinstance(event_type, basestring)
+        assert isinstance(event_type, six.string_types)
         expected_event = self.parser.getEvent(event_type, data, client, target)
 
         if not len(self.evt_queue):
@@ -106,13 +112,13 @@ class ChivTestCase(unittest.TestCase):
                         and (client_equal(expected_event.target, evt.target) or target == WHATEVER):
                     return
 
-            self.fail("expecting event %s. Got instead: %s" % (expected_event, map(str, self.evt_queue)))
+            self.fail("expecting event %s. Got instead: %s" % (expected_event, list(map(str, self.evt_queue))))
 
     def assert_has_not_event(self, event_type, data=None, client=None, target=None):
         """
         assert that self.evt_queue does not contain at least one event for the given type that has the given characteristics.
         """
-        assert isinstance(event_type, basestring)
+        assert isinstance(event_type, six.string_types)
         unexpected_event = self.parser.getEvent(event_type, data, client, target)
 
         if not len(self.evt_queue):
@@ -126,7 +132,7 @@ class ChivTestCase(unittest.TestCase):
                     and (target is None or client_equal(target, evt.target))
                 )
             if any(map(event_match, self.evt_queue)):
-                self.fail("not expecting event %s" % (filter(event_match, self.evt_queue)))
+                self.fail("not expecting event %s" % (list(filter(event_match, self.evt_queue))))
 
 
 class Test_gameevent_parsing(ChivTestCase):

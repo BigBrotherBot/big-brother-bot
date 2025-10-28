@@ -22,6 +22,7 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 from mock import Mock, patch
 from b3.config import CfgConfigParser
 from b3.plugins.poweradminurt import PoweradminurtPlugin

@@ -22,14 +22,17 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
 import logging
 from mock import Mock, patch, ANY
 from mockito import mock, when, any as anything
-import unittest2 as unittest
+import unittest
 from b3.clients import Client
 from b3.config import XmlConfigParser
 from b3.fake import FakeClient
 from b3.parsers.cod4 import Cod4Parser
+import six
+from six.moves import map
 
 log = logging.getLogger("test")
 log.setLevel(logging.INFO)
@@ -71,7 +74,7 @@ class Cod4TestCase(unittest.TestCase):
         self.output_mock = mock()
         # simulate game server actions
         def write(*args, **kwargs):
-            pretty_args = map(repr, args) + ["%s=%s" % (k, v) for k, v in kwargs.iteritems()]
+            pretty_args = list(map(repr, args)) + ["%s=%s" % (k, v) for k, v in six.iteritems(kwargs)]
             log.info("write(%s)" % ', '.join(pretty_args))
             return self.output_mock.write(*args, **kwargs)
         self.console.write = Mock(wraps=write)

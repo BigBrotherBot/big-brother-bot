@@ -22,6 +22,10 @@
 #                                                                     #
 # ################################################################### #
 
+from __future__ import absolute_import
+from __future__ import print_function
+import six
+from six.moves import range
 __version__ = '1.4'
 __author__  = 'Freelander'
 
@@ -179,7 +183,7 @@ class Poweradmincod7Plugin(b3.plugin.Plugin):
         Display available playlists
         (You can safely use the command without the 'pa' at the beginning)
         """
-        for n, p in sorted(self._playlists.iteritems()):
+        for n, p in sorted(six.iteritems(self._playlists)):
             cmd.sayLoudOrPM(client, '%s - %s' % (n, p))
             time.sleep(1)
 
@@ -205,7 +209,7 @@ class Poweradmincod7Plugin(b3.plugin.Plugin):
             return
 
         data = int(data)
-        if data not in range(1, _number_of_playlists + 1):
+        if data not in list(range(1, _number_of_playlists + 1)):
             client.message('Playlist number %s out of range! Please enter a valid number' % data)
         else:
             self.console.write('setadmindvar playlist %s' % data, maxRetries=5)
@@ -228,13 +232,13 @@ class Poweradmincod7Plugin(b3.plugin.Plugin):
         self.debug('Requested map for next round is %s' % data)
         data = data.lower()
 
-        if data in self._cod7maps.keys():
+        if data in list(self._cod7maps.keys()):
             mapname = data
             self.debug('%s is a console mapname' % data)
-        elif ('mp_%s' % data) in self._cod7maps.keys():
+        elif ('mp_%s' % data) in list(self._cod7maps.keys()):
             mapname = ('mp_%s' % data)
             self.debug('%s is considered to be %s' % (data, mapname))
-        elif data in self._cod7maps.values():
+        elif data in list(self._cod7maps.values()):
             cod7maps_inverse = dict((self._cod7maps[k], k) for k in self._cod7maps)
             mapname = cod7maps_inverse[data]
             self.debug('%s is an easy mapname, console name is %s' % (data, mapname))
@@ -242,7 +246,7 @@ class Poweradmincod7Plugin(b3.plugin.Plugin):
             client.message('%s is not a stock CoD7 map, please check your spelling and try again!' % data)
             return
 
-        excludeMaps = self._cod7maps.keys()
+        excludeMaps = list(self._cod7maps.keys())
         excludeMaps.remove(mapname)
         self.console.write('setadmindvar playlist_excludeMap "%s"' % ' '.join(excludeMaps), maxRetries=5)
         client.message('Setting map ^3%s for next round' % self._cod7maps[mapname].title())
@@ -265,7 +269,7 @@ class Poweradmincod7Plugin(b3.plugin.Plugin):
         # check if mapnames typed correctly
         mapnames = data.split(' ')
         for m in mapnames:
-            if m not in self._cod7maps.keys():
+            if m not in list(self._cod7maps.keys()):
                 client.message('%s is not a valid mapname, please check your spelling and try again' % m)
                 return False
 
@@ -288,14 +292,14 @@ class Poweradmincod7Plugin(b3.plugin.Plugin):
         if not x:
             try:
                 cmd.sayLoudOrPM(client, '%s: %s - %s' % (client.name, client.ip, client.guid))
-            except Exception, err:
+            except Exception as err:
                 client.message('Error, server replied %s' % err)
         else:
             try:
                 sclient = self._adminPlugin.findClientPrompt(x[0], client)
                 if sclient:
                     cmd.sayLoudOrPM(client, '%s: %s - %s' % (sclient.name, sclient.ip, sclient.guid))
-            except Exception, err:
+            except Exception as err:
                 client.message('Error, server replied %s' % err)
 
     def cmd_paset(self, data, client, cmd=None):
@@ -384,7 +388,7 @@ class Poweradmincod7Plugin(b3.plugin.Plugin):
             data = data.split(' ')
             gametype = data[0].lower()
             for g in gametypes:
-                if gametype not in gametypes.keys():
+                if gametype not in list(gametypes.keys()):
                     client.message('^3%s ^7is not a valid gametype, please try again!' % gametype)
                     return False
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # ################################################################### #
@@ -23,6 +24,8 @@
 # ################################################################### #
 
 
+from __future__ import absolute_import
+from __future__ import print_function
 __author__  = 'GrosBedo'
 __version__ = '0.8'
 
@@ -73,8 +76,8 @@ def parse_cmdline_args():
         args, extras = parser.parse_known_args() # We parse only the special commandlines parameter here, for the rest, the normal switchs, we give them up to the rest of B3 functions (namely the main() in b3/run.py). The recognized args are stored in args var, for the rest it's stored in extras var
         extras.insert(0, sys.argv[0]) # add the path to this script file (to normalize the arguments)
         sys.argv = extras # trim out the debug vars we will process here, so that b3 can parse the arguments normally
-    except BaseException, e:
-        print('Exception: %s' % str(e))
+    except BaseException as e:
+        print(('Exception: %s' % str(e)))
         return
 
     # processing the arguments
@@ -122,13 +125,13 @@ def parse_cmdline_args():
         prestats = []
         # Processing the logs in input
         if args.diaglog:
-            print('Analyzing the log(s) %s' % (' - '.join(args.diaglog)))
+            print(('Analyzing the log(s) %s' % (' - '.join(args.diaglog))))
             supermatrix.extend(diag.lines_per_second(*args.diaglog))
             print('Analyze completed.')
         # Loading some previous results' matrix
         if args.diagrawload:
-            print('Loading raw data results from %s. '
-                  'This can take some time, please be patient...' % (' - '.join(args.diagrawload)))
+            print(('Loading raw data results from %s. '
+                  'This can take some time, please be patient...' % (' - '.join(args.diagrawload))))
             loadmatrix.extend(diag.load_data(True, *args.diagrawload))
         # Merge the matrix first
         if len(supermatrix) > 1:
@@ -140,7 +143,7 @@ def parse_cmdline_args():
 
         # Save the raw datas matrix(es)
         if args.diagrawsave:
-            print('Saving the raw data to %s' % args.diagrawsave)
+            print(('Saving the raw data to %s' % args.diagrawsave))
             if len(loadmatrix) > 0:
                     diag.save_data(args.diagrawsave, *loadmatrix)
             else:
@@ -166,11 +169,11 @@ def parse_cmdline_args():
 
         # Loading some previous results' stats
         if args.diagstatsload:
-            print('Loading previous stats results from %s' % (' - '.join(args.diagstatsload)))
+            print(('Loading previous stats results from %s' % (' - '.join(args.diagstatsload))))
             prestats.extend( (diag.load_data(False, statsfile)[0][0][1] for statsfile in args.diagstatsload ) )
         # Loading some previous results' stats in YAML
         if args.diagload:
-            print('Loading previous stats results from %s' % (' - '.join(args.diagload)))
+            print(('Loading previous stats results from %s' % (' - '.join(args.diagload))))
             prestats.extend( diag.load_data_yaml(*args.diagload) )
         # Merge then all the stats (only if there is an additional stats to merge after the matrix merge !)
         if args.diagload or args.diagstatsload:
@@ -184,19 +187,19 @@ def parse_cmdline_args():
         # Save the stats in computer readable format
         if args.diagstatssave:
             if args.diagmergeonly: # Save only the merged result if specified by the user
-                print('Saving the final, merged stats to %s' % args.diagstatssave)
+                print(('Saving the final, merged stats to %s' % args.diagstatssave))
                 diag.save_data(args.diagstatssave, *mergedstats)
             else:
-                print('Saving all the stats + merged to %s' % args.diagstatssave)
+                print(('Saving all the stats + merged to %s' % args.diagstatssave))
                 superstats.extend(mergedstats)
                 diag.save_data(args.diagstatssave, *superstats)
         # Save the stats in human readable format
         if args.diagsave:
             if args.diagmergeonly: # Save only the merged result if specified by the user
-                print('Saving the stats digest to %s' % args.diagsave)
+                print(('Saving the stats digest to %s' % args.diagsave))
                 diag.save_data_yaml(args.diagsave, *mergedstats)
             else:
-                print('Saving the full stats digest (all the stats + merged) to %s' % args.diagsave)
+                print(('Saving the full stats digest (all the stats + merged) to %s' % args.diagsave))
                 superstats.extend(mergedstats)
                 diag.save_data_yaml(args.diagsave, *superstats)
         else:
